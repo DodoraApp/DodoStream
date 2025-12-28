@@ -103,6 +103,8 @@ jobs:
             platform: android
             profile: development
             output: app-dev.apk
+            channel: development
+            ext: apk
             node_env: development
             build_type: dev
             run_on_push: false
@@ -112,6 +114,8 @@ jobs:
             platform: android
             profile: development_tv
             output: app-dev_tv.apk
+            channel: development_tv
+            ext: apk
             node_env: development
             build_type: dev
             run_on_push: false
@@ -121,6 +125,8 @@ jobs:
             platform: android
             profile: production_apk
             output: app-prod.apk
+            channel: production
+            ext: apk
             node_env: production
             build_type: prod-apk
             run_on_push: true
@@ -130,6 +136,8 @@ jobs:
             platform: android
             profile: production_tv_apk
             output: app-prod_tv.apk
+            channel: production_tv
+            ext: apk
             node_env: production
             build_type: prod-apk
             run_on_push: true
@@ -175,6 +183,14 @@ jobs:
           pnpm install
           pnpm i -g eas-cli@latest
 
+      - name: 🔖 Read app version
+        id: app_version
+        shell: bash
+        run: |
+          VERSION=$(node -e "const fs=require('fs'); const s=fs.readFileSync('app.config.ts','utf8'); const m=s.match(/\"version\"\s*:\s*\"([^\"]+)\"/); if(!m){ console.error('Could not find version in app.config.ts'); process.exit(1);} process.stdout.write(m[1]);")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "App version: $VERSION"
+
       - name: 📁 Setup expo-build-disk-cache
         uses: actions/cache@v4
         with:
@@ -209,7 +225,9 @@ jobs:
           )
         run: |
           export NODE_OPTIONS="--openssl-legacy-provider --max_old_space_size=4096"
-          eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} --local --non-interactive --output=./${{ matrix.output }}
+          ARTIFACT="DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}.${{ matrix.ext }}"
+          echo "Building artifact: $ARTIFACT"
+          eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} --local --non-interactive --output="./$ARTIFACT"
         env:
           NODE_ENV: ${{ matrix.node_env }}
 
@@ -217,8 +235,8 @@ jobs:
         if: steps.eas_build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.output }}
-          path: ./${{ matrix.output }}
+          name: DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}.${{ matrix.ext }}
+          path: ./DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}.${{ matrix.ext }}
           retention-days: 7
 
   expo_update:
@@ -292,7 +310,7 @@ jobs:
       - name: 📥 Download production APK artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: app-prod*.apk
+          pattern: DodoStream-*-production*.*
           path: dist
           merge-multiple: true
 
