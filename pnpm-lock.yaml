@@ -33,8 +33,8 @@ importers:
         specifier: ^7.1.6
         version: 7.1.25(react-native-tvos@0.81.5-1)(react@19.1.0)
       '@shopify/flash-list':
-        specifier: ^2.0.2
-        version: 2.0.2(@babel/runtime@7.28.4)(react-native-tvos@0.81.5-1)(react@19.1.0)
+        specifier: ^2.2.0
+        version: 2.2.0(@babel/runtime@7.28.4)(react-native-tvos@0.81.5-1)(react@19.1.0)
       '@shopify/restyle':
         specifier: ^2.4.5
         version: 2.4.5(react-native-tvos@0.81.5-1)(react@19.1.0)
@@ -1437,8 +1437,8 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
-  '@shopify/flash-list@2.0.2':
-    resolution: {integrity: sha512-zhlrhA9eiuEzja4wxVvotgXHtqd3qsYbXkQ3rsBfOgbFA9BVeErpDE/yEwtlIviRGEqpuFj/oU5owD6ByaNX+w==}
+  '@shopify/flash-list@2.2.0':
+    resolution: {integrity: sha512-mL61IofcfBNRZ/qazIf+pghGULkcZUQ7EZNldH1JBbIjtDb25ADSiQrt62ZTnRz0H5+bPFEZUmN9+WChHzX8pw==}
     peerDependencies:
       '@babel/runtime': '*'
       react: '*'
@@ -5028,6 +5028,7 @@ packages:
   whatwg-encoding@2.0.0:
     resolution: {integrity: sha512-p41ogyeMUrw3jWclHWTQg1k05DSVXPLcVxRTYsXUk+ZooOCZLcoYgPZ/HL/D/N+uQPOtcp1me1WhBEaX02mhWg==}
     engines: {node: '>=12'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
@@ -6943,12 +6944,11 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@shopify/flash-list@2.0.2(@babel/runtime@7.28.4)(react-native-tvos@0.81.5-1)(react@19.1.0)':
+  '@shopify/flash-list@2.2.0(@babel/runtime@7.28.4)(react-native-tvos@0.81.5-1)(react@19.1.0)':
     dependencies:
       '@babel/runtime': 7.28.4
       react: 19.1.0
       react-native: react-native-tvos@0.81.5-1(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
-      tslib: 2.8.1
 
   '@shopify/restyle@2.4.5(react-native-tvos@0.81.5-1)(react@19.1.0)':
     dependencies:
