@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     "name": "DodoStream",
     "slug": "dodostream",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "newArchEnabled": true,
     "scheme": "dodostream",
     "platforms": [

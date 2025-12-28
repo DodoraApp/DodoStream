@@ -18,6 +18,7 @@ import {
 interface ContinueWatchingCardProps {
   /** The continue watching entry to display */
   entry: ContinueWatchingEntry;
+  hideText?: boolean;
   onPress: () => void;
   onFocused?: () => void;
   hasTVPreferredFocus?: boolean;
@@ -27,6 +28,7 @@ interface ContinueWatchingCardProps {
 export const ContinueWatchingCard = memo(
   ({
     entry,
+    hideText,
     onPress,
     onFocused,
     hasTVPreferredFocus = false,
@@ -88,16 +90,18 @@ export const ContinueWatchingCard = memo(
               ) : null}
             </Box>
 
-            <Box gap="xs">
-              <Text variant="cardTitle" numberOfLines={1}>
-                {title}
-              </Text>
-              {subtitle ? (
-                <Text variant="caption" numberOfLines={1} color="textSecondary">
-                  {subtitle}
+            {!hideText && (
+              <Box gap="xs">
+                <Text variant="cardTitle" numberOfLines={1}>
+                  {title}
                 </Text>
-              ) : null}
-            </Box>
+                {subtitle ? (
+                  <Text variant="caption" numberOfLines={1} color="textSecondary">
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </Box>
+            )}
           </Box>
         )}
       </Focusable>

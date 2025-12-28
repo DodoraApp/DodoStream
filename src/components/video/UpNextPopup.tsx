@@ -56,7 +56,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = ({
 
   const resolved = useMemo<UpNextResolved | undefined>(() => {
     if (!enabled) return undefined;
-    if (!upNextVideo?.id || !upNextVideo?.title) return undefined;
+    if (!upNextVideo?.id) return undefined;
     return {
       videoId: upNextVideo.id,
       title: upNextVideo.title,
@@ -151,9 +151,16 @@ export const UpNextPopup: FC<UpNextPopupProps> = ({
   if (!shouldShow || !upNextEntry) return null;
 
   return (
-    <Box position="absolute" right={24} top={24} gap="s" alignItems="flex-end">
+    <Box
+      position="absolute"
+      right={24}
+      top={24}
+      gap="s"
+      alignItems="center"
+      justifyContent="center">
       <ContinueWatchingCard
         entry={upNextEntry}
+        hideText
         hasTVPreferredFocus={true}
         onPress={() => {
           debug('playNextPressed', {
@@ -166,26 +173,19 @@ export const UpNextPopup: FC<UpNextPopupProps> = ({
         }}
       />
 
-      <Box alignItems="center" width={240}>
-        <Box
-          backgroundColor="cardBackground"
-          borderRadius="m"
-          style={{ borderWidth: 2, borderColor: 'transparent' }}>
-          <Button
-            icon="close"
-            onPress={() => {
-              debug('autoplayCancelledByUser', {
-                metaId,
-                mediaType,
-                videoId,
-                nextVideoId: upNextVideo?.id,
-              });
-              onCancelAutoplay();
-              onDismiss();
-            }}
-          />
-        </Box>
-      </Box>
+      <Button
+        icon="close"
+        onPress={() => {
+          debug('autoplayCancelledByUser', {
+            metaId,
+            mediaType,
+            videoId,
+            nextVideoId: upNextVideo?.id,
+          });
+          onCancelAutoplay();
+          onDismiss();
+        }}
+      />
     </Box>
   );
 };
