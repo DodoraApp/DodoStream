@@ -69,8 +69,8 @@ importers:
         specifier: ~3.0.11
         version: 3.0.11(expo@54.0.30)(react-native-tvos@0.81.5-1)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
       expo-libvlc-player:
-        specifier: ^2.2.6
-        version: 2.2.6(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0)
+        specifier: ^2.3.1
+        version: 2.3.1(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0)
       expo-linear-gradient:
         specifier: ~15.0.8
         version: 15.0.8(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0)
@@ -2683,8 +2683,8 @@ packages:
       expo: '*'
       react: '*'
 
-  expo-libvlc-player@2.2.6:
-    resolution: {integrity: sha512-7t0gcKHkZC6Ybzcmc/9Lf9/6sZRZs9vBOf6arewRcQ8swmj2TZw9S/vcDapzTu0EZCiphiDCawOtKehqeVtZHA==}
+  expo-libvlc-player@2.3.1:
+    resolution: {integrity: sha512-x3OTky4sg/FVy3J4cL3Ab3eyBb+90tg1pCsrLkYwZsjC2jYHu51fjWJos59Qe1MCDKqENYrbWVkBTX7M3QS0BQ==}
     peerDependencies:
       expo: '*'
       react: '*'
@@ -5028,6 +5028,7 @@ packages:
   whatwg-encoding@2.0.0:
     resolution: {integrity: sha512-p41ogyeMUrw3jWclHWTQg1k05DSVXPLcVxRTYsXUk+ZooOCZLcoYgPZ/HL/D/N+uQPOtcp1me1WhBEaX02mhWg==}
     engines: {node: '>=12'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
@@ -8409,7 +8410,7 @@ snapshots:
       expo: 54.0.30(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.21)(react-native-tvos@0.81.5-1)(react@19.1.0)
       react: 19.1.0
 
-  expo-libvlc-player@2.2.6(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0):
+  expo-libvlc-player@2.3.1(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0):
     dependencies:
       expo: 54.0.30(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.21)(react-native-tvos@0.81.5-1)(react@19.1.0)
       react: 19.1.0
