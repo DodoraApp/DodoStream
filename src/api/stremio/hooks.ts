@@ -121,7 +121,7 @@ export function useAddonCatalogs(
             queryKey: stremioKeys.catalog(manifestUrl, type, id, 0),
             queryFn: () => fetchCatalogWithPagination(manifestUrl, type, id, 0),
             enabled: enabled && !!manifestUrl,
-            staleTime: 1000 * 60 * 10,
+            staleTime: 1000 * 60 * 10, // 10 minutes
         })),
     });
 }
@@ -191,7 +191,7 @@ export function useSearchCatalogs(query: string, enabled: boolean = true) {
             queryKey: [...stremioKeys.catalog(manifestUrl, catalogType, catalogId, 0), { search: query }],
             queryFn: () => fetchCatalog(manifestUrl, catalogType, catalogId, { search: query }),
             enabled: enabled && query.length > 0,
-            staleTime: 1000 * 60 * 5, // 5 minutes
+            staleTime: 1000 * 60 * 15, // 15 minutes
             retry: 1,
             meta: { catalogName, addonName, manifestUrl, catalogType, catalogId },
         })),
@@ -276,7 +276,8 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
             queryKey: [...stremioKeys.meta(type, id), addon.manifestUrl],
             queryFn: () => fetchMeta(addon.manifestUrl, type, id),
             enabled: enabled && !!type && !!id,
-            staleTime: 1000 * 60 * 30, // 30 minutes (meta data rarely changes)
+            staleTime: 1000 * 60 * 60 * 24, // 24 hours (metadata rarely changes)
+            gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
             retry: 1,
         })),
     });
@@ -432,7 +433,8 @@ export function useSubtitles(
             queryKey: [...stremioKeys.subtitle(type, id, extra), addon.manifestUrl],
             queryFn: () => fetchSubtitles(addon.manifestUrl, type, id, extra),
             enabled: enabled && !!type && !!id,
-            staleTime: 1000 * 60 * 10,
+            staleTime: 1000 * 60 * 60 * 24, // 24 hours
+            gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
             retry: 1,
         })),
     });
