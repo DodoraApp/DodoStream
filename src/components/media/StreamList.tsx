@@ -160,8 +160,6 @@ export const StreamList = memo(({ type, id, title, videoId }: StreamListProps) =
     return streams.filter((s) => (s.addonId ?? 'unknown') === selectedAddonId);
   }, [streams, selectedAddonId]);
 
-  console.log('Filtered streams', filteredStreams);
-
   return (
     <Box gap="s">
       <FadeIn>

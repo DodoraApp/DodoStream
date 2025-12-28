@@ -20,6 +20,7 @@ import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
 import { initializeProfiles, useProfileStore } from '@/store/profile.store';
 import { ProfileSelector } from '@/components/profile/ProfileSelector';
+import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -71,6 +72,7 @@ export default function Layout() {
   if (!fontsLoaded || !isAddonsInitialized || !isProfilesInitialized) {
     return null;
   }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
@@ -80,6 +82,7 @@ export default function Layout() {
           <GestureHandlerRootView
             key={appKey}
             style={{ flex: 1, backgroundColor: theme.colors.mainBackground }}>
+            <GithubReleaseModal enabled={!showProfileSelector} />
             <Stack
               screenOptions={{
                 headerStyle: {

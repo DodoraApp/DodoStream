@@ -70,6 +70,7 @@ export const Button = <T extends IconComponentType = typeof Ionicons>({
           opacity={disabled ? 0.5 : 1}
           flexDirection="row"
           gap="s"
+          borderRadius="full"
           style={
             isFocused && !disabled
               ? {
