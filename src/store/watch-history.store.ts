@@ -20,6 +20,12 @@ export interface WatchHistoryItem {
   progressSeconds: number;
   durationSeconds: number;
 
+  /**
+   * Optional ratio-only progress (0..1). Used when we know progress but don't
+   * know duration yet (e.g., external sync).
+   */
+  progressRatio?: number;
+
 
   /** Last playable target type for resume (preferred over lastStreamId). */
   lastStreamTargetType?: 'url' | 'external' | 'yt';
@@ -94,6 +100,22 @@ export const isContinueWatching = (
   return false;
 };
 
+export const isContinueWatchingItem = (item: WatchHistoryItem): boolean => {
+  const ratioFromSeconds =
+    item.durationSeconds > 0 ? item.progressSeconds / item.durationSeconds : undefined;
+  const ratio =
+    ratioFromSeconds !== undefined
+      ? ratioFromSeconds
+      : Number.isFinite(item.progressRatio)
+        ? Math.max(0, Math.min(1, item.progressRatio ?? 0))
+        : undefined;
+
+  if (ratio === undefined) return false;
+  if (ratio >= PLAYBACK_CONTINUE_WATCHING_MIN_RATIO && ratio < PLAYBACK_FINISHED_RATIO) return true;
+  if (ratio >= PLAYBACK_FINISHED_RATIO && !!item.videoId) return true;
+  return false;
+};
+
 /** Get the video key for storage: videoId for episodes, "_" for movies */
 const getVideoKey = (videoId?: string): string => videoId ?? MOVIE_VIDEO_KEY;
 
@@ -118,7 +140,7 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
         const allItems: WatchHistoryItem[] = [];
         for (const metaItems of Object.values(profileData)) {
           for (const item of Object.values(metaItems)) {
-            if (isContinueWatching(item.progressSeconds, item.durationSeconds, item.videoId)) {
+            if (isContinueWatchingItem(item)) {
               allItems.push(item);
             }
           }
@@ -144,8 +166,11 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
       getProgressRatio: (id, videoId) => {
         const item = get().getItem(id, videoId);
         if (!item) return 0;
-        if (item.durationSeconds <= 0) return 0;
-        return item.progressSeconds / item.durationSeconds;
+        if (item.durationSeconds > 0) return item.progressSeconds / item.durationSeconds;
+        if (Number.isFinite(item.progressRatio)) {
+          return Math.max(0, Math.min(1, item.progressRatio ?? 0));
+        }
+        return 0;
       },
 
 
@@ -182,8 +207,14 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
         // This avoids a short-started episode becoming the latest-by-show and hiding
         // a legitimate continue-watching entry for the same series.
         if (!existingBefore) {
-          if (item.durationSeconds <= 0) return;
-          const ratio = item.progressSeconds / item.durationSeconds;
+          const ratio =
+            item.durationSeconds > 0
+              ? item.progressSeconds / item.durationSeconds
+              : Number.isFinite((item as WatchHistoryItem).progressRatio)
+                ? (item as WatchHistoryItem).progressRatio
+                : undefined;
+
+          if (ratio === undefined) return;
           if (ratio < PLAYBACK_CONTINUE_WATCHING_MIN_RATIO) {
             debug('skipUpsertBelowThreshold', {
               metaId: item.id,
@@ -209,6 +240,7 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
 
         set((state) => {
           const existing = state.byProfile[profileId]?.[item.id]?.[videoKey];
+          const shouldClearRatio = item.durationSeconds > 0;
           return {
             byProfile: {
               ...state.byProfile,
@@ -223,10 +255,12 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
                       videoId: item.videoId,
                       progressSeconds: 0,
                       durationSeconds: 0,
+                      progressRatio: undefined,
                       lastWatchedAt: Date.now(),
                     }),
                     ...item,
                     lastWatchedAt: item.lastWatchedAt ?? Date.now(),
+                    progressRatio: shouldClearRatio ? undefined : (item as WatchHistoryItem).progressRatio,
                   },
                 },
               },
@@ -308,6 +342,7 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
                     ...existing,
                     progressSeconds,
                     durationSeconds,
+                    progressRatio: undefined,
                     lastWatchedAt: Date.now(),
                   },
                 },

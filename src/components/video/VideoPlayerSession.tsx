@@ -206,8 +206,25 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
       const rawResumeSeconds = resumeHistoryItem?.progressSeconds ?? 0;
       const durationSeconds = data.duration;
+      const resumeRatio =
+        resumeHistoryItem?.durationSeconds && resumeHistoryItem.durationSeconds > 0
+          ? undefined
+          : resumeHistoryItem?.progressRatio;
+
+      const resumeSecondsFromRatio =
+        typeof resumeRatio === 'number' && Number.isFinite(resumeRatio) && durationSeconds > 0
+          ? Math.max(0, Math.min(durationSeconds - 1, resumeRatio * durationSeconds))
+          : 0;
+
+      const resumeSecondsFromStoredSeconds = Math.min(
+        Math.max(rawResumeSeconds, 0),
+        Math.max(0, durationSeconds - 1)
+      );
+
       const resumeSeconds = shouldApplyResume
-        ? Math.min(Math.max(rawResumeSeconds, 0), Math.max(0, durationSeconds - 1))
+        ? resumeSecondsFromRatio > 0
+          ? resumeSecondsFromRatio
+          : resumeSecondsFromStoredSeconds
         : 0;
 
       setDuration(data.duration);
@@ -233,7 +250,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       mediaType,
       persistProgress,
       playerType,
+      resumeHistoryItem?.durationSeconds,
       resumeHistoryItem?.progressSeconds,
+      resumeHistoryItem?.progressRatio,
       source,
       usedPlayerType,
       videoId,

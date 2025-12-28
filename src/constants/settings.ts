@@ -23,6 +23,13 @@ export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
         icon: 'extension-puzzle-outline',
         href: '/settings/addons',
     },
+    {
+        id: 'integrations',
+        title: 'Integrations',
+        description: 'External watch history & scrobbling',
+        icon: 'sync-outline',
+        href: '/settings/integrations',
+    },
 ];
 
 /** Map settings page ID to route path */
@@ -30,4 +37,5 @@ export const SETTINGS_ROUTES: Record<string, string> = {
     playback: '/settings/playback',
     profiles: '/settings/profiles',
     addons: '/settings/addons',
+    integrations: '/settings/integrations',
 };

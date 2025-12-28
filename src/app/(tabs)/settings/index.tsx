@@ -12,6 +12,7 @@ import { SETTINGS_MENU_ITEMS } from '@/constants/settings';
 import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
 import { ProfilesSettingsContent } from '@/components/settings/ProfilesSettingsContent';
 import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
+import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
 
 export default function Settings() {
   const profiles = useProfileStore((state) => state.profiles);
@@ -39,6 +40,8 @@ export default function Settings() {
         return <ProfilesSettingsContent />;
       case 'addons':
         return <AddonsSettingsContent />;
+      case 'integrations':
+        return <IntegrationsSettingsContent />;
       default:
         return <PlaybackSettingsContent />;
     }

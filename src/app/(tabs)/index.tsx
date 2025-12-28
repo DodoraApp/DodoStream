@@ -15,6 +15,7 @@ import { useContinueWatching, ContinueWatchingEntry } from '@/hooks/useContinueW
 import { CONTINUE_WATCHING_PAGE_SIZE } from '@/constants/media';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
+import { TrackingSyncIndicator } from '@/components/tracking/TrackingSyncIndicator';
 
 interface CatalogSectionData {
   manifestUrl: string;
@@ -249,6 +250,8 @@ const HomeSectionHeader = memo(({ section }: HomeSectionHeaderProps) => (
         </Text>
       )}
     </Box>
+
+    {section.key === 'continue-watching' ? <TrackingSyncIndicator /> : null}
   </Box>
 ));
 

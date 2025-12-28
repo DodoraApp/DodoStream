@@ -6,6 +6,8 @@ import { createDebugLogger } from '@/utils/debug';
 import { useMyListStore } from '@/store/my-list.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { useTrackingStore } from '@/store/tracking.store';
+import { useSimklStore } from '@/store/simkl.store';
 
 export interface Profile extends ProfileOptions {
     id: string;
@@ -197,6 +199,8 @@ const syncActiveProfileId = (profileId?: string) => {
     useMyListStore.getState().setActiveProfileId(profileId);
     useProfileSettingsStore.getState().setActiveProfileId(profileId);
     useWatchHistoryStore.getState().setActiveProfileId(profileId);
+    useTrackingStore.getState().setActiveProfileId(profileId);
+    useSimklStore.getState().setActiveProfileId(profileId);
 };
 
 let lastSyncedProfileId: string | undefined = useProfileStore.getState().activeProfileId;
