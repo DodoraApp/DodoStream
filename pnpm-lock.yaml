@@ -159,6 +159,9 @@ importers:
       '@types/stremio-addon-sdk':
         specifier: ^1.6.12
         version: 1.6.12
+      babel-preset-expo:
+        specifier: ~54.0.9
+        version: 54.0.9(@babel/core@7.28.5)(@babel/runtime@7.28.4)(expo@54.0.30)(react-refresh@0.14.2)
       eslint:
         specifier: ^9.25.1
         version: 9.39.1(jiti@1.21.7)
