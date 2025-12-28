@@ -68,7 +68,7 @@
     "react-native-video": "^6.18.0",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "0.5.1",
-    "zustand": "^4.5.1"
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
