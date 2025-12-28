@@ -80,6 +80,7 @@ This project is under active development. Expect occasional breaking changes, un
 - [x] Auto-play next episode
 - [x] Search across enabled addon catalogs
 - [x] My List (local, per-profile)
+- [x] New release checking
 
 ## Features
 
@@ -100,10 +101,11 @@ This project is under active development. Expect occasional breaking changes, un
 - [ ] "Random" / Shuffle Play
 - [ ] Onboarding wizard
 - [ ] MPV Player Support
+- [ ] TMDB Metadata enrichment
 
 ### More Settings / Customization
 
-- [ ] Addons enabled per-profile 
+- [ ] Addons enabled per-profile
 - [ ] Auto Select First Stream (skip stream selection screen)
 - [ ] Subtitles Style/Size etc.
 - [ ] Audio/Subtitle Delay adjustment
@@ -121,6 +123,7 @@ This project is under active development. Expect occasional breaking changes, un
 
 - [ ] Customizable Hero section on home screen
 - [ ] More Animations
+- [ ] "Starts in..." countdown on Up Next Popup
 - [ ] "Stats for Nerds" overlay (Bitrate, Codec, Dropped frames)
 - [ ] Cast & Crew clickable links (search by actor/director)
 - [ ] "Similar" / "Recommended" section on details page
@@ -128,6 +131,7 @@ This project is under active development. Expect occasional breaking changes, un
 - [ ] Badge chips for quality (4K, HDR, Dolby Atmos)
 - [ ] Show "Ends at" time when playing & current system time
 - [ ] Adaptive Frame Rate Support
+- [ ] Button that links to addon configuration page if addon is configurable
 
 ### Full Stremio Addon SDK Support
 
@@ -145,6 +149,7 @@ This project is under active development. Expect occasional breaking changes, un
 
 ### Technical
 
+- [ ] Replace Burnt with custom Toasts or another library
 - [ ] Auto-updater for Android APKs
 - [ ] Crash Reporting
 - [ ] Performance Profiling

@@ -12,6 +12,17 @@ import Video, {
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import { useDebugLogger } from '@/utils/debug';
 
+const composeErrorString = (error: OnVideoErrorData['error']): string => {
+  const errorParts: string[] = [
+    error.errorCode,
+    error.errorString,
+    error.errorException,
+    error.error,
+  ].filter((str) => str !== undefined);
+
+  return errorParts.length > 0 ? errorParts.join(' ') : JSON.stringify(error);
+};
+
 export const RNVideoPlayer = memo(
   forwardRef<PlayerRef, PlayerProps>((props, ref) => {
     const debug = useDebugLogger('RNVideoPlayer');
@@ -55,7 +66,7 @@ export const RNVideoPlayer = memo(
     const handleError = useCallback(
       (data: OnVideoErrorData) => {
         debug('error', { error: data.error });
-        onError?.(data.error.errorString ?? 'Unknown error');
+        onError?.(composeErrorString(data.error));
       },
       [debug, onError]
     );

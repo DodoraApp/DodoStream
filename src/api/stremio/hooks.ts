@@ -339,8 +339,10 @@ export function useStreams(type: ContentType, metaId: string, videoId?: string, 
             queryKey: [...stremioKeys.stream(type, id), addon.manifestUrl],
             queryFn: () => fetchStreams(addon.manifestUrl, type, id),
             enabled: enabled && !!type && !!id,
-            staleTime: 1000 * 60 * 5, // 5 minutes (streams can change)
+            staleTime: 1000 * 60 * 15, // 15 minutes (streams can change)
+            gcTime: 1000 * 60 * 30, // 30 minutes
             retry: 1,
+            refetchOnMount: false
         })),
     });
 

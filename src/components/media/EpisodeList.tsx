@@ -91,7 +91,11 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
   return (
     <Box gap="m">
       <FadeIn>
-        <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+        <Box
+          flexDirection="row"
+          gap="m"
+          justifyContent={isHorizontal ? undefined : 'space-between'}
+          alignItems="center">
           <Text variant="subheader">Episodes</Text>
           {seasons.length > 1 && (
             <PickerInput

@@ -17,6 +17,13 @@ interface TagProps {
   onBlur?: () => void;
 }
 
+const getColor = (selected: boolean, isFocused: boolean) => {
+  if (selected) {
+    return isFocused ? 'focusBackgroundPrimary' : 'primaryBackground';
+  }
+  return isFocused ? 'focusBackground' : 'cardBackground';
+};
+
 export const Tag = memo(
   ({
     label,
@@ -32,9 +39,7 @@ export const Tag = memo(
 
     const renderContent = (isFocused: boolean) => (
       <Box
-        backgroundColor={
-          selected ? 'primaryBackground' : isFocused ? 'focusBackground' : 'cardBackground'
-        }
+        backgroundColor={getColor(selected, isFocused)}
         paddingHorizontal="m"
         paddingVertical="xs"
         borderRadius="s"
