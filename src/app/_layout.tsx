@@ -20,6 +20,8 @@ import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
 import { initializeProfiles, useProfileStore } from '@/store/profile.store';
 import { ProfileSelector } from '@/components/profile/ProfileSelector';
+import { initializeSimklScrobbleMiddleware } from '@/api/tracking/scrobble';
+import { initializeTrackingSync } from '@/api/tracking/sync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -62,6 +64,16 @@ export default function Layout() {
     if (fontsLoaded && isAddonsInitialized && isProfilesInitialized) {
       SplashScreen.hideAsync();
     }
+  }, [fontsLoaded, isAddonsInitialized, isProfilesInitialized]);
+
+  useEffect(() => {
+    if (!fontsLoaded || !isAddonsInitialized || !isProfilesInitialized) return;
+    return initializeSimklScrobbleMiddleware();
+  }, [fontsLoaded, isAddonsInitialized, isProfilesInitialized]);
+
+  useEffect(() => {
+    if (!fontsLoaded || !isAddonsInitialized || !isProfilesInitialized) return;
+    return initializeTrackingSync();
   }, [fontsLoaded, isAddonsInitialized, isProfilesInitialized]);
 
   const handleProfileSelect = () => {
