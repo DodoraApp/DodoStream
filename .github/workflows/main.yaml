@@ -1,36 +1,35 @@
 name: React Native CI/CD
 
+permissions:
+  contents: write
+
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     paths-ignore:
       - '**.md'
       - 'LICENSE'
       - 'docs/**'
   pull_request:
-    branches: ['**']
   workflow_dispatch:
     inputs:
       buildType:
         type: choice
         description: 'Build type to run'
+        default: 'dev'
         options:
           - dev
           - prod-apk
-          - prod-aab
-          - ios-dev
-          - ios-prod
-          - publish-expo
-          - publish-stores
-          - all
+          #- prod-aab
+          #- ios-dev
+          #- ios-prod
       platform:
         type: choice
         description: 'Platform to build'
-        default: 'all'
+        default: 'android'
         options:
           - android
-          - ios
-          - all
+          #- ios
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -43,15 +42,10 @@ env:
   NODE_OPTIONS: --openssl-legacy-provider
 
 jobs:
-  check-skip:
-    runs-on: ubuntu-latest
-    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
-    steps:
-      - name: Skip CI check
-        run: echo "Proceeding with workflow"
-
   test:
-    needs: check-skip
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - name: 🏗 Checkout repository
@@ -83,8 +77,9 @@ jobs:
         run: pnpm run test
 
   build:
-    needs: test
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) || github.event_name == 'workflow_dispatch'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch')
     strategy:
       fail-fast: false
       matrix:
@@ -96,6 +91,7 @@ jobs:
             output: app-dev.apk
             node_env: development
             build_type: dev
+            run_on_push: false
             runs_on: ubuntu-latest
 
           - name: 'Android Dev TV APK'
@@ -104,23 +100,26 @@ jobs:
             output: app-dev_tv.apk
             node_env: development
             build_type: dev
+            run_on_push: false
             runs_on: ubuntu-latest
 
-          # - name: 'Android Production APK'
-          #   platform: android
-          #   profile: production-apk
-          #   output: app-prod.apk
-          #   node_env: production
-          #   build_type: prod-apk
-          #   runs_on: ubuntu-latest
+          - name: 'Android Production APK'
+            platform: android
+            profile: production_apk
+            output: app-prod.apk
+            node_env: production
+            build_type: prod-apk
+            run_on_push: true
+            runs_on: ubuntu-latest
 
-          # - name: 'Android Production AAB'
-          #   platform: android
-          #   profile: production
-          #   output: app-prod.aab
-          #   node_env: production
-          #   build_type: prod-aab
-          #   runs_on: ubuntu-latest
+          - name: 'Android Production TV APK'
+            platform: android
+            profile: production_tv_apk
+            output: app-prod_tv.apk
+            node_env: production
+            build_type: prod-apk
+            run_on_push: true
+            runs_on: ubuntu-latest
 
           # # iOS builds
           # - name: 'iOS Dev'
@@ -163,7 +162,7 @@ jobs:
           pnpm i -g eas-cli@latest
 
       - name: 📁 Setup expo-build-disk-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: node_modules/.expo-build-disk-cache
           key: ${{ runner.os }}-expo-build-disk-cache-${{ hashFiles('**/package.json') }}
@@ -176,12 +175,13 @@ jobs:
           eas --version
 
       - name: 📱 Build ${{ matrix.name }}
+        id: eas_build
         if: |
-          github.event_name == 'push' || 
-          github.event.inputs.buildType == 'all' || 
-          github.event.inputs.buildType == matrix.build_type ||
-          (github.event.inputs.platform == 'all') ||
-          (github.event.inputs.platform == matrix.platform)
+          (github.event_name == 'push' && matrix.run_on_push) ||
+          (github.event_name == 'workflow_dispatch' &&
+            github.event.inputs.buildType == matrix.build_type &&
+            github.event.inputs.platform == matrix.platform
+          )
         run: |
           export NODE_OPTIONS="--openssl-legacy-provider --max_old_space_size=4096"
           eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} --local --non-interactive --output=./${{ matrix.output }}
@@ -189,7 +189,7 @@ jobs:
           NODE_ENV: ${{ matrix.node_env }}
 
       - name: 📦 Upload build artifact
-        if: success()
+        if: steps.eas_build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.output }}
@@ -197,30 +197,10 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: build
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'publish-expo' || github.event.inputs.buildType == 'publish-stores'))
+    needs: [test, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: 'Expo Update'
-            type: expo
-            build_type: publish-expo
-
-          # - name: 'Play Store'
-          #   type: play-store
-          #   platform: android
-          #   artifact: app-prod.aab
-          #   build_type: publish-stores
-
-          # - name: 'App Store'
-          #   type: app-store
-          #   platform: ios
-          #   artifact: app-ios-prod.ipa
-          #   build_type: publish-stores
-
-    name: Publish to ${{ matrix.name }}
+    name: Publish (Expo Update)
 
     steps:
       - name: 🏗 Checkout repository
@@ -242,31 +222,32 @@ jobs:
           pnpm install
           pnpm i -g eas-cli@latest
 
-      - name: 📥 Download build artifact
-        if: matrix.type != 'expo'
+      - name: 🔖 Read app version
+        id: app_version
+        shell: bash
+        run: |
+          VERSION=$(node -e "const fs=require('fs'); const s=fs.readFileSync('app.config.ts','utf8'); const m=s.match(/\"version\"\s*:\s*\"([^\"]+)\"/); if(!m){ console.error('Could not find version in app.config.ts'); process.exit(1);} process.stdout.write(m[1]);")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "App version: $VERSION"
+
+      - name: 📥 Download production APK artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: .
+          pattern: app-prod*.apk
+          path: dist
+          merge-multiple: true
+
+      - name: 🏷️ Create/Update GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ steps.app_version.outputs.version }}
+          name: v${{ steps.app_version.outputs.version }}
+          artifacts: dist/*.apk
+          allowUpdates: true
+          replacesArtifacts: true
+          generateReleaseNotes: true
 
       - name: 🚀 Publish to Expo
-        if: matrix.type == 'expo' && (github.event_name == 'push' || github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'publish-expo')
         run: eas update --auto
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      - name: 🚀 Submit to Play Store
-        if: matrix.type == 'play-store' && (github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'publish-stores') && (github.event.inputs.platform == 'all' || github.event.inputs.platform == 'android')
-        run: eas submit -p android --path ./${{ matrix.artifact }} --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
-
-      - name: 🚀 Submit to App Store
-        if: matrix.type == 'app-store' && (github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'publish-stores') && (github.event.inputs.platform == 'all' || github.event.inputs.platform == 'ios')
-        run: eas submit -p ios --path ./${{ matrix.artifact }} --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
-          EXPO_APPLE_PASSWORD: ${{ secrets.EXPO_APPLE_PASSWORD }}
-          EXPO_TEAM_ID: ${{ secrets.EXPO_TEAM_ID }}

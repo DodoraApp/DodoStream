@@ -46,6 +46,12 @@
       "channel": "production",
       "autoIncrement": true
     },
+    "production_apk": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production_tv": {
       "extends": "production",
       "autoIncrement": true,
@@ -54,6 +60,12 @@
       },
       "environment": "production",
       "channel": "production_tv"
+    },
+    "production_tv_apk": {
+      "extends": "production_tv",
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
