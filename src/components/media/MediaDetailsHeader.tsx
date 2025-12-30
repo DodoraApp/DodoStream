@@ -67,7 +67,7 @@ export const MediaDetailsHeader = memo(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: '70%',
+                height: '50%',
               }}
             />
           </Box>

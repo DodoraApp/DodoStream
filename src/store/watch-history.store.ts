@@ -39,6 +39,8 @@ type WatchHistoryByProfile = Record<string, WatchHistoryByMeta>;
 /** The videoKey used for movies or meta-level stream preferences */
 const MOVIE_VIDEO_KEY = '_';
 
+export type WatchState = 'not-watched' | 'in-progress' | 'watched';
+
 interface WatchHistoryState {
   activeProfileId?: string;
 
@@ -52,6 +54,8 @@ interface WatchHistoryState {
   getItemsForMeta: (metaId: string) => WatchHistoryItem[];
   getItem: (id: string, videoId?: string) => WatchHistoryItem | undefined;
   getProgressRatio: (id: string, videoId?: string) => number;
+  getWatchState: (id: string, videoId?: string) => WatchState;
+  getLatestItemForMeta: (metaId: string) => WatchHistoryItem | undefined;
   hasWatchedEpisode: (id: string, videoId: string) => boolean;
   getLastStreamTarget: (
     id: string,
@@ -148,6 +152,23 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
         return item.progressSeconds / item.durationSeconds;
       },
 
+      getWatchState: (id, videoId) => {
+        const item = get().getItem(id, videoId);
+        if (!item || item.durationSeconds <= 0) return 'not-watched';
+        const ratio = item.progressSeconds / item.durationSeconds;
+        if (ratio >= PLAYBACK_FINISHED_RATIO) return 'watched';
+        if (ratio > 0) return 'in-progress';
+        return 'not-watched';
+      },
+
+      getLatestItemForMeta: (metaId) => {
+        const items = get().getItemsForMeta(metaId);
+        if (items.length === 0) return undefined;
+        return items.reduce<WatchHistoryItem | undefined>(
+          (best, item) => (!best || item.lastWatchedAt > best.lastWatchedAt ? item : best),
+          undefined
+        );
+      },
 
       getLastStreamTarget: (id, videoId) => {
         const profileId = get().activeProfileId;

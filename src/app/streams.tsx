@@ -211,16 +211,6 @@ export default function StreamsPage() {
             color: theme.colors.mainForeground,
             fontFamily: 'Outfit_600SemiBold',
           },
-          headerLeft: () => (
-            <Box paddingVertical="s" paddingLeft="m" paddingRight="s">
-              <Button
-                variant="secondary"
-                icon="arrow-back"
-                onPress={handleBack}
-                paddingHorizontal="m"
-              />
-            </Box>
-          ),
         }}
       />
 

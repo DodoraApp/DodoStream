@@ -245,4 +245,104 @@ describe('WatchHistoryStore', () => {
             });
         });
     });
+
+    describe('getWatchState', () => {
+        it('returns not-watched when no history item exists', () => {
+            expect(useWatchHistoryStore.getState().getWatchState('unknown')).toBe('not-watched');
+        });
+
+        it('returns not-watched when progress is 0', () => {
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'tt1',
+                type: 'movie' as ContentType,
+                progressSeconds: 100, // above threshold
+                durationSeconds: 1000,
+            });
+            useWatchHistoryStore.getState().updateProgress('tt1', undefined, 0, 1000);
+
+            expect(useWatchHistoryStore.getState().getWatchState('tt1')).toBe('not-watched');
+        });
+
+        it('returns in-progress when partially watched', () => {
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'tt1',
+                type: 'movie' as ContentType,
+                progressSeconds: 500,
+                durationSeconds: 1000,
+            });
+
+            expect(useWatchHistoryStore.getState().getWatchState('tt1')).toBe('in-progress');
+        });
+
+        it('returns watched when at or above finished ratio', () => {
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'tt1',
+                type: 'movie' as ContentType,
+                progressSeconds: 950,
+                durationSeconds: 1000,
+            });
+
+            expect(useWatchHistoryStore.getState().getWatchState('tt1')).toBe('watched');
+        });
+
+        it('returns correct state for specific videoId', () => {
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'show1',
+                videoId: 'ep1',
+                type: 'series' as ContentType,
+                progressSeconds: 500,
+                durationSeconds: 1000,
+            });
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'show1',
+                videoId: 'ep2',
+                type: 'series' as ContentType,
+                progressSeconds: 950,
+                durationSeconds: 1000,
+            });
+
+            expect(useWatchHistoryStore.getState().getWatchState('show1', 'ep1')).toBe('in-progress');
+            expect(useWatchHistoryStore.getState().getWatchState('show1', 'ep2')).toBe('watched');
+        });
+    });
+
+    describe('getLatestItemForMeta', () => {
+        it('returns undefined when no items exist', () => {
+            expect(useWatchHistoryStore.getState().getLatestItemForMeta('unknown')).toBeUndefined();
+        });
+
+        it('returns the single item when only one exists', () => {
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'tt1',
+                type: 'movie' as ContentType,
+                progressSeconds: 500,
+                durationSeconds: 1000,
+            });
+
+            const latest = useWatchHistoryStore.getState().getLatestItemForMeta('tt1');
+            expect(latest?.id).toBe('tt1');
+        });
+
+        it('returns the most recently watched item', () => {
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'show1',
+                videoId: 'ep1',
+                type: 'series' as ContentType,
+                progressSeconds: 500,
+                durationSeconds: 1000,
+                lastWatchedAt: 1000,
+            });
+            useWatchHistoryStore.getState().upsertItem({
+                id: 'show1',
+                videoId: 'ep2',
+                type: 'series' as ContentType,
+                progressSeconds: 300,
+                durationSeconds: 1000,
+                lastWatchedAt: 2000,
+            });
+
+            const latest = useWatchHistoryStore.getState().getLatestItemForMeta('show1');
+            expect(latest?.videoId).toBe('ep2');
+        });
+    });
 });

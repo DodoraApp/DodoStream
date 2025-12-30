@@ -1,4 +1,5 @@
 import { memo, PropsWithChildren, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { AnimatedImage } from '@/components/basic/AnimatedImage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,10 +18,12 @@ interface DetailsShellProps {
   media: MetaDetail;
   /** Use TV layout when running on a TV platform (Apple TV / Android TV). */
   forceTVLayout?: boolean;
+  /** Rendered directly under the logo/title in the header area (TV and non-TV). */
+  headerChildren?: ReactNode;
 }
 
 export const DetailsShell = memo(
-  ({ media, forceTVLayout, children }: PropsWithChildren<DetailsShellProps>) => {
+  ({ media, forceTVLayout, headerChildren, children }: PropsWithChildren<DetailsShellProps>) => {
     const theme = useTheme<Theme>();
     const { isPlatformTV, width } = useResponsiveLayout();
 
@@ -35,7 +38,7 @@ export const DetailsShell = memo(
     if (!useTVLayout) {
       return (
         <ScrollView>
-          <MediaDetailsHeader media={media} />
+          <MediaDetailsHeader media={media}>{headerChildren}</MediaDetailsHeader>
 
           <Box paddingHorizontal="l" gap="m">
             {children}
@@ -77,11 +80,13 @@ export const DetailsShell = memo(
               )}
             </Box>
 
+            {headerChildren}
+
             <MediaInfo media={media} variant="full" layout="tvHeader" />
           </Box>
 
-          <Box paddingHorizontal="l" paddingBottom="xl">
-            <Box gap="m">{children}</Box>
+          <Box paddingHorizontal="l" paddingBottom="xl" gap="m">
+            {children}
           </Box>
         </ScrollView>
       </Box>
