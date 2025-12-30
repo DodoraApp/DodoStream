@@ -12,6 +12,9 @@ import { AddonSubtitle, ContentType, InstalledAddon, Stream } from '@/types/stre
 import { useDebugLogger } from '@/utils/debug';
 import { StremioApiError } from '@/api/errors';
 
+// Normalize `stremio://` scheme to `https://`
+const normalizeManifestUrl = (url: string): string => url.replace(/^stremio:\/\//i, 'https://');
+
 const toStremioApiError = (error: unknown, endpoint: string): StremioApiError => {
     return error instanceof StremioApiError
         ? error
@@ -49,8 +52,9 @@ export function useInstallAddon() {
 
     return useMutation({
         mutationFn: async (manifestUrl: string) => {
-            const manifest = await fetchManifest(manifestUrl);
-            return { manifestUrl, manifest };
+            const normalizedUrl = normalizeManifestUrl(manifestUrl);
+            const manifest = await fetchManifest(normalizedUrl);
+            return { manifestUrl: normalizedUrl, manifest };
         },
         onSuccess: ({ manifestUrl, manifest }) => {
             addAddon(manifest.id, manifestUrl, manifest);
