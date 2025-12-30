@@ -1,13 +1,10 @@
 import { Container } from '@/components/basic/Container';
 import { SearchInput } from '@/components/basic/SearchInput';
-import { MediaList } from '@/components/media/MediaList';
 import { PageHeader } from '@/components/basic/PageHeader';
 import { Platform, SectionList } from 'react-native';
 import theme, { Box, Text } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
-import { useCatalog } from '@/api/stremio';
 import { useMemo, useCallback, memo, useRef, useState } from 'react';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { MetaPreview } from '@/types/stremio';
 import { FlashList } from '@shopify/flash-list';
 import { HorizontalSpacer } from '@/components/basic/Spacer';
@@ -15,6 +12,8 @@ import { useContinueWatching, ContinueWatchingEntry } from '@/hooks/useContinueW
 import { CONTINUE_WATCHING_PAGE_SIZE } from '@/constants/media';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
+import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
+import { CatalogSection } from '@/components/media/CatalogSection';
 
 interface CatalogSectionData {
   manifestUrl: string;
@@ -161,8 +160,11 @@ export default function Home() {
       const sectionIndex = sectionIndexByKey[section.key] ?? 0;
 
       return (
-        <HomeSectionItem
-          item={item.item}
+        <CatalogSection
+          manifestUrl={item.item.manifestUrl}
+          catalogType={item.item.catalogType}
+          catalogId={item.item.catalogId}
+          catalogName={item.item.catalogName}
           onMediaPress={handleMediaPress}
           hasTVPreferredFocus={isTV && !hasContinueWatching && sectionIndex === 0 && index === 0}
           sectionKey={section.key}
@@ -182,7 +184,9 @@ export default function Home() {
   );
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: SectionModel }) => <HomeSectionHeader section={section} />,
+    ({ section }: { section: SectionModel }) => (
+      <CatalogSectionHeader title={section.title} type={section.type} />
+    ),
     []
   );
 
@@ -229,57 +233,6 @@ const HomeHeader = memo(() => {
   );
 });
 
-interface HomeSectionHeaderProps {
-  section: SectionModel;
-}
-
-const HomeSectionHeader = memo(({ section }: HomeSectionHeaderProps) => (
-  <Box
-    flexDirection="row"
-    justifyContent="space-between"
-    alignItems="center"
-    marginTop="m"
-    marginBottom="s"
-    marginHorizontal="m">
-    <Box>
-      <Text variant="subheader">{section.title}</Text>
-      {section.type && (
-        <Text variant="caption" color="textSecondary" textTransform="capitalize">
-          {section.type}
-        </Text>
-      )}
-    </Box>
-  </Box>
-));
-
-interface HomeSectionItemProps {
-  item: CatalogSectionData;
-  onMediaPress: (media: MetaPreview) => void;
-  hasTVPreferredFocus?: boolean;
-  sectionKey: string;
-  onSectionFocused: (sectionKey: string) => void;
-}
-
-const HomeSectionItem = memo(
-  ({
-    item,
-    onMediaPress,
-    hasTVPreferredFocus = false,
-    sectionKey,
-    onSectionFocused,
-  }: HomeSectionItemProps) => (
-    <CatalogSection
-      manifestUrl={item.manifestUrl}
-      catalogType={item.catalogType}
-      catalogId={item.catalogId}
-      catalogName={item.catalogName}
-      onMediaPress={onMediaPress}
-      hasTVPreferredFocus={hasTVPreferredFocus}
-      sectionKey={sectionKey}
-      onSectionFocused={onSectionFocused}
-    />
-  )
-);
 
 interface ContinueWatchingSectionRowProps {
   sectionKey: string;
@@ -324,48 +277,3 @@ const ContinueWatchingSectionRow = memo(
   }
 );
 
-interface CatalogSectionProps {
-  manifestUrl: string;
-  catalogType: string;
-  catalogId: string;
-  catalogName: string;
-  onMediaPress: (media: MetaPreview) => void;
-  hasTVPreferredFocus?: boolean;
-  sectionKey: string;
-  onSectionFocused: (sectionKey: string) => void;
-}
-
-const CatalogSection = memo(
-  ({
-    manifestUrl,
-    catalogType,
-    catalogId,
-    onMediaPress,
-    hasTVPreferredFocus = false,
-    sectionKey,
-    onSectionFocused,
-  }: CatalogSectionProps) => {
-    const { data, isLoading, isError } = useCatalog(manifestUrl, catalogType, catalogId, 0);
-
-    if (isLoading) {
-      return (
-        <Box padding="xl" alignItems="center" height={234}>
-          <LoadingIndicator size="large" />
-        </Box>
-      );
-    }
-
-    if (isError || !data || !data.metas || data.metas.length === 0) {
-      return null; // Don't show empty or errored catalogs
-    }
-
-    return (
-      <MediaList
-        data={data.metas}
-        onMediaPress={onMediaPress}
-        hasTVPreferredFocus={hasTVPreferredFocus}
-        onItemFocused={() => onSectionFocused(sectionKey)}
-      />
-    );
-  }
-);

@@ -1,5 +1,4 @@
 import { Container } from '@/components/basic/Container';
-import { MediaList } from '@/components/media/MediaList';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SectionList } from 'react-native';
 import { Box, Text } from '@/theme/theme';
@@ -7,6 +6,8 @@ import { useSearchCatalogs } from '@/api/stremio';
 import { MetaPreview } from '@/types/stremio';
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
+import { StaticCatalogSection } from '@/components/media/CatalogSection';
 
 export default function Search() {
   const { q } = useLocalSearchParams<{ q?: string }>();
@@ -19,11 +20,21 @@ export default function Search() {
     isError,
   } = useSearchCatalogs(searchQuery, searchQuery.length > 0);
 
-  // Transform searchResults into SectionList format
-  const sections = searchResults.map((result) => ({
-    title: result.catalogName,
-    data: [result], // Wrap in array for SectionList
-  }));
+  // Transform searchResults into SectionList format compatible with Home layout
+  const sections = searchResults.map((result) => {
+    const sectionKey = `${result.manifestUrl}-${result.catalogType}-${result.catalogId}`;
+    return {
+      key: sectionKey,
+      title: result.catalogName,
+      type: result.catalogType,
+      data: [
+        {
+          key: `search-${sectionKey}-row`,
+          metas: result.metas,
+        },
+      ],
+    };
+  });
 
   const handleMediaPress = (media: MetaPreview) => {
     navigateToDetails(media.id, media.type);
@@ -53,11 +64,13 @@ export default function Search() {
             ) : (
               <SectionList
                 sections={sections}
-                keyExtractor={(item, index) => `${item.manifestUrl}-${item.catalogId}-${index}`}
+                keyExtractor={(item) => item.key}
                 renderItem={({ item }) => (
-                  <SearchCatalogResults metas={item.metas} onMediaPress={handleMediaPress} />
+                  <StaticCatalogSection metas={item.metas} onMediaPress={handleMediaPress} />
                 )}
-                renderSectionHeader={() => null}
+                renderSectionHeader={({ section }) => (
+                  <CatalogSectionHeader title={section.title} type={section.type} />
+                )}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 40 }}
               />
@@ -67,20 +80,4 @@ export default function Search() {
       </Box>
     </Container>
   );
-}
-
-/**
- * Component to display search results from a single catalog
- */
-interface SearchCatalogResultsProps {
-  metas: MetaPreview[];
-  onMediaPress: (media: MetaPreview) => void;
-}
-
-function SearchCatalogResults({ metas, onMediaPress }: SearchCatalogResultsProps) {
-  if (!metas || metas.length === 0) {
-    return null;
-  }
-
-  return <MediaList data={metas} onMediaPress={onMediaPress} />;
 }
