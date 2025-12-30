@@ -32,7 +32,13 @@ const LogoLoadingIndicator = ({ size, message }: { size: 'small' | 'large'; mess
 
   const travelDistance = theme.spacing.s;
   return (
-    <Box flex={1} alignItems="center" width={containerSize} height={containerSize}>
+    <Box
+      flex={1}
+      justifyContent="center"
+      alignItems="center"
+      alignSelf="center"
+      width={containerSize}
+      height={containerSize}>
       <MotiView
         from={{ translateY: 0 }}
         animate={{ translateY: travelDistance }}
