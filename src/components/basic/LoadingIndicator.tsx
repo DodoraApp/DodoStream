@@ -32,27 +32,23 @@ const LogoLoadingIndicator = ({ size, message }: { size: 'small' | 'large'; mess
 
   const travelDistance = theme.spacing.s;
   return (
-    <Box
-      flex={1}
-      justifyContent="center"
-      alignItems="center"
-      alignSelf="center"
-      width={containerSize}
-      height={containerSize}>
-      <MotiView
-        from={{ translateY: 0 }}
-        animate={{ translateY: travelDistance }}
-        transition={{
-          type: 'timing',
-          duration: LOADING_LOGO_ANIMATION_DURATION_MS,
-          loop: true,
-          easing: Easing.inOut(Easing.ease),
-        }}
-        style={{ paddingHorizontal: theme.spacing.s }}>
-        <AppLogo size={logoSize} />
-      </MotiView>
+    <Box flex={1} justifyContent="center" alignItems="center" alignSelf="center">
+      <Box width={containerSize} height={containerSize}>
+        <MotiView
+          from={{ translateY: 0 }}
+          animate={{ translateY: travelDistance }}
+          transition={{
+            type: 'timing',
+            duration: LOADING_LOGO_ANIMATION_DURATION_MS,
+            loop: true,
+            easing: Easing.inOut(Easing.ease),
+          }}
+          style={{ paddingHorizontal: theme.spacing.s }}>
+          <AppLogo size={logoSize} />
+        </MotiView>
+      </Box>
       {message && (
-        <Text variant="body" marginTop="m" color="textSecondary">
+        <Text variant="body" marginTop="m" color="textSecondary" textAlign="center">
           {message}
         </Text>
       )}
