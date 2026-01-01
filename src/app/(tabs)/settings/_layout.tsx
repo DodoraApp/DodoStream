@@ -49,6 +49,12 @@ export default function SettingsLayout() {
           title: 'Addons',
         }}
       />
+      <Stack.Screen
+        name="about"
+        options={{
+          title: 'About',
+        }}
+      />
     </Stack>
   );
 }
