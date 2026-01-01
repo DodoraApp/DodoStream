@@ -45,6 +45,7 @@ export default function MediaDetails() {
         data={meta}
         loadingMessage="Loading details..."
         loadingComponent={<MediaDetailsSkeleton />}
+        emptyMessage={`No details available for ID ${id}. Try installing a metadata addon that supports this ID.`}
         errorMessage="Failed to load details">
         {(mediaData) => (
           <DetailsShell
