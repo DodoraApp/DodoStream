@@ -1,4 +1,5 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
+const packageJson = require('./package.json');
 
 export default ({ config }: ConfigContext): ExpoConfig => {
     const appBackgroundColor = '#181A20';
@@ -7,7 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ...config,
         name: 'DodoStream',
         slug: 'dodostream',
-        version: '0.0.3',
+        version: packageJson.version,
         newArchEnabled: true,
         scheme: 'dodostream',
         platforms: ['ios', 'android'],
