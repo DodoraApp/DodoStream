@@ -42,6 +42,7 @@ env:
   NODE_OPTIONS: --openssl-legacy-provider
   # Expose commit hash to the app (used by the About page)
   EXPO_PUBLIC_GIT_COMMIT_HASH: ${{ github.sha }}
+  EXPO_PUBLIC_GITHUB_RELEASES_URL: ${{ github.server_url }}/${{ github.repository }}/releases
 
 jobs:
   test:
