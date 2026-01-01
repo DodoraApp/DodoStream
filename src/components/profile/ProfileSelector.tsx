@@ -7,6 +7,9 @@ import { PINPrompt } from './PINPrompt';
 import { useProfileStore, Profile } from '@/store/profile.store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+import { Easing } from 'react-native-reanimated';
+import { PROFILE_EXIT_ANIMATION_MS } from '@/constants/ui';
 
 import * as Burnt from 'burnt';
 
@@ -25,6 +28,22 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
     undefined
   );
   const [pinInput, setPinInput] = useState('');
+  const [isExiting, setIsExiting] = useState(false);
+
+  const triggerExit = useCallback(
+    (profileId: string) => {
+      setIsExiting(true);
+      setTimeout(() => {
+        const success = switchProfile(profileId);
+        if (success) {
+          onSelect();
+        } else {
+          setIsExiting(false);
+        }
+      }, PROFILE_EXIT_ANIMATION_MS);
+    },
+    [switchProfile, onSelect]
+  );
 
   const handleProfileSelect = useCallback(
     (profileId: string) => {
@@ -38,23 +57,27 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
         return;
       }
 
-      // Otherwise, switch directly
-      const success = switchProfile(profileId);
-      if (success) {
-        onSelect();
-      }
+      // Trigger exit animation then switch
+      triggerExit(profileId);
     },
-    [profiles, switchProfile, onSelect]
+    [profiles, triggerExit]
   );
 
   const handlePINSubmit = useCallback(() => {
     if (!selectedProfileForPIN) return;
+    // Check PIN first before triggering exit
     const success = switchProfile(selectedProfileForPIN.id, pinInput);
     if (success) {
+      // PIN was correct, now undo the switch and do exit animation
+      // Actually, switchProfile already switched, so we proceed
       setShowPINPrompt(false);
       setSelectedProfileForPIN(undefined);
       setPinInput('');
-      onSelect();
+      // Trigger exit animation
+      setIsExiting(true);
+      setTimeout(() => {
+        onSelect();
+      }, PROFILE_EXIT_ANIMATION_MS);
       return;
     }
 
@@ -105,38 +128,51 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.mainBackground }}>
-      <Box flex={1} backgroundColor="mainBackground" justifyContent="center" alignItems="center">
-        <Box width="100%" maxWidth={800} paddingHorizontal="l">
-          <Box marginBottom="xl" alignItems="center">
-            <Text
-              variant="header"
-              color="mainForeground"
-              textAlign="center"
-              style={{ fontSize: 48, fontWeight: '700' }}>
-              Who&apos;s watching?
-            </Text>
-          </Box>
+      <MotiView
+        from={{ opacity: 1, translateY: 0 }}
+        animate={{
+          opacity: isExiting ? 0 : 1,
+          translateY: isExiting ? 100 : 0,
+        }}
+        transition={{
+          type: 'timing',
+          duration: PROFILE_EXIT_ANIMATION_MS,
+          easing: Easing.in(Easing.cubic),
+        }}
+        style={{ flex: 1 }}>
+        <Box flex={1} backgroundColor="mainBackground" justifyContent="center" alignItems="center">
+          <Box width="100%" maxWidth={800} paddingHorizontal="l">
+            <Box marginBottom="xl" alignItems="center">
+              <Text
+                variant="header"
+                color="mainForeground"
+                textAlign="center"
+                style={{ fontSize: 48, fontWeight: '700' }}>
+                Who&apos;s watching?
+              </Text>
+            </Box>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: 24,
-              paddingVertical: 16,
-            }}>
-            {profiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                onPress={() => handleProfileSelect(profile.id)}
-              />
-            ))}
-            <ProfileCard isAddCard onPress={handleAddProfile} />
-          </ScrollView>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: 24,
+                paddingVertical: 16,
+              }}>
+              {profiles.map((profile) => (
+                <ProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  onPress={() => handleProfileSelect(profile.id)}
+                />
+              ))}
+              <ProfileCard isAddCard onPress={handleAddProfile} />
+            </ScrollView>
+          </Box>
         </Box>
-      </Box>
+      </MotiView>
 
       <PINPrompt
         visible={showPINPrompt}

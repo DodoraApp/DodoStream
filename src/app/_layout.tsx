@@ -14,7 +14,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
@@ -24,6 +24,7 @@ import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
 import { useAppSettingsStore } from '@/store/app-settings.store';
 import { Container } from '@/components/basic/Container';
 import { Button } from '@/components/basic/Button';
+import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -66,6 +67,8 @@ export default function Layout() {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const releaseCheckOnStartup = useAppSettingsStore((state) => state.releaseCheckOnStartup);
 
+  // Track both animation completion and initialization separately
+  const storesInitialized = isAddonsInitialized && isProfilesInitialized;
   const showProfileSelector = !activeProfileId;
 
   // Key the entire app subtree by profile. This resets navigation state and all component state.
@@ -75,6 +78,9 @@ export default function Layout() {
     if (!fontsLoaded) return;
     if (didInitRef.current) return;
     didInitRef.current = true;
+
+    // Hide native splash screen as soon as fonts are loaded - our custom animation takes over
+    void SplashScreen.hideAsync();
 
     // Initialize both addons and profiles after fonts are loaded.
     const init = async () => {
@@ -92,18 +98,22 @@ export default function Layout() {
     void init();
   }, [fontsLoaded]);
 
-  useEffect(() => {
-    if (fontsLoaded && isAddonsInitialized && isProfilesInitialized) {
-      void SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, isAddonsInitialized, isProfilesInitialized]);
-
   const handleProfileSelect = () => {
     router.replace('/');
   };
 
-  if (!fontsLoaded || !isAddonsInitialized || !isProfilesInitialized) {
+  // Wait for fonts before rendering anything
+  if (!fontsLoaded) {
     return null;
+  }
+
+  // Show start animation while stores are initializing
+  if (!storesInitialized) {
+    return (
+      <ThemeProvider theme={theme}>
+        <AppStartAnimation />
+      </ThemeProvider>
+    );
   }
 
   return (

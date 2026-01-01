@@ -6,6 +6,15 @@ export const TOAST_DURATION_LONG = 4;
 // Loading animation timings
 export const LOADING_LOGO_ANIMATION_DURATION_MS = 600;
 
+// App start animation
+export const APP_START_LOGO_SIZE = 80;
+export const APP_START_LOGO_FADE_IN_MS = 500;
+export const APP_START_TEXT_EXPAND_DELAY_MS = 600;
+export const APP_START_TEXT_EXPAND_MS = 400;
+
+// Profile selector exit animation
+export const PROFILE_EXIT_ANIMATION_MS = 400;
+
 // Skeleton shimmer/pulse timing
 export const ANIMATION_SKELETON_PULSE_DURATION_MS = 1200;
 
