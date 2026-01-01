@@ -189,7 +189,7 @@ jobs:
         id: app_version
         shell: bash
         run: |
-          VERSION=$(node -e "const fs=require('fs'); const s=fs.readFileSync('app.config.ts','utf8'); const m=s.match(/\"version\"\s*:\s*\"([^\"]+)\"/); if(!m){ console.error('Could not find version in app.config.ts'); process.exit(1);} process.stdout.write(m[1]);")
+          VERSION=$(node -e "console.log(require('./package.json').version)")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "App version: $VERSION"
 
@@ -305,7 +305,7 @@ jobs:
         id: app_version
         shell: bash
         run: |
-          VERSION=$(node -e "const fs=require('fs'); const s=fs.readFileSync('app.config.ts','utf8'); const m=s.match(/\"version\"\s*:\s*\"([^\"]+)\"/); if(!m){ console.error('Could not find version in app.config.ts'); process.exit(1);} process.stdout.write(m[1]);")
+          VERSION=$(node -e "console.log(require('./package.json').version)")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "App version: $VERSION"
 
