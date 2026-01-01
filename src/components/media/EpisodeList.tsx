@@ -1,7 +1,7 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
-import theme, { Box, Text } from '@/theme/theme';
-import { ContentType, MetaVideo } from '@/types/stremio';
+import { Box, Text } from '@/theme/theme';
+import { MetaVideo } from '@/types/stremio';
 import { PickerInput } from '@/components/basic/PickerInput';
 import { PickerItem } from '@/components/basic/PickerModal';
 import { EpisodeItem } from '@/components/media/EpisodeItem';
@@ -42,11 +42,19 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
     return grouped;
   }, [videos]);
 
+  // Get unique seasons in order they appear (videos are already sorted with season 0 last)
   const seasons = useMemo(() => {
-    return Object.keys(groupedEpisodes)
-      .map(Number)
-      .sort((a, b) => a - b);
-  }, [groupedEpisodes]);
+    const seen = new Set<number>();
+    const result: number[] = [];
+    for (const video of videos) {
+      const season = video.season ?? 0;
+      if (!seen.has(season)) {
+        seen.add(season);
+        result.push(season);
+      }
+    }
+    return result;
+  }, [videos]);
 
   const [userSelectedSeason, setUserSelectedSeason] = useState<number | undefined>(undefined);
 

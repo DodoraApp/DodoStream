@@ -56,6 +56,7 @@ const isMetaDetail = (meta: unknown): meta is MetaDetail =>
 /**
  * Find the next unwatched video in the sequence.
  * Looks for the first video after currentIndex that hasn't been fully watched.
+ * Videos are expected to be pre-sorted with season 0 (Specials) last.
  */
 const findNextUnwatchedVideo = (
     videos: MetaVideo[],

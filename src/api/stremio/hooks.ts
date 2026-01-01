@@ -10,6 +10,7 @@ import {
 import { useAddonStore } from '@/store/addon.store';
 import { AddonSubtitle, ContentType, InstalledAddon, Stream } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
+import { sortVideosBySeason } from '@/utils/video';
 import { StremioApiError } from '@/api/errors';
 
 // Normalize `stremio://` scheme to `https://`
@@ -290,8 +291,12 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
     const successfulResult = results.find((result) => result.isSuccess && result.data);
     const rawError = results.find((result) => result.error)?.error as unknown;
 
+    // Sort videos with season 0 (Specials) last
+    const meta = successfulResult?.data?.meta;
+    const sortedMeta = meta ? { ...meta, videos: sortVideosBySeason(meta.videos) } : undefined;
+
     return {
-        data: successfulResult?.data?.meta,
+        data: sortedMeta,
         isLoading: results.some((result) => result.isLoading),
         isError: results.length > 0 && results.every((result) => result.isError),
         error: rawError ? toStremioApiError(rawError, 'useMeta') : undefined,
