@@ -1,7 +1,7 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, type ErrorBoundaryProps, useRouter } from 'expo-router';
 import { ThemeProvider } from '@shopify/restyle';
-import theme from '@/theme/theme';
+import theme, { Box, Text } from '@/theme/theme';
 import {
   useFonts,
   Outfit_400Regular,
@@ -14,7 +14,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
@@ -22,8 +22,32 @@ import { initializeProfiles, useProfileStore } from '@/store/profile.store';
 import { ProfileSelector } from '@/components/profile/ProfileSelector';
 import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
 import { useAppSettingsStore } from '@/store/app-settings.store';
+import { Container } from '@/components/basic/Container';
+import { Button } from '@/components/basic/Button';
 
 SplashScreen.preventAutoHideAsync();
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const handleRetry = useCallback(() => {
+    retry();
+  }, [retry]);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Container>
+        <Box flex={1} justifyContent="center" gap="m">
+          <Box gap="xs">
+            <Text variant="header">Something went wrong</Text>
+            <Text variant="body" color="textSecondary">
+              {error.name}: {error.message}
+            </Text>
+          </Box>
+          <Button title="Try again" onPress={handleRetry} hasTVPreferredFocus />
+        </Box>
+      </Container>
+    </ThemeProvider>
+  );
+}
 
 export default function Layout() {
   const router = useRouter();
