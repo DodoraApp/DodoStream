@@ -8,7 +8,8 @@ import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { useMyListStore } from '@/store/my-list.store';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useContinueWatchingForMeta, getSeasonEpisodeLabel } from '@/hooks/useContinueWatching';
+import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import * as Burnt from 'burnt';
@@ -91,14 +92,14 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const multiVideoProgressRatio = continueWatching?.progressRatio ?? 0;
 
   const resumeLabel = useMemo(() => {
-    const label = getSeasonEpisodeLabel(continueWatching?.video);
+    const label = formatSeasonEpisodeLabel(continueWatching?.video);
     return label ? `Resume ${label}` : 'Resume';
   }, [continueWatching?.video]);
 
   const playLabel = useMemo(() => {
     // For multi-video, show the target episode label (continue watching or first)
     const targetVideo = continueWatching?.video ?? videos?.[0];
-    const label = getSeasonEpisodeLabel(targetVideo);
+    const label = formatSeasonEpisodeLabel(targetVideo);
     return label ? `Play ${label}` : 'Play';
   }, [continueWatching?.video, videos]);
 

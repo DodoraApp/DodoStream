@@ -3,8 +3,6 @@ import {
     useContinueWatching,
     useContinueWatchingForMeta,
     useNextVideo,
-    getSeasonEpisodeLabel,
-    getEpisodeDisplaySubtitle,
 } from '../useContinueWatching';
 import { useProfileStore } from '@/store/profile.store';
 import { useWatchHistoryStore, type WatchHistoryItem } from '@/store/watch-history.store';
@@ -53,44 +51,6 @@ describe('useContinueWatching', () => {
     beforeEach(() => {
         setActiveProfileId(undefined);
         useWatchHistoryStore.setState({ activeProfileId: undefined, byProfile: {} } as any);
-    });
-
-    describe('getSeasonEpisodeLabel', () => {
-        it('returns formatted label for season and episode', () => {
-            expect(getSeasonEpisodeLabel({ season: 1, episode: 2 })).toBe('S1E2');
-        });
-
-        it('returns formatted label for season only', () => {
-            expect(getSeasonEpisodeLabel({ season: 1 })).toBe('S1');
-        });
-
-        it('returns formatted label for episode only', () => {
-            expect(getSeasonEpisodeLabel({ episode: 2 })).toBe('E2');
-        });
-
-        it('returns undefined when neither season nor episode is present', () => {
-            expect(getSeasonEpisodeLabel({})).toBeUndefined();
-        });
-    });
-
-    describe('getEpisodeDisplaySubtitle', () => {
-        it('returns undefined if no video provided', () => {
-            expect(getEpisodeDisplaySubtitle(undefined)).toBeUndefined();
-        });
-
-        it('returns formatted subtitle with season, episode and title', () => {
-            expect(
-                getEpisodeDisplaySubtitle({ season: 1, episode: 2, title: 'Ep Title' })
-            ).toBe('S1E2: Ep Title');
-        });
-
-        it('returns label only when no episode title', () => {
-            expect(getEpisodeDisplaySubtitle({ season: 1, episode: 2 })).toBe('S1E2');
-        });
-
-        it('returns just title when no season/episode', () => {
-            expect(getEpisodeDisplaySubtitle({ title: 'Just Title' })).toBe('Just Title');
-        });
     });
 
     describe('useContinueWatching hook', () => {

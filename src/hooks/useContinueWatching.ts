@@ -40,12 +40,6 @@ export interface ContinueWatchingEntry {
     imageUrl?: string;
 }
 
-interface SeasonEpisodeLike {
-    season?: number;
-    episode?: number;
-    title?: string;
-}
-
 // ============================================================================
 // Utility Functions
 // ============================================================================
@@ -58,30 +52,6 @@ const getProgressRatio = (progressSeconds: number, durationSeconds: number): num
 
 const isMetaDetail = (meta: unknown): meta is MetaDetail =>
     typeof meta === 'object' && meta !== null && 'name' in meta;
-
-/**
- * Format season/episode label (e.g., "S1E2")
- */
-export const getSeasonEpisodeLabel = (video?: SeasonEpisodeLike): string | undefined => {
-    const { season, episode } = video ?? {};
-    if (season != null && episode != null) return `S${season}E${episode}`;
-    if (season != null) return `S${season}`;
-    if (episode != null) return `E${episode}`;
-    return undefined;
-};
-
-/**
- * Format episode subtitle for cards (e.g., "S1E2: Episode Title")
- * Returns undefined for movies (no video info)
- */
-export const getEpisodeDisplaySubtitle = (video?: SeasonEpisodeLike): string | undefined => {
-    if (!video) return undefined;
-
-    const label = getSeasonEpisodeLabel(video);
-    if (!label) return video.title;
-
-    return video.title ? `${label}: ${video.title}` : label;
-};
 
 /**
  * Find the next unwatched video in the sequence.

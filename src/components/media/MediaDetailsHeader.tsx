@@ -8,6 +8,7 @@ import type { Theme } from '@/theme/theme';
 import type { MetaDetail, MetaVideo } from '@/types/stremio';
 import { MediaInfo } from '@/components/media/MediaInfo';
 import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
 
 import { MEDIA_DETAILS_HEADER_COVER_HEIGHT } from '@/constants/media';
 import { Tag } from '@/components/basic/Tag';
@@ -34,11 +35,7 @@ export const MediaDetailsHeader = memo(
     }, [media.logo]);
 
     const episodeTag = useMemo(() => {
-      if (!video) return undefined;
-      if (video.season === undefined && video.episode === undefined) return undefined;
-      const s = video.season !== undefined ? `S${video.season}` : '';
-      const e = video.episode !== undefined ? `E${video.episode}` : '';
-      return `${s}${e}` || undefined;
+      return formatSeasonEpisodeLabel(video);
     }, [video]);
 
     const episodeTitle = useMemo(() => {

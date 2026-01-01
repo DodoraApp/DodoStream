@@ -43,7 +43,7 @@ const Play = () => {
   }, [bingeGroup, debug, metaId, replaceToStreams, router, shouldReturnToStreams, type, videoId]);
 
   const handleStop = useCallback(() => {
-    debug('handleStop')
+    debug('handleStop');
     if (shouldReturnToStreams) {
       returnToStreams();
       return;
@@ -52,14 +52,14 @@ const Play = () => {
   }, [debug, returnToStreams, router, shouldReturnToStreams]);
 
   useTVBackButton(() => {
-    debug('backButtonPressed')
+    debug('backButtonPressed');
     handleStop();
     return true;
   });
 
   const handleError = useCallback(
     (message: string) => {
-      debug('handleError', { message })
+      debug('handleError', { message });
       Alert.alert(message);
       if (shouldReturnToStreams) {
         returnToStreams();

@@ -25,7 +25,7 @@ interface StreamListProps {
   type: ContentType;
   id: string;
   videoId?: string;
-  title: string;
+  title?: string;
 }
 
 const isStreamAvailable = (stream: Stream): boolean => {
@@ -103,7 +103,7 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
   );
 });
 
-export const StreamList = memo(({ type, id, title, videoId }: StreamListProps) => {
+export const StreamList = memo(({ type, id, videoId, title }: StreamListProps) => {
   const { data: streams, isLoading, isError, allResults, addons } = useStreams(type, id, videoId);
   const [selectedAddonId, setSelectedAddonId] = useState<string | null>(null);
   const { openStreamFromStream } = useMediaNavigation();

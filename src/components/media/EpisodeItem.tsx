@@ -11,6 +11,7 @@ import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { Focusable } from '@/components/basic/Focusable';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
 
 export interface EpisodeItemProps {
   video: MetaVideo;
@@ -27,14 +28,8 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
   const clampedProgressRatio = Math.min(1, Math.max(0, progressRatio));
   const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;
 
-  const releaseLabel = useMemo(() => {
-    if (!video.released) return undefined;
-    const date = new Date(video.released);
-    if (Number.isNaN(date.getTime())) return undefined;
-    return date.toLocaleDateString();
-  }, [video.released]);
-
-  const titleText = `${video.episode ?? '?'}. ${video.name ?? video.title}`;
+  const releaseLabel = useMemo(() => formatReleaseDate(video.released), [video.released]);
+  const titleText = useMemo(() => formatEpisodeListTitle(video), [video]);
   const imageSource = video.thumbnail ? { uri: video.thumbnail } : undefined;
 
   return (

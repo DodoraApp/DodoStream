@@ -17,6 +17,7 @@ import { useDebugLogger } from '@/utils/debug';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { Button } from '@/components/basic/Button';
+import { formatPlayerTitle } from '@/utils/format';
 
 const parseBooleanParam = (value?: string): boolean => {
   if (!value) return false;
@@ -68,10 +69,9 @@ export default function StreamsPage() {
     return meta.videos?.find((v) => v.id === videoId);
   }, [meta, videoId]);
 
-  const streamListTitle = useMemo(() => {
-    if (!meta) return 'Select Stream';
-    return selectedVideo?.title ?? meta.name;
-  }, [meta, selectedVideo?.title]);
+  const playerTitle = useMemo(() => {
+    return formatPlayerTitle(meta, selectedVideo);
+  }, [meta, selectedVideo]);
 
   useEffect(() => {
     if (!effectiveAutoPlay) return;
@@ -96,7 +96,7 @@ export default function StreamsPage() {
         metaId,
         videoId,
         type,
-        title: streamListTitle,
+        title: playerTitle,
         bingeGroup,
         target: lastStreamTarget,
         navigation: 'replace',
@@ -152,7 +152,7 @@ export default function StreamsPage() {
         metaId,
         videoId,
         type,
-        title: streamListTitle,
+        title: playerTitle,
         stream: candidate,
         navigation: 'replace',
         fromAutoPlay: true,
@@ -162,7 +162,7 @@ export default function StreamsPage() {
         metaId,
         videoId,
         type,
-        title: streamListTitle,
+        title: playerTitle,
         stream: candidate,
         navigation: 'replace',
         onExternalOpened: () => setAutoPlayFailed(true),
@@ -181,7 +181,7 @@ export default function StreamsPage() {
     metaId,
     openStreamFromStream,
     openStreamTarget,
-    streamListTitle,
+    playerTitle,
     streams,
     type,
     videoId,
@@ -225,7 +225,7 @@ export default function StreamsPage() {
             <Box flex={1} backgroundColor="mainBackground">
               <MediaDetailsHeader media={mediaData} video={selectedVideo} variant="minimal" />
               <Box paddingHorizontal="l">
-                <StreamList title={streamListTitle} type={type} id={metaId} videoId={videoId} />
+                <StreamList type={type} id={metaId} videoId={videoId} title={playerTitle} />
               </Box>
             </Box>
           </ScrollView>

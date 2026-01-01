@@ -4,11 +4,8 @@ import type { ContentType } from '@/types/stremio';
 import { useMeta } from '@/api/stremio';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
-import {
-  useNextVideo,
-  getSeasonEpisodeLabel,
-  type ContinueWatchingEntry,
-} from '@/hooks/useContinueWatching';
+import { useNextVideo, type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { useDebugLogger } from '@/utils/debug';
 import { Button } from '@/components/basic/Button';
 
@@ -60,7 +57,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = ({
     return {
       videoId: upNextVideo.id,
       title: upNextVideo.title,
-      episodeLabel: getSeasonEpisodeLabel(upNextVideo),
+      episodeLabel: formatSeasonEpisodeLabel(upNextVideo),
       imageUrl: meta?.background ?? meta?.poster,
     };
   }, [enabled, meta?.background, meta?.poster, upNextVideo]);

@@ -5,6 +5,7 @@ import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
 import type { ReactNode } from 'react';
 import { ScrollView } from 'react-native';
 import FadeIn from '@/components/basic/FadeIn';
+import { formatReleaseInfo, formatRuntime, formatDescription } from '@/utils/format';
 
 interface MediaInfoProps {
   media: MetaDetail;
@@ -39,26 +40,6 @@ const parseImdbRating = (imdbRating: string | undefined) => {
   if (!imdbRating) return undefined;
   const n = Number.parseFloat(imdbRating);
   return Number.isFinite(n) ? n : undefined;
-};
-
-const formatReleaseInfo = (media: MetaDetail, video?: MetaVideo) => {
-  if (media.releaseInfo?.trim()) return media.releaseInfo.trim();
-
-  const releasedIso = video?.released ?? media.released;
-  if (!releasedIso) return undefined;
-  const date = new Date(releasedIso);
-  if (Number.isNaN(date.getTime())) return undefined;
-  return String(date.getFullYear());
-};
-
-const getRuntime = (media: MetaDetail, video?: MetaVideo) => {
-  const fromVideo = (video as Partial<{ runtime?: string }> | undefined)?.runtime;
-  return fromVideo?.trim() || media.runtime?.trim() || undefined;
-};
-
-const getDescription = (media: MetaDetail, video?: MetaVideo) => {
-  const fromVideo = (video as Partial<{ overview?: string }> | undefined)?.overview;
-  return fromVideo?.trim() || media.description?.trim() || undefined;
 };
 
 const IMDB_YELLOW = '#F5C518';
@@ -151,9 +132,9 @@ export const MediaInfo = ({
 }: MediaInfoProps) => {
   const imdbRating = parseImdbRating(media.imdbRating);
   const releaseInfo = formatReleaseInfo(media, video);
-  const runtime = getRuntime(media, video);
+  const runtime = formatRuntime(media, video);
   const genres = extractGenres(media);
-  const description = getDescription(media, video);
+  const description = formatDescription(media, video);
   const directors = extractPeople(media, 'director');
   const writers = extractPeople(media, 'writer');
   const cast = extractPeople(media, 'actor');

@@ -20,7 +20,7 @@ type OpenStreamTargetArgs = {
     metaId: string;
     videoId: string | undefined;
     type: ContentType;
-    title: string;
+    title?: string;
     bingeGroup?: string;
     target: StreamTarget;
     navigation?: 'push' | 'replace';
@@ -33,7 +33,7 @@ type OpenStreamFromStreamArgs = {
     metaId: string;
     videoId: string | undefined;
     type: ContentType;
-    title: string;
+    title?: string;
     stream: Stream;
     navigation?: 'push' | 'replace';
     fromAutoPlay?: boolean;

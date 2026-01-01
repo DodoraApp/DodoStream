@@ -9,11 +9,8 @@ import { NO_POSTER_LANDSCAPE } from '@/constants/images';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { getImageSource } from '@/utils/image';
-import {
-  getSeasonEpisodeLabel,
-  getEpisodeDisplaySubtitle,
-  type ContinueWatchingEntry,
-} from '@/hooks/useContinueWatching';
+import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
+import { formatSeasonEpisodeLabel, formatEpisodeCardTitle } from '@/utils/format';
 
 interface ContinueWatchingCardProps {
   /** The continue watching entry to display */
@@ -40,9 +37,9 @@ export const ContinueWatchingCard = memo(
 
     // Derive display values
     const clampedProgress = isUpNext ? 0 : Math.min(1, Math.max(0, progressRatio));
-    const episodeLabel = getSeasonEpisodeLabel(video);
+    const episodeLabel = formatSeasonEpisodeLabel(video);
     const title = metaName ?? '';
-    const subtitle = getEpisodeDisplaySubtitle(video);
+    const subtitle = formatEpisodeCardTitle(video);
     const finalImageSource = getImageSource(video?.thumbnail ?? imageUrl, NO_POSTER_LANDSCAPE);
 
     return (
