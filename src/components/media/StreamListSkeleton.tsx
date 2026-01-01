@@ -19,12 +19,10 @@ export const StreamListSkeleton = memo(({ count }: StreamListSkeletonProps) => {
     <CardListSkeleton
       horizontal={horizontal}
       count={count ?? defaultCount}
-      cardWidth={horizontal ? theme.cardSizes.continueWatching.width : '100%'}
-      cardHeight={theme.cardSizes.continueWatching.height}
+      cardWidth={horizontal ? theme.cardSizes.stream.width : '100%'}
+      cardHeight={theme.cardSizes.stream.width * 0.56}
       cardBorderRadius="m"
-      withLabel={true}
-      contentPaddingHorizontal="l"
-      contentPaddingVertical={'s'}
+      withLabel={false}
     />
   );
 });

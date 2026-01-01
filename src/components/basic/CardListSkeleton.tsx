@@ -17,6 +17,29 @@ export interface CardListSkeletonProps {
   contentPaddingVertical?: keyof Theme['spacing'];
 }
 
+const SkeletonCard = memo(
+  ({
+    cardWidth,
+    cardHeight,
+    cardBorderRadius,
+    withLabel,
+  }: Pick<
+    CardListSkeletonProps,
+    'cardWidth' | 'cardHeight' | 'cardBorderRadius' | 'withLabel'
+  >) => {
+    const theme = useTheme<Theme>();
+
+    return (
+      <Box width={cardWidth} gap="s">
+        <Skeleton width={cardWidth} height={cardHeight} borderRadius={cardBorderRadius} />
+        {withLabel ? <Skeleton width="75%" height={theme.spacing.m} borderRadius="s" /> : null}
+      </Box>
+    );
+  }
+);
+
+SkeletonCard.displayName = 'SkeletonCard';
+
 export const CardListSkeleton = memo(
   ({
     horizontal,
@@ -25,16 +48,18 @@ export const CardListSkeleton = memo(
     cardHeight,
     cardBorderRadius = 'l',
     withLabel = true,
-    contentPaddingHorizontal = 'm',
-    contentPaddingVertical = 's',
+    contentPaddingHorizontal,
+    contentPaddingVertical,
   }: CardListSkeletonProps) => {
     const theme = useTheme<Theme>();
 
     const data = useMemo(() => Array.from({ length: count }, (_, index) => index), [count]);
 
     const contentPaddingStyle = {
-      paddingHorizontal: theme.spacing[contentPaddingHorizontal],
-      paddingVertical: theme.spacing[contentPaddingVertical],
+      paddingHorizontal: contentPaddingHorizontal
+        ? theme.spacing[contentPaddingHorizontal]
+        : undefined,
+      paddingVertical: contentPaddingVertical ? theme.spacing[contentPaddingVertical] : undefined,
     };
 
     if (horizontal) {
@@ -44,14 +69,18 @@ export const CardListSkeleton = memo(
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={contentPaddingStyle}>
           <Box flexDirection="row">
-            {data.map((item) => (
-              <Box key={`card-skeleton-${item}`} width={cardWidth} gap="s">
-                <Skeleton width={cardWidth} height={cardHeight} borderRadius={cardBorderRadius} />
-                {withLabel ? (
-                  <Skeleton width="75%" height={theme.spacing.m} borderRadius="s" />
-                ) : null}
-                {item === data.length - 1 ? null : <HorizontalSpacer />}
-              </Box>
+            {data.map((item, index) => (
+              <>
+                <SkeletonCard
+                  key={`card-skeleton-${item}`}
+                  cardWidth={cardWidth}
+                  cardHeight={cardHeight}
+                  cardBorderRadius={cardBorderRadius}
+                  withLabel={withLabel}
+                />
+                {index < data.length - 1 &&
+                  (horizontal ? <HorizontalSpacer /> : <VerticalSpacer />)}
+              </>
             ))}
           </Box>
         </ScrollView>
@@ -60,12 +89,17 @@ export const CardListSkeleton = memo(
 
     return (
       <Box style={contentPaddingStyle}>
-        {data.map((item) => (
-          <Box key={`card-skeleton-${item}`} width="100%" gap="s">
-            <Skeleton width="100%" height={cardHeight} borderRadius={cardBorderRadius} />
-            {withLabel ? <Skeleton width="75%" height={theme.spacing.m} borderRadius="s" /> : null}
-            {item === data.length - 1 ? null : <VerticalSpacer size="m" />}
-          </Box>
+        {data.map((item, index) => (
+          <>
+            <SkeletonCard
+              key={`card-skeleton-${item}`}
+              cardWidth="100%"
+              cardHeight={cardHeight}
+              cardBorderRadius={cardBorderRadius}
+              withLabel={withLabel}
+            />
+            {index < data.length - 1 && (horizontal ? <HorizontalSpacer /> : <VerticalSpacer />)}
+          </>
         ))}
       </Box>
     );
