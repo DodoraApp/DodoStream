@@ -11,3 +11,6 @@ export const ANIMATION_SKELETON_PULSE_DURATION_MS = 1200;
 
 // Fade-in timing for content after data loads
 export const ANIMATION_FADE_IN_MS = 400;
+
+// Network timeouts
+export const ADDON_MANIFEST_FETCH_TIMEOUT_MS = 10_000;

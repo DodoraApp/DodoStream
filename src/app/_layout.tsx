@@ -54,8 +54,16 @@ export default function Layout() {
 
     // Initialize both addons and profiles after fonts are loaded.
     const init = async () => {
-      await initializeProfiles();
-      await initializeAddons();
+      try {
+        await initializeProfiles();
+        await initializeAddons();
+      } catch (error) {
+        // Fail open: never let a boot-time init error keep the splash screen forever.
+        // Stores should also be resilient, but this is an extra guardrail.
+        console.warn('[boot] init failed', error);
+        useProfileStore.getState().setInitialized(true);
+        useAddonStore.getState().setInitialized(true);
+      }
     };
     void init();
   }, [fontsLoaded]);

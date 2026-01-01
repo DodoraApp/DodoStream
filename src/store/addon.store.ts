@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InstalledAddon, Manifest } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
+import { fetchWithTimeout } from '@/utils/network';
+import { ADDON_MANIFEST_FETCH_TIMEOUT_MS } from '@/constants/ui';
 
 const debug = createDebugLogger('AddonStore');
 
@@ -181,13 +183,25 @@ export const initializeAddons = async () => {
         // Update all existing addons
         const updatePromises = addonsList.map(async (addon) => {
             try {
-                const response = await fetch(addon.manifestUrl);
+                const response = await fetchWithTimeout(
+                    addon.manifestUrl,
+                    ADDON_MANIFEST_FETCH_TIMEOUT_MS
+                );
                 if (response.ok) {
                     const manifest: Manifest = await response.json();
                     updateAddon(addon.id, manifest);
                 }
             } catch (error) {
-                debug('updateAddonFailed', { addonId: addon.id, manifestUrl: addon.manifestUrl, error });
+                const name = (error as { name?: string } | null)?.name;
+                if (name === 'AbortError') {
+                    debug('updateAddonTimedOut', {
+                        addonId: addon.id,
+                        manifestUrl: addon.manifestUrl,
+                        timeoutMs: ADDON_MANIFEST_FETCH_TIMEOUT_MS,
+                    });
+                } else {
+                    debug('updateAddonFailed', { addonId: addon.id, manifestUrl: addon.manifestUrl, error });
+                }
             }
         });
         await Promise.allSettled(updatePromises);
