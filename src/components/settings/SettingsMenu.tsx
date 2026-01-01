@@ -6,6 +6,7 @@ import { Focusable } from '@/components/basic/Focusable';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { router } from 'expo-router';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 export interface SettingsMenuItem {
   id: string;
@@ -71,7 +72,7 @@ const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
       <Focusable onPress={onPress} hasTVPreferredFocus={hasTVPreferredFocus}>
         {({ isFocused }) => (
           <Box
-            backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+            backgroundColor={getFocusableBackgroundColor({ isFocused })}
             borderRadius="m"
             padding="s"
             flexDirection="row"

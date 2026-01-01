@@ -16,6 +16,7 @@ import {
 import { Theme, Text, Box } from '@/theme/theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Focusable } from '@/components/basic/Focusable';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 export type IconComponentType = typeof Ionicons | typeof MaterialCommunityIcons;
 
@@ -62,6 +63,9 @@ export const Button = <T extends IconComponentType = typeof Ionicons>({
         ? 'secondaryForeground'
         : 'tertiaryForeground';
 
+  // Map button variants to whether they're considered "active" (primary style)
+  const isPrimaryVariant = variant === 'primary';
+
   return (
     <Focusable disabled={disabled} hasTVPreferredFocus={false} {...rest}>
       {({ isFocused }) => (
@@ -75,11 +79,12 @@ export const Button = <T extends IconComponentType = typeof Ionicons>({
             isFocused && !disabled
               ? {
                   backgroundColor:
-                    variant === 'primary'
-                      ? theme.colors.focusBackgroundPrimary
-                      : variant === 'secondary'
-                        ? theme.colors.focusBackground
-                        : theme.colors.focusBackground,
+                    theme.colors[
+                      getFocusableBackgroundColor({
+                        isActive: isPrimaryVariant,
+                        isFocused: true,
+                      })
+                    ],
                 }
               : undefined
           }>

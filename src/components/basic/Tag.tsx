@@ -4,6 +4,7 @@ import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@/theme/theme';
 import type { Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
+import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 interface TagProps {
   label: string;
@@ -16,13 +17,6 @@ interface TagProps {
   onFocus?: () => void;
   onBlur?: () => void;
 }
-
-const getColor = (selected: boolean, isFocused: boolean) => {
-  if (selected) {
-    return isFocused ? 'focusBackgroundPrimary' : 'primaryBackground';
-  }
-  return isFocused ? 'focusBackground' : 'cardBackground';
-};
 
 export const Tag = memo(
   ({
@@ -39,7 +33,7 @@ export const Tag = memo(
 
     const renderContent = (isFocused: boolean) => (
       <Box
-        backgroundColor={getColor(selected, isFocused)}
+        backgroundColor={getFocusableBackgroundColor({ isActive: selected, isFocused })}
         paddingHorizontal="m"
         paddingVertical="xs"
         borderRadius="s"
@@ -53,7 +47,7 @@ export const Tag = memo(
         focusable={focusable}>
         <Text
           variant="caption"
-          color={selected ? 'primaryForeground' : isFocused ? 'focusForeground' : 'textSecondary'}
+          color={getFocusableForegroundColor({ isActive: selected, isFocused })}
           style={{ includeFontPadding: false }}>
           {label}
         </Text>

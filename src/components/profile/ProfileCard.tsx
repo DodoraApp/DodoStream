@@ -5,6 +5,7 @@ import { Profile } from '@/store/profile.store';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
 import { Focusable } from '@/components/basic/Focusable';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface ProfileCardProps {
   profile?: Profile; // undefined for "Add Profile" card
@@ -22,7 +23,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ profile, onPress, isAddCard 
           <Box
             width={theme.cardSizes.profile.width}
             height={theme.cardSizes.profile.height}
-            backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+            backgroundColor={getFocusableBackgroundColor({ isFocused })}
             borderRadius="l"
             justifyContent="center"
             alignItems="center"
@@ -58,7 +59,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ profile, onPress, isAddCard 
         <Box
           width={theme.cardSizes.profile.width}
           height={theme.cardSizes.profile.height}
-          backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+          backgroundColor={getFocusableBackgroundColor({ isFocused })}
           borderRadius="l"
           justifyContent="center"
           alignItems="center"

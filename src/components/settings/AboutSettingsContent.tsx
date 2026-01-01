@@ -16,6 +16,7 @@ import { useDebugLogger } from '@/utils/debug';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 import { useAppSettingsStore } from '@/store/app-settings.store';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface AboutLinkItem {
   id: string;
@@ -37,7 +38,10 @@ const AboutLinkRow: FC<AboutLinkRowProps> = memo(({ item, onPress }) => {
     <Focusable onPress={() => onPress(item)}>
       {({ isFocused }) => (
         <Box
-          backgroundColor={isFocused ? 'focusBackground' : 'inputBackground'}
+          backgroundColor={getFocusableBackgroundColor({
+            isFocused,
+            defaultColor: 'inputBackground',
+          })}
           borderRadius="m"
           padding="m"
           flexDirection="row"
@@ -237,7 +241,10 @@ export const AboutSettingsContent: FC = memo(() => {
               onPress={() => void handleCheckForUpdates()}>
               {({ isFocused }) => (
                 <Box
-                  backgroundColor={isFocused ? 'focusBackground' : 'inputBackground'}
+                  backgroundColor={getFocusableBackgroundColor({
+                    isFocused,
+                    defaultColor: 'inputBackground',
+                  })}
                   borderRadius="m"
                   paddingVertical="m"
                   flexDirection="row"

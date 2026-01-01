@@ -2,6 +2,7 @@ import { Box, Text, Theme } from '@/theme/theme';
 import { Switch } from 'react-native';
 import { Focusable } from '@/components/basic/Focusable';
 import { useTheme } from '@shopify/restyle';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface SettingsSwitchProps {
   label: string;
@@ -21,7 +22,7 @@ export function SettingsSwitch({ label, description, value, onValueChange }: Set
           alignItems="center"
           justifyContent="space-between"
           gap="m"
-          backgroundColor={isFocused ? 'focusBackground' : undefined}
+          backgroundColor={getFocusableBackgroundColor({ isFocused, defaultColor: 'transparent' })}
           borderRadius="m"
           padding="s"
           style={{ marginHorizontal: -theme.spacing.s }}>

@@ -2,6 +2,7 @@ import theme, { Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Focusable } from '@/components/basic/Focusable';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface SettingsLinkProps {
   title: string;
@@ -17,7 +18,7 @@ export function SettingsLink({ title, description, icon, href }: SettingsLinkPro
     <Focusable onPress={() => router.push(href as any)}>
       {({ isFocused }) => (
         <Box
-          backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+          backgroundColor={getFocusableBackgroundColor({ isFocused })}
           borderRadius="m"
           padding="m"
           flexDirection="row"

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { NativeSyntheticEvent, TextLayoutEventData, ViewStyle } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
+import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 type TextVariant = Exclude<keyof Theme['textVariants'], 'defaults'>;
 
@@ -87,18 +88,11 @@ export const ExpandableSection = memo(
         {showToggle ? (
           <Focusable onPress={handleToggle} style={{ alignSelf: 'flex-start' }}>
             {({ isFocused }) => (
-              <Box
-                paddingTop="xs"
-                paddingBottom="xs"
-                paddingHorizontal="s"
-                borderRadius="s"
-                backgroundColor={isFocused ? 'focusBackground' : undefined}>
-                <Text
-                  variant={toggleTextVariant}
-                  color={isFocused ? 'focusForeground' : toggleTextColor}>
-                  {isExpanded ? toggleLabelLess : toggleLabelMore}
-                </Text>
-              </Box>
+              <Text
+                variant={toggleTextVariant}
+                color={getFocusableForegroundColor({ isFocused, defaultColor: toggleTextColor })}>
+                {isExpanded ? toggleLabelLess : toggleLabelMore}
+              </Text>
             )}
           </Focusable>
         ) : null}

@@ -12,6 +12,7 @@ import { ProgressBar } from '@/components/basic/ProgressBar';
 import { Focusable } from '@/components/basic/Focusable';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 export interface EpisodeItemProps {
   video: MetaVideo;
@@ -36,7 +37,7 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
     <Focusable onPress={onPress} hasTVPreferredFocus={false} recyclingKey={video.id}>
       {({ isFocused }) => (
         <Box
-          backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+          backgroundColor={getFocusableBackgroundColor({ isFocused })}
           borderRadius="m"
           overflow="hidden"
           width={horizontal ? theme.cardSizes.episode.width : '100%'}

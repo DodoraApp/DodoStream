@@ -14,6 +14,7 @@ import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import FadeIn from '@/components/basic/FadeIn';
 import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
 import { TagFilters, TagOption } from '@/components/basic/TagFilters';
+import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface AddonOption {
   id: string;
@@ -54,7 +55,7 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
       focusStyle={{ borderRadius: theme.borderRadii.m }}>
       {({ isFocused }) => (
         <Box
-          backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+          backgroundColor={getFocusableBackgroundColor({ isFocused })}
           padding="m"
           borderRadius="m"
           gap="xs"

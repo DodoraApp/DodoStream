@@ -8,6 +8,7 @@ import { Focusable } from '@/components/basic/Focusable';
 import { TagFilters } from '@/components/basic/TagFilters';
 import { useGroupOptions } from '@/hooks/useGroupOptions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 export interface PickerItem<T extends string | number = string | number> {
   label: string;
@@ -136,25 +137,21 @@ export function PickerModal<T extends string | number = string | number>({
                           hasTVPreferredFocus={isSelected}>
                           {({ isFocused }) => (
                             <Box
-                              backgroundColor={
-                                isSelected
-                                  ? 'primaryBackground'
-                                  : isFocused
-                                    ? 'focusBackground'
-                                    : 'inputBackground'
-                              }
+                              backgroundColor={getFocusableBackgroundColor({
+                                isActive: isSelected,
+                                isFocused,
+                                defaultColor: 'inputBackground',
+                              })}
                               borderRadius="m"
                               paddingHorizontal="m"
                               paddingVertical="m">
                               <Text
                                 variant="body"
-                                color={
-                                  isSelected
-                                    ? 'primaryForeground'
-                                    : isFocused
-                                      ? 'focusForeground'
-                                      : 'mainForeground'
-                                }
+                                color={getFocusableForegroundColor({
+                                  isActive: isSelected,
+                                  isFocused,
+                                  defaultColor: 'mainForeground',
+                                })}
                                 fontSize={16}>
                                 {item.label}
                               </Text>
