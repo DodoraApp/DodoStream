@@ -23,6 +23,13 @@ export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
         icon: 'extension-puzzle-outline',
         href: '/settings/addons',
     },
+    {
+        id: 'about',
+        title: 'About',
+        description: 'App info, version, and useful links',
+        icon: 'information-circle-outline',
+        href: '/settings/about',
+    },
 ];
 
 /** Map settings page ID to route path */
@@ -30,4 +37,5 @@ export const SETTINGS_ROUTES: Record<string, string> = {
     playback: '/settings/playback',
     profiles: '/settings/profiles',
     addons: '/settings/addons',
+    about: '/settings/about',
 };

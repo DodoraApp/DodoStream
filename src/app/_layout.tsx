@@ -14,20 +14,20 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
 import { initializeProfiles, useProfileStore } from '@/store/profile.store';
 import { ProfileSelector } from '@/components/profile/ProfileSelector';
 import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
+import { useAppSettingsStore } from '@/store/app-settings.store';
 
 SplashScreen.preventAutoHideAsync();
 
-let didInit = false;
-
 export default function Layout() {
   const router = useRouter();
+  const didInitRef = useRef(false);
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
     Outfit_600SemiBold,
@@ -40,6 +40,7 @@ export default function Layout() {
   const isAddonsInitialized = useAddonStore((state) => state.isInitialized);
   const isProfilesInitialized = useProfileStore((state) => state.isInitialized);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const releaseCheckOnStartup = useAppSettingsStore((state) => state.releaseCheckOnStartup);
 
   const showProfileSelector = !activeProfileId;
 
@@ -48,20 +49,20 @@ export default function Layout() {
 
   useEffect(() => {
     if (!fontsLoaded) return;
-    if (didInit) return;
-    didInit = true;
+    if (didInitRef.current) return;
+    didInitRef.current = true;
 
     // Initialize both addons and profiles after fonts are loaded.
     const init = async () => {
       await initializeProfiles();
       await initializeAddons();
     };
-    init();
+    void init();
   }, [fontsLoaded]);
 
   useEffect(() => {
     if (fontsLoaded && isAddonsInitialized && isProfilesInitialized) {
-      SplashScreen.hideAsync();
+      void SplashScreen.hideAsync();
     }
   }, [fontsLoaded, isAddonsInitialized, isProfilesInitialized]);
 
@@ -82,7 +83,7 @@ export default function Layout() {
           <GestureHandlerRootView
             key={appKey}
             style={{ flex: 1, backgroundColor: theme.colors.mainBackground }}>
-            <GithubReleaseModal enabled={!showProfileSelector} />
+            <GithubReleaseModal enabled={releaseCheckOnStartup && !showProfileSelector} />
             <Stack
               screenOptions={{
                 headerStyle: {

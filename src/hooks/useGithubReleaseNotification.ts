@@ -2,22 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Burnt from 'burnt';
 import * as Linking from 'expo-linking';
-import Constants from 'expo-constants';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
-import { toGithubLatestReleaseApiUrl } from '@/api/github/client';
-import { useLatestGithubRelease } from '@/api/github/hooks';
-import { areVersionsDifferent, extractSemverFromText, normalizeVersion } from '@/utils/version';
+import { useAppInfo } from '@/hooks/useAppInfo';
+import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 
 const STORAGE_KEY_LAST_DISMISSED_TAG = 'githubRelease:lastDismissedTag';
-const RELEASES_URL_RAW = process.env.EXPO_PUBLIC_GITHUB_RELEASES_URL;
-
-function getInstalledAppVersion(): string {
-    const expoConfigVersion = Constants.expoConfig?.version;
-    const manifestVersion = (Constants as any)?.manifest?.version;
-    const fallbackVersion = (Constants as any)?.manifest2?.extra?.expoClient?.version;
-    return expoConfigVersion ?? manifestVersion ?? fallbackVersion ?? '0.0.0';
-}
 
 export interface GithubReleaseNotification {
     isVisible: boolean;
@@ -33,21 +23,15 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     const { enabled } = params;
     const debug = useDebugLogger('useGithubReleaseNotification');
 
-    const releasesApiUrl = useMemo(() => {
-        if (!RELEASES_URL_RAW) return null;
-        return toGithubLatestReleaseApiUrl(RELEASES_URL_RAW);
-    }, []);
-
-    const installedVersion = useMemo(() => getInstalledAppVersion(), []);
+    const appInfo = useAppInfo();
+    const releaseStatus = useGithubReleaseStatus({
+        installedVersion: appInfo.appVersion,
+        enabled,
+    });
 
     const [isStorageLoaded, setIsStorageLoaded] = useState(false);
     const [lastDismissedTag, setLastDismissedTag] = useState<string | null>(null);
     const [isVisible, setIsVisible] = useState(false);
-
-    const { data: latestRelease } = useLatestGithubRelease({
-        releasesApiUrl: releasesApiUrl ?? '',
-        enabled: enabled && !!releasesApiUrl,
-    });
 
     useEffect(() => {
         if (!enabled) return;
@@ -71,20 +55,20 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         };
     }, [enabled, debug]);
 
-    const latestVersion = useMemo(() => {
-        if (!latestRelease) return '';
-        return extractSemverFromText(latestRelease.tagName) ?? normalizeVersion(latestRelease.tagName);
-    }, [latestRelease]);
+    const latestRelease = releaseStatus.latestRelease;
 
     const shouldNotify = useMemo(() => {
         if (!enabled) return false;
-        if (!releasesApiUrl) return false;
+        if (!releaseStatus.canCheck) return false;
         if (!isStorageLoaded) return false;
         if (!latestRelease) return false;
 
-        const differs = areVersionsDifferent(installedVersion, latestVersion);
-        if (!differs) {
-            debug('noUpdate', { installedVersion, latestVersion, tagName: latestRelease.tagName });
+        if (releaseStatus.isUpdateAvailable !== true) {
+            debug('noUpdate', {
+                installedVersion: releaseStatus.installedVersion,
+                latestVersion: releaseStatus.latestVersion,
+                tagName: latestRelease.tagName,
+            });
             return false;
         }
 
@@ -94,8 +78,8 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         }
 
         debug('updateAvailable', {
-            installedVersion,
-            latestVersion,
+            installedVersion: releaseStatus.installedVersion,
+            latestVersion: releaseStatus.latestVersion,
             tagName: latestRelease.tagName,
             dismissedTag: lastDismissedTag,
         });
@@ -103,13 +87,14 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         return true;
     }, [
         enabled,
-        releasesApiUrl,
         isStorageLoaded,
         latestRelease,
-        installedVersion,
-        latestVersion,
         lastDismissedTag,
         debug,
+        releaseStatus.canCheck,
+        releaseStatus.installedVersion,
+        releaseStatus.isUpdateAvailable,
+        releaseStatus.latestVersion,
     ]);
 
     useEffect(() => {
@@ -152,11 +137,11 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
 
     const body = useMemo(() => {
         if (!latestRelease) return '';
-        const header = `Installed: ${installedVersion}\nLatest: ${latestVersion}`;
+        const header = `Installed: ${releaseStatus.installedVersion}\nLatest: ${releaseStatus.latestVersion}`;
         const releaseTitle = latestRelease.name?.trim() ? `\n\n${latestRelease.name.trim()}` : '';
         const notes = latestRelease.body?.trim() ? `\n\n${latestRelease.body.trim()}` : '';
         return `${header}${releaseTitle}${notes}`.trim();
-    }, [latestRelease, installedVersion, latestVersion]);
+    }, [latestRelease, releaseStatus.installedVersion, releaseStatus.latestVersion]);
 
     const releaseNotification: GithubReleaseNotification | null = useMemo(() => {
         if (!latestRelease) return null;

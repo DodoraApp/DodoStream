@@ -16,6 +16,8 @@ type: 'Bug'
 
 Device model and OS version:
 
+DodoStream version (Settings > About): 
+
 ## Steps to reproduce
 
 1.

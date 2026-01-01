@@ -40,6 +40,8 @@ env:
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
   DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
   NODE_OPTIONS: --openssl-legacy-provider
+  # Expose commit hash to the app (used by the About page)
+  EXPO_PUBLIC_GIT_COMMIT_HASH: ${{ github.sha }}
 
 jobs:
   test:
