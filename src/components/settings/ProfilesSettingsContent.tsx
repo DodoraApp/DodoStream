@@ -152,9 +152,8 @@ export const ProfilesSettingsContent: FC = memo(() => {
                   </Box>
                 </Box>
 
-                <Box flexDirection="row" gap="s">
+                <Box flexDirection="row" gap="s" alignSelf="flex-end">
                   <Button
-                    title="Switch"
                     variant="secondary"
                     icon="swap-horizontal"
                     disabled={isActive}
@@ -162,7 +161,6 @@ export const ProfilesSettingsContent: FC = memo(() => {
                     style={{ flex: 1 }}
                   />
                   <Button
-                    title="Edit"
                     variant="secondary"
                     icon="create-outline"
                     onPress={() => {
@@ -172,7 +170,6 @@ export const ProfilesSettingsContent: FC = memo(() => {
                     style={{ flex: 1 }}
                   />
                   <Button
-                    title="Delete"
                     variant="tertiary"
                     icon="trash-outline"
                     disabled={isActive}
