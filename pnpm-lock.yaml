@@ -68,6 +68,9 @@ importers:
       expo-image:
         specifier: ~3.0.11
         version: 3.0.11(expo@54.0.30)(react-native-tvos@0.81.5-1)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      expo-keep-awake:
+        specifier: ~15.0.8
+        version: 15.0.8(expo@54.0.30)(react@19.1.0)
       expo-libvlc-player:
         specifier: ^2.2.6
         version: 2.2.6(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0)
@@ -113,6 +116,9 @@ importers:
       react-native-gesture-handler:
         specifier: ~2.28.0
         version: 2.28.0(react-native-tvos@0.81.5-1)(react@19.1.0)
+      react-native-immersive-mode:
+        specifier: ^2.0.2
+        version: 2.0.2(react-native-tvos@0.81.5-1)
       react-native-reanimated:
         specifier: ~4.1.6
         version: 4.1.6(@babel/core@7.28.5)(react-native-tvos@0.81.5-1)(react-native-worklets@0.5.1(@babel/core@7.28.5)(react-native-tvos@0.81.5-1)(react@19.1.0))(react@19.1.0)
@@ -4237,6 +4243,11 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  react-native-immersive-mode@2.0.2:
+    resolution: {integrity: sha512-W4YBpf/seURr6pdt91bKWtlQhwoZYgQN1nllj/y+EkwKs5xbu/IiRxlCs/8ML7dyA8wbOFaXR24AC4HOrvxapw==}
+    peerDependencies:
+      react-native: '>=0.60.5'
 
   react-native-is-edge-to-edge@1.2.1:
     resolution: {integrity: sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q==}
@@ -10324,6 +10335,10 @@ snapshots:
       hoist-non-react-statics: 3.3.2
       invariant: 2.2.4
       react: 19.1.0
+      react-native: react-native-tvos@0.81.5-1(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
+
+  react-native-immersive-mode@2.0.2(react-native-tvos@0.81.5-1):
+    dependencies:
       react-native: react-native-tvos@0.81.5-1(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
 
   react-native-is-edge-to-edge@1.2.1(react-native-tvos@0.81.5-1)(react@19.1.0):

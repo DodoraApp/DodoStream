@@ -30,7 +30,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 },
             ],
             'expo-system-ui',
-            '@react-native-tvos/config-tv',
+            [
+                '@react-native-tvos/config-tv',
+                {
+                    androidTVBanner: "assets/app/banner.png",
+                }
+            ],
             'expo-router',
             'expo-localization',
             [
@@ -67,11 +72,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             tsconfigPaths: true,
         },
         orientation: 'portrait',
-        icon: './assets/images/icon.png',
+        icon: './assets/app/icon.png',
         backgroundColor: appBackgroundColor,
         userInterfaceStyle: 'dark',
         splash: {
-            image: './assets/images/splash-icon-dark.png',
+            image: './assets/app/splash-icon.png',
             resizeMode: 'contain',
             backgroundColor: appBackgroundColor,
         },
@@ -83,7 +88,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
         android: {
             adaptiveIcon: {
-                foregroundImage: './assets/images/adaptive-icon.png',
+                foregroundImage: './assets/app/adaptive-icon.png',
                 backgroundColor: appBackgroundColor,
             },
             userInterfaceStyle: 'dark',

@@ -1,6 +1,6 @@
 {
   "name": "dodostream",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "license": "GPL-3.0-only",
   "main": "expo-router/entry",
   "scripts": {
@@ -50,6 +50,7 @@
     "expo-device": "~8.0.9",
     "expo-font": "^14.0.10",
     "expo-image": "~3.0.11",
+    "expo-keep-awake": "~15.0.8",
     "expo-libvlc-player": "^2.2.6",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.11",
@@ -65,6 +66,7 @@
     "react-dom": "19.1.0",
     "react-native": "npm:react-native-tvos@0.81-stable",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-immersive-mode": "^2.0.2",
     "react-native-reanimated": "~4.1.6",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.16.0",

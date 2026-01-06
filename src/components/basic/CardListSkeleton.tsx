@@ -3,7 +3,7 @@ import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
 import type { Theme } from '@/theme/theme';
 import { Box } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
-import { memo, useMemo } from 'react';
+import { Fragment, memo, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
 export interface CardListSkeletonProps {
@@ -70,9 +70,8 @@ export const CardListSkeleton = memo(
           contentContainerStyle={contentPaddingStyle}>
           <Box flexDirection="row">
             {data.map((item, index) => (
-              <>
+              <Fragment key={`card-skeleton-${item}`}>
                 <SkeletonCard
-                  key={`card-skeleton-${item}`}
                   cardWidth={cardWidth}
                   cardHeight={cardHeight}
                   cardBorderRadius={cardBorderRadius}
@@ -80,7 +79,7 @@ export const CardListSkeleton = memo(
                 />
                 {index < data.length - 1 &&
                   (horizontal ? <HorizontalSpacer /> : <VerticalSpacer />)}
-              </>
+              </Fragment>
             ))}
           </Box>
         </ScrollView>
@@ -90,16 +89,15 @@ export const CardListSkeleton = memo(
     return (
       <Box style={contentPaddingStyle}>
         {data.map((item, index) => (
-          <>
+          <Fragment key={`card-skeleton-${item}`}>
             <SkeletonCard
-              key={`card-skeleton-${item}`}
               cardWidth="100%"
               cardHeight={cardHeight}
               cardBorderRadius={cardBorderRadius}
               withLabel={withLabel}
             />
             {index < data.length - 1 && (horizontal ? <HorizontalSpacer /> : <VerticalSpacer />)}
-          </>
+          </Fragment>
         ))}
       </Box>
     );
