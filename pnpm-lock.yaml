@@ -68,6 +68,9 @@ importers:
       expo-image:
         specifier: ~3.0.11
         version: 3.0.11(expo@54.0.30)(react-native-tvos@0.81.5-1)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      expo-keep-awake:
+        specifier: ~15.0.8
+        version: 15.0.8(expo@54.0.30)(react@19.1.0)
       expo-libvlc-player:
         specifier: ^2.2.6
         version: 2.2.6(expo@54.0.30)(react-native-tvos@0.81.5-1)(react@19.1.0)
