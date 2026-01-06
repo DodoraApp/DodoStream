@@ -1,12 +1,13 @@
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Box } from '@/theme/theme';
-import { Alert } from 'react-native';
+import { Alert, Platform, StatusBar } from 'react-native';
 import type { ContentType } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useTVBackButton } from '@/hooks/useTVBackButton';
+import ImmersiveMode from 'react-native-immersive-mode';
 
 const parseBooleanParam = (value?: string): boolean => {
   if (!value) return false;
@@ -28,6 +29,25 @@ const Play = () => {
 
   const debug = useDebugLogger('Play');
   const shouldReturnToStreams = parseBooleanParam(fromAutoPlay);
+
+  // Enable immersive mode (hide navigation bar) on Android
+  useEffect(() => {
+    // Hide status bar on all platforms
+    StatusBar.setHidden(true);
+
+    if (Platform.OS === 'android') {
+      ImmersiveMode.fullLayout(true);
+      ImmersiveMode.setBarMode('FullSticky');
+    }
+
+    return () => {
+      StatusBar.setHidden(false);
+      if (Platform.OS === 'android') {
+        ImmersiveMode.fullLayout(false);
+        ImmersiveMode.setBarMode('Normal');
+      }
+    };
+  }, []);
 
   const returnToStreams = useCallback(() => {
     if (!metaId || !type || !videoId) {
