@@ -1,5 +1,5 @@
 import React, { FC, useState, useEffect, useCallback, useMemo } from 'react';
-import { StyleSheet, Pressable, StatusBar } from 'react-native';
+import { StyleSheet, Pressable } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
@@ -138,10 +138,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
 
   const textTrackItems = useMemo<PickerItem[]>(() => {
     const preferred = getPreferredLanguageCodes(preferredSubtitleLanguages);
-    return [
-      { label: 'None', value: -1 },
-      ...buildOrderedTrackItems(textTracks, preferred),
-    ];
+    return [{ label: 'None', value: -1 }, ...buildOrderedTrackItems(textTracks, preferred)];
   }, [buildOrderedTrackItems, preferredSubtitleLanguages, textTracks]);
 
   // Auto-hide controls after inactivity
@@ -237,16 +234,13 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   if (!visible) {
     // Invisible touchable area to show controls
     return (
-      <>
-        <StatusBar hidden />
-        <Pressable
-          testID="player-controls-invisible-area"
-          style={StyleSheet.absoluteFill}
-          onPress={showControls}
-          hasTVPreferredFocus>
-          <Box flex={1} />
-        </Pressable>
-      </>
+      <Pressable
+        testID="player-controls-invisible-area"
+        style={StyleSheet.absoluteFill}
+        onPress={showControls}
+        hasTVPreferredFocus>
+        <Box flex={1} />
+      </Pressable>
     );
   }
 
@@ -255,7 +249,6 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       testID="player-controls-overlay"
       style={StyleSheet.absoluteFill}
       onPress={toggleControls}>
-      <StatusBar hidden />
       <Box flex={1} justifyContent="space-between">
         {/* Top Bar */}
         <Box

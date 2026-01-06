@@ -65,6 +65,7 @@
     "react-dom": "19.1.0",
     "react-native": "npm:react-native-tvos@0.81-stable",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-immersive-mode": "^2.0.2",
     "react-native-reanimated": "~4.1.6",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.16.0",
