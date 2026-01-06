@@ -1,5 +1,5 @@
 import { FC, memo, useState } from 'react';
-import { Alert, TouchableOpacity, Switch } from 'react-native';
+import { Alert, TouchableOpacity, Switch, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { FlashList } from '@shopify/flash-list';
 import theme, { Box, Text } from '@/theme/theme';
@@ -10,6 +10,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useAddonStore } from '@/store/addon.store';
 import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
+import { toast } from 'burnt';
 
 /**
  * Addons settings content component
@@ -61,6 +62,17 @@ export const AddonsSettingsContent: FC = memo(() => {
     ]);
   };
 
+  const onConfigure = (url: string) => {
+    const configureUrl = url.replace(/manifest\.json$/, 'configure');
+    Linking.openURL(configureUrl).catch(() => {
+      toast({
+        title: 'Failed to open configuration URL',
+        preset: 'error',
+        haptic: 'error',
+      });
+    });
+  };
+
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <Box padding="m" gap="l" flex={1}>
@@ -103,6 +115,7 @@ export const AddonsSettingsContent: FC = memo(() => {
                 <AddonCard
                   addon={item}
                   onRemove={handleRemove}
+                  onConfigure={onConfigure}
                   onToggleHome={toggleUseCatalogsOnHome}
                   onToggleSearch={toggleUseCatalogsInSearch}
                 />
@@ -122,60 +135,70 @@ interface AddonCardProps {
   onRemove: (id: string, name: string) => void;
   onToggleHome: (id: string) => void;
   onToggleSearch: (id: string) => void;
+  onConfigure: (url: string) => void;
 }
 
-const AddonCard: FC<AddonCardProps> = memo(({ addon, onRemove, onToggleHome, onToggleSearch }) => {
-  return (
-    <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
-      {/* Header with title and remove button */}
-      <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
-        <Box flex={1} gap="xs">
-          <Text variant="cardTitle">{addon.manifest.name}</Text>
-          <Text variant="caption" color="textSecondary" numberOfLines={1}>
-            {addon.manifestUrl}
-          </Text>
-          {addon.manifest.catalogs && (
-            <Text variant="caption" color="textSecondary">
-              {addon.manifest.catalogs.length} catalog(s)
+const AddonCard: FC<AddonCardProps> = memo(
+  ({ addon, onRemove, onToggleHome, onToggleSearch, onConfigure }) => {
+    return (
+      <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
+        {/* Header with title and remove button */}
+        <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
+          <Box flex={1} gap="xs">
+            <Text variant="cardTitle">{addon.manifest.name}</Text>
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {addon.manifestUrl}
             </Text>
-          )}
+            {addon.manifest.catalogs && (
+              <Text variant="caption" color="textSecondary">
+                {addon.manifest.catalogs.length} catalog(s)
+              </Text>
+            )}
+          </Box>
+          <Box flexDirection="row" gap="xs">
+            <TouchableOpacity onPress={() => onRemove(addon.id, addon.manifest.name)}>
+              <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
+            </TouchableOpacity>
+            {addon.manifest.behaviorHints?.configurable && (
+              <TouchableOpacity onPress={() => onConfigure(addon.manifestUrl)}>
+                <Ionicons name="settings-outline" size={20} color={theme.colors.mainForeground} />
+              </TouchableOpacity>
+            )}
+          </Box>
         </Box>
-        <TouchableOpacity onPress={() => onRemove(addon.id, addon.manifest.name)}>
-          <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
-        </TouchableOpacity>
-      </Box>
 
-      {/* Settings toggles */}
-      <Box gap="s">
-        <Box flexDirection="row" alignItems="center" gap="s">
-          <Switch
-            value={addon.useCatalogsOnHome}
-            onValueChange={() => onToggleHome(addon.id)}
-            trackColor={{
-              false: theme.colors.mainBackground,
-              true: theme.colors.primaryBackground,
-            }}
-            thumbColor={theme.colors.mainForeground}
-          />
-          <Text variant="body" color="textSecondary">
-            Use catalogs on Home
-          </Text>
-        </Box>
-        <Box flexDirection="row" alignItems="center" gap="s">
-          <Switch
-            value={addon.useCatalogsInSearch}
-            onValueChange={() => onToggleSearch(addon.id)}
-            trackColor={{
-              false: theme.colors.mainBackground,
-              true: theme.colors.primaryBackground,
-            }}
-            thumbColor={theme.colors.mainForeground}
-          />
-          <Text variant="body" color="textSecondary">
-            Use catalogs in Search
-          </Text>
+        {/* Settings toggles */}
+        <Box gap="s">
+          <Box flexDirection="row" alignItems="center" gap="s">
+            <Switch
+              value={addon.useCatalogsOnHome}
+              onValueChange={() => onToggleHome(addon.id)}
+              trackColor={{
+                false: theme.colors.mainBackground,
+                true: theme.colors.primaryBackground,
+              }}
+              thumbColor={theme.colors.mainForeground}
+            />
+            <Text variant="body" color="textSecondary">
+              Use catalogs on Home
+            </Text>
+          </Box>
+          <Box flexDirection="row" alignItems="center" gap="s">
+            <Switch
+              value={addon.useCatalogsInSearch}
+              onValueChange={() => onToggleSearch(addon.id)}
+              trackColor={{
+                false: theme.colors.mainBackground,
+                true: theme.colors.primaryBackground,
+              }}
+              thumbColor={theme.colors.mainForeground}
+            />
+            <Text variant="body" color="textSecondary">
+              Use catalogs in Search
+            </Text>
+          </Box>
         </Box>
       </Box>
-    </Box>
-  );
-});
+    );
+  }
+);
