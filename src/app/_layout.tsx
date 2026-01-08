@@ -25,6 +25,30 @@ import { useAppSettingsStore } from '@/store/app-settings.store';
 import { Container } from '@/components/basic/Container';
 import { Button } from '@/components/basic/Button';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
+import * as Sentry from '@sentry/react-native';
+import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
+
+if (isSentryEnabled) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+
+    // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
+    // We recommend adjusting this value in production.
+    // Learn more at
+    // https://docs.sentry.io/platforms/react-native/configuration/options/#traces-sample-rate
+    tracesSampleRate: 0.2,
+    // Enable logs to be sent to Sentry
+    // Learn more at https://docs.sentry.io/platforms/react-native/logs/
+    enableLogs: true,
+    // profilesSampleRate is relative to tracesSampleRate.
+    // Here, we'll capture profiles for 30% of transactions.
+    profilesSampleRate: 0.3,
+    // Record session replays for 100% of errors and 10% of sessions
+    replaysOnErrorSampleRate: 1.0,
+    replaysSessionSampleRate: 0,
+    integrations: [Sentry.mobileReplayIntegration()],
+  });
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,7 +74,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
-export default function Layout() {
+function Layout() {
   const router = useRouter();
   const didInitRef = useRef(false);
   const [fontsLoaded] = useFonts({
@@ -149,3 +173,6 @@ export default function Layout() {
     </QueryClientProvider>
   );
 }
+
+const AppLayout = isSentryEnabled ? Sentry.wrap(Layout) : Layout;
+export default AppLayout;
