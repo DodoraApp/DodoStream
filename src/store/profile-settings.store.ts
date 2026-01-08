@@ -6,6 +6,7 @@ import type { PlayerType } from '@/types/player';
 export interface ProfilePlaybackSettings {
   player: PlayerType;
   automaticFallback: boolean;
+  autoPlayFirstStream: boolean;
   preferredAudioLanguages?: string[];
   preferredSubtitleLanguages?: string[];
 }
@@ -23,12 +24,14 @@ interface ProfileSettingsState {
   // Mutations (active profile)
   setPlayer: (player: PlayerType) => void;
   setAutomaticFallback: (automaticFallback: boolean) => void;
+  setAutoPlayFirstStream: (autoPlayFirstStream: boolean) => void;
   setPreferredAudioLanguages: (languages: string[]) => void;
   setPreferredSubtitleLanguages: (languages: string[]) => void;
 
   // Mutations (specific profile)
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
   setAutomaticFallbackForProfile: (profileId: string, automaticFallback: boolean) => void;
+  setAutoPlayFirstStreamForProfile: (profileId: string, autoPlayFirstStream: boolean) => void;
   setPreferredAudioLanguagesForProfile: (profileId: string, languages: string[]) => void;
   setPreferredSubtitleLanguagesForProfile: (profileId: string, languages: string[]) => void;
 }
@@ -36,6 +39,7 @@ interface ProfileSettingsState {
 export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   player: 'exoplayer',
   automaticFallback: true,
+  autoPlayFirstStream: false,
 };
 
 export const useProfileSettingsStore = create<ProfileSettingsState>()(
@@ -64,6 +68,12 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setAutomaticFallbackForProfile(profileId, automaticFallback);
+      },
+
+      setAutoPlayFirstStream: (autoPlayFirstStream) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setAutoPlayFirstStreamForProfile(profileId, autoPlayFirstStream);
       },
 
       setPreferredAudioLanguages: (languages) => {
@@ -102,6 +112,18 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         }));
       },
 
+      setAutoPlayFirstStreamForProfile: (profileId, autoPlayFirstStream) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              autoPlayFirstStream,
+            },
+          },
+        }));
+      },
+
       setPreferredAudioLanguagesForProfile: (profileId, preferredAudioLanguages) => {
         set((state) => ({
           byProfile: {
@@ -130,6 +152,23 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
       name: 'profile-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ byProfile: state.byProfile }),
+      version: 1,
+      migrate: (persistedState, version) => {
+        if (!persistedState) return persistedState;
+        const state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
+        if (version === 0) {
+          const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
+          for (const [profileId, settings] of Object.entries(state.byProfile)) {
+            migratedByProfile[profileId] = {
+              ...settings,
+              autoPlayFirstStream: settings.autoPlayFirstStream ?? false,
+            };
+          }
+          return { ...persistedState, byProfile: migratedByProfile };
+        }
+
+        return persistedState;
+      },
     }
   )
 );

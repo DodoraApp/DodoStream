@@ -31,10 +31,12 @@ export const PlaybackSettingsContent: FC = memo(() => {
   const {
     player,
     automaticFallback,
+    autoPlayFirstStream,
     preferredAudioLanguages,
     preferredSubtitleLanguages,
     setPlayerForProfile,
     setAutomaticFallbackForProfile,
+    setAutoPlayFirstStreamForProfile,
     setPreferredAudioLanguagesForProfile,
     setPreferredSubtitleLanguagesForProfile,
   } = useProfileSettingsStore((state) => ({
@@ -44,6 +46,9 @@ export const PlaybackSettingsContent: FC = memo(() => {
     automaticFallback:
       (activeProfileId ? state.byProfile[activeProfileId]?.automaticFallback : undefined) ??
       DEFAULT_PROFILE_PLAYBACK_SETTINGS.automaticFallback,
+    autoPlayFirstStream:
+      (activeProfileId ? state.byProfile[activeProfileId]?.autoPlayFirstStream : undefined) ??
+      DEFAULT_PROFILE_PLAYBACK_SETTINGS.autoPlayFirstStream,
     preferredAudioLanguages: activeProfileId
       ? (state.byProfile[activeProfileId]?.preferredAudioLanguages ?? [])
       : [],
@@ -52,6 +57,7 @@ export const PlaybackSettingsContent: FC = memo(() => {
       : [],
     setPlayerForProfile: state.setPlayerForProfile,
     setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
+    setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
     setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
     setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
   }));
@@ -70,7 +76,7 @@ export const PlaybackSettingsContent: FC = memo(() => {
     <>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-          <SettingsCard title="Video Player">
+          <SettingsCard title="Playback">
             <SettingsRow label="Player">
               <TouchableOpacity onPress={() => setShowPlayerPicker(true)}>
                 <Box
@@ -95,6 +101,14 @@ export const PlaybackSettingsContent: FC = memo(() => {
               value={automaticFallback}
               onValueChange={(value) =>
                 activeProfileId && setAutomaticFallbackForProfile(activeProfileId, value)
+              }
+            />
+            <SettingsSwitch
+              label="Auto Play First Stream"
+              description="Automatically play the first stream returned"
+              value={autoPlayFirstStream}
+              onValueChange={(value) =>
+                activeProfileId && setAutoPlayFirstStreamForProfile(activeProfileId, value)
               }
             />
           </SettingsCard>
