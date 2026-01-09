@@ -134,8 +134,11 @@ describe('VideoPlayerSession', () => {
       ...overrides,
     };
 
+    const { createTestQueryClient } = require('@/utils/test-utils');
     return {
-      ...renderWithProviders(<VideoPlayerSession {...props} />),
+      ...renderWithProviders(<VideoPlayerSession {...props} />, {
+        queryClient: createTestQueryClient(),
+      }),
       props,
     };
   };
@@ -247,6 +250,7 @@ describe('VideoPlayerSession', () => {
     // Arrange
     mockUpNextResolved = { videoId: 'v2', episodeLabel: 'S1E2' };
 
+    const { createTestQueryClient } = require('@/utils/test-utils');
     renderWithProviders(
       <VideoPlayerSession
         source="s"
@@ -261,7 +265,8 @@ describe('VideoPlayerSession', () => {
         setUsedPlayerType={jest.fn()}
         playerType="exoplayer"
         automaticFallback={false}
-      />
+      />,
+      { queryClient: createTestQueryClient() }
     );
 
     // Act

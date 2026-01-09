@@ -179,7 +179,14 @@ export const VLCPlayer = memo(
       );
 
       const handleFirstPlay = useCallback(
-        (event: { length: number; tracks: { audio: any[]; video: any[]; subtitle: any[] } }) => {
+        (event: {
+          length: number;
+          tracks: {
+            audio: { id: number; name: string }[];
+            video: { id: number; name: string }[];
+            subtitle: { id: number; name: string }[];
+          };
+        }) => {
           debug('firstPlay', { lengthMs: event.length });
           // length is in milliseconds, convert to seconds
           const durationInSeconds = event.length / 1000;
@@ -202,13 +209,15 @@ export const VLCPlayer = memo(
             onAudioTracks?.(audioTracks);
           }
 
-          // Process subtitle tracks
+          // Process subtitle tracks (in-stream video subtitles)
           if (event.tracks.subtitle) {
             const textTracks: TextTrack[] = event.tracks.subtitle
               .filter((t) => t.id !== -1)
               .map((track) => ({
+                source: 'video' as const,
                 index: track.id,
                 title: track.name || `Subtitle ${track.id}`,
+                playerIndex: track.id,
               }));
             onTextTracks?.(textTracks);
           }
@@ -243,7 +252,7 @@ export const VLCPlayer = memo(
           autoplay={false}
           tracks={{
             audio: selectedAudioTrack?.index,
-            subtitle: selectedTextTrack?.index ?? -1,
+            subtitle: selectedTextTrack?.playerIndex ?? selectedTextTrack?.index ?? -1,
           }}
           onBuffering={handleBuffering}
           onPlaying={handlePlaying}

@@ -88,11 +88,12 @@ export const RNVideoPlayer = memo(
     const handleTextTracks = useCallback(
       (data: OnTextTracksData) => {
         debug('textTracks', { count: data.textTracks?.length });
-        const tracks: TextTrack[] = data.textTracks.map((track, index) => ({
-          index,
+        const tracks: TextTrack[] = data.textTracks.map((track, idx) => ({
+          source: 'video' as const,
+          index: idx,
           title: track.title,
           language: track.language,
-          type: track.type || undefined,
+          playerIndex: track.index, // Use the player's track index for selection
         }));
         onTextTracks?.(tracks);
       },
@@ -105,12 +106,19 @@ export const RNVideoPlayer = memo(
           value: selectedAudioTrack.index,
         }
       : undefined;
-    const textTrackSelection: SelectedTrack | undefined = selectedTextTrack
+
+    // Only select video-source subtitles (addon subtitles are rendered by CustomSubtitles)
+    // When no video-source track is selected, explicitly disable to hide any default subtitles
+    const textTrackSelection: SelectedTrack = selectedTextTrack
       ? {
           type: 'index' as SelectedTrackType,
-          value: selectedTextTrack.index,
+          value: selectedTextTrack.playerIndex ?? selectedTextTrack.index,
         }
-      : undefined;
+      : {
+          type: 'disabled' as SelectedTrackType,
+          value: '',
+        };
+
     return (
       <Video
         ref={videoRef}

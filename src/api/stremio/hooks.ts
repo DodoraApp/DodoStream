@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import {
     fetchManifest,
     fetchCatalogWithPagination,
@@ -409,35 +410,42 @@ export function useSubtitles(
     enabled: boolean = true
 ) {
     const id = videoId ?? metaId;
-    const getAddonsList = useAddonStore((state) => state.getAddonsList);
-    const addons = getAddonsList();
+    // Select the addons object directly for stable reference (zustand returns same object if unchanged)
+    const addons = useAddonStore((state) => state.addons);
 
-    const compatibleAddons = addons.filter((addon) => {
-        const { manifest } = addon;
+    // Memoize compatible addons to prevent recalculation on every render
+    const compatibleAddons = useMemo(() => {
+        return Object.values(addons).filter((addon) => {
+            const { manifest } = addon;
 
-        if (!manifest.types.includes(type)) {
-            return false;
-        }
-
-        const hasSubtitlesResource = manifest.resources.some((resource) => {
-            if (typeof resource === 'string') {
-                return resource === 'subtitles';
+            if (!addon.useForSubtitles) {
+                return false;
             }
-            return resource.name === 'subtitles' && (!resource.types || resource.types.includes(type));
+
+            if (!manifest.types.includes(type)) {
+                return false;
+            }
+
+            const hasSubtitlesResource = manifest.resources.some((resource) => {
+                if (typeof resource === 'string') {
+                    return resource === 'subtitles';
+                }
+                return resource.name === 'subtitles' && (!resource.types || resource.types.includes(type));
+            });
+
+            if (!hasSubtitlesResource) {
+                return false;
+            }
+
+            if (manifest.idPrefixes && manifest.idPrefixes.length > 0) {
+                return manifest.idPrefixes.some((prefix) => id.startsWith(prefix));
+            }
+
+            return true;
         });
+    }, [addons, type, id]);
 
-        if (!hasSubtitlesResource) {
-            return false;
-        }
-
-        if (manifest.idPrefixes && manifest.idPrefixes.length > 0) {
-            return manifest.idPrefixes.some((prefix) => id.startsWith(prefix));
-        }
-
-        return true;
-    });
-
-    const results = useQueries({
+    const { data: allSubtitles, isLoading, isError, error: rawError } = useQueries({
         queries: compatibleAddons.map((addon) => ({
             queryKey: [...stremioKeys.subtitle(type, id, extra), addon.manifestUrl],
             queryFn: () => fetchSubtitles(addon.manifestUrl, type, id, extra),
@@ -446,33 +454,41 @@ export function useSubtitles(
             gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
             retry: 1,
         })),
-    });
+        combine: (results) => {
+            const subtitles: AddonSubtitle[] = [];
+            let hasError: Error | null = null;
 
-    const allSubtitles: AddonSubtitle[] = [];
-
-    results.forEach((result, index) => {
-        if (result.isSuccess && result.data?.subtitles) {
-            const addon = compatibleAddons[index];
-            result.data.subtitles.forEach((subtitle) => {
-                allSubtitles.push({
-                    ...subtitle,
-                    // Ensure IDs are stable+unique across addons
-                    id: `${addon.manifest.id}:${subtitle.id}`,
-                    addonId: addon.manifest.id,
-                    addonName: addon.manifest.name,
-                    addonManifestUrl: addon.manifestUrl,
-                });
+            results.forEach((result, index) => {
+                if (result.error && !hasError) {
+                    hasError = result.error as Error;
+                }
+                if (result.isSuccess && result.data?.subtitles) {
+                    const addon = compatibleAddons[index];
+                    result.data.subtitles.forEach((subtitle) => {
+                        subtitles.push({
+                            ...subtitle,
+                            id: `${addon.manifest.id}:${subtitle.id}`,
+                            addonId: addon.manifest.id,
+                            addonName: addon.manifest.name,
+                            addonManifestUrl: addon.manifestUrl,
+                        });
+                    });
+                }
             });
-        }
-    });
 
-    const rawError = results.find((result) => result.error)?.error as unknown;
+            return {
+                data: subtitles,
+                isLoading: results.some((r) => r.isLoading),
+                isError: results.length > 0 && results.every((r) => r.isError),
+                error: hasError,
+            };
+        },
+    });
 
     return {
         data: allSubtitles,
-        isLoading: results.some((result) => result.isLoading),
-        isError: results.length > 0 && results.every((result) => result.isError),
+        isLoading,
+        isError,
         error: rawError ? toStremioApiError(rawError, 'useSubtitles') : undefined,
-        allResults: results,
     };
 }

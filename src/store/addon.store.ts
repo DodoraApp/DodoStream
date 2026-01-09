@@ -20,6 +20,7 @@ interface AddonState {
     updateAddon: (id: string, manifest: Manifest) => void;
     toggleUseCatalogsOnHome: (id: string) => void;
     toggleUseCatalogsInSearch: (id: string) => void;
+    toggleUseForSubtitles: (id: string) => void;
     hasAddons: () => boolean;
     hasAddon: (id: string) => boolean;
     getAddonsList: () => InstalledAddon[];
@@ -53,6 +54,7 @@ export const useAddonStore = create<AddonState>()(
                     installedAt: Date.now(),
                     useCatalogsOnHome: true,
                     useCatalogsInSearch: true,
+                    useForSubtitles: true,
                 };
 
                 set({
@@ -134,6 +136,27 @@ export const useAddonStore = create<AddonState>()(
                 }));
             },
 
+            toggleUseForSubtitles: (id: string) => {
+                const { addons } = get();
+                const addon = addons[id];
+
+                if (!addon) {
+                    set({ error: 'Addon not found' });
+                    return;
+                }
+
+                set((state) => ({
+                    addons: {
+                        ...state.addons,
+                        [id]: {
+                            ...addon,
+                            useForSubtitles: !addon.useForSubtitles,
+                        },
+                    },
+                    error: null,
+                }));
+            },
+
             hasAddons: () => {
                 return Object.keys(get().addons).length > 0;
             },
@@ -162,6 +185,22 @@ export const useAddonStore = create<AddonState>()(
             name: 'addon-storage',
             storage: createJSONStorage(() => AsyncStorage),
             partialize: (state) => ({ addons: state.addons }),
+            version: 1,
+            migrate: (persistedState, version) => {
+                const state = persistedState as { addons: Record<string, InstalledAddon> };
+                // v0 -> v1: Add useForSubtitles=true to all existing addons
+                if (version === 0 && state.addons) {
+                    const migratedAddons: Record<string, InstalledAddon> = {};
+                    for (const [id, addon] of Object.entries(state.addons)) {
+                        migratedAddons[id] = {
+                            ...addon,
+                            useForSubtitles: addon.useForSubtitles ?? true,
+                        };
+                    }
+                    return { addons: migratedAddons };
+                }
+                return state;
+            },
         }
     )
 );

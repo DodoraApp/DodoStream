@@ -6,13 +6,19 @@ import { RNVideoPlayer } from './RNVideoPlayer';
 import { VLCPlayer } from './VLCPlayer';
 import { PlayerControls } from './PlayerControls';
 import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
+import { CustomSubtitles } from './CustomSubtitles';
 
 import { AudioTrack, PlayerRef, TextTrack } from '@/types/player';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
-import { findBestTrackByLanguage, getPreferredLanguageCodes } from '@/utils/languages';
+import {
+  findBestTrackByLanguage,
+  getPreferredLanguageCodes,
+  normalizeLanguageCode,
+} from '@/utils/languages';
+import { combineSubtitles } from '@/utils/subtitles';
 import {
   SKIP_FORWARD_SECONDS,
   SKIP_BACKWARD_SECONDS,
@@ -22,6 +28,7 @@ import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { getVideoSessionId } from '@/utils/stream';
+import { useSubtitles } from '@/api/stremio';
 
 export interface VideoPlayerProps {
   source: string;
@@ -41,6 +48,34 @@ export interface VideoPlayerSessionProps extends VideoPlayerProps {
   playerType: 'vlc' | 'exoplayer';
   automaticFallback: boolean;
 }
+
+// Combine subtitle tracks from addon sources and the internal video player.
+// Group by language, sort preferred languages first (in order), then a divider and the rest alphabetically.
+// Within a language group: addon-provided subtitles first (sorted by addonName/title), then video source tracks.
+const useSubtitleCombiner = (mediaType: ContentType, metaId: string, videoId?: string) => {
+  const [videoSubtitles, setVideoSubtitles] = useState<TextTrack[] | undefined>();
+  const { data: addonSubtitles = [], isLoading: areSubtitlesLoading } = useSubtitles(
+    mediaType,
+    metaId,
+    videoId
+  );
+
+  const activeProfileId = useProfileStore((s) => s.activeProfileId);
+  const preferredSubtitleLanguages = useProfileSettingsStore((state) =>
+    activeProfileId ? state.byProfile[activeProfileId]?.preferredSubtitleLanguages : undefined
+  );
+
+  const combinedSubtitles = useMemo(() => {
+    if (areSubtitlesLoading) return [] as TextTrack[];
+    return combineSubtitles(videoSubtitles, addonSubtitles, preferredSubtitleLanguages);
+  }, [addonSubtitles, areSubtitlesLoading, preferredSubtitleLanguages, videoSubtitles]);
+
+  return {
+    combinedSubtitles,
+    areSubtitlesLoading,
+    setVideoSubtitles,
+  };
+};
 
 export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   source,
@@ -80,7 +115,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [paused, setPaused] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
 
   const progressRatio = useMemo(() => {
@@ -89,9 +124,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   }, [currentTime, duration]);
 
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
-  const [textTracks, setTextTracks] = useState<TextTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
   const [selectedTextTrack, setSelectedTextTrack] = useState<TextTrack>();
+
+  const { combinedSubtitles, areSubtitlesLoading, setVideoSubtitles } = useSubtitleCombiner(
+    mediaType,
+    metaId,
+    videoId
+  );
 
   const lastPersistAtRef = useRef(0);
   const lastKnownTimeRef = useRef(0);
@@ -211,7 +251,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         : 0;
 
       setDuration(data.duration);
-      setIsLoading(false);
+      setIsVideoLoading(false);
       setPaused(false);
       lastKnownDurationRef.current = data.duration;
 
@@ -269,7 +309,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
           haptic: 'warning',
           duration: TOAST_DURATION_MEDIUM,
         });
-        setIsLoading(true);
+        setIsVideoLoading(true);
         setUsedPlayerType(newPlayer);
       } else {
         Burnt.toast({
@@ -330,9 +370,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const handleTextTracksLoaded = useCallback(
     (tracks: TextTrack[]) => {
       debug('textTracksLoaded', { count: tracks.length });
-      setTextTracks(tracks);
+      setVideoSubtitles(tracks);
     },
-    [debug]
+    [debug, setVideoSubtitles]
   );
 
   const handleSelectAudioTrack = useCallback(
@@ -349,19 +389,34 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const handleSelectTextTrack = useCallback(
     (index?: number) => {
       debug('selectTextTrack', { index });
+
       if (index === undefined) {
         setSelectedTextTrack(undefined);
         return;
       }
-      const chosenTextTrack = textTracks.find((tt) => tt.index === index);
-      if (chosenTextTrack && (!selectedTextTrack || selectedTextTrack.index !== index)) {
-        setSelectedTextTrack(chosenTextTrack);
+
+      const chosenTextTrack = combinedSubtitles?.find((tt) => tt.index === index);
+      if (!chosenTextTrack) {
+        debug('selectTextTrack:notFound', { index });
+        return;
       }
+
+      // If already selected, do nothing
+      if (selectedTextTrack?.index === index) return;
+
+      debug('selectTextTrack:selected', {
+        index,
+        source: chosenTextTrack.source,
+        language: chosenTextTrack.language,
+      });
+      setSelectedTextTrack(chosenTextTrack);
     },
-    [debug, selectedTextTrack, textTracks]
+    [combinedSubtitles, debug, selectedTextTrack]
   );
 
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
+  const isLoading = isVideoLoading || areSubtitlesLoading;
+
   return (
     <Box flex={1} backgroundColor="playerBackground">
       <PlayerComponent
@@ -377,8 +432,13 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onAudioTracks={handleAudioTracksLoaded}
         onTextTracks={handleTextTracksLoaded}
         selectedAudioTrack={selectedAudioTrack}
-        selectedTextTrack={selectedTextTrack}
+        selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
       />
+
+      {/* Custom subtitles overlay for addon-provided subtitles */}
+      {selectedTextTrack?.source === 'addon' && selectedTextTrack.uri && (
+        <CustomSubtitles url={selectedTextTrack.uri} currentTime={currentTime} />
+      )}
 
       <PlayerControls
         paused={paused}
@@ -387,7 +447,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         showLoadingIndicator={isLoading || isBuffering}
         title={title}
         audioTracks={audioTracks}
-        textTracks={textTracks}
+        textTracks={combinedSubtitles}
         selectedAudioTrack={selectedAudioTrack}
         selectedTextTrack={selectedTextTrack}
         onPlayPause={handlePlayPause}

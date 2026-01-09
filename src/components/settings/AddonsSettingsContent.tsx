@@ -11,6 +11,7 @@ import { useAddonStore } from '@/store/addon.store';
 import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
 import { toast } from 'burnt';
+import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 
 /**
  * Addons settings content component
@@ -22,6 +23,7 @@ export const AddonsSettingsContent: FC = memo(() => {
     removeAddon,
     toggleUseCatalogsOnHome,
     toggleUseCatalogsInSearch,
+    toggleUseForSubtitles,
     error: storeError,
     getAddonsList,
   } = useAddonStore();
@@ -118,6 +120,7 @@ export const AddonsSettingsContent: FC = memo(() => {
                   onConfigure={onConfigure}
                   onToggleHome={toggleUseCatalogsOnHome}
                   onToggleSearch={toggleUseCatalogsInSearch}
+                  onToggleSubtitles={toggleUseForSubtitles}
                 />
               )}
               ItemSeparatorComponent={() => <Box height={8} />}
@@ -135,11 +138,12 @@ interface AddonCardProps {
   onRemove: (id: string, name: string) => void;
   onToggleHome: (id: string) => void;
   onToggleSearch: (id: string) => void;
+  onToggleSubtitles: (id: string) => void;
   onConfigure: (url: string) => void;
 }
 
 const AddonCard: FC<AddonCardProps> = memo(
-  ({ addon, onRemove, onToggleHome, onToggleSearch, onConfigure }) => {
+  ({ addon, onRemove, onToggleHome, onToggleSearch, onToggleSubtitles, onConfigure }) => {
     return (
       <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
         {/* Header with title and remove button */}
@@ -169,34 +173,24 @@ const AddonCard: FC<AddonCardProps> = memo(
 
         {/* Settings toggles */}
         <Box gap="s">
-          <Box flexDirection="row" alignItems="center" gap="s">
-            <Switch
-              value={addon.useCatalogsOnHome}
-              onValueChange={() => onToggleHome(addon.id)}
-              trackColor={{
-                false: theme.colors.mainBackground,
-                true: theme.colors.primaryBackground,
-              }}
-              thumbColor={theme.colors.mainForeground}
-            />
-            <Text variant="body" color="textSecondary">
-              Use catalogs on Home
-            </Text>
-          </Box>
-          <Box flexDirection="row" alignItems="center" gap="s">
-            <Switch
-              value={addon.useCatalogsInSearch}
-              onValueChange={() => onToggleSearch(addon.id)}
-              trackColor={{
-                false: theme.colors.mainBackground,
-                true: theme.colors.primaryBackground,
-              }}
-              thumbColor={theme.colors.mainForeground}
-            />
-            <Text variant="body" color="textSecondary">
-              Use catalogs in Search
-            </Text>
-          </Box>
+          <SettingsSwitch
+            label="Visible on Home"
+            value={addon.useCatalogsOnHome}
+            onValueChange={() => onToggleHome(addon.id)}
+            description="Catalogs are visible on the Home screen"
+          />
+          <SettingsSwitch
+            label="Use in Search"
+            value={addon.useCatalogsInSearch}
+            onValueChange={() => onToggleSearch(addon.id)}
+            description="Catalogs are used for searching"
+          />
+          <SettingsSwitch
+            label="Use for Subtitles"
+            value={addon.useForSubtitles}
+            onValueChange={() => onToggleSubtitles(addon.id)}
+            description="Subtitles are fetched from this addon if available"
+          />
         </Box>
       </Box>
     );

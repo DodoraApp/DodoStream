@@ -16,8 +16,9 @@ import {
   normalizeLanguageCode,
   getLanguageDisplayName,
 } from '@/utils/languages';
+import { buildSubtitleLabel } from '@/utils/subtitles';
 import { useDebugLogger } from '@/utils/debug';
-import { ControlButton } from '@/components/video/controls/ControlButton'; // import { getVideoSessionId } from '@/utils/stream';
+import { ControlButton } from '@/components/video/controls/ControlButton';
 
 interface PlayerControlsProps {
   // Playback state
@@ -96,50 +97,53 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     setVisible(true);
   }, []);
 
-  const buildOrderedTrackItems = useCallback(
-    <T extends { index: number; title?: string; language?: string }>(
-      tracks: T[],
-      preferredLanguageCodes: string[]
-    ): PickerItem[] => {
-      const preferredIndexByLang = new Map<string, number>();
-      preferredLanguageCodes.forEach((code, idx) => preferredIndexByLang.set(code, idx));
-
-      return tracks
-        .map((track, originalIndex) => {
-          const languageCode = normalizeLanguageCode(track.language);
-          const preferredIndex =
-            languageCode && preferredIndexByLang.has(languageCode)
-              ? (preferredIndexByLang.get(languageCode) as number)
-              : Number.POSITIVE_INFINITY;
-          return {
-            preferredIndex,
-            originalIndex,
-            item: {
-              label: track.title || track.language || `Track ${track.index + 1}`,
-              value: track.index,
-              groupId: languageCode ?? null,
-            } satisfies PickerItem,
-          };
-        })
-        .sort((a, b) => {
-          if (a.preferredIndex !== b.preferredIndex) return a.preferredIndex - b.preferredIndex;
-          return a.originalIndex - b.originalIndex;
-        })
-        .map((x) => x.item);
-    },
-    []
-  );
-
-  // Convert tracks to picker items, ordered by preferred languages first
+  // Build ordered audio track items (audio tracks need sorting by preference)
   const audioTrackItems = useMemo<PickerItem[]>(() => {
-    const preferred = getPreferredLanguageCodes(preferredAudioLanguages);
-    return buildOrderedTrackItems(audioTracks, preferred);
-  }, [audioTracks, buildOrderedTrackItems, preferredAudioLanguages]);
+    const preferredCodes = getPreferredLanguageCodes(preferredAudioLanguages);
+    const preferredIndexByLang = new Map<string, number>();
+    preferredCodes.forEach((code, idx) => preferredIndexByLang.set(code, idx));
 
+    return audioTracks
+      .map((track, originalIndex) => {
+        const languageCode = normalizeLanguageCode(track.language);
+        const preferredIndex =
+          languageCode && preferredIndexByLang.has(languageCode)
+            ? (preferredIndexByLang.get(languageCode) as number)
+            : Number.POSITIVE_INFINITY;
+        return {
+          preferredIndex,
+          originalIndex,
+          item: {
+            label: track.title || track.language || `Track ${track.index + 1}`,
+            value: track.index,
+            groupId: languageCode ?? null,
+          } satisfies PickerItem,
+        };
+      })
+      .sort((a, b) => {
+        if (a.preferredIndex !== b.preferredIndex) return a.preferredIndex - b.preferredIndex;
+        return a.originalIndex - b.originalIndex;
+      })
+      .map((x) => x.item);
+  }, [audioTracks, preferredAudioLanguages]);
+
+  // Convert text tracks to picker items
+  // Note: textTracks are already sorted by the combiner (preferred languages first, addons before video)
+  // so we just need to convert them to PickerItems maintaining the order
   const textTrackItems = useMemo<PickerItem[]>(() => {
-    const preferred = getPreferredLanguageCodes(preferredSubtitleLanguages);
-    return [{ label: 'None', value: -1 }, ...buildOrderedTrackItems(textTracks, preferred)];
-  }, [buildOrderedTrackItems, preferredSubtitleLanguages, textTracks]);
+    const items: PickerItem[] = [{ label: 'None', value: -1 }];
+
+    for (const track of textTracks) {
+      items.push({
+        label: buildSubtitleLabel(track),
+        value: track.index,
+        groupId: normalizeLanguageCode(track.language) ?? null,
+        tag: track.source === 'addon' ? 'Addon' : 'Video', // Shows source type as badge
+      });
+    }
+
+    return items;
+  }, [textTracks]);
 
   // Auto-hide controls after inactivity
   useEffect(() => {

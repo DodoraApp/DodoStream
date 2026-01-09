@@ -53,6 +53,7 @@ export interface InstalledAddon {
     installedAt: number;
     useCatalogsOnHome: boolean;
     useCatalogsInSearch: boolean;
+    useForSubtitles: boolean;
 }
 
 export { MetaLink, MetaVideo, Manifest, ManifestCatalog, Subtitle, ContentType, MetaPreview, MetaDetail };
