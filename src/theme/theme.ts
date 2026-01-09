@@ -138,6 +138,13 @@ const theme = createTheme({
             fontSize: 24,
             color: 'textPrimary',
         },
+        sectionLabel: {
+            fontFamily: 'Outfit_600SemiBold',
+            fontSize: 14,
+            color: 'textSecondary',
+            textTransform: 'uppercase' as const,
+            letterSpacing: 0.5,
+        },
         cardTitle: {
             fontFamily: 'Outfit_700Bold',
             fontSize: 18,

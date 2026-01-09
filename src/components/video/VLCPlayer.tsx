@@ -11,8 +11,78 @@ import React, {
 import { LibVlcPlayerView, LibVlcPlayerViewRef } from 'expo-libvlc-player';
 import { StyleSheet } from 'react-native';
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
+import type { SubtitleStyle } from '@/types/subtitles';
+import { useProfileStore } from '@/store/profile.store';
+import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { DEFAULT_SUBTITLE_STYLE } from '@/constants/subtitles';
 import { useDebugLogger } from '@/utils/debug';
 import { useFocusEffect } from 'expo-router';
+
+/**
+ * Convert a hex color to VLC integer format.
+ * VLC uses integer colors: 0xRRGGBB
+ */
+const hexToVLCColor = (hex: string): number => {
+  const hexWithoutHash = hex.replace('#', '');
+  return parseInt(hexWithoutHash, 16);
+};
+
+const getVLCFontFamilyOption = (fontFamily: SubtitleStyle['fontFamily']): string | undefined => {
+  switch (fontFamily) {
+    case 'System':
+      return undefined; // VLC default
+    case 'Serif':
+      return 'Serif';
+    case 'Monospace':
+      return 'Monospace';
+    default:
+      // For explicit font names, pass through directly to VLC.
+      return fontFamily;
+  }
+};
+
+/**
+ * Convert SubtitleStyle to VLC freetype options.
+ */
+const getVLCSubtitleOptions = (style: SubtitleStyle | undefined): string[] => {
+  if (!style) return [];
+
+  const options: string[] = [];
+
+  // Font size: VLC's freetype-fontsize expects a pixel value.
+  // SubtitleStyle.fontSize is defined as "Font size in pixels (scaled relative to 1080p)",
+  // so we pass it through directly without additional scaling here.
+  options.push(`--freetype-fontsize=${Math.round(style.fontSize)}`);
+
+  // Font family
+  const vlcFontFamily = getVLCFontFamilyOption(style.fontFamily);
+  if (vlcFontFamily) {
+    options.push(`--freetype-font=${vlcFontFamily}`);
+  }
+
+  // Font color - VLC uses integer format
+  options.push(`--freetype-color=${hexToVLCColor(style.fontColor)}`);
+
+  // Font opacity (0-255 in VLC)
+  options.push(`--freetype-opacity=${Math.round(style.fontOpacity * 255)}`);
+
+  // Background settings
+  if (style.backgroundOpacity > 0) {
+    options.push(`--freetype-background-color=${hexToVLCColor(style.backgroundColor)}`);
+    options.push(`--freetype-background-opacity=${Math.round(style.backgroundOpacity * 255)}`);
+  }
+
+  // Vertical position: map bottomPosition (0–100, from bottom) to VLC sub-margin.
+  // This is a heuristic mapping; VLC interprets sub-margin in "lines".
+  const clampedBottom = Math.max(0, Math.min(100, style.bottomPosition));
+  const maxMarginLines = 20;
+  const marginLines = Math.round(((100 - clampedBottom) / 100) * maxMarginLines);
+  if (marginLines > 0) {
+    options.push(`--sub-margin=${marginLines}`);
+  }
+
+  return options;
+};
 
 export const VLCPlayer = memo(
   forwardRef<PlayerRef, PlayerProps>(
@@ -29,6 +99,7 @@ export const VLCPlayer = memo(
         onTextTracks,
         selectedAudioTrack,
         selectedTextTrack,
+        // Note: subtitleStyle prop is ignored for VLC - we use profile settings directly
       },
       ref
     ) => {
@@ -36,6 +107,20 @@ export const VLCPlayer = memo(
       const playerRef = useRef<LibVlcPlayerViewRef>(null);
       const [forceRemount, setForceRemount] = useState(false);
       const [vlcKey, setVlcKey] = useState('vlc-initial');
+
+      // Get subtitle style from profile settings for VLC freetype options
+      const activeProfileId = useProfileStore((state) => state.activeProfileId);
+      const subtitleStyleFromStore = useProfileSettingsStore((state) =>
+        activeProfileId
+          ? (state.byProfile[activeProfileId]?.subtitleStyle ?? DEFAULT_SUBTITLE_STYLE)
+          : DEFAULT_SUBTITLE_STYLE
+      );
+
+      // Compute VLC subtitle options from subtitle style
+      const vlcSubtitleOptions = useMemo(
+        () => getVLCSubtitleOptions(subtitleStyleFromStore),
+        [subtitleStyleFromStore]
+      );
       // Track playing state - use ref for synchronous checks in callbacks
       const isPlayingRef = useRef(false);
       // Track whether the player is ready (after onFirstPlay has fired)
@@ -250,6 +335,7 @@ export const VLCPlayer = memo(
           source={processedSource}
           style={styles.player}
           autoplay={false}
+          options={vlcSubtitleOptions}
           tracks={{
             audio: selectedAudioTrack?.index,
             subtitle: selectedTextTrack?.playerIndex ?? selectedTextTrack?.index ?? -1,

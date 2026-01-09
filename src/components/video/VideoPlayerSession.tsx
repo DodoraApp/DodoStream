@@ -29,6 +29,7 @@ import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { getVideoSessionId } from '@/utils/stream';
 import { useSubtitles } from '@/api/stremio';
+import { useNativeSubtitleStyle } from '@/hooks/useSubtitleStyle';
 
 export interface VideoPlayerProps {
   source: string;
@@ -105,6 +106,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       ? state.byProfile[activeProfileId]?.preferredSubtitleLanguages
       : undefined,
   }));
+
+  const nativeSubtitleStyle = useNativeSubtitleStyle();
 
   const resumeHistoryItem = useWatchHistoryStore((state) => {
     if (!activeProfileId) return undefined;
@@ -433,6 +436,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onTextTracks={handleTextTracksLoaded}
         selectedAudioTrack={selectedAudioTrack}
         selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
+        subtitleStyle={nativeSubtitleStyle}
       />
 
       {/* Custom subtitles overlay for addon-provided subtitles */}

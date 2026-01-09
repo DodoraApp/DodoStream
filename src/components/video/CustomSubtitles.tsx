@@ -1,21 +1,11 @@
 import React, { memo, useRef } from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { findCurrentCue } from '@/utils/subtitles';
 import { useSubtitleCues } from '@/hooks/useSubtitleCues';
 import { useDebugLogger } from '@/utils/debug';
-import {
-  SUBTITLE_FONT_SIZE,
-  SUBTITLE_FONT_FAMILY,
-  SUBTITLE_TEXT_COLOR,
-  SUBTITLE_TEXT_SHADOW_COLOR,
-  SUBTITLE_TEXT_SHADOW_RADIUS,
-  SUBTITLE_TEXT_SHADOW_OFFSET,
-  SUBTITLE_BACKGROUND_COLOR,
-  SUBTITLE_CONTAINER_BOTTOM_MARGIN,
-  SUBTITLE_MAX_LINES,
-  SUBTITLE_LINE_HEIGHT_MULTIPLIER,
-} from '@/constants/subtitles';
+import { useComputedSubtitleStyle } from '@/hooks/useSubtitleStyle';
+import { SUBTITLE_MAX_LINES } from '@/constants/subtitles';
 
 interface CustomSubtitlesProps {
   /** URL to the subtitle file */
@@ -24,40 +14,44 @@ interface CustomSubtitlesProps {
   currentTime: number;
 }
 
+interface SubtitleDisplayProps {
+  text: string;
+  containerHeight: number;
+}
+
 /**
  * Inner component that renders the subtitle text.
- * Separated to allow memoization of the outer query component.
+ * Uses the computed subtitle style from the hook.
  */
-const SubtitleDisplay = memo<{ text: string }>(({ text }) => {
+const SubtitleDisplay = memo<SubtitleDisplayProps>(({ text, containerHeight }) => {
+  const computedStyle = useComputedSubtitleStyle(containerHeight);
+
   return (
     <Box
       style={[
         styles.container,
-        { bottom: SUBTITLE_CONTAINER_BOTTOM_MARGIN + (Platform.OS === 'ios' ? 20 : 0) },
+        { bottom: computedStyle.bottomOffset + (Platform.OS === 'ios' ? 20 : 0) },
       ]}
       paddingHorizontal="l"
       pointerEvents="none">
       <Box
-        paddingHorizontal="m"
-        paddingVertical="s"
         borderRadius="m"
         style={[
           styles.textContainer,
           {
-            backgroundColor: SUBTITLE_BACKGROUND_COLOR,
+            backgroundColor: computedStyle.backgroundColorWithOpacity,
+            paddingHorizontal: computedStyle.paddingHorizontal,
+            paddingVertical: computedStyle.paddingVertical,
           },
         ]}>
         <Text
           style={[
             styles.subtitleText,
             {
-              fontSize: SUBTITLE_FONT_SIZE,
-              lineHeight: SUBTITLE_FONT_SIZE * SUBTITLE_LINE_HEIGHT_MULTIPLIER,
-              fontFamily: SUBTITLE_FONT_FAMILY,
-              color: SUBTITLE_TEXT_COLOR,
-              textShadowColor: SUBTITLE_TEXT_SHADOW_COLOR,
-              textShadowRadius: SUBTITLE_TEXT_SHADOW_RADIUS,
-              textShadowOffset: SUBTITLE_TEXT_SHADOW_OFFSET,
+              fontSize: computedStyle.fontSize,
+              lineHeight: computedStyle.lineHeight,
+              fontFamily: computedStyle.fontFamily,
+              color: computedStyle.fontColorWithOpacity,
             },
           ]}
           numberOfLines={SUBTITLE_MAX_LINES}>
@@ -73,10 +67,12 @@ SubtitleDisplay.displayName = 'SubtitleDisplay';
 /**
  * Displays custom subtitles on top of the video player.
  * Uses binary search for efficient cue lookup.
+ * Applies subtitle style from profile settings via useComputedSubtitleStyle hook.
  */
 export const CustomSubtitles = memo<CustomSubtitlesProps>(({ url, currentTime }) => {
   const debug = useDebugLogger('CustomSubtitles');
   const lastCueIndexRef = useRef<number>(-1);
+  const { height: windowHeight } = useWindowDimensions();
 
   const { data: cues = [], isLoading, isError } = useSubtitleCues(url);
 
@@ -104,7 +100,7 @@ export const CustomSubtitles = memo<CustomSubtitlesProps>(({ url, currentTime })
     return null;
   }
 
-  return <SubtitleDisplay text={currentCue.text} />;
+  return <SubtitleDisplay text={currentCue.text} containerHeight={windowHeight} />;
 });
 
 CustomSubtitles.displayName = 'CustomSubtitles';

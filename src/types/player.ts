@@ -51,6 +51,27 @@ export interface TextTrack {
     playerIndex?: number;
 }
 
+/**
+ * Native subtitle style options for react-native-video.
+ * See: https://github.com/TheWidlarzGroup/react-native-video
+ */
+export interface NativeSubtitleStyle {
+    /** Font size in pixels */
+    fontSize?: number;
+    /** Padding from top in pixels */
+    paddingTop?: number;
+    /** Padding from bottom in pixels */
+    paddingBottom?: number;
+    /** Padding from left in pixels */
+    paddingLeft?: number;
+    /** Padding from right in pixels */
+    paddingRight?: number;
+    /** Opacity 0-1 */
+    opacity?: number;
+    /** Whether subtitles follow video when scaling */
+    subtitlesFollowVideo?: boolean;
+}
+
 export interface PlayerProps {
     source: string;
     paused: boolean;
@@ -63,4 +84,6 @@ export interface PlayerProps {
     onTextTracks?: (tracks: TextTrack[]) => void;
     selectedAudioTrack?: AudioTrack;
     selectedTextTrack?: TextTrack;
+    /** Native subtitle style (limited platform support) */
+    subtitleStyle?: NativeSubtitleStyle;
 }

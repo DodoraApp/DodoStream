@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { PlayerType } from '@/types/player';
+import type { SubtitleStyle } from '@/types/subtitles';
 
 export interface ProfilePlaybackSettings {
   player: PlayerType;
@@ -9,6 +10,7 @@ export interface ProfilePlaybackSettings {
   autoPlayFirstStream: boolean;
   preferredAudioLanguages?: string[];
   preferredSubtitleLanguages?: string[];
+  subtitleStyle?: SubtitleStyle;
 }
 
 interface ProfileSettingsState {
@@ -27,6 +29,7 @@ interface ProfileSettingsState {
   setAutoPlayFirstStream: (autoPlayFirstStream: boolean) => void;
   setPreferredAudioLanguages: (languages: string[]) => void;
   setPreferredSubtitleLanguages: (languages: string[]) => void;
+  setSubtitleStyle: (style: SubtitleStyle) => void;
 
   // Mutations (specific profile)
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
@@ -34,6 +37,7 @@ interface ProfileSettingsState {
   setAutoPlayFirstStreamForProfile: (profileId: string, autoPlayFirstStream: boolean) => void;
   setPreferredAudioLanguagesForProfile: (profileId: string, languages: string[]) => void;
   setPreferredSubtitleLanguagesForProfile: (profileId: string, languages: string[]) => void;
+  setSubtitleStyleForProfile: (profileId: string, style: SubtitleStyle) => void;
 }
 
 export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
@@ -86,6 +90,12 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setPreferredSubtitleLanguagesForProfile(profileId, languages);
+      },
+
+      setSubtitleStyle: (style) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setSubtitleStyleForProfile(profileId, style);
       },
 
       setPlayerForProfile: (profileId, player) => {
@@ -143,6 +153,18 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
             [profileId]: {
               ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
               preferredSubtitleLanguages,
+            },
+          },
+        }));
+      },
+
+      setSubtitleStyleForProfile: (profileId, subtitleStyle) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              subtitleStyle,
             },
           },
         }));

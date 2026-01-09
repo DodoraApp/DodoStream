@@ -37,6 +37,7 @@ export const RNVideoPlayer = memo(
       onTextTracks,
       selectedAudioTrack,
       selectedTextTrack,
+      subtitleStyle,
     } = props;
     const videoRef = useRef<VideoRef>(null);
     useImperativeHandle(ref, () => ({
@@ -149,6 +150,7 @@ export const RNVideoPlayer = memo(
         // Adaptive streaming
         selectedAudioTrack={audioTrackSelection}
         selectedTextTrack={textTrackSelection}
+        subtitleStyle={subtitleStyle}
         // Event handlers
         onProgress={handleProgress}
         onLoad={handleLoad}
