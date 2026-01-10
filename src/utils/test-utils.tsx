@@ -26,7 +26,7 @@ export function renderWithProviders(
     queryClient?: QueryClient;
   }
 ) {
-  const queryClient = options?.queryClient;
+  const queryClient = options?.queryClient ?? createTestQueryClient();
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     const themed = (
@@ -34,7 +34,6 @@ export function renderWithProviders(
         <ThemeProvider theme={theme}>{children}</ThemeProvider>
       </SafeAreaProvider>
     );
-    if (!queryClient) return themed;
     return <QueryClientProvider client={queryClient}>{themed}</QueryClientProvider>;
   };
 
@@ -48,14 +47,13 @@ export function renderHookWithProviders<TProps, TResult>(
     queryClient?: QueryClient;
   }
 ) {
-  const queryClient = options?.queryClient;
+  const queryClient = options?.queryClient ?? createTestQueryClient();
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     const themed = (
       <SafeAreaProvider initialMetrics={SAFE_AREA_INITIAL_METRICS}>
         <ThemeProvider theme={theme}>{children}</ThemeProvider>
       </SafeAreaProvider>
     );
-    if (!queryClient) return themed;
     return <QueryClientProvider client={queryClient}>{themed}</QueryClientProvider>;
   };
 

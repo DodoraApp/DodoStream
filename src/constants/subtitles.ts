@@ -52,6 +52,19 @@ export const SUBTITLE_POSITION_MAX = 75;
 export const SUBTITLE_POSITION_STEP = 1;
 
 /**
+ * Subtitle sync/delay constants
+ */
+export const SUBTITLE_DELAY_MIN = -10; // seconds
+export const SUBTITLE_DELAY_MAX = 10; // seconds
+export const SUBTITLE_DELAY_STEP = 0.1; // 100ms increments
+
+/**
+ * Cue preview constants (for sync panel)
+ */
+export const SUBTITLE_CUE_PREVIEW_COUNT = 5; // total cues shown (2 above, current, 2 below)
+export const SUBTITLE_CUE_PREVIEW_FADE_LEVELS = [0.3, 0.6, 1, 0.6, 0.3]; // opacity for each cue
+
+/**
  * Classic subtitle style - clean white text without background
  * The standard look for most streaming services and Blu-rays
  */

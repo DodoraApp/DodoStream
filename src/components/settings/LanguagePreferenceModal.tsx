@@ -1,13 +1,14 @@
 import React from 'react';
-import { Box, Text, Theme } from '@/theme/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@shopify/restyle';
-import { Modal, Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { useTheme } from '@shopify/restyle';
+import { Ionicons } from '@expo/vector-icons';
+import { Box, Text, Theme } from '@/theme/theme';
 import { getLanguageDisplayName } from '@/utils/languages';
 import { moveItem, uniqNormalizedStrings } from '@/utils/array';
 import { Focusable } from '@/components/basic/Focusable';
 import { Button } from '@/components/basic/Button';
+import { Modal } from '@/components/basic/Modal';
 
 interface LanguagePreferenceModalProps {
   visible: boolean;
@@ -32,65 +33,59 @@ export function LanguagePreferenceModal({
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Box flex={1} justifyContent="center" alignItems="center" pointerEvents="box-none">
-          <Pressable onPress={() => {}}>
-            <Box backgroundColor="cardBackground" borderRadius="l" padding="l" style={styles.card}>
-              <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-                <Text variant="subheader">{title}</Text>
-                <Button icon="close" onPress={onClose} />
-              </Box>
-
-              <ScrollView style={styles.scroll}>
-                <Box gap="m">
-                  <Box gap="s">
-                    <Text variant="caption" color="textSecondary">
-                      Selected (in order)
-                    </Text>
-
-                    {selected.length === 0 ? (
-                      <Text variant="body" color="textSecondary">
-                        Device default
-                      </Text>
-                    ) : (
-                      <Box gap="s">
-                        {selected.map((code, index) => (
-                          <LanguageRow
-                            key={`selected-${code}`}
-                            code={code}
-                            index={index}
-                            total={selected.length}
-                            onMoveUp={() => onChange(moveItem(selected, index, index - 1))}
-                            onMoveDown={() => onChange(moveItem(selected, index, index + 1))}
-                            onRemove={() => onChange(selected.filter((c) => c !== code))}
-                          />
-                        ))}
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Box gap="s">
-                    <Text variant="caption" color="textSecondary">
-                      Add language
-                    </Text>
-
-                    <Box gap="s">
-                      {available.map((code) => (
-                        <AddRow
-                          key={`available-${code}`}
-                          code={code}
-                          onAdd={() => onChange([...selected, code])}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                </Box>
-              </ScrollView>
-            </Box>
-          </Pressable>
+    <Modal visible={visible} onClose={onClose} animationType="slide">
+      <Box backgroundColor="cardBackground" borderRadius="l" padding="l" style={styles.card}>
+        <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+          <Text variant="subheader">{title}</Text>
+          <Button icon="close" onPress={onClose} />
         </Box>
-      </Pressable>
+
+        <ScrollView style={styles.scroll}>
+          <Box gap="m">
+            <Box gap="s">
+              <Text variant="caption" color="textSecondary">
+                Selected (in order)
+              </Text>
+
+              {selected.length === 0 ? (
+                <Text variant="body" color="textSecondary">
+                  Device default
+                </Text>
+              ) : (
+                <Box gap="s">
+                  {selected.map((code, index) => (
+                    <LanguageRow
+                      key={`selected-${code}`}
+                      code={code}
+                      index={index}
+                      total={selected.length}
+                      onMoveUp={() => onChange(moveItem(selected, index, index - 1))}
+                      onMoveDown={() => onChange(moveItem(selected, index, index + 1))}
+                      onRemove={() => onChange(selected.filter((c) => c !== code))}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+
+            <Box gap="s">
+              <Text variant="caption" color="textSecondary">
+                Add language
+              </Text>
+
+              <Box gap="s">
+                {available.map((code) => (
+                  <AddRow
+                    key={`available-${code}`}
+                    code={code}
+                    onAdd={() => onChange([...selected, code])}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </ScrollView>
+      </Box>
     </Modal>
   );
 }
@@ -195,12 +190,6 @@ function AddRow({ code, onAdd }: AddRowProps) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   card: {
     minWidth: 320,
     maxWidth: 520,

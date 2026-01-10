@@ -1,6 +1,6 @@
 import { FC, useState, useCallback } from 'react';
 import { Modal, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { Box, Text , Theme } from '@/theme/theme';
+import { Box, Text, Theme } from '@/theme/theme';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useProfileStore, Profile } from '@/store/profile.store';
 import { Button } from '@/components/basic/Button';

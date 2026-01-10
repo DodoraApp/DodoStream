@@ -26,6 +26,7 @@ const TagFiltersItem = memo(
     isLoading,
     disabled,
     selected,
+    hasTVPreferredFocus,
     onPress,
   }: {
     id: string | null;
@@ -33,6 +34,7 @@ const TagFiltersItem = memo(
     isLoading?: boolean;
     disabled?: boolean;
     selected: boolean;
+    hasTVPreferredFocus?: boolean;
     onPress: (id: string | null) => void;
   }) => {
     return (
@@ -41,6 +43,7 @@ const TagFiltersItem = memo(
         selected={selected}
         focusable={true}
         disabled={disabled ?? false}
+        hasTVPreferredFocus={hasTVPreferredFocus}
         rightElement={
           id === null || !isLoading ? null : <LoadingIndicator type="simple" size="small" />
         }
@@ -68,6 +71,7 @@ export const TagFilters = memo(
               id={null}
               label={allLabel}
               selected={allSelected}
+              hasTVPreferredFocus={true}
               onPress={onSelectId}
             />
           ) : null}

@@ -1,13 +1,12 @@
 import React, { useMemo, useState, useCallback, memo } from 'react';
-import { Modal, Pressable, StyleSheet, TVFocusGuideView } from 'react-native';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
 import { Focusable } from '@/components/basic/Focusable';
-import { TagFilters, type TagOption } from '@/components/basic/TagFilters';
+import { Modal } from '@/components/basic/Modal';
+import { TagFilters } from '@/components/basic/TagFilters';
 import { useGroupOptions } from '@/hooks/useGroupOptions';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 export interface PickerItem<T extends string | number = string | number> {
@@ -96,7 +95,6 @@ export function PickerModal<T extends string | number = string | number>({
   preferredGroupIds,
 }: PickerModalProps<T>) {
   const theme = useTheme<Theme>();
-  const insets = useSafeAreaInsets();
 
   const handleValueChange = useCallback(
     (value: T) => {
@@ -155,73 +153,43 @@ export function PickerModal<T extends string | number = string | number>({
   const keyExtractor = useCallback((item: PickerItem<T>) => item.value?.toString() ?? '', []);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            backgroundColor: theme.colors.overlayBackground,
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            paddingLeft: insets.left,
-            paddingRight: insets.right,
-            justifyContent: 'center',
-            alignItems: 'center',
-          },
-        ]}
-        onPress={onClose}
-        focusable={false}>
-        <Box flex={1} justifyContent="center" alignItems="center" pointerEvents="box-none">
-          <TVFocusGuideView
-            autoFocus
-            trapFocusUp
-            trapFocusDown
-            trapFocusLeft
-            trapFocusRight
-            style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <Pressable onPress={() => {}} focusable={false}>
-              <Box
-                backgroundColor="cardBackground"
-                borderRadius="l"
-                padding="l"
-                style={{
-                  minWidth: theme.sizes.modalMinWidth,
-                  maxWidth: theme.sizes.modalMaxWidth,
-                }}>
-                <Box gap="s" marginBottom="m">
-                  {label && (
-                    <Box flexDirection="row" alignItems="center" gap="s">
-                      {icon && (
-                        <Ionicons name={icon} size={24} color={theme.colors.mainForeground} />
-                      )}
-                      <Text variant="body" style={{ fontSize: 18, fontWeight: '600' }}>
-                        {label}
-                      </Text>
-                    </Box>
-                  )}
-                  {/* Render filter header outside FlashList to prevent re-render/focus issues */}
-                  {groups.length > 0 && (
-                    <TagFilters
-                      options={groups}
-                      selectedId={selectedGroupId}
-                      onSelectId={setSelectedGroupId}
-                      includeAllOption
-                      allLabel="All"
-                    />
-                  )}
-                </Box>
-                <FlashList
-                  data={filteredItems}
-                  renderItem={renderItem}
-                  keyExtractor={keyExtractor}
-                  initialScrollIndex={initialScrollIndex}
-                  showsVerticalScrollIndicator={false}
-                />
-              </Box>
-            </Pressable>
-          </TVFocusGuideView>
+    <Modal visible={visible} onClose={onClose}>
+      <Box
+        backgroundColor="cardBackground"
+        borderRadius="l"
+        padding="l"
+        style={{
+          minWidth: theme.sizes.modalMinWidth,
+          maxWidth: theme.sizes.modalMaxWidth,
+        }}>
+        <Box gap="s" marginBottom="m">
+          {label && (
+            <Box flexDirection="row" alignItems="center" gap="s">
+              {icon && <Ionicons name={icon} size={24} color={theme.colors.mainForeground} />}
+              <Text variant="body" style={{ fontSize: 18, fontWeight: '600' }}>
+                {label}
+              </Text>
+            </Box>
+          )}
+          {/* Render filter header outside FlashList to prevent re-render/focus issues */}
+          {groups.length > 0 && (
+            <TagFilters
+              options={groups}
+              selectedId={selectedGroupId}
+              onSelectId={setSelectedGroupId}
+              includeAllOption
+              allLabel="All"
+            />
+          )}
         </Box>
-      </Pressable>
+        <FlashList
+          data={filteredItems}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          initialScrollIndex={initialScrollIndex}
+          showsVerticalScrollIndicator={false}
+        />
+      </Box>
     </Modal>
   );
 }

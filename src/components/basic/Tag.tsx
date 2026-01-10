@@ -12,6 +12,8 @@ interface TagProps {
   isFocused?: boolean;
   disabled?: boolean;
   focusable?: boolean;
+  /** Whether this tag should receive focus by default on TV */
+  hasTVPreferredFocus?: boolean;
   rightElement?: ReactNode;
   onPress?: () => void;
   onFocus?: () => void;
@@ -24,6 +26,7 @@ export const Tag = memo(
     selected = false,
     focusable = false,
     disabled = false,
+    hasTVPreferredFocus = false,
     rightElement,
     onPress,
     onFocus,
@@ -65,6 +68,7 @@ export const Tag = memo(
         disabled={disabled}
         onFocus={onFocus}
         onBlur={onBlur}
+        hasTVPreferredFocus={hasTVPreferredFocus}
         style={{ borderRadius: theme.borderRadii.s }}>
         {({ isFocused }) => renderContent(isFocused)}
       </Focusable>

@@ -7,6 +7,7 @@ import { useTheme } from '@shopify/restyle';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AudioTrack, TextTrack } from '@/types/player';
 import { PickerItem, PickerModal } from '@/components/basic/PickerModal';
+import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
@@ -20,7 +21,6 @@ import {
   normalizeLanguageCode,
   getLanguageDisplayName,
 } from '@/utils/languages';
-import { buildSubtitleLabel } from '@/utils/subtitles';
 import { useDebugLogger } from '@/utils/debug';
 import { ControlButton } from '@/components/video/controls/ControlButton';
 
@@ -39,6 +39,10 @@ interface PlayerControlsProps {
   textTracks: TextTrack[];
   selectedAudioTrack?: AudioTrack;
   selectedTextTrack?: TextTrack;
+
+  // Subtitle sync
+  subtitleDelay: number;
+  onSubtitleDelayChange: (delay: number) => void;
 
   // Callbacks
   onPlayPause: () => void;
@@ -63,6 +67,8 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   textTracks,
   selectedAudioTrack,
   selectedTextTrack,
+  subtitleDelay,
+  onSubtitleDelayChange,
   onPlayPause,
   onSeek,
   onSkipBackward,
@@ -130,24 +136,6 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       })
       .map((x) => x.item);
   }, [audioTracks, preferredAudioLanguages]);
-
-  // Convert text tracks to picker items
-  // Note: textTracks are already sorted by the combiner (preferred languages first, addons before video)
-  // so we just need to convert them to PickerItems maintaining the order
-  const textTrackItems = useMemo<PickerItem[]>(() => {
-    const items: PickerItem[] = [{ label: 'None', value: -1 }];
-
-    for (const track of textTracks) {
-      items.push({
-        label: buildSubtitleLabel(track),
-        value: track.index,
-        groupId: normalizeLanguageCode(track.language) ?? null,
-        tag: track.source === 'addon' ? 'Addon' : 'Video', // Shows source type as badge
-      });
-    }
-
-    return items;
-  }, [textTracks]);
 
   // Auto-hide controls after inactivity
   useEffect(() => {
@@ -329,7 +317,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
                   icon="skip-next"
                   iconComponent={MaterialCommunityIcons}
                   disabled={showLoadingIndicator || !onSkipEpisode}
-                  label={skipEpisodeLabel}
+                  label="Skip"
                   onFocusChange={handleButtonFocusChange}
                   badge={skipEpisodeLabel}
                   badgeVariant="tertiary"
@@ -427,22 +415,20 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           preferredGroupIds={getPreferredLanguageCodes(preferredAudioLanguages)}
         />
 
-        {/* Text Track Selector Modal */}
-        <PickerModal
+        {/* Subtitle Picker Modal with Sync Controls */}
+        <SubtitlePickerModal
           visible={showTextTracks}
           onClose={() => setShowTextTracks(false)}
-          label="Select Subtitles"
-          icon="text"
-          items={textTrackItems}
-          selectedValue={selectedTextTrack?.index ?? -1}
-          onValueChange={(value) => {
+          tracks={textTracks}
+          selectedTrack={selectedTextTrack}
+          onSelectTrack={(index) => {
             registerInteraction();
-            const numericValue = typeof value === 'number' ? value : Number(value);
-            onSelectTextTrack(numericValue === -1 ? undefined : numericValue);
+            onSelectTextTrack(index);
           }}
-          getItemGroupId={(item) => item.groupId ?? null}
-          getGroupLabel={(id) => (id === 'none' ? 'None' : getLanguageDisplayName(id))}
-          preferredGroupIds={getPreferredLanguageCodes(preferredSubtitleLanguages)}
+          preferredLanguages={preferredSubtitleLanguages}
+          currentTime={currentTime}
+          delay={subtitleDelay}
+          onDelayChange={onSubtitleDelayChange}
         />
       </Box>
     </Pressable>

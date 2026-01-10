@@ -110,6 +110,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
   const nativeSubtitleStyle = useNativeSubtitleStyle();
 
+  // Local subtitle delay state (not persisted)
+  const [subtitleDelay, setSubtitleDelay] = useState(0);
+
   const resumeHistoryItem = useWatchHistoryStore((state) => {
     if (!activeProfileId) return undefined;
     const videoKey = videoId ?? '_';
@@ -454,8 +457,15 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     (index?: number, isAutoSelect = false) => {
       debug('selectTextTrack', { index, isAutoSelect });
 
+      // If already selected, do nothing
+      if (selectedTextTrack?.index === index) return;
+
       if (index === undefined) {
         setSelectedTextTrack(undefined);
+        if (!isAutoSelect && activeProfileId) {
+          usePlaybackStore.getState().clearSubtitlePreference();
+          debug('subtitlePreferenceCleared');
+        }
         return;
       }
 
@@ -464,9 +474,6 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         debug('selectTextTrack:notFound', { index });
         return;
       }
-
-      // If already selected, do nothing
-      if (selectedTextTrack?.index === index) return;
 
       debug('selectTextTrack:selected', {
         index,
@@ -519,7 +526,11 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
       {/* Custom subtitles overlay for addon-provided subtitles */}
       {selectedTextTrack?.source === 'addon' && selectedTextTrack.uri && (
-        <CustomSubtitles url={selectedTextTrack.uri} currentTime={currentTime} />
+        <CustomSubtitles
+          url={selectedTextTrack.uri}
+          currentTime={currentTime}
+          delay={subtitleDelay}
+        />
       )}
 
       <PlayerControls
@@ -532,6 +543,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         textTracks={combinedSubtitles}
         selectedAudioTrack={selectedAudioTrack}
         selectedTextTrack={selectedTextTrack}
+        subtitleDelay={subtitleDelay}
+        onSubtitleDelayChange={setSubtitleDelay}
         onPlayPause={handlePlayPause}
         onSeek={handleSeek}
         onSkipBackward={handleSkipBackward}

@@ -1,7 +1,7 @@
 import React, { FC, memo, useCallback, useState } from 'react';
-import { Modal, Pressable } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
+import { Modal } from '@/components/basic/Modal';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 /** Default color palette for general use */
@@ -122,42 +122,30 @@ export const ColorPicker: FC<ColorPickerProps> = memo(
         </Focusable>
 
         {/* Color Picker Modal */}
-        <Modal
-          visible={isModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={handleClose}>
-          <Pressable style={{ flex: 1 }} onPress={handleClose}>
-            <Box
-              flex={1}
-              backgroundColor="overlayBackground"
-              justifyContent="center"
-              alignItems="center">
-              <Box
-                backgroundColor="cardBackground"
-                borderRadius="l"
-                padding="l"
-                margin="l"
-                maxWidth={400}>
-                <Box gap="m">
-                  <Text variant="subheader" textAlign="center">
-                    {label ?? 'Select Color'}
-                  </Text>
+        <Modal visible={isModalVisible} onClose={handleClose}>
+          <Box
+            backgroundColor="cardBackground"
+            borderRadius="l"
+            padding="l"
+            margin="l"
+            maxWidth={400}>
+            <Box gap="m">
+              <Text variant="subheader" textAlign="center">
+                {label ?? 'Select Color'}
+              </Text>
 
-                  <Box flexDirection="row" flexWrap="wrap" justifyContent="center" gap="s">
-                    {colors.map((color) => (
-                      <ColorSwatch
-                        key={color}
-                        color={color}
-                        isSelected={value === color}
-                        onPress={() => handleSelectColor(color)}
-                      />
-                    ))}
-                  </Box>
-                </Box>
+              <Box flexDirection="row" flexWrap="wrap" justifyContent="center" gap="s">
+                {colors.map((color) => (
+                  <ColorSwatch
+                    key={color}
+                    color={color}
+                    isSelected={value === color}
+                    onPress={() => handleSelectColor(color)}
+                  />
+                ))}
               </Box>
             </Box>
-          </Pressable>
+          </Box>
         </Modal>
       </>
     );

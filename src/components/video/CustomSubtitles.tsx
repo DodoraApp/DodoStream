@@ -12,6 +12,8 @@ interface CustomSubtitlesProps {
   url: string;
   /** Current playback time in seconds */
   currentTime: number;
+  /** Subtitle delay in seconds (positive = subtitles appear later) */
+  delay?: number;
 }
 
 interface SubtitleDisplayProps {
@@ -69,9 +71,7 @@ SubtitleDisplay.displayName = 'SubtitleDisplay';
  * Uses binary search for efficient cue lookup.
  * Applies subtitle style from profile settings via useComputedSubtitleStyle hook.
  */
-export const CustomSubtitles = memo<CustomSubtitlesProps>(({ url, currentTime }) => {
-  const debug = useDebugLogger('CustomSubtitles');
-  const lastCueIndexRef = useRef<number>(-1);
+export const CustomSubtitles = memo<CustomSubtitlesProps>(({ url, currentTime, delay = 0 }) => {
   const { height: windowHeight } = useWindowDimensions();
 
   const { data: cues = [], isLoading, isError } = useSubtitleCues(url);
@@ -81,20 +81,12 @@ export const CustomSubtitles = memo<CustomSubtitlesProps>(({ url, currentTime })
     return null;
   }
 
-  // Find current cue using binary search (O(log n))
-  const currentCue = findCurrentCue(cues, currentTime);
+  // Apply delay: positive delay means subtitles appear later,
+  // so we look for cues at an earlier time
+  const adjustedTime = currentTime - delay;
 
-  // Log cue changes for debugging (not on every render)
-  if (currentCue?.index !== lastCueIndexRef.current) {
-    lastCueIndexRef.current = currentCue?.index ?? -1;
-    if (currentCue) {
-      debug('showCue', {
-        index: currentCue.index,
-        time: currentTime.toFixed(1),
-        text: currentCue.text.substring(0, 40),
-      });
-    }
-  }
+  // Find current cue using binary search (O(log n))
+  const currentCue = findCurrentCue(cues, adjustedTime);
 
   if (!currentCue) {
     return null;

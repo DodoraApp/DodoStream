@@ -54,6 +54,8 @@ describe('PlayerControls', () => {
         onSkipForward={() => {}}
         onSelectAudioTrack={() => {}}
         onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
       />
     );
 
@@ -109,6 +111,8 @@ describe('PlayerControls', () => {
         onSkipForward={() => {}}
         onSelectAudioTrack={() => {}}
         onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
       />
     );
 

@@ -76,7 +76,11 @@ export const SliderInput: FC<SliderInputProps> = memo(
     const canIncrement = value < maximumValue;
 
     return (
-      <Box gap="s" opacity={disabled ? 0.5 : 1}>
+      <Box
+        gap="s"
+        opacity={disabled ? 0.5 : 1}
+        height={theme.sizes.inputHeight}
+        justifyContent="space-between">
         {label && (
           <Box flexDirection="row" justifyContent="space-between" alignItems="center">
             <Text variant="body" color="textPrimary">
@@ -88,7 +92,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
           </Box>
         )}
 
-        <Box flexDirection="row" alignItems="center" gap="s">
+        <Box flexDirection="row" alignItems="center" gap="xs">
           {showButtons && (
             <Focusable onPress={handleDecrement} disabled={disabled || !canDecrement}>
               {({ isFocused }) => (
@@ -105,7 +109,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
                   opacity={canDecrement ? 1 : 0.4}>
                   <Ionicons
                     name="remove"
-                    size={24}
+                    size={20}
                     color={
                       theme.colors[
                         getFocusableForegroundColor({
@@ -132,6 +136,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
               maximumTrackTintColor={theme.colors.secondaryBackground}
               thumbTintColor={theme.colors.primaryBackground}
               disabled={disabled}
+              focusable={false}
             />
           </Box>
 
@@ -151,7 +156,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
                   opacity={canIncrement ? 1 : 0.4}>
                   <Ionicons
                     name="add"
-                    size={24}
+                    size={20}
                     color={
                       theme.colors[
                         getFocusableForegroundColor({
