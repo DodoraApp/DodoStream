@@ -16,34 +16,28 @@
       "ios": {
         "buildConfiguration": "Debug"
       },
+      "env": {
+        "APP_VARIANT": "dev"
+      },
       "environment": "development",
       "channel": "development"
     },
     "development_tv": {
       "extends": "development",
       "env": {
+        "APP_VARIANT": "dev",
         "EXPO_TV": "1"
       },
       "environment": "development",
       "channel": "development_tv"
     },
-    "preview": {
-      "extends": "base",
-      "environment": "preview",
-      "channel": "preview"
-    },
-    "preview_tv": {
-      "extends": "preview",
-      "env": {
-        "EXPO_TV": "1"
-      },
-      "environment": "preview",
-      "channel": "preview_tv"
-    },
     "production": {
       "extends": "base",
       "environment": "production",
       "channel": "production",
+      "env": {
+        "APP_VARIANT": "prod"
+      },
       "autoIncrement": true
     },
     "production_apk": {
@@ -56,6 +50,7 @@
       "extends": "production",
       "autoIncrement": true,
       "env": {
+        "APP_VARIANT": "prod",
         "EXPO_TV": "1"
       },
       "environment": "production",

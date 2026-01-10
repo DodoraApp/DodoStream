@@ -5,6 +5,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     const appBackgroundColor = '#181A20';
     const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 
+    // Build variant selection (used to keep dev/prod separately installable).
+    // Set via EAS build profile env: APP_VARIANT=dev|prod
+    const appVariant = (process.env.APP_VARIANT ?? 'prod').toLowerCase();
+    const isDevVariant = appVariant !== 'prod';
+
+    const appName = isDevVariant ? 'DodoStream (Dev)' : 'DodoStream';
+    const iosBundleIdentifier = isDevVariant ? 'app.dodora.dodostream.dev' : 'app.dodora.dodostream';
+    const androidPackage = isDevVariant ? 'app.dodora.dodostream.dev' : 'app.dodora.dodostream';
+
     const plugins: ExpoConfig['plugins'] = [
         [
             'expo-build-properties',
@@ -55,20 +64,19 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'expo-libvlc-player',
     ]
 
-    if(sentryDsn) {
+    if (sentryDsn) {
         plugins.push([
             "@sentry/react-native/expo",
             {
-                "url": "https://sentry.io/",
-                "project": "dodostream",
-                "organization": "dodora"
+                organization: process.env.SENTRY_ORG,
+                project: process.env.SENTRY_PROJECT,
             }
         ])
     }
 
     return {
         ...config,
-        name: 'DodoStream',
+        name: appName,
         slug: 'dodostream',
         version: packageJson.version,
         newArchEnabled: true,
@@ -97,7 +105,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         assetBundlePatterns: ['**/*'],
         ios: {
             supportsTablet: true,
-            bundleIdentifier: 'app.dodora.dodostream',
+            bundleIdentifier: iosBundleIdentifier,
             backgroundColor: appBackgroundColor,
         },
         android: {
@@ -106,7 +114,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 backgroundColor: appBackgroundColor,
             },
             userInterfaceStyle: 'dark',
-            package: 'app.dodora.dodostream',
+            package: androidPackage,
             permissions: [
                 'android.permission.FOREGROUND_SERVICE',
                 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',

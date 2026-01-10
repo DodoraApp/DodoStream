@@ -11,10 +11,6 @@
     "build:dev:local": "eas build --profile development --local",
     "build:dev:tv": "eas build --profile development_tv",
     "build:dev:tv:local": "eas build --profile development_tv --local",
-    "build:preview": "eas build --profile preview",
-    "build:preview:local": "eas build --profile preview --local",
-    "build:preview:tv": "eas build --profile preview_tv",
-    "build:preview:tv:local": "eas build --profile preview_tv --local",
     "build:production": "eas build --profile production",
     "build:production:local": "eas build --profile production --local",
     "build:production:tv": "eas build --profile production_tv",
@@ -80,6 +76,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@react-native-tvos/config-tv": "^0.1.4",
+    "@sentry/cli": "^3.0.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.10",
