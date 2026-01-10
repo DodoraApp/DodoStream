@@ -3,7 +3,7 @@ import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent
 
 export default function AboutSettings() {
   return (
-    <Container disablePadding>
+    <Container disablePadding safeAreaEdges={['left', 'right']}>
       <AboutSettingsContent />
     </Container>
   );

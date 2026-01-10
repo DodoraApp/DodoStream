@@ -1,9 +1,9 @@
-import { FC, memo, useMemo, useState } from 'react';
+import { FC, memo, useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import theme, { Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { PickerModal, PickerItem } from '@/components/basic/PickerModal';
+import { PickerModal } from '@/components/basic/PickerModal';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
@@ -17,9 +17,6 @@ import { useProfileStore } from '@/store/profile.store';
 import { PLAYER_PICKER_ITEMS } from '@/constants/playback';
 import { COMMON_LANGUAGE_CODES } from '@/constants/languages';
 import { getDevicePreferredLanguageCodes } from '@/utils/languages';
-import { DEFAULT_SUBTITLE_STYLE, SUBTITLE_STYLE_PRESETS } from '@/constants/subtitles';
-import type { SubtitleStylePreset } from '@/types/subtitles';
-import { SubtitleStyleSettings } from '@/components/settings/SubtitleStyleSettings';
 
 /**
  * Playback settings content component
@@ -29,7 +26,6 @@ export const PlaybackSettingsContent: FC = memo(() => {
   const [showPlayerPicker, setShowPlayerPicker] = useState(false);
   const [showAudioLanguagePicker, setShowAudioLanguagePicker] = useState(false);
   const [showSubtitleLanguagePicker, setShowSubtitleLanguagePicker] = useState(false);
-  const [showPresetPicker, setShowPresetPicker] = useState(false);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
   const {
@@ -38,13 +34,11 @@ export const PlaybackSettingsContent: FC = memo(() => {
     autoPlayFirstStream,
     preferredAudioLanguages,
     preferredSubtitleLanguages,
-    subtitleStyle,
     setPlayerForProfile,
     setAutomaticFallbackForProfile,
     setAutoPlayFirstStreamForProfile,
     setPreferredAudioLanguagesForProfile,
     setPreferredSubtitleLanguagesForProfile,
-    setSubtitleStyleForProfile,
   } = useProfileSettingsStore((state) => ({
     player:
       (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
@@ -61,42 +55,12 @@ export const PlaybackSettingsContent: FC = memo(() => {
     preferredSubtitleLanguages: activeProfileId
       ? (state.byProfile[activeProfileId]?.preferredSubtitleLanguages ?? [])
       : [],
-    subtitleStyle:
-      (activeProfileId ? state.byProfile[activeProfileId]?.subtitleStyle : undefined) ??
-      DEFAULT_SUBTITLE_STYLE,
     setPlayerForProfile: state.setPlayerForProfile,
     setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
     setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
     setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
     setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
-    setSubtitleStyleForProfile: state.setSubtitleStyleForProfile,
   }));
-
-  // Find current preset (if any matches)
-  const currentPreset = useMemo(
-    () =>
-      SUBTITLE_STYLE_PRESETS.find((p) => JSON.stringify(p.style) === JSON.stringify(subtitleStyle)),
-    [subtitleStyle]
-  );
-  const currentPresetLabel = currentPreset?.label ?? 'Custom';
-  const currentPresetValue: SubtitleStylePreset | 'custom' = currentPreset?.id ?? 'custom';
-
-  // Preset picker items including "Custom" option
-  const presetPickerItems: PickerItem<SubtitleStylePreset | 'custom'>[] = useMemo(
-    () => [
-      ...SUBTITLE_STYLE_PRESETS.map((p) => ({ label: p.label, value: p.id })),
-      { label: 'Custom', value: 'custom' as const },
-    ],
-    []
-  );
-
-  const handlePresetChange = (value: SubtitleStylePreset | 'custom') => {
-    if (value === 'custom' || !activeProfileId) return;
-    const preset = SUBTITLE_STYLE_PRESETS.find((p) => p.id === value);
-    if (preset) {
-      setSubtitleStyleForProfile(activeProfileId, preset.style);
-    }
-  };
 
   const deviceLanguageCodes = getDevicePreferredLanguageCodes();
   const availableLanguageCodes = Array.from(
@@ -194,29 +158,6 @@ export const PlaybackSettingsContent: FC = memo(() => {
               </TouchableOpacity>
             </SettingsRow>
           </SettingsCard>
-
-          <SettingsCard title="Subtitles">
-            <SettingsRow label="Preset" description="Apply a predefined subtitle style">
-              <TouchableOpacity onPress={() => setShowPresetPicker(true)}>
-                <Box
-                  backgroundColor="inputBackground"
-                  borderRadius="m"
-                  paddingHorizontal="m"
-                  paddingVertical="s"
-                  flexDirection="row"
-                  alignItems="center"
-                  gap="s"
-                  minWidth={140}>
-                  <Ionicons name="color-palette" size={20} color={theme.colors.textSecondary} />
-                  <Text variant="body">{currentPresetLabel}</Text>
-                  <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
-                </Box>
-              </TouchableOpacity>
-            </SettingsRow>
-
-            {/* Subtitle Style Preview and Settings */}
-            <SubtitleStyleSettings />
-          </SettingsCard>
         </Box>
       </ScrollView>
 
@@ -252,16 +193,6 @@ export const PlaybackSettingsContent: FC = memo(() => {
         onChange={(next) =>
           activeProfileId && setPreferredSubtitleLanguagesForProfile(activeProfileId, next)
         }
-      />
-
-      <PickerModal
-        visible={showPresetPicker}
-        onClose={() => setShowPresetPicker(false)}
-        label="Select Preset"
-        icon="color-palette"
-        items={presetPickerItems}
-        selectedValue={currentPresetValue}
-        onValueChange={handlePresetChange}
       />
     </>
   );

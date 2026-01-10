@@ -1,14 +1,6 @@
 import type { SettingsMenuItem } from '@/components/settings/SettingsMenu';
 
-/** Settings menu items for navigation */
-export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
-    {
-        id: 'playback',
-        title: 'Profile Settings',
-        description: 'Playback settings for the active profile',
-        icon: 'play-circle-outline',
-        href: '/settings/playback',
-    },
+export const SETTINGS_PROFILE_MENU_ITEMS: SettingsMenuItem[] = [
     {
         id: 'profiles',
         title: 'Profiles',
@@ -16,6 +8,23 @@ export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
         icon: 'people-outline',
         href: '/settings/profiles',
     },
+    {
+        id: 'playback',
+        title: 'Playback',
+        description: 'Playback and language preferences for the active profile',
+        icon: 'play-circle-outline',
+        href: '/settings/playback',
+    },
+    {
+        id: 'subtitles',
+        title: 'Subtitles',
+        description: 'Subtitle style and preview',
+        icon: 'text-outline',
+        href: '/settings/subtitles',
+    },
+];
+
+export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
     {
         id: 'addons',
         title: 'Addons',
@@ -32,10 +41,17 @@ export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
     },
 ];
 
+/** Flat list used in places that don’t render sections */
+export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
+    ...SETTINGS_PROFILE_MENU_ITEMS,
+    ...SETTINGS_GLOBAL_MENU_ITEMS,
+];
+
 /** Map settings page ID to route path */
 export const SETTINGS_ROUTES: Record<string, string> = {
     playback: '/settings/playback',
     profiles: '/settings/profiles',
+    subtitles: '/settings/subtitles',
     addons: '/settings/addons',
     about: '/settings/about',
 };

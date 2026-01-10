@@ -1,22 +1,24 @@
 import React, { FC, memo, useCallback, useMemo, useState } from 'react';
-import { useWindowDimensions, TouchableOpacity } from 'react-native';
+import { Platform, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { useTheme } from '@shopify/restyle';
+import { Ionicons } from '@expo/vector-icons';
 import theme, { Box, Text } from '@/theme/theme';
+import type { Theme } from '@/theme/theme';
 import { ColorPicker } from '@/components/basic/ColorPicker';
 import { SliderInput } from '@/components/basic/SliderInput';
 import { PickerModal, PickerItem } from '@/components/basic/PickerModal';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
-import { Ionicons } from '@expo/vector-icons';
 import {
   DEFAULT_SUBTITLE_STYLE,
+  SUBTITLE_COMMON_COLORS,
   SUBTITLE_FONT_FAMILIES,
-  SUBTITLE_FONT_SIZE_MIN,
   SUBTITLE_FONT_SIZE_MAX,
+  SUBTITLE_FONT_SIZE_MIN,
   SUBTITLE_FONT_SIZE_STEP,
   SUBTITLE_POSITION_MIN,
   SUBTITLE_POSITION_MAX,
   SUBTITLE_POSITION_STEP,
-  SUBTITLE_COMMON_COLORS,
   SUBTITLE_MAX_LINES,
 } from '@/constants/subtitles';
 import type { SubtitleStyle, SubtitleFontFamily } from '@/types/subtitles';
@@ -29,6 +31,22 @@ interface SubtitlePreviewProps {
   style: SubtitleStyle;
   containerWidth: number;
 }
+
+/**
+ * Get the platform-specific font family for the given subtitle font family.
+ */
+const getFontFamily = (family: SubtitleFontFamily): string | undefined => {
+  switch (family) {
+    case 'System':
+      return undefined;
+    case 'Serif':
+      return Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
+    case 'Monospace':
+      return Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
+    default:
+      return family;
+  }
+};
 
 /**
  * Renders a 16:9 preview of subtitles with the current style settings.
@@ -61,9 +79,7 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
       borderRadius="m"
       overflow="hidden"
       style={{ position: 'relative' }}>
-      {/* Video placeholder with varied brightness to test subtitle readability */}
       <Box position="absolute" top={0} left={0} right={0} bottom={0}>
-        {/* Dark area on left */}
         <Box
           position="absolute"
           top={0}
@@ -72,7 +88,6 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
           height="100%"
           style={{ backgroundColor: '#0a0a14' }}
         />
-        {/* Medium area in center */}
         <Box
           position="absolute"
           top={0}
@@ -81,7 +96,6 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
           height="100%"
           style={{ backgroundColor: '#3d4566' }}
         />
-        {/* Bright area on right */}
         <Box
           position="absolute"
           top={0}
@@ -92,7 +106,6 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
         />
       </Box>
 
-      {/* Subtitle container */}
       <Box
         position="absolute"
         left={0}
@@ -127,9 +140,6 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
 
 SubtitlePreview.displayName = 'SubtitlePreview';
 
-/**
- * Section label component for subtitle settings groups
- */
 const SectionLabel: FC<{ label: string }> = memo(({ label }) => (
   <Text variant="sectionLabel" marginTop="m" marginBottom="xs">
     {label}
@@ -138,9 +148,6 @@ const SectionLabel: FC<{ label: string }> = memo(({ label }) => (
 
 SectionLabel.displayName = 'SectionLabel';
 
-/**
- * Row component for a setting with label and control
- */
 const SettingRow: FC<{ label: string; children: React.ReactNode }> = memo(({ label, children }) => (
   <Box flexDirection="row" justifyContent="space-between" alignItems="center" paddingVertical="s">
     <Text variant="body" color="textPrimary">
@@ -152,25 +159,14 @@ const SettingRow: FC<{ label: string; children: React.ReactNode }> = memo(({ lab
 
 SettingRow.displayName = 'SettingRow';
 
-/**
- * Subtitle style customization settings component.
- * Provides a live preview and controls for all subtitle style properties.
- */
-export const SubtitleStyleSettings: FC = memo(() => {
-  const { width: windowWidth } = useWindowDimensions();
+const useActiveProfileSubtitleStyle = () => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
-
-  const [showFontPicker, setShowFontPicker] = useState(false);
-
   const { subtitleStyle, setSubtitleStyleForProfile } = useProfileSettingsStore((state) => ({
     subtitleStyle:
       (activeProfileId ? state.byProfile[activeProfileId]?.subtitleStyle : undefined) ??
       DEFAULT_SUBTITLE_STYLE,
     setSubtitleStyleForProfile: state.setSubtitleStyleForProfile,
   }));
-
-  // Calculate preview width (with padding)
-  const previewWidth = Math.min(windowWidth - 48, 600);
 
   const updateStyle = useCallback(
     (updates: Partial<SubtitleStyle>) => {
@@ -180,8 +176,34 @@ export const SubtitleStyleSettings: FC = memo(() => {
         ...updates,
       });
     },
-    [activeProfileId, subtitleStyle, setSubtitleStyleForProfile]
+    [activeProfileId, setSubtitleStyleForProfile, subtitleStyle]
   );
+
+  return { subtitleStyle, updateStyle };
+};
+
+export const SubtitleStylePreview: FC = memo(() => {
+  const restyleTheme = useTheme<Theme>();
+  const { width: windowWidth } = useWindowDimensions();
+  const { subtitleStyle } = useActiveProfileSubtitleStyle();
+
+  const previewWidth = useMemo(() => {
+    const horizontalPadding = restyleTheme.spacing.m * 3;
+    return Math.min(windowWidth - horizontalPadding, 600);
+  }, [restyleTheme.spacing.m, windowWidth]);
+
+  return (
+    <Box alignItems="center" marginBottom="m">
+      <SubtitlePreview style={subtitleStyle} containerWidth={previewWidth} />
+    </Box>
+  );
+});
+
+SubtitleStylePreview.displayName = 'SubtitleStylePreview';
+
+export const SubtitleStyleControls: FC = memo(() => {
+  const [showFontPicker, setShowFontPicker] = useState(false);
+  const { subtitleStyle, updateStyle } = useActiveProfileSubtitleStyle();
 
   const fontFamilyItems: PickerItem<SubtitleFontFamily>[] = useMemo(
     () =>
@@ -199,12 +221,6 @@ export const SubtitleStyleSettings: FC = memo(() => {
 
   return (
     <Box gap="s">
-      {/* Preview */}
-      <Box alignItems="center" marginBottom="m">
-        <SubtitlePreview style={subtitleStyle} containerWidth={previewWidth} />
-      </Box>
-
-      {/* Font Section */}
       <SectionLabel label="Font" />
 
       <SettingRow label="Font Family">
@@ -253,7 +269,6 @@ export const SubtitleStyleSettings: FC = memo(() => {
         unit="%"
       />
 
-      {/* Background Section */}
       <SectionLabel label="Background" />
 
       <SettingRow label="Background Color">
@@ -274,7 +289,6 @@ export const SubtitleStyleSettings: FC = memo(() => {
         unit="%"
       />
 
-      {/* Position Section */}
       <SectionLabel label="Position" />
 
       <SliderInput
@@ -287,7 +301,6 @@ export const SubtitleStyleSettings: FC = memo(() => {
         unit="%"
       />
 
-      {/* Font Family Picker Modal */}
       <PickerModal
         visible={showFontPicker}
         onClose={() => setShowFontPicker(false)}
@@ -300,6 +313,17 @@ export const SubtitleStyleSettings: FC = memo(() => {
           setShowFontPicker(false);
         }}
       />
+    </Box>
+  );
+});
+
+SubtitleStyleControls.displayName = 'SubtitleStyleControls';
+
+export const SubtitleStyleSettings: FC = memo(() => {
+  return (
+    <Box gap="s">
+      <SubtitleStylePreview />
+      <SubtitleStyleControls />
     </Box>
   );
 });

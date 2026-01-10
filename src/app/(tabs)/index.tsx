@@ -191,7 +191,7 @@ export default function Home() {
   );
 
   return (
-    <Container disablePadding>
+    <Container disablePadding safeAreaEdges={['left', 'right', 'top']}>
       <SectionList<HomeSectionItemData, SectionModel>
         ref={sectionListRef}
         sections={hasAnyAddons ? sections : []}
@@ -232,7 +232,6 @@ const HomeHeader = memo(() => {
     </Box>
   );
 });
-
 
 interface ContinueWatchingSectionRowProps {
   sectionKey: string;
@@ -276,4 +275,3 @@ const ContinueWatchingSectionRow = memo(
     );
   }
 );
-

@@ -5,7 +5,6 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { NAV_ITEMS } from '@/constants/navigation';
-import { AppLogo } from '@/components/basic/AppLogo';
 
 export default function TabsLayout() {
   const { bottom } = useSafeAreaInsets();
@@ -24,7 +23,7 @@ export default function TabsLayout() {
                 backgroundColor: theme.colors.cardBackground,
                 borderTopColor: theme.colors.cardBorder,
                 borderTopWidth: 1,
-                height: 75,
+                height: 85,
                 paddingBottom: bottom + 10,
                 paddingTop: 10,
                 marginTop: 0,

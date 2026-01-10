@@ -1,31 +1,24 @@
-import { useState, useMemo, useCallback } from 'react';
-import theme, { Box, Text } from '@/theme/theme';
+import { useState, useCallback } from 'react';
+import { ScrollView } from 'react-native';
+import { Box, Text } from '@/theme/theme';
 import { Container } from '@/components/basic/Container';
 import { SettingsShell } from '@/components/settings/SettingsShell';
 import { SettingsMenu } from '@/components/settings/SettingsMenu';
 import { PageHeader } from '@/components/basic/PageHeader';
-import { useProfileStore } from '@/store/profile.store';
-import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
-import { Button } from '@/components/basic/Button';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
-import { SETTINGS_MENU_ITEMS } from '@/constants/settings';
+import { SETTINGS_GLOBAL_MENU_ITEMS, SETTINGS_PROFILE_MENU_ITEMS } from '@/constants/settings';
 import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
 import { ProfilesSettingsContent } from '@/components/settings/ProfilesSettingsContent';
 import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
 import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
+import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSettingsContent';
+import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
+import { SettingsLink } from '@/components/settings/SettingsLink';
 
 export default function Settings() {
-  const profiles = useProfileStore((state) => state.profiles);
-  const activeProfileId = useProfileStore((state) => state.activeProfileId);
-  const clearActiveProfile = useProfileStore((state) => state.clearActiveProfile);
   const { splitLayout } = useResponsiveLayout();
 
   const [selectedPage, setSelectedPage] = useState('playback');
-
-  const activeProfile = useMemo(() => {
-    if (!activeProfileId) return undefined;
-    return profiles[activeProfileId];
-  }, [activeProfileId, profiles]);
 
   const handleSelectPage = useCallback((id: string) => {
     setSelectedPage(id);
@@ -36,6 +29,8 @@ export default function Settings() {
     switch (selectedPage) {
       case 'playback':
         return <PlaybackSettingsContent />;
+      case 'subtitles':
+        return <SubtitlesSettingsContent />;
       case 'profiles':
         return <ProfilesSettingsContent />;
       case 'addons':
@@ -52,9 +47,30 @@ export default function Settings() {
     return (
       <Container disablePadding>
         <SettingsShell
-          menuItems={SETTINGS_MENU_ITEMS}
-          selectedId={selectedPage}
-          onSelectItem={handleSelectPage}>
+          menu={
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Box gap="m" paddingHorizontal="s">
+                <Text variant="subheader">Settings</Text>
+                <ProfileSwitcherCard />
+
+                <Text variant="sectionLabel">Profile</Text>
+                <SettingsMenu
+                  items={SETTINGS_PROFILE_MENU_ITEMS}
+                  selectedId={selectedPage}
+                  onSelect={handleSelectPage}
+                  scrollable={false}
+                />
+
+                <Text variant="sectionLabel">Global</Text>
+                <SettingsMenu
+                  items={SETTINGS_GLOBAL_MENU_ITEMS}
+                  selectedId={selectedPage}
+                  onSelect={handleSelectPage}
+                  scrollable={false}
+                />
+              </Box>
+            </ScrollView>
+          }>
           {renderContent()}
         </SettingsShell>
       </Container>
@@ -63,35 +79,40 @@ export default function Settings() {
 
   // Mobile layout: show menu with links to separate pages
   return (
-    <Container>
+    <Container safeAreaEdges={['left', 'right', 'top']}>
       <Box flex={1}>
         <PageHeader title="Settings" />
-        <Box paddingVertical="m" gap="m">
-          <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
-            <Box flexDirection="row" alignItems="center" gap="m">
-              <ProfileAvatar
-                icon={activeProfile?.avatarIcon ?? 'person'}
-                color={activeProfile?.avatarColor ?? theme.colors.primaryBackground}
-                size="small"
-              />
-              <Box flex={1} gap="xs">
-                <Text variant="cardTitle">Current Profile</Text>
-                <Text variant="caption" color="textSecondary">
-                  {activeProfile?.name ?? 'None'}
-                </Text>
-              </Box>
-            </Box>
-            <Button
-              title="Switch Profile"
-              variant="secondary"
-              icon="swap-horizontal"
-              onPress={() => clearActiveProfile()}
-              disabled={Object.keys(profiles).length <= 1}
-            />
-          </Box>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Box paddingVertical="m" gap="m">
+            <Text variant="sectionLabel">Profile</Text>
+            <ProfileSwitcherCard />
 
-          <SettingsMenu items={SETTINGS_MENU_ITEMS} selectedId="" navigationMode />
-        </Box>
+            <Box gap="s">
+              {SETTINGS_PROFILE_MENU_ITEMS.map((item) => (
+                <SettingsLink
+                  key={item.id}
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
+                  href={item.href ?? '/settings'}
+                />
+              ))}
+            </Box>
+
+            <Text variant="sectionLabel">Global</Text>
+            <Box gap="s">
+              {SETTINGS_GLOBAL_MENU_ITEMS.map((item) => (
+                <SettingsLink
+                  key={item.id}
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
+                  href={item.href ?? '/settings'}
+                />
+              ))}
+            </Box>
+          </Box>
+        </ScrollView>
       </Box>
     </Container>
   );

@@ -23,6 +23,8 @@ interface SettingsMenuProps {
   onSelect?: (id: string) => void;
   /** When true, items navigate to their href instead of calling onSelect */
   navigationMode?: boolean;
+  /** When false, renders only the list items without an outer ScrollView */
+  scrollable?: boolean;
 }
 
 /**
@@ -30,7 +32,7 @@ interface SettingsMenuProps {
  * Supports both selection mode (for split layout) and navigation mode (for mobile)
  */
 export const SettingsMenu: FC<SettingsMenuProps> = memo(
-  ({ items, selectedId, onSelect, navigationMode = false }) => {
+  ({ items, selectedId, onSelect, navigationMode = false, scrollable = true }) => {
     const handlePress = (item: SettingsMenuItem) => {
       if (navigationMode && item.href) {
         router.push(item.href as Parameters<typeof router.push>[0]);
@@ -39,21 +41,25 @@ export const SettingsMenu: FC<SettingsMenuProps> = memo(
       }
     };
 
-    return (
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Box gap="s" padding="s">
-          {items.map((item) => (
-            <SettingsMenuItemInner
-              key={item.id}
-              item={item}
-              isSelected={item.id === selectedId}
-              onPress={() => handlePress(item)}
-              hasTVPreferredFocus={item.id === selectedId}
-            />
-          ))}
-        </Box>
-      </ScrollView>
+    const content = (
+      <Box gap="s">
+        {items.map((item) => (
+          <SettingsMenuItemInner
+            key={item.id}
+            item={item}
+            isSelected={item.id === selectedId}
+            onPress={() => handlePress(item)}
+            hasTVPreferredFocus={item.id === selectedId}
+          />
+        ))}
+      </Box>
     );
+
+    if (!scrollable) {
+      return content;
+    }
+
+    return <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>;
   }
 );
 
@@ -68,6 +74,9 @@ const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
   ({ item, isSelected, onPress, hasTVPreferredFocus = false }) => {
     const theme = useTheme<Theme>();
 
+    const iconContainerSize = theme.sizes.loadingIndicatorSizeSmall;
+    const iconSize = theme.spacing.l;
+
     return (
       <Focusable onPress={onPress} hasTVPreferredFocus={hasTVPreferredFocus}>
         {({ isFocused }) => (
@@ -81,11 +90,11 @@ const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
             <Box
               backgroundColor={isSelected ? 'primaryBackground' : undefined}
               borderRadius="m"
-              width={40}
-              height={40}
+              width={iconContainerSize}
+              height={iconContainerSize}
               justifyContent="center"
               alignItems="center">
-              <Ionicons name={item.icon} size={20} color={theme.colors.primaryForeground} />
+              <Ionicons name={item.icon} size={iconSize} color={theme.colors.primaryForeground} />
             </Box>
             <Box flex={1} gap="xs">
               <Text variant="cardTitle" color="textPrimary">

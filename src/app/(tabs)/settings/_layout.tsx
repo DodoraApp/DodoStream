@@ -34,7 +34,13 @@ export default function SettingsLayout() {
       <Stack.Screen
         name="playback"
         options={{
-          title: 'Profile Settings',
+          title: 'Playback',
+        }}
+      />
+      <Stack.Screen
+        name="subtitles"
+        options={{
+          title: 'Subtitles',
         }}
       />
       <Stack.Screen

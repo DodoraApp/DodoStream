@@ -3,7 +3,7 @@ import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsC
 
 export default function PlaybackSettings() {
   return (
-    <Container disablePadding>
+    <Container disablePadding safeAreaEdges={['left', 'right']}>
       <PlaybackSettingsContent />
     </Container>
   );
