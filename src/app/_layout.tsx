@@ -27,8 +27,11 @@ import { Button } from '@/components/basic/Button';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
 import * as Sentry from '@sentry/react-native';
 import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
+import { createDebugLogger } from '@/utils/debug';
 
+const debug = createDebugLogger('layout');
 if (isSentryEnabled) {
+  debug('Initializing Sentry with DSN:', SENTRY_DSN);
   Sentry.init({
     dsn: SENTRY_DSN,
 

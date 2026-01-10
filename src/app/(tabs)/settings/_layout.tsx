@@ -61,6 +61,12 @@ export default function SettingsLayout() {
           title: 'About',
         }}
       />
+      <Stack.Screen
+        name="developer"
+        options={{
+          title: 'Developer',
+        }}
+      />
     </Stack>
   );
 }

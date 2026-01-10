@@ -1,9 +1,10 @@
-import { FC, memo, useCallback, useMemo } from 'react';
+import { FC, memo, useCallback, useMemo, useRef } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import * as Burnt from 'burnt';
 import { useTheme } from '@shopify/restyle';
+import { useRouter } from 'expo-router';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
 import { AppLogo } from '@/components/basic/AppLogo';
@@ -107,14 +108,22 @@ const links: AboutLinkItem[] = [
   },
 ];
 
+const DEVELOPER_TAP_COUNT = 5;
+const TAP_TIMEOUT_MS = 2000;
+
 /**
  * About settings content component
  * Shows app metadata and useful support links
  */
 export const AboutSettingsContent: FC = memo(() => {
   const theme = useTheme<Theme>();
+  const router = useRouter();
   const debug = useDebugLogger('AboutSettingsContent');
   const info = useAppInfo();
+
+  // Developer mode tap counter
+  const tapCountRef = useRef(0);
+  const lastTapTimeRef = useRef(0);
 
   const releaseCheckOnStartup = useAppSettingsStore((state) => state.releaseCheckOnStartup);
   const setReleaseCheckOnStartup = useAppSettingsStore((state) => state.setReleaseCheckOnStartup);
@@ -131,6 +140,35 @@ export const AboutSettingsContent: FC = memo(() => {
     const trimmed = info.commitHash.trim();
     return trimmed.length > 10 ? trimmed.slice(0, 10) : trimmed;
   }, [info.commitHash]);
+
+  const handleVersionTap = useCallback(() => {
+    const now = Date.now();
+
+    // Reset counter if too much time has passed since last tap
+    if (now - lastTapTimeRef.current > TAP_TIMEOUT_MS) {
+      tapCountRef.current = 0;
+    }
+
+    lastTapTimeRef.current = now;
+    tapCountRef.current += 1;
+
+    debug('versionTap', { count: tapCountRef.current });
+
+    const remaining = DEVELOPER_TAP_COUNT - tapCountRef.current;
+
+    if (remaining > 0 && remaining <= 3) {
+      Burnt.toast({
+        title: `${remaining} tap${remaining === 1 ? '' : 's'} to developer mode`,
+        duration: TOAST_DURATION_SHORT,
+      });
+    }
+
+    if (tapCountRef.current >= DEVELOPER_TAP_COUNT) {
+      tapCountRef.current = 0;
+      debug('developerModeActivated');
+      router.push('/(tabs)/settings/developer');
+    }
+  }, [debug, router]);
 
   const handleOpenLink = useCallback(
     async (item: AboutLinkItem) => {
@@ -193,11 +231,16 @@ export const AboutSettingsContent: FC = memo(() => {
         </Box>
 
         <SettingsCard title="App">
-          <SettingsRow label="Version">
-            <Text variant="body" color="textSecondary">
-              {info.appVersion}
-            </Text>
-          </SettingsRow>
+          <Focusable onPress={handleVersionTap}>
+            {({ isFocused }) => (
+              <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap="m">
+                <Text variant="body">Version</Text>
+                <Text variant="body" color={isFocused ? 'primaryForeground' : 'textSecondary'}>
+                  {info.appVersion}
+                </Text>
+              </Box>
+            )}
+          </Focusable>
 
           <SettingsRow label="Commit">
             <Text variant="body" color="textSecondary" numberOfLines={1}>
