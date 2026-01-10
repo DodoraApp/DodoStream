@@ -10,7 +10,11 @@ import { PickerItem, PickerModal } from '@/components/basic/PickerModal';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
-import { PLAYER_CONTROLS_AUTO_HIDE_MS } from '@/constants/playback';
+import {
+  PLAYER_CONTROLS_AUTO_HIDE_MS,
+  SKIP_BACKWARD_SECONDS,
+  SKIP_FORWARD_SECONDS,
+} from '@/constants/playback';
 import {
   getPreferredLanguageCodes,
   normalizeLanguageCode,
@@ -327,6 +331,8 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
                   disabled={showLoadingIndicator || !onSkipEpisode}
                   label={skipEpisodeLabel}
                   onFocusChange={handleButtonFocusChange}
+                  badge={skipEpisodeLabel}
+                  badgeVariant="tertiary"
                 />
               )}
             </Box>
@@ -337,7 +343,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
                 icon="rotate-left"
                 iconComponent={MaterialCommunityIcons}
                 disabled={showLoadingIndicator}
-                label="-15s"
+                label={`-${SKIP_BACKWARD_SECONDS}s`}
                 onFocusChange={handleButtonFocusChange}
               />
               <ControlButton
@@ -355,7 +361,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
                 icon="rotate-right"
                 iconComponent={MaterialCommunityIcons}
                 disabled={showLoadingIndicator}
-                label="+15s"
+                label={`+${SKIP_FORWARD_SECONDS}s`}
                 onFocusChange={handleButtonFocusChange}
               />
             </Box>
@@ -372,6 +378,13 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
                 disabled={showLoadingIndicator}
                 onFocusChange={handleButtonFocusChange}
                 label="Audio"
+                badge={
+                  selectedAudioTrack?.language
+                    ? (normalizeLanguageCode(selectedAudioTrack.language)?.toUpperCase() ??
+                      selectedAudioTrack.language.substring(0, 2).toUpperCase())
+                    : undefined
+                }
+                badgeVariant="tertiary"
               />
               {textTracks.length > 0 && (
                 <ControlButton
@@ -384,6 +397,13 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
                   disabled={showLoadingIndicator}
                   onFocusChange={handleButtonFocusChange}
                   label="Subtitles"
+                  badge={
+                    selectedTextTrack?.language
+                      ? (normalizeLanguageCode(selectedTextTrack.language)?.toUpperCase() ??
+                        selectedTextTrack.language.substring(0, 2).toUpperCase())
+                      : undefined
+                  }
+                  badgeVariant="tertiary"
                 />
               )}
             </Box>
