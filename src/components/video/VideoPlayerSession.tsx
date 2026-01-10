@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@/theme/theme';
 import * as Burnt from 'burnt';
 
@@ -13,6 +13,7 @@ import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import {
   findBestTrackByLanguage,
   getPreferredLanguageCodes,
@@ -141,6 +142,66 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const lastKnownDurationRef = useRef(0);
   const resumeAppliedKeyRef = useRef<string | null>(null);
   const didPersistLastTargetRef = useRef(false);
+  const subtitlePreferenceAppliedRef = useRef(false);
+
+  // Auto-apply saved subtitle preference when subtitles are loaded
+  useEffect(() => {
+    if (subtitlePreferenceAppliedRef.current) return;
+    if (areSubtitlesLoading || combinedSubtitles.length === 0) return;
+    if (selectedTextTrack) return; // Don't override if already selected
+
+    const savedPreference = usePlaybackStore.getState().getActivePlaybackState().subtitlePreference;
+    if (!savedPreference) return;
+
+    debug('autoApplySubtitlePreference', {
+      savedPreference,
+      availableCount: combinedSubtitles.length,
+    });
+
+    // Try to find a matching track based on saved preference
+    const normalizedSavedLang = normalizeLanguageCode(savedPreference.language);
+    let bestMatch: TextTrack | undefined;
+
+    // Priority 1: Exact match (same source, addon, and language)
+    if (savedPreference.source === 'addon' && savedPreference.addonId) {
+      bestMatch = combinedSubtitles.find(
+        (t) =>
+          t.source === 'addon' &&
+          t.addonId === savedPreference.addonId &&
+          normalizeLanguageCode(t.language) === normalizedSavedLang
+      );
+    }
+
+    // Priority 2: Same source and language (any addon or video track)
+    if (!bestMatch) {
+      bestMatch = combinedSubtitles.find(
+        (t) =>
+          t.source === savedPreference.source &&
+          normalizeLanguageCode(t.language) === normalizedSavedLang
+      );
+    }
+
+    // Priority 3: Same language, any source
+    if (!bestMatch && normalizedSavedLang) {
+      bestMatch = combinedSubtitles.find(
+        (t) => normalizeLanguageCode(t.language) === normalizedSavedLang
+      );
+    }
+
+    if (bestMatch) {
+      debug('autoApplySubtitlePreference:matched', {
+        index: bestMatch.index,
+        source: bestMatch.source,
+        language: bestMatch.language,
+        addonId: bestMatch.addonId,
+      });
+      subtitlePreferenceAppliedRef.current = true;
+      setSelectedTextTrack(bestMatch);
+    } else {
+      debug('autoApplySubtitlePreference:noMatch');
+      subtitlePreferenceAppliedRef.current = true;
+    }
+  }, [activeProfileId, areSubtitlesLoading, combinedSubtitles, debug, selectedTextTrack]);
 
   const didStartNextRef = useRef(false);
   const [autoplayCancelled, setAutoplayCancelled] = useState(false);
@@ -390,8 +451,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const handleSelectTextTrack = useCallback(
-    (index?: number) => {
-      debug('selectTextTrack', { index });
+    (index?: number, isAutoSelect = false) => {
+      debug('selectTextTrack', { index, isAutoSelect });
 
       if (index === undefined) {
         setSelectedTextTrack(undefined);
@@ -411,10 +472,27 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         index,
         source: chosenTextTrack.source,
         language: chosenTextTrack.language,
+        addonId: chosenTextTrack.addonId,
+        addonName: chosenTextTrack.addonName,
       });
       setSelectedTextTrack(chosenTextTrack);
+
+      // Remember subtitle preference when user manually selects (not auto-select)
+      if (!isAutoSelect && activeProfileId) {
+        usePlaybackStore.getState().setSubtitlePreference({
+          source: chosenTextTrack.source,
+          language: normalizeLanguageCode(chosenTextTrack.language) ?? chosenTextTrack.language,
+          addonId: chosenTextTrack.addonId,
+          addonName: chosenTextTrack.addonName,
+        });
+        debug('subtitlePreferenceSaved', {
+          source: chosenTextTrack.source,
+          language: chosenTextTrack.language,
+          addonId: chosenTextTrack.addonId,
+        });
+      }
     },
-    [combinedSubtitles, debug, selectedTextTrack]
+    [activeProfileId, combinedSubtitles, debug, selectedTextTrack]
   );
 
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;

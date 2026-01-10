@@ -2,6 +2,7 @@ import React, { memo, useCallback, useState } from 'react';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Button, ButtonProps, IconComponentType } from '@/components/basic/Button';
+import { Badge } from '@/components/basic/Badge';
 
 export interface ControlButtonProps extends Pick<
   ButtonProps<IconComponentType>,
@@ -12,6 +13,10 @@ export interface ControlButtonProps extends Pick<
   hasTVPreferredFocus?: boolean;
   disabled?: boolean;
   onFocusChange?: (focused: boolean) => void;
+  /** Badge text displayed at top right of button */
+  badge?: string;
+  /** Badge variant (default: primary) */
+  badgeVariant?: 'primary' | 'secondary' | 'tertiary';
 }
 
 export const ControlButton = memo(
@@ -22,6 +27,8 @@ export const ControlButton = memo(
     disabled = false,
     onFocusChange,
     variant = 'secondary',
+    badge,
+    badgeVariant = 'primary',
     ...buttonProps
   }: ControlButtonProps) => {
     const theme = useTheme<Theme>();
@@ -55,6 +62,11 @@ export const ControlButton = memo(
           onBlur={handleBlurred}
           variant={variant}
         />
+        {badge && (
+          <Box position="absolute" top={-theme.spacing.xs} right={-theme.spacing.xs}>
+            <Badge label={badge} variant={badgeVariant} />
+          </Box>
+        )}
       </Box>
     );
   }
