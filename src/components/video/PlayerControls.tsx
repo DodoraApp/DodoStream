@@ -55,7 +55,20 @@ interface PlayerControlsProps {
   onBack?: () => void;
   onSelectAudioTrack: (index: number) => void;
   onSelectTextTrack: (index?: number) => void;
+  onVisibilityChange?: (visible: boolean) => void;
 }
+
+const formatTime = (seconds: number): string => {
+  if (!isFinite(seconds)) return '0:00';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+};
 
 export const PlayerControls: FC<PlayerControlsProps> = ({
   paused,
@@ -79,6 +92,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   onBack,
   onSelectAudioTrack,
   onSelectTextTrack,
+  onVisibilityChange,
 }) => {
   const theme = useTheme<Theme>();
   const debug = useDebugLogger('PlayerControls');
@@ -101,6 +115,11 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   const [showAudioTracks, setShowAudioTracks] = useState(false);
   const [showTextTracks, setShowTextTracks] = useState(false);
   const [interactionId, setInteractionId] = useState(0);
+
+  // Notify parent when visibility changes
+  useEffect(() => {
+    onVisibilityChange?.(visible);
+  }, [visible, onVisibilityChange]);
 
   const registerInteraction = useCallback(() => {
     setInteractionId((prev) => prev + 1);
@@ -178,18 +197,6 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     registerInteraction();
     onSkipEpisode();
   }, [onSkipEpisode, registerInteraction, showSkipEpisode]);
-
-  const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds)) return '0:00';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleSeekStart = useCallback(() => {
     debug('seekStart');

@@ -209,6 +209,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const didStartNextRef = useRef(false);
   const [autoplayCancelled, setAutoplayCancelled] = useState(false);
   const [upNextDismissed, setUpNextDismissed] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   const upNextVideoIdRef = useRef<string | undefined>(undefined);
   const [upNextResolved, setUpNextResolved] = useState<UpNextResolved | undefined>(undefined);
@@ -555,6 +556,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onBack={onStop}
         onSelectAudioTrack={handleSelectAudioTrack}
         onSelectTextTrack={handleSelectTextTrack}
+        onVisibilityChange={setControlsVisible}
       />
 
       <UpNextPopup
@@ -565,6 +567,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         progressRatio={progressRatio}
         dismissed={upNextDismissed}
         autoplayCancelled={autoplayCancelled}
+        controlsVisible={controlsVisible}
         onCancelAutoplay={() => setAutoplayCancelled(true)}
         onDismiss={() => setUpNextDismissed(true)}
         onPlayNext={startNextEpisode}
