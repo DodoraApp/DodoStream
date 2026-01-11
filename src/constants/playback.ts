@@ -18,6 +18,11 @@ export const MAX_AUTO_PLAY_ATTEMPTS = 3;
 
 // Player control timing
 export const PLAYER_CONTROLS_AUTO_HIDE_MS = 5000;
+// Debounce window for TV remote scrubbing (D-pad left/right emits value changes without a reliable "sliding complete")
+export const PLAYER_SEEK_DEBOUNCE_MS = 750;
+// Keep the seek UI pinned briefly after committing a TV seek, until playback time catches up.
+export const PLAYER_SEEK_UI_SYNC_TIMEOUT_MS = 1500;
+export const PLAYER_SEEK_UI_SYNC_THRESHOLD_SECONDS = 1;
 export const SKIP_FORWARD_SECONDS = 15;
 export const SKIP_BACKWARD_SECONDS = 15;
 
