@@ -40,6 +40,8 @@ export default function StreamsPage() {
     playerTitle,
     bingeGroup,
     autoPlay,
+    backgroundImage: meta?.background,
+    logoImage: meta?.logo,
   });
 
   if (effectiveAutoPlay) {
@@ -77,7 +79,14 @@ export default function StreamsPage() {
             <Box flex={1} backgroundColor="mainBackground">
               <MediaDetailsHeader media={mediaData} video={selectedVideo} variant="minimal" />
               <Box paddingHorizontal="l">
-                <StreamList type={type} id={metaId} videoId={videoId} title={playerTitle} />
+                <StreamList
+                  type={type}
+                  id={metaId}
+                  videoId={videoId}
+                  title={playerTitle}
+                  backgroundImage={mediaData.background}
+                  logoImage={mediaData.logo}
+                />
               </Box>
             </Box>
           </ScrollView>

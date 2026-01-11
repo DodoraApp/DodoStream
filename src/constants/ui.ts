@@ -4,7 +4,7 @@ export const TOAST_DURATION_MEDIUM = 3;
 export const TOAST_DURATION_LONG = 4;
 
 // Loading animation timings
-export const LOADING_LOGO_ANIMATION_DURATION_MS = 600;
+export const LOADING_LOGO_ANIMATION_DURATION_MS = 800;
 
 // App start animation
 export const APP_START_LOGO_SIZE = 80;

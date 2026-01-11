@@ -50,7 +50,16 @@ export const VideoPlayer: FC<VideoPlayerProps> = (props) => {
   return (
     <VideoPlayerSession
       key={sessionKey}
-      {...props}
+      source={props.source}
+      title={props.title}
+      mediaType={props.mediaType}
+      metaId={props.metaId}
+      videoId={props.videoId}
+      bingeGroup={props.bingeGroup}
+      backgroundImage={props.backgroundImage}
+      logoImage={props.logoImage}
+      onStop={props.onStop}
+      onError={props.onError}
       usedPlayerType={usedPlayerType}
       setUsedPlayerType={setUsedPlayerType}
       playerType={playerType}

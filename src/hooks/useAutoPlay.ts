@@ -23,6 +23,10 @@ interface UseAutoPlayParams {
   bingeGroup?: string;
   autoPlay?: string;
   playerTitle?: string;
+  /** Background image URL for player loading screen. */
+  backgroundImage?: string;
+  /** Logo image URL for player loading screen. */
+  logoImage?: string;
 }
 
 export const useAutoPlay = ({
@@ -32,6 +36,8 @@ export const useAutoPlay = ({
   bingeGroup,
   playerTitle,
   autoPlay,
+  backgroundImage,
+  logoImage,
 }: UseAutoPlayParams) => {
   const debug = useDebugLogger('useAutoPlay');
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
@@ -69,6 +75,8 @@ export const useAutoPlay = ({
         type,
         title: playerTitle,
         bingeGroup,
+        backgroundImage,
+        logoImage,
         target: lastStreamTarget,
         navigation: 'replace',
         fromAutoPlay: lastStreamTarget.type === 'url',
@@ -109,6 +117,8 @@ export const useAutoPlay = ({
         videoId,
         type,
         title: playerTitle,
+        backgroundImage,
+        logoImage,
         stream,
         navigation: 'replace',
         fromAutoPlay: true,
@@ -118,20 +128,7 @@ export const useAutoPlay = ({
     };
 
     tryNextStream();
-  }, [
-    effectiveAutoPlay,
-    streams,
-    metaId,
-    videoId,
-    type,
-    bingeGroup,
-    lastStreamTarget,
-    openStreamFromStream,
-    openStreamTarget,
-    playerTitle,
-    debug,
-    isLoading,
-  ]);
+  }, [effectiveAutoPlay, streams, metaId, videoId, type, bingeGroup, lastStreamTarget, openStreamFromStream, openStreamTarget, playerTitle, debug, isLoading, backgroundImage, logoImage]);
 
   return {
     effectiveAutoPlay,

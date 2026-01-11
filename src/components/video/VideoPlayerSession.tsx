@@ -7,6 +7,7 @@ import { VLCPlayer } from './VLCPlayer';
 import { PlayerControls } from './PlayerControls';
 import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
 import { CustomSubtitles } from './CustomSubtitles';
+import { PlayerLoadingScreen } from './PlayerLoadingScreen';
 
 import { AudioTrack, PlayerRef, TextTrack } from '@/types/player';
 import type { ContentType } from '@/types/stremio';
@@ -40,6 +41,10 @@ export interface VideoPlayerProps {
   videoId?: string;
   /** Stream behaviorHints.group of the currently playing stream (if any). */
   bingeGroup?: string;
+  /** Background image URL for initial loading screen. */
+  backgroundImage?: string;
+  /** Logo image URL for initial loading screen. */
+  logoImage?: string;
   onStop?: () => void;
   onError?: (message: string) => void;
 }
@@ -86,6 +91,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   metaId,
   videoId,
   bingeGroup,
+  backgroundImage,
+  logoImage,
   onStop,
   onError,
   usedPlayerType,
@@ -98,6 +105,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const playerRef = useRef<PlayerRef>(null);
   const { replaceToStreams } = useMediaNavigation();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
+
+  // Track if this is the first load (for showing custom loading screen)
+  const isFirstLoadRef = useRef(true);
+  const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
   const { preferredAudioLanguages } = useProfileSettingsStore((state) => ({
     preferredAudioLanguages: activeProfileId
@@ -296,6 +307,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const handleLoad = useCallback(
     (data: { duration: number }) => {
       debug('load', { duration: data.duration, usedPlayerType, playerType, automaticFallback });
+
+      // Mark first load as complete
+      isFirstLoadRef.current = false;
 
       // Only remember the last stream if playback actually starts loading successfully.
       // This prevents a broken stream URL from being remembered and re-tried forever.
@@ -506,6 +520,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
   const isLoading = isVideoLoading || areSubtitlesLoading;
 
+  // Show custom loading screen on first load if background/logo is available
+  const showCustomLoadingScreen = isLoading && isFirstLoadRef.current && hasBackgroundOrLogo;
   return (
     <Box flex={1} backgroundColor="playerBackground">
       <PlayerComponent
@@ -534,30 +550,37 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         />
       )}
 
-      <PlayerControls
-        paused={paused}
-        currentTime={currentTime}
-        duration={duration}
-        showLoadingIndicator={isLoading || isBuffering}
-        title={title}
-        audioTracks={audioTracks}
-        textTracks={combinedSubtitles}
-        selectedAudioTrack={selectedAudioTrack}
-        selectedTextTrack={selectedTextTrack}
-        subtitleDelay={subtitleDelay}
-        onSubtitleDelayChange={setSubtitleDelay}
-        onPlayPause={handlePlayPause}
-        onSeek={handleSeek}
-        onSkipBackward={handleSkipBackward}
-        onSkipForward={handleSkipForward}
-        showSkipEpisode={!!upNextResolved?.videoId}
-        skipEpisodeLabel={upNextResolved?.episodeLabel}
-        onSkipEpisode={startNextEpisode}
-        onBack={onStop}
-        onSelectAudioTrack={handleSelectAudioTrack}
-        onSelectTextTrack={handleSelectTextTrack}
-        onVisibilityChange={setControlsVisible}
-      />
+      {/* Custom loading screen on first load */}
+      {showCustomLoadingScreen && (
+        <PlayerLoadingScreen backgroundImage={backgroundImage} logoImage={logoImage} />
+      )}
+
+      {!showCustomLoadingScreen && (
+        <PlayerControls
+          paused={paused}
+          currentTime={currentTime}
+          duration={duration}
+          showLoadingIndicator={isLoading || isBuffering}
+          title={title}
+          audioTracks={audioTracks}
+          textTracks={combinedSubtitles}
+          selectedAudioTrack={selectedAudioTrack}
+          selectedTextTrack={selectedTextTrack}
+          subtitleDelay={subtitleDelay}
+          onSubtitleDelayChange={setSubtitleDelay}
+          onPlayPause={handlePlayPause}
+          onSeek={handleSeek}
+          onSkipBackward={handleSkipBackward}
+          onSkipForward={handleSkipForward}
+          showSkipEpisode={!!upNextResolved?.videoId}
+          skipEpisodeLabel={upNextResolved?.episodeLabel}
+          onSkipEpisode={startNextEpisode}
+          onBack={onStop}
+          onSelectAudioTrack={handleSelectAudioTrack}
+          onSelectTextTrack={handleSelectTextTrack}
+          onVisibilityChange={setControlsVisible}
+        />
+      )}
 
       <UpNextPopup
         enabled={!didStartNextRef.current}

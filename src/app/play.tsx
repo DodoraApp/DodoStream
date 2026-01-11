@@ -14,7 +14,17 @@ const parseBooleanParam = (value?: string): boolean => {
 };
 
 const Play = () => {
-  const { source, title, metaId, type, videoId, bingeGroup, fromAutoPlay } = useLocalSearchParams<{
+  const {
+    source,
+    title,
+    metaId,
+    type,
+    videoId,
+    bingeGroup,
+    fromAutoPlay,
+    backgroundImage,
+    logoImage,
+  } = useLocalSearchParams<{
     source: string;
     title?: string;
     metaId?: string;
@@ -22,6 +32,8 @@ const Play = () => {
     videoId?: string;
     bingeGroup?: string;
     fromAutoPlay?: string;
+    backgroundImage?: string;
+    logoImage?: string;
   }>();
   const router = useRouter();
   const { replaceToStreams } = useMediaNavigation();
@@ -91,6 +103,8 @@ const Play = () => {
         metaId={metaId}
         videoId={videoId}
         bingeGroup={bingeGroup}
+        backgroundImage={backgroundImage}
+        logoImage={logoImage}
         onStop={handleStop}
         onError={handleError}
       />

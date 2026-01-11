@@ -22,6 +22,8 @@ type OpenStreamTargetArgs = {
     type: ContentType;
     title?: string;
     bingeGroup?: string;
+    backgroundImage?: string;
+    logoImage?: string;
     target: StreamTarget;
     navigation?: 'push' | 'replace';
     fromAutoPlay?: boolean;
@@ -34,6 +36,8 @@ type OpenStreamFromStreamArgs = {
     videoId: string | undefined;
     type: ContentType;
     title?: string;
+    backgroundImage?: string;
+    logoImage?: string;
     stream: Stream;
     navigation?: 'push' | 'replace';
     fromAutoPlay?: boolean;
@@ -93,6 +97,8 @@ export const useMediaNavigation = () => {
             type,
             title,
             bingeGroup,
+            backgroundImage,
+            logoImage,
             target,
             navigation = 'push',
             fromAutoPlay,
@@ -110,6 +116,8 @@ export const useMediaNavigation = () => {
                         type,
                         videoId,
                         bingeGroup,
+                        backgroundImage,
+                        logoImage,
                         fromAutoPlay: fromAutoPlay ? '1' : undefined,
                     },
                 });
@@ -147,6 +155,8 @@ export const useMediaNavigation = () => {
             videoId,
             type,
             title,
+            backgroundImage,
+            logoImage,
             stream,
             navigation,
             fromAutoPlay,
@@ -160,6 +170,8 @@ export const useMediaNavigation = () => {
                     type,
                     title,
                     bingeGroup: stream.behaviorHints?.group,
+                    backgroundImage,
+                    logoImage,
                     target: { type: 'url', value: stream.url },
                     navigation,
                     fromAutoPlay,
