@@ -1,204 +1,305 @@
 import { FC, memo, useState } from 'react';
-import { Alert, TouchableOpacity, Switch, Linking } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  Alert,
+  Modal,
+  Dimensions,
+  TextInput,
+} from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import theme, { Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Input } from '@/components/basic/Input';
-import { Button } from '@/components/basic/Button';
-import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useAddonStore } from '@/store/addon.store';
 import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
 import { toast } from 'burnt';
+import { Button } from '../basic/Button';
 
-/**
- * Addons settings content component
- * Extracted for use in both standalone page and split layout
- */
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+
 export const AddonsSettingsContent: FC = memo(() => {
-  const [manifestUrl, setManifestUrl] = useState('');
-  const {
-    removeAddon,
-    toggleUseCatalogsOnHome,
-    toggleUseCatalogsInSearch,
-    error: storeError,
-    getAddonsList,
-  } = useAddonStore();
+  const { getAddonsList, removeAddon } = useAddonStore();
   const addons = getAddonsList();
+  const [focusedAddonId, setFocusedAddonId] = useState<string | null>(null);
+  const [selectedAddon, setSelectedAddon] = useState<InstalledAddon | null>(null);
+  const [installModalVisible, setInstallModalVisible] = useState(false);
+  const [installUrl, setInstallUrl] = useState('');
   const installAddon = useInstallAddon();
 
-  const handleInstall = async () => {
-    if (!manifestUrl.trim()) {
-      Alert.alert('Error', 'Please enter a manifest URL');
-      return;
-    }
-
-    if (!manifestUrl.endsWith('manifest.json')) {
-      Alert.alert('Error', 'URL must end with manifest.json');
-      return;
-    }
+  const handleInstallAddon = async () => {
+    if (!installUrl.trim()) return;
+    toast({ title: 'Enter manifest URL', preset: 'error', haptic: 'error' });
+    if (!installUrl.endsWith('manifest.json')) return;
+    toast({ title: 'URL must end with manifest.json', preset: 'error', haptic: 'error' });
 
     try {
-      await installAddon.mutateAsync(manifestUrl);
-      setManifestUrl('');
-      Alert.alert('Success', 'Addon installed successfully');
-    } catch (error) {
-      Alert.alert(
-        'Installation Failed',
-        error instanceof Error ? error.message : 'Failed to install addon'
-      );
-    }
-  };
-
-  const handleRemove = (id: string, name: string) => {
-    Alert.alert('Remove Addon', `Are you sure you want to remove "${name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeAddon(id),
-      },
-    ]);
-  };
-
-  const onConfigure = (url: string) => {
-    const configureUrl = url.replace(/manifest\.json$/, 'configure');
-    Linking.openURL(configureUrl).catch(() => {
+      await installAddon.mutateAsync(installUrl);
+      setInstallUrl('');
+      setInstallModalVisible(false);
+      toast({ title: 'Addon installed', preset: 'done', haptic: 'success' });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
       toast({
-        title: 'Failed to open configuration URL',
+        title: 'Failed to install addon',
         preset: 'error',
         haptic: 'error',
       });
-    });
+    }
   };
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Box padding="m" gap="l" flex={1}>
-        {/* Install Addon Section */}
-        <SettingsCard title="Install Addon">
-          <Input
-            placeholder="https://example.com/manifest.json"
-            value={manifestUrl}
-            onChangeText={setManifestUrl}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Button
-            variant="primary"
-            title={installAddon.isPending ? 'Installing...' : 'Install Addon'}
-            onPress={handleInstall}
-            disabled={installAddon.isPending}
-          />
-          {(storeError || installAddon.isError) && (
-            <Text variant="bodySmall" color="danger">
-              {storeError || 'Failed to install addon'}
-            </Text>
-          )}
-        </SettingsCard>
+    <View style={styles.container}>
+      {/* ADDONS LIST */}
+      <View style={styles.listPane}>
+        <Text variant="subheader" marginBottom="m">
+          Addons
+        </Text>
 
-        {/* Installed Addons Section */}
-        <Box gap="m" flex={1}>
-          <Text variant="subheader">Installed Addons ({addons.length})</Text>
-          {addons.length === 0 ? (
-            <SettingsCard>
-              <Text variant="body" color="textSecondary">
-                No addons installed
-              </Text>
-            </SettingsCard>
-          ) : (
-            <FlashList
-              data={addons}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <AddonCard
-                  addon={item}
-                  onRemove={handleRemove}
-                  onConfigure={onConfigure}
-                  onToggleHome={toggleUseCatalogsOnHome}
-                  onToggleSearch={toggleUseCatalogsInSearch}
+        <FlashList
+          data={[{ id: 'add-addon' } as InstalledAddon, ...addons]}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => {
+            const isFocused = focusedAddonId === item.id;
+
+            if (item.id === 'add-addon') {
+              return (
+                <AddonRow
+                  addonPlaceholder
+                  label="Add Addon"
+                  focused={isFocused}
+                  onFocus={() => setFocusedAddonId(item.id)}
+                  onPress={() => setInstallModalVisible(true)}
                 />
-              )}
-              ItemSeparatorComponent={() => <Box height={8} />}
-              showsVerticalScrollIndicator={false}
+              );
+            }
+
+            return (
+              <AddonRow
+                addon={item}
+                focused={isFocused}
+                onFocus={() => setFocusedAddonId(item.id)}
+                onPress={() => setSelectedAddon(item)}
+              />
+            );
+          }}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          onBlur={() => setFocusedAddonId(null)} // <-- reset focus when list loses it
+        />
+      </View>
+
+      {/* INSTALL MODAL */}
+      <Modal visible={installModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.details}>
+            <Text variant="header">Install Addon</Text>
+            <TextInput
+              placeholder="https://example.com/manifest.json"
+              value={installUrl}
+              onChangeText={setInstallUrl}
+              style={styles.input}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
-          )}
-        </Box>
-      </Box>
-    </ScrollView>
+            <Box flexDirection="row" justifyContent="center" gap="m" marginTop="l">
+              <Button title="Install" onPress={handleInstallAddon} />
+              <Button
+                variant="secondary"
+                title="Cancel"
+                onPress={() => setInstallModalVisible(false)}
+              />
+            </Box>
+          </View>
+        </View>
+      </Modal>
+
+      {/* DETAILS MODAL */}
+      {selectedAddon && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSelectedAddon(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.details}>
+              <Text variant="header">{selectedAddon.manifest.name}</Text>
+
+              <Text variant="body" color="textSecondary" marginTop="s" numberOfLines={4}>
+                {selectedAddon.manifest.description}
+              </Text>
+
+              <Text variant="caption" color="textSecondary" marginTop="m">
+                Supported types: {selectedAddon.manifest.types?.join(', ')}
+              </Text>
+
+              <View style={styles.actionsRow}>
+                {selectedAddon.manifest.behaviorHints?.configurable && (
+                  <Button
+                    title="Configure"
+                    variant="primary"
+                    onPress={() => {
+                      const url = selectedAddon.manifestUrl.replace(/manifest\.json$/, 'configure');
+                      Linking.openURL(url).catch(() =>
+                        toast({ title: 'Failed to open URL', preset: 'error' })
+                      );
+                    }}
+                  />
+                )}
+
+                <Button
+                  title="Uninstall"
+                  variant="primary"
+                  onPress={() =>
+                    Alert.alert('Remove Addon', `Remove "${selectedAddon.manifest.name}"?`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Remove',
+                        style: 'destructive',
+                        onPress: () => {
+                          removeAddon(selectedAddon.id);
+                          setSelectedAddon(null);
+                        },
+                      },
+                    ])
+                  }
+                />
+
+                <Button variant="secondary" title="Close" onPress={() => setSelectedAddon(null)} />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+    </View>
   );
 });
 
-interface AddonCardProps {
-  addon: InstalledAddon;
-  onRemove: (id: string, name: string) => void;
-  onToggleHome: (id: string) => void;
-  onToggleSearch: (id: string) => void;
-  onConfigure: (url: string) => void;
-}
+/* ────────────────────────────────────────────── */
+/* ADDON ROW                                      */
+/* ────────────────────────────────────────────── */
 
-const AddonCard: FC<AddonCardProps> = memo(
-  ({ addon, onRemove, onToggleHome, onToggleSearch, onConfigure }) => {
-    return (
-      <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
-        {/* Header with title and remove button */}
-        <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
-          <Box flex={1} gap="xs">
-            <Text variant="cardTitle">{addon.manifest.name}</Text>
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
-              {addon.manifestUrl}
-            </Text>
-            {addon.manifest.catalogs && (
+const AddonRow = ({
+  addon,
+  addonPlaceholder,
+  label,
+  focused,
+  onPress,
+  onFocus,
+  hasTVPreferredFocus,
+}: {
+  addon?: InstalledAddon;
+  addonPlaceholder?: boolean;
+  label?: string;
+  focused: boolean;
+  onPress: () => void;
+  onFocus?: () => void;
+  hasTVPreferredFocus?: boolean;
+}) => {
+  const displayLabel = addonPlaceholder ? label : (addon?.manifest.name ?? '');
+
+  return (
+    <View style={styles.rowWrapper}>
+      <TouchableOpacity
+        focusable
+        hasTVPreferredFocus={hasTVPreferredFocus}
+        onFocus={onFocus}
+        onBlur={() => {}}
+        onPress={onPress}
+        style={[styles.row, focused ? styles.rowFocused : styles.rowDimmed]}>
+        <Box flexDirection="row" gap="m" alignItems="center">
+          <Ionicons
+            name={addonPlaceholder ? 'add-circle-outline' : 'extension-puzzle-outline'}
+            size={36}
+            color={focused ? theme.colors.primaryBackground : theme.colors.textSecondary}
+          />
+          <Box flex={1}>
+            <Text variant="cardTitle">{displayLabel}</Text>
+            {!addonPlaceholder && addon && (
               <Text variant="caption" color="textSecondary">
-                {addon.manifest.catalogs.length} catalog(s)
+                v{addon.manifest.version}
               </Text>
             )}
           </Box>
-          <Box flexDirection="row" gap="xs">
-            <TouchableOpacity onPress={() => onRemove(addon.id, addon.manifest.name)}>
-              <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
-            </TouchableOpacity>
-            {addon.manifest.behaviorHints?.configurable && (
-              <TouchableOpacity onPress={() => onConfigure(addon.manifestUrl)}>
-                <Ionicons name="settings-outline" size={20} color={theme.colors.mainForeground} />
-              </TouchableOpacity>
-            )}
-          </Box>
         </Box>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
-        {/* Settings toggles */}
-        <Box gap="s">
-          <Box flexDirection="row" alignItems="center" gap="s">
-            <Switch
-              value={addon.useCatalogsOnHome}
-              onValueChange={() => onToggleHome(addon.id)}
-              trackColor={{
-                false: theme.colors.mainBackground,
-                true: theme.colors.primaryBackground,
-              }}
-              thumbColor={theme.colors.mainForeground}
-            />
-            <Text variant="body" color="textSecondary">
-              Use catalogs on Home
-            </Text>
-          </Box>
-          <Box flexDirection="row" alignItems="center" gap="s">
-            <Switch
-              value={addon.useCatalogsInSearch}
-              onValueChange={() => onToggleSearch(addon.id)}
-              trackColor={{
-                false: theme.colors.mainBackground,
-                true: theme.colors.primaryBackground,
-              }}
-              thumbColor={theme.colors.mainForeground}
-            />
-            <Text variant="body" color="textSecondary">
-              Use catalogs in Search
-            </Text>
-          </Box>
-        </Box>
-      </Box>
-    );
-  }
-);
+/* ────────────────────────────────────────────── */
+/* STYLES                                         */
+/* ────────────────────────────────────────────── */
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+    padding: 24,
+    gap: 32,
+  },
+
+  listPane: {
+    width: '100%',
+  },
+
+  rowWrapper: {
+    borderRadius: 16,
+    overflow: 'hidden', // fixes shadow radius
+  },
+
+  row: {
+    padding: 20,
+    backgroundColor: theme.colors.cardBackground,
+    borderRadius: 16,
+  },
+
+  rowFocused: {
+    transform: [{ scale: 1.06 }],
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
+    borderRadius: 16, // keep rounded
+  },
+
+  rowDimmed: {
+    opacity: 0.4,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40, // spacing from screen edges
+  },
+
+  details: {
+    width: SCREEN_WIDTH * 0.6, // 60% width
+    maxHeight: SCREEN_HEIGHT * 0.7, // not full height
+    padding: 32,
+    borderRadius: 24,
+    backgroundColor: theme.colors.cardBackground,
+  },
+
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center', // center the buttons
+    marginTop: 40,
+    gap: 20,
+  },
+
+  buttonDestructive: {
+    backgroundColor: theme.colors.danger,
+  },
+  input: {
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    borderColor: '#666',
+    marginTop: 16,
+  },
+});
