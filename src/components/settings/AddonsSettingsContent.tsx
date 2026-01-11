@@ -1,198 +1,218 @@
 import { FC, memo, useState } from 'react';
-import { Alert, TouchableOpacity, Switch, Linking } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { Alert, Linking, TextInput, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import theme, { Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Input } from '@/components/basic/Input';
-import { Button } from '@/components/basic/Button';
-import { SettingsCard } from '@/components/settings/SettingsCard';
+import theme, { Box, Text } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
 import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
+import { Button } from '@/components/basic/Button';
+import { Modal } from '@/components/basic/Modal';
 import { toast } from 'burnt';
-import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 
-/**
- * Addons settings content component
- * Extracted for use in both standalone page and split layout
- */
 export const AddonsSettingsContent: FC = memo(() => {
-  const [manifestUrl, setManifestUrl] = useState('');
-  const {
-    removeAddon,
-    toggleUseCatalogsOnHome,
-    toggleUseCatalogsInSearch,
-    toggleUseForSubtitles,
-    error: storeError,
-    getAddonsList,
-  } = useAddonStore();
+  const { getAddonsList, removeAddon } = useAddonStore();
   const addons = getAddonsList();
   const installAddon = useInstallAddon();
 
-  const handleInstall = async () => {
-    if (!manifestUrl.trim()) {
-      Alert.alert('Error', 'Please enter a manifest URL');
-      return;
-    }
+  const [focusedAddonId, setFocusedAddonId] = useState<string | null>(null);
+  const [selectedAddon, setSelectedAddon] = useState<InstalledAddon | null>(null);
+  const [installModalVisible, setInstallModalVisible] = useState(false);
+  const [installUrl, setInstallUrl] = useState('');
 
-    if (!manifestUrl.endsWith('manifest.json')) {
-      Alert.alert('Error', 'URL must end with manifest.json');
-      return;
+  const handleInstallAddon = async () => {
+    if (!installUrl.trim()) {
+      return toast({ title: 'Enter manifest URL', preset: 'error', haptic: 'error' });
+    }
+    if (!installUrl.endsWith('manifest.json')) {
+      return toast({ title: 'URL must end with manifest.json', preset: 'error', haptic: 'error' });
     }
 
     try {
-      await installAddon.mutateAsync(manifestUrl);
-      setManifestUrl('');
-      Alert.alert('Success', 'Addon installed successfully');
-    } catch (error) {
-      Alert.alert(
-        'Installation Failed',
-        error instanceof Error ? error.message : 'Failed to install addon'
-      );
+      await installAddon.mutateAsync(installUrl);
+      setInstallUrl('');
+      setInstallModalVisible(false);
+      toast({ title: 'Addon installed', preset: 'done', haptic: 'success' });
+    } catch {
+      toast({ title: 'Failed to install addon', preset: 'error', haptic: 'error' });
     }
   };
 
-  const handleRemove = (id: string, name: string) => {
-    Alert.alert('Remove Addon', `Are you sure you want to remove "${name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeAddon(id),
-      },
-    ]);
-  };
-
-  const onConfigure = (url: string) => {
-    const configureUrl = url.replace(/manifest\.json$/, 'configure');
-    Linking.openURL(configureUrl).catch(() => {
-      toast({
-        title: 'Failed to open configuration URL',
-        preset: 'error',
-        haptic: 'error',
-      });
-    });
-  };
-
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Box padding="m" gap="l" flex={1}>
-        {/* Install Addon Section */}
-        <SettingsCard title="Install Addon">
-          <Input
+    <Box flex={1} flexDirection="row" padding="xl" gap="xl">
+      {/* ADDONS LIST */}
+      <Box width="100%">
+        <Text variant="subheader" marginBottom="m">
+          Addons
+        </Text>
+
+        <FlashList
+          data={[{ id: 'add-addon' } as InstalledAddon, ...addons]}
+          keyExtractor={(item) => item.id}
+          onBlur={() => setFocusedAddonId(null)}
+          ItemSeparatorComponent={() => <Box height={theme.spacing.m} />}
+          renderItem={({ item }) => {
+            const isFocused = focusedAddonId === item.id;
+            const isAdd = item.id === 'add-addon';
+
+            return (
+              <AddonRow
+                addon={isAdd ? undefined : item}
+                addonPlaceholder={isAdd}
+                label={isAdd ? 'Add Addon' : undefined}
+                focused={isFocused}
+                onFocus={() => setFocusedAddonId(item.id)}
+                onPress={() => (isAdd ? setInstallModalVisible(true) : setSelectedAddon(item))}
+              />
+            );
+          }}
+        />
+      </Box>
+
+      {/* INSTALL MODAL */}
+      <Modal visible={installModalVisible} onClose={() => setInstallModalVisible(false)}>
+        <Box
+          width="90%"
+          maxWidth={600}
+          padding="xl"
+          borderRadius="xl"
+          backgroundColor="cardBackground">
+          <Text variant="header">Install Addon</Text>
+
+          <TextInput
             placeholder="https://example.com/manifest.json"
-            value={manifestUrl}
-            onChangeText={setManifestUrl}
+            value={installUrl}
+            onChangeText={setInstallUrl}
+            style={{
+              marginTop: theme.spacing.m,
+              padding: theme.spacing.m,
+              borderWidth: 1,
+              borderRadius: theme.borderRadii.m,
+              borderColor: theme.colors.cardBorder,
+              color: theme.colors.textPrimary,
+            }}
             autoCapitalize="none"
             autoCorrect={false}
           />
-          <Button
-            variant="primary"
-            title={installAddon.isPending ? 'Installing...' : 'Install Addon'}
-            onPress={handleInstall}
-            disabled={installAddon.isPending}
-          />
-          {(storeError || installAddon.isError) && (
-            <Text variant="bodySmall" color="danger">
-              {storeError || 'Failed to install addon'}
-            </Text>
-          )}
-        </SettingsCard>
 
-        {/* Installed Addons Section */}
-        <Box gap="m" flex={1}>
-          <Text variant="subheader">Installed Addons ({addons.length})</Text>
-          {addons.length === 0 ? (
-            <SettingsCard>
-              <Text variant="body" color="textSecondary">
-                No addons installed
-              </Text>
-            </SettingsCard>
-          ) : (
-            <FlashList
-              data={addons}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <AddonCard
-                  addon={item}
-                  onRemove={handleRemove}
-                  onConfigure={onConfigure}
-                  onToggleHome={toggleUseCatalogsOnHome}
-                  onToggleSearch={toggleUseCatalogsInSearch}
-                  onToggleSubtitles={toggleUseForSubtitles}
+          <Box flexDirection="row" justifyContent="center" gap="m" marginTop="xl">
+            <Button title="Install" onPress={handleInstallAddon} />
+            <Button
+              variant="secondary"
+              title="Cancel"
+              onPress={() => setInstallModalVisible(false)}
+            />
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* DETAILS MODAL */}
+      {selectedAddon && (
+        <Modal visible onClose={() => setSelectedAddon(null)}>
+          <Box
+            width="90%"
+            maxWidth={700}
+            padding="xl"
+            borderRadius="xl"
+            backgroundColor="cardBackground">
+            <Text variant="header">{selectedAddon.manifest.name}</Text>
+
+            <Text variant="body" color="textSecondary" marginTop="s" numberOfLines={4}>
+              {selectedAddon.manifest.description}
+            </Text>
+
+            <Text variant="caption" color="textSecondary" marginTop="m">
+              Supported types: {selectedAddon.manifest.types?.join(', ')}
+            </Text>
+
+            <Box flexDirection="row" justifyContent="center" gap="m" marginTop="xl">
+              {selectedAddon.manifest.behaviorHints?.configurable && (
+                <Button
+                  title="Configure"
+                  onPress={() => {
+                    const url = selectedAddon.manifestUrl.replace(/manifest\.json$/, 'configure');
+                    Linking.openURL(url).catch(() =>
+                      toast({ title: 'Failed to open URL', preset: 'error' })
+                    );
+                  }}
                 />
               )}
-              ItemSeparatorComponent={() => <Box height={8} />}
-              showsVerticalScrollIndicator={false}
-            />
-          )}
-        </Box>
-      </Box>
-    </ScrollView>
+
+              <Button
+                title="Uninstall"
+                onPress={() =>
+                  Alert.alert('Remove Addon', `Remove "${selectedAddon.manifest.name}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Remove',
+                      style: 'destructive',
+                      onPress: () => {
+                        removeAddon(selectedAddon.id);
+                        setSelectedAddon(null);
+                      },
+                    },
+                  ])
+                }
+              />
+
+              <Button variant="secondary" title="Close" onPress={() => setSelectedAddon(null)} />
+            </Box>
+          </Box>
+        </Modal>
+      )}
+    </Box>
   );
 });
 
-interface AddonCardProps {
-  addon: InstalledAddon;
-  onRemove: (id: string, name: string) => void;
-  onToggleHome: (id: string) => void;
-  onToggleSearch: (id: string) => void;
-  onToggleSubtitles: (id: string) => void;
-  onConfigure: (url: string) => void;
-}
+/* ADDON ROW COMPONENT */
+const AddonRow = ({
+  addon,
+  addonPlaceholder,
+  label,
+  focused,
+  onPress,
+  onFocus,
+}: {
+  addon?: InstalledAddon;
+  addonPlaceholder?: boolean;
+  label?: string;
+  focused: boolean;
+  onPress: () => void;
+  onFocus?: () => void;
+}) => {
+  const displayLabel = addonPlaceholder ? label : (addon?.manifest.name ?? '');
 
-const AddonCard: FC<AddonCardProps> = memo(
-  ({ addon, onRemove, onToggleHome, onToggleSearch, onToggleSubtitles, onConfigure }) => {
-    return (
-      <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
-        {/* Header with title and remove button */}
-        <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
-          <Box flex={1} gap="xs">
-            <Text variant="cardTitle">{addon.manifest.name}</Text>
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
-              {addon.manifestUrl}
-            </Text>
-            {addon.manifest.catalogs && (
+  return (
+    <Box borderRadius="l" overflow="hidden">
+      <TouchableOpacity
+        focusable
+        onFocus={onFocus}
+        onPress={onPress}
+        style={{
+          padding: theme.spacing.m,
+          borderRadius: theme.borderRadii.m,
+          backgroundColor: theme.colors.cardBackground,
+          opacity: focused ? 1 : 0.4,
+          transform: [{ scale: focused ? 1.06 : 1 }],
+          elevation: focused ? 8 : 0,
+        }}>
+        <Box flexDirection="row" gap="m" alignItems="center">
+          <Ionicons
+            name={addonPlaceholder ? 'add-circle-outline' : 'extension-puzzle-outline'}
+            size={36}
+            color={focused ? theme.colors.primaryBackground : theme.colors.textSecondary}
+          />
+
+          <Box flex={1}>
+            <Text variant="cardTitle">{displayLabel}</Text>
+            {!!addon && (
               <Text variant="caption" color="textSecondary">
-                {addon.manifest.catalogs.length} catalog(s)
+                v{addon.manifest.version}
               </Text>
             )}
           </Box>
-          <Box flexDirection="row" gap="xs">
-            <TouchableOpacity onPress={() => onRemove(addon.id, addon.manifest.name)}>
-              <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
-            </TouchableOpacity>
-            {addon.manifest.behaviorHints?.configurable && (
-              <TouchableOpacity onPress={() => onConfigure(addon.manifestUrl)}>
-                <Ionicons name="settings-outline" size={20} color={theme.colors.mainForeground} />
-              </TouchableOpacity>
-            )}
-          </Box>
         </Box>
-
-        {/* Settings toggles */}
-        <Box gap="s">
-          <SettingsSwitch
-            label="Visible on Home"
-            value={addon.useCatalogsOnHome}
-            onValueChange={() => onToggleHome(addon.id)}
-            description="Catalogs are visible on the Home screen"
-          />
-          <SettingsSwitch
-            label="Use in Search"
-            value={addon.useCatalogsInSearch}
-            onValueChange={() => onToggleSearch(addon.id)}
-            description="Catalogs are used for searching"
-          />
-          <SettingsSwitch
-            label="Use for Subtitles"
-            value={addon.useForSubtitles}
-            onValueChange={() => onToggleSubtitles(addon.id)}
-            description="Subtitles are fetched from this addon if available"
-          />
-        </Box>
-      </Box>
-    );
-  }
-);
+      </TouchableOpacity>
+    </Box>
+  );
+};
