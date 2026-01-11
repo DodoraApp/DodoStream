@@ -37,7 +37,7 @@
     "@sentry/react-native": "^7.2.0",
     "@shopify/flash-list": "^2.0.2",
     "@shopify/restyle": "^2.4.5",
-    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query": "^5.90.14",
     "burnt": "^0.13.0",
     "expo": "^54.0.31",
     "expo-build-disk-cache": "^0.7.2",
