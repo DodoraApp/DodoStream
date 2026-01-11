@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, useRef } from 'react';
+import { Animated, Easing } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { MetaPreview } from '@/types/stremio';
 import { Image } from 'expo-image';
@@ -9,6 +10,9 @@ import { Badge } from '@/components/basic/Badge';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import { Focusable } from '@/components/basic/Focusable';
 import { getImageSource } from '@/utils/image';
+import { CARD_ANIMATION_DURATION, CARD_SCALE_FOCUSED, CARD_SCALE_NORMAL } from '@/constants/media';
+
+const AnimatedBox = Animated.createAnimatedComponent(Box);
 
 interface MediaCardProps {
   media: MetaPreview;
@@ -29,28 +33,45 @@ export const MediaCard = memo(
     onFocused,
   }: MediaCardProps) => {
     const theme = useTheme<Theme>();
-
+    const scaleAnim = useRef(new Animated.Value(1)).current;
     const posterSource = getImageSource(media.poster || media.background, NO_POSTER_PORTRAIT);
+
+    const animateFocus = (focused: boolean) => {
+      Animated.timing(scaleAnim, {
+        toValue: focused ? CARD_SCALE_FOCUSED : CARD_SCALE_NORMAL,
+        duration: CARD_ANIMATION_DURATION,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }).start();
+    };
+
     return (
       <Focusable
         onPress={() => onPress(media)}
-        withOutline
         testID={testID}
         hasTVPreferredFocus={hasTVPreferredFocus}
         recyclingKey={media.id}
         onFocusChange={(isFocused) => {
+          animateFocus(isFocused);
           if (isFocused) onFocused?.();
         }}>
-        {({ focusStyle }) => (
-          <Box width={theme.cardSizes.media.width} gap="s">
+        {() => (
+          <AnimatedBox
+            width={theme.cardSizes.media.width}
+            gap="s"
+            style={{ transform: [{ scale: scaleAnim }] }}
+            shadowColor="mainForeground"
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.3}
+            shadowRadius={6}
+            elevation={4}>
             <Box
               height={theme.cardSizes.media.height}
               width={theme.cardSizes.media.width}
               borderRadius="l"
               overflow="hidden"
               backgroundColor="cardBackground"
-              position="relative"
-              style={focusStyle}>
+              position="relative">
               <Image
                 source={posterSource}
                 style={{ width: '100%', height: '100%' }}
@@ -58,16 +79,16 @@ export const MediaCard = memo(
                 recyclingKey={media.id}
               />
 
-              {badgeLabel ? (
+              {badgeLabel && (
                 <Box position="absolute" top={theme.spacing.s} right={theme.spacing.s}>
                   <Badge label={badgeLabel} />
                 </Box>
-              ) : null}
+              )}
             </Box>
             <Text variant="cardTitle" numberOfLines={1}>
               {media.name}
             </Text>
-          </Box>
+          </AnimatedBox>
         )}
       </Focusable>
     );
