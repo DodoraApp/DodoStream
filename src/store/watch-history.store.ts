@@ -7,6 +7,7 @@ import {
   PLAYBACK_FINISHED_RATIO,
 } from '@/constants/playback';
 import { createDebugLogger } from '@/utils/debug';
+import { useContinueWatchingStore } from '@/store/continue-watching.store';
 
 export interface WatchHistoryItem {
   id: string;
@@ -82,6 +83,8 @@ interface WatchHistoryState {
     durationSeconds: number
   ) => void;
   remove: (id: string, videoId?: string) => void;
+  /** Remove all history entries for a meta (movies + all episodes). */
+  removeMeta: (id: string) => void;
 }
 
 export const isContinueWatching = (
@@ -195,6 +198,9 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
       upsertItem: (item) => {
         const profileId = get().activeProfileId;
         if (!profileId) return;
+
+        // If the user watches something again, unhide it on the home screen.
+        useContinueWatchingStore.getState().setHidden(item.id, false);
 
         const videoKey = getVideoKey(item.videoId);
 
@@ -372,6 +378,24 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
               },
             };
           }
+        });
+      },
+
+      removeMeta: (id) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+
+        set((state) => {
+          const currentProfile = state.byProfile[profileId] ?? {};
+          if (!currentProfile[id]) return state;
+
+          const { [id]: removedMeta, ...restMetas } = currentProfile;
+          return {
+            byProfile: {
+              ...state.byProfile,
+              [profileId]: restMetas,
+            },
+          };
         });
       },
     }),

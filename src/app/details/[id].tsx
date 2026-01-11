@@ -1,15 +1,11 @@
 import { useLocalSearchParams, Stack } from 'expo-router';
-import theme, { Box, Text } from '@/theme/theme';
+import theme from '@/theme/theme';
 import { useMeta } from '@/api/stremio';
-import { useCallback } from 'react';
-
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
 import { EpisodeList } from '@/components/media/EpisodeList';
 import { ContentType, MetaVideo } from '@/types/stremio';
 import { Container } from '@/components/basic/Container';
-import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
-import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { DetailsShell } from '@/components/media/DetailsShell';
 import FadeIn from '@/components/basic/FadeIn';

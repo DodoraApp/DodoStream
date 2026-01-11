@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ContentType, MetaDetail, MetaVideo } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
+import { useContinueWatchingStore } from '@/store/continue-watching.store';
 import {
     useWatchHistoryStore,
     isContinueWatching,
@@ -110,6 +111,13 @@ const selectLatestItemPerMeta = (
 export function useContinueWatching(): ContinueWatchingEntry[] {
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
+    const hiddenMetaIds = useContinueWatchingStore(
+        useShallow((state) => {
+            if (!activeProfileId) return {} as Record<string, true>;
+            return state.byProfile[activeProfileId]?.hidden ?? {};
+        })
+    );
+
     const profileData = useWatchHistoryStore(
         useShallow((state) => {
             if (!activeProfileId) return {};
@@ -118,24 +126,26 @@ export function useContinueWatching(): ContinueWatchingEntry[] {
     );
 
     return useMemo(() => {
-        return selectLatestItemPerMeta(profileData).map((item): ContinueWatchingEntry => {
-            const progressRatio = getProgressRatio(item.progressSeconds, item.durationSeconds);
-            const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
+        return selectLatestItemPerMeta(profileData)
+            .filter((item) => !hiddenMetaIds[item.id])
+            .map((item): ContinueWatchingEntry => {
+                const progressRatio = getProgressRatio(item.progressSeconds, item.durationSeconds);
+                const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
 
-            return {
-                key: getEntryKey(item.id, item.videoId),
-                metaId: item.id,
-                type: item.type,
-                videoId: item.videoId,
-                progressSeconds: item.progressSeconds,
-                durationSeconds: item.durationSeconds,
-                progressRatio,
-                lastWatchedAt: item.lastWatchedAt,
-                // Preliminary isUpNext flag - will be refined when meta is fetched
-                isUpNext: isFinished && !!item.videoId,
-            };
-        });
-    }, [profileData]);
+                return {
+                    key: getEntryKey(item.id, item.videoId),
+                    metaId: item.id,
+                    type: item.type,
+                    videoId: item.videoId,
+                    progressSeconds: item.progressSeconds,
+                    durationSeconds: item.durationSeconds,
+                    progressRatio,
+                    lastWatchedAt: item.lastWatchedAt,
+                    // Preliminary isUpNext flag - will be refined when meta is fetched
+                    isUpNext: isFinished && !!item.videoId,
+                };
+            });
+    }, [hiddenMetaIds, profileData]);
 }
 
 /**

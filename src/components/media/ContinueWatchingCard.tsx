@@ -17,6 +17,7 @@ interface ContinueWatchingCardProps {
   entry: ContinueWatchingEntry;
   hideText?: boolean;
   onPress: () => void;
+  onLongPress?: () => void;
   onFocused?: () => void;
   hasTVPreferredFocus?: boolean;
   testID?: string;
@@ -27,6 +28,7 @@ export const ContinueWatchingCard = memo(
     entry,
     hideText,
     onPress,
+    onLongPress,
     onFocused,
     hasTVPreferredFocus = false,
     testID,
@@ -45,6 +47,7 @@ export const ContinueWatchingCard = memo(
     return (
       <Focusable
         onPress={onPress}
+        onLongPress={onLongPress}
         onFocus={() => onFocused?.()}
         hasTVPreferredFocus={hasTVPreferredFocus}
         withOutline

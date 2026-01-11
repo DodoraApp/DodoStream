@@ -13,6 +13,7 @@ import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import * as Burnt from 'burnt';
+import { resetProgressToStart } from '@/utils/playback';
 
 interface MediaButtonsProps {
   metaId: string;
@@ -62,9 +63,12 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   }, [debug, metaId, pushToStreams, videoId, type]);
 
   const handleStartOver = useCallback(() => {
-    if (historyItem && historyItem.durationSeconds > 0) {
-      updateProgress(metaId, videoId, 0, historyItem.durationSeconds);
-    }
+    resetProgressToStart({
+      metaId,
+      videoId,
+      durationSeconds: historyItem?.durationSeconds,
+      updateProgress,
+    });
     debug('navigateSingle', { metaId, videoId, type, mode: 'start-over' });
     pushToStreams({ metaId, videoId, type });
   }, [debug, historyItem, metaId, pushToStreams, videoId, type, updateProgress]);

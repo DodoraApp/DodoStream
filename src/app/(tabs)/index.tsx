@@ -14,6 +14,8 @@ import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
 import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
 import { CatalogSection } from '@/components/media/CatalogSection';
+import { PickerModal } from '@/components/basic/PickerModal';
+import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
 
 interface CatalogSectionData {
   manifestUrl: string;
@@ -46,6 +48,8 @@ export default function Home() {
   const [visibleContinueWatchingCount, setVisibleContinueWatchingCount] = useState<number>(
     CONTINUE_WATCHING_PAGE_SIZE
   );
+
+  const continueWatchingActions = useContinueWatchingActions();
 
   const hasAnyAddons = hasAddons();
 
@@ -152,6 +156,7 @@ export default function Home() {
             continueWatchingVisible={continueWatchingVisible}
             onEndReached={handleContinueWatchingEndReached}
             onSectionFocused={handleSectionFocused}
+            onLongPressEntry={continueWatchingActions.openActions}
             hasTVPreferredFocus={isTV}
           />
         );
@@ -173,6 +178,7 @@ export default function Home() {
       );
     },
     [
+      continueWatchingActions.openActions,
       continueWatchingVisible,
       handleContinueWatchingEndReached,
       handleMediaPress,
@@ -219,6 +225,14 @@ export default function Home() {
         decelerationRate={isTV ? undefined : 'fast'}
         showsVerticalScrollIndicator={false}
       />
+
+      <PickerModal
+        visible={continueWatchingActions.isVisible}
+        onClose={continueWatchingActions.closeActions}
+        label={continueWatchingActions.label}
+        items={continueWatchingActions.items}
+        onValueChange={continueWatchingActions.handleAction}
+      />
     </Container>
   );
 }
@@ -238,6 +252,7 @@ interface ContinueWatchingSectionRowProps {
   continueWatchingVisible: ContinueWatchingEntry[];
   onEndReached: () => void;
   onSectionFocused: (sectionKey: string) => void;
+  onLongPressEntry: (entry: ContinueWatchingEntry) => void;
   hasTVPreferredFocus?: boolean;
 }
 
@@ -247,6 +262,7 @@ const ContinueWatchingSectionRow = memo(
     continueWatchingVisible,
     onEndReached,
     onSectionFocused,
+    onLongPressEntry,
     hasTVPreferredFocus = false,
   }: ContinueWatchingSectionRowProps) => {
     const isTV = Platform.isTV;
@@ -261,6 +277,7 @@ const ContinueWatchingSectionRow = memo(
             entry={item}
             hasTVPreferredFocus={Boolean(hasTVPreferredFocus && isTV && index === 0)}
             onFocused={() => onSectionFocused(sectionKey)}
+            onLongPress={onLongPressEntry}
           />
         )}
         showsHorizontalScrollIndicator={false}

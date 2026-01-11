@@ -9,11 +9,49 @@ import { TagFilters } from '@/components/basic/TagFilters';
 import { useGroupOptions } from '@/hooks/useGroupOptions';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
+const getPickerListItemColors = ({
+  tone,
+  isSelected,
+  isFocused,
+}: {
+  tone: PickerItem['tone'];
+  isSelected: boolean;
+  isFocused: boolean;
+}): {
+  backgroundColor: keyof Theme['colors'];
+  foregroundColor: keyof Theme['colors'];
+} => {
+  const isDestructive = tone === 'destructive';
+  const isActiveOrFocused = isSelected || isFocused;
+
+  if (isDestructive) {
+    return {
+      backgroundColor: isActiveOrFocused ? 'danger' : 'inputBackground',
+      foregroundColor: isActiveOrFocused ? 'mainForeground' : 'danger',
+    };
+  }
+
+  return {
+    backgroundColor: getFocusableBackgroundColor({
+      isActive: isSelected,
+      isFocused,
+      defaultColor: 'inputBackground',
+    }),
+    foregroundColor: getFocusableForegroundColor({
+      isActive: isSelected,
+      isFocused,
+      defaultColor: 'mainForeground',
+    }),
+  };
+};
+
 export interface PickerItem<T extends string | number = string | number> {
   label: string;
   value: T;
   groupId?: string | null; // optional grouping identifier (e.g., language code)
   tag?: string; // optional tag displayed as a badge (e.g., "Addon", "Video")
+  icon?: keyof typeof Ionicons.glyphMap;
+  tone?: 'default' | 'destructive';
 }
 
 export interface PickerModalProps<T extends string | number = string | number> {
@@ -37,48 +75,55 @@ interface PickerListItemProps {
 }
 
 /** Memoized list item to prevent re-renders during filter/scroll */
-const PickerListItem = memo(({ item, isSelected, onPress }: PickerListItemProps) => (
-  <Focusable onPress={() => onPress(item.value)} hasTVPreferredFocus={isSelected}>
-    {({ isFocused }) => (
-      <Box
-        backgroundColor={getFocusableBackgroundColor({
-          isActive: isSelected,
+const PickerListItem = memo(({ item, isSelected, onPress }: PickerListItemProps) => {
+  const theme = useTheme<Theme>();
+
+  return (
+    <Focusable onPress={() => onPress(item.value)} hasTVPreferredFocus={isSelected}>
+      {({ isFocused }) => {
+        const { backgroundColor, foregroundColor } = getPickerListItemColors({
+          tone: item.tone,
+          isSelected,
           isFocused,
-          defaultColor: 'inputBackground',
-        })}
-        borderRadius="m"
-        paddingHorizontal="m"
-        paddingVertical="m"
-        flexDirection="row"
-        alignItems="center"
-        justifyContent="space-between">
-        <Text
-          variant="body"
-          color={getFocusableForegroundColor({
-            isActive: isSelected,
-            isFocused,
-            defaultColor: 'mainForeground',
-          })}
-          fontSize={16}
-          style={{ flex: 1 }}>
-          {item.label}
-        </Text>
-        {item.tag && (
+        });
+
+        return (
           <Box
-            backgroundColor="focusBackground"
-            borderRadius="s"
-            paddingHorizontal="s"
-            paddingVertical="xs"
-            marginLeft="s">
-            <Text variant="caption" color="textSecondary" fontSize={12}>
-              {item.tag}
-            </Text>
+            backgroundColor={backgroundColor}
+            borderRadius="m"
+            paddingHorizontal="m"
+            paddingVertical="m"
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="space-between">
+            <Box flexDirection="row" alignItems="center" gap="s" flex={1}>
+              {item.icon && (
+                <Box>
+                  <Ionicons name={item.icon} size={24} color={theme.colors[foregroundColor]} />
+                </Box>
+              )}
+              <Text variant="body" color={foregroundColor} fontSize={16} style={{ flex: 1 }}>
+                {item.label}
+              </Text>
+            </Box>
+            {item.tag && (
+              <Box
+                backgroundColor="focusBackground"
+                borderRadius="s"
+                paddingHorizontal="s"
+                paddingVertical="xs"
+                marginLeft="s">
+                <Text variant="caption" color="textSecondary" fontSize={12}>
+                  {item.tag}
+                </Text>
+              </Box>
+            )}
           </Box>
-        )}
-      </Box>
-    )}
-  </Focusable>
-));
+        );
+      }}
+    </Focusable>
+  );
+});
 
 PickerListItem.displayName = 'PickerListItem';
 

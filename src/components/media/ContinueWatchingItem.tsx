@@ -13,6 +13,7 @@ interface ContinueWatchingItemProps {
   entry: ContinueWatchingEntry;
   hasTVPreferredFocus?: boolean;
   onFocused?: () => void;
+  onLongPress?: (entry: ContinueWatchingEntry) => void;
 }
 
 /**
@@ -20,7 +21,7 @@ interface ContinueWatchingItemProps {
  * Fetches meta data and resolves the full entry before rendering the card.
  */
 export const ContinueWatchingItem = memo(
-  ({ entry, hasTVPreferredFocus = false, onFocused }: ContinueWatchingItemProps) => {
+  ({ entry, hasTVPreferredFocus = false, onFocused, onLongPress }: ContinueWatchingItemProps) => {
     const { pushToStreams } = useMediaNavigation();
     const getLastStreamTarget = useWatchHistoryStore((state) => state.getLastStreamTarget);
 
@@ -43,6 +44,11 @@ export const ContinueWatchingItem = memo(
       );
     }, [resolvedEntry, getLastStreamTarget, pushToStreams]);
 
+    const handleLongPress = useCallback(() => {
+      if (!resolvedEntry) return;
+      onLongPress?.(resolvedEntry);
+    }, [onLongPress, resolvedEntry]);
+
     // TODO render skeleton instead?
     // Don't render if loading or no valid entry
     if (isLoading || !resolvedEntry) return null;
@@ -51,6 +57,7 @@ export const ContinueWatchingItem = memo(
       <ContinueWatchingCard
         entry={resolvedEntry}
         onPress={handlePress}
+        onLongPress={onLongPress ? handleLongPress : undefined}
         onFocused={onFocused}
         hasTVPreferredFocus={hasTVPreferredFocus}
       />

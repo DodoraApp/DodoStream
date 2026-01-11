@@ -22,6 +22,23 @@ jest.mock('@expo/vector-icons', () => {
     };
 });
 
+// Avoid native module errors for haptics in tests
+jest.mock('expo-haptics', () => ({
+    selectionAsync: jest.fn(() => Promise.resolve()),
+    impactAsync: jest.fn(() => Promise.resolve()),
+    notificationAsync: jest.fn(() => Promise.resolve()),
+    ImpactFeedbackStyle: {
+        Light: 'Light',
+        Medium: 'Medium',
+        Heavy: 'Heavy',
+    },
+    NotificationFeedbackType: {
+        Success: 'Success',
+        Warning: 'Warning',
+        Error: 'Error',
+    },
+}));
+
 // Moti ships ESM builds; mock to avoid Jest ESM transform issues.
 jest.mock('moti', () => {
     const React = require('react');

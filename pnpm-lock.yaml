@@ -68,6 +68,9 @@ importers:
       expo-font:
         specifier: ^14.0.10
         version: 14.0.10(expo@54.0.31)(react-native-tvos@0.81.5-1)(react@19.1.0)
+      expo-haptics:
+        specifier: ~15.0.8
+        version: 15.0.8(expo@54.0.31)
       expo-image:
         specifier: ~3.0.11
         version: 3.0.11(expo@54.0.31)(react-native-tvos@0.81.5-1)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
@@ -2821,6 +2824,11 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-haptics@15.0.8:
+    resolution: {integrity: sha512-lftutojy8Qs8zaDzzjwM3gKHFZ8bOOEZDCkmh2Ddpe95Ra6kt2izeOfOfKuP/QEh0MZ1j9TfqippyHdRd1ZM9g==}
+    peerDependencies:
+      expo: '*'
 
   expo-image@3.0.11:
     resolution: {integrity: sha512-4TudfUCLgYgENv+f48omnU8tjS2S0Pd9EaON5/s1ZUBRwZ7K8acEr4NfvLPSaeXvxW24iLAiyQ7sV7BXQH3RoA==}
@@ -8661,6 +8669,10 @@ snapshots:
       fontfaceobserver: 2.3.0
       react: 19.1.0
       react-native: react-native-tvos@0.81.5-1(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
+
+  expo-haptics@15.0.8(expo@54.0.31):
+    dependencies:
+      expo: 54.0.31(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.21)(react-native-tvos@0.81.5-1)(react@19.1.0)
 
   expo-image@3.0.11(expo@54.0.31)(react-native-tvos@0.81.5-1)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
     dependencies:
