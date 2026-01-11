@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                     enableNotificationControls: true,
                     enableBackgroundAudio: false,
                     enableADSExtension: false,
-                    enableCacheExtension: true,
+                    enablFeCacheExtension: true,
                     enableAndroidPictureInPicture: true,
                     androidExtensions: {
                         useExoplayerRtsp: false,
@@ -103,10 +103,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             backgroundColor: appBackgroundColor,
         },
         android: {
-            adaptiveIcon: {
-                foregroundImage: './assets/app/adaptive-icon.png',
-                backgroundColor: appBackgroundColor,
-            },
             userInterfaceStyle: 'dark',
             package: androidPackage,
             permissions: [
