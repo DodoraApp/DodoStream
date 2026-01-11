@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react';
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
+import { ContinueWatchingItemSkeleton } from '@/components/media/ContinueWatchingItemSkeleton';
 import { useMeta } from '@/api/stremio';
 import {
   useContinueWatchingForMeta,
@@ -49,9 +50,10 @@ export const ContinueWatchingItem = memo(
       onLongPress?.(resolvedEntry);
     }, [onLongPress, resolvedEntry]);
 
-    // TODO render skeleton instead?
-    // Don't render if loading or no valid entry
-    if (isLoading || !resolvedEntry) return null;
+    // Show skeleton while loading
+    if (isLoading || !resolvedEntry) {
+      return <ContinueWatchingItemSkeleton />;
+    }
 
     return (
       <ContinueWatchingCard

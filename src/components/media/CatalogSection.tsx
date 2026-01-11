@@ -1,7 +1,6 @@
 import { memo } from 'react';
-import { Box } from '@/theme/theme';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { MediaList } from '@/components/media/MediaList';
+import { MediaListSkeleton } from '@/components/media/MediaListSkeleton';
 import { MetaPreview } from '@/types/stremio';
 import { useCatalog } from '@/api/stremio';
 
@@ -61,11 +60,7 @@ export const CatalogSection = memo(
     const { data, isLoading, isError } = useCatalog(manifestUrl, catalogType, catalogId, 0, true);
 
     if (isLoading) {
-      return (
-        <Box padding="xl" alignItems="center" height={234}>
-          <LoadingIndicator size="large" />
-        </Box>
-      );
+      return <MediaListSkeleton />;
     }
 
     if (isError || !data || !data.metas) {
