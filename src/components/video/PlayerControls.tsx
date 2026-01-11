@@ -1,5 +1,5 @@
-import React, { FC, useState, useEffect, useCallback, useMemo } from 'react';
-import { StyleSheet, Pressable } from 'react-native';
+import React, { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { StyleSheet, Pressable, Platform } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
@@ -13,6 +13,9 @@ import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import {
   PLAYER_CONTROLS_AUTO_HIDE_MS,
+  PLAYER_SEEK_DEBOUNCE_MS,
+  PLAYER_SEEK_UI_SYNC_THRESHOLD_SECONDS,
+  PLAYER_SEEK_UI_SYNC_TIMEOUT_MS,
   SKIP_BACKWARD_SECONDS,
   SKIP_FORWARD_SECONDS,
 } from '@/constants/playback';
@@ -112,9 +115,51 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   const [visible, setVisible] = useState(true);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
+  const [isSeekFocused, setIsSeekFocused] = useState(false);
   const [showAudioTracks, setShowAudioTracks] = useState(false);
   const [showTextTracks, setShowTextTracks] = useState(false);
   const [interactionId, setInteractionId] = useState(0);
+
+  const seekDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seekDebounceTokenRef = useRef(0);
+  const lastSeekTimeRef = useRef(0);
+  const wasPlayingBeforeSeekRef = useRef(false);
+  const tvSeekActiveRef = useRef(false);
+  const tvPendingSeekTimeRef = useRef<number | null>(null);
+  const tvUiSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastNonZeroDurationRef = useRef(0);
+
+  useEffect(() => {
+    if (duration > 0 && isFinite(duration)) {
+      lastNonZeroDurationRef.current = duration;
+    }
+  }, [duration]);
+
+  useEffect(() => {
+    return () => {
+      if (seekDebounceTimeoutRef.current) {
+        clearTimeout(seekDebounceTimeoutRef.current);
+        seekDebounceTimeoutRef.current = null;
+      }
+      if (tvUiSyncTimeoutRef.current) {
+        clearTimeout(tvUiSyncTimeoutRef.current);
+        tvUiSyncTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!Platform.isTV) return;
+    if (tvSeekActiveRef.current) return;
+
+    const pending = tvPendingSeekTimeRef.current;
+    if (!isSeeking || pending == null) return;
+
+    if (Math.abs(currentTime - pending) <= PLAYER_SEEK_UI_SYNC_THRESHOLD_SECONDS) {
+      tvPendingSeekTimeRef.current = null;
+      setIsSeeking(false);
+    }
+  }, [currentTime, isSeeking]);
 
   // Notify parent when visibility changes
   useEffect(() => {
@@ -202,17 +247,79 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     debug('seekStart');
     registerInteraction();
     setIsSeeking(true);
+    setSeekTime(currentTime);
+    lastSeekTimeRef.current = currentTime;
+
+    // Only resume afterwards if we paused because of seeking.
+    wasPlayingBeforeSeekRef.current = !paused;
     if (!paused) {
       onPlayPause(); // Pause video while seeking
     }
-  }, [debug, paused, onPlayPause, registerInteraction]);
+  }, [currentTime, debug, paused, onPlayPause, registerInteraction]);
 
   const handleSeekChange = useCallback(
     (value: number) => {
       registerInteraction();
+
       setSeekTime(value);
+      lastSeekTimeRef.current = value;
+
+      if (!Platform.isTV) return;
+
+      // On TV, value changes are triggered by D-pad left/right without a reliable "sliding complete".
+      // We debounce and commit the seek after the user stops scrubbing.
+      if (!tvSeekActiveRef.current) {
+        debug('tvSeekStart');
+        tvSeekActiveRef.current = true;
+        setIsSeeking(true);
+
+        wasPlayingBeforeSeekRef.current = !paused;
+        if (!paused) {
+          onPlayPause();
+        }
+      }
+
+      if (seekDebounceTimeoutRef.current) {
+        clearTimeout(seekDebounceTimeoutRef.current);
+        seekDebounceTimeoutRef.current = null;
+      }
+
+      seekDebounceTokenRef.current += 1;
+      const token = seekDebounceTokenRef.current;
+
+      seekDebounceTimeoutRef.current = setTimeout(() => {
+        if (token !== seekDebounceTokenRef.current) return;
+
+        const max = lastNonZeroDurationRef.current;
+        const commitValue = max > 0 ? Math.min(lastSeekTimeRef.current, max) : lastSeekTimeRef.current;
+
+        debug('tvSeekCommit', { commitValue });
+        registerInteraction();
+        onSeek(commitValue);
+
+        // Keep the UI pinned to the committed value until playback time catches up.
+        setSeekTime(commitValue);
+        tvPendingSeekTimeRef.current = commitValue;
+        tvSeekActiveRef.current = false;
+
+        if (tvUiSyncTimeoutRef.current) {
+          clearTimeout(tvUiSyncTimeoutRef.current);
+          tvUiSyncTimeoutRef.current = null;
+        }
+
+        tvUiSyncTimeoutRef.current = setTimeout(() => {
+          tvUiSyncTimeoutRef.current = null;
+          tvPendingSeekTimeRef.current = null;
+          setIsSeeking(false);
+        }, PLAYER_SEEK_UI_SYNC_TIMEOUT_MS);
+
+        if (wasPlayingBeforeSeekRef.current) {
+          wasPlayingBeforeSeekRef.current = false;
+          onPlayPause();
+        }
+      }, PLAYER_SEEK_DEBOUNCE_MS);
     },
-    [registerInteraction]
+    [debug, onPlayPause, onSeek, paused, registerInteraction]
   );
 
   const handleSeekEnd = useCallback(
@@ -221,11 +328,14 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       registerInteraction();
       setIsSeeking(false);
       onSeek(value);
-      if (paused) {
-        onPlayPause(); // Resume video after seeking
+
+      // Only resume if we paused because of seeking.
+      if (wasPlayingBeforeSeekRef.current) {
+        wasPlayingBeforeSeekRef.current = false;
+        onPlayPause();
       }
     },
-    [debug, paused, onSeek, onPlayPause, registerInteraction]
+    [debug, onSeek, onPlayPause, registerInteraction]
   );
 
   const toggleControls = useCallback(() => {
@@ -246,6 +356,10 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       </Pressable>
     );
   }
+
+  const effectiveDuration = duration > 0 ? duration : lastNonZeroDurationRef.current;
+  const sliderMaximumValue = effectiveDuration > 0 ? effectiveDuration : 1;
+  const sliderValue = Math.min(isSeeking ? seekTime : currentTime, sliderMaximumValue);
 
   return (
     <Pressable
@@ -282,7 +396,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           paddingVertical="m"
           gap="s"
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backgroundColor: theme.colors.semiTransparentBackground,
           }}>
           <Box>
             {/* Time Display */}
@@ -301,16 +415,23 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
 
             {/* Seek Bar - Full Width */}
             <Slider
-              style={{ width: '100%', height: 40 }}
+              style={{ width: '100%', height: theme.sizes.inputHeight }}
               minimumValue={0}
-              maximumValue={duration || 0}
-              value={currentTime}
+              maximumValue={sliderMaximumValue}
+              value={sliderValue}
               onSlidingStart={handleSeekStart}
               onValueChange={handleSeekChange}
-              onSlidingComplete={handleSeekEnd}
-              minimumTrackTintColor={theme.colors.primaryBackground}
+              onSlidingComplete={Platform.isTV ? undefined : handleSeekEnd}
+              onFocus={() => setIsSeekFocused(true)}
+              onBlur={() => setIsSeekFocused(false)}
+              minimumTrackTintColor={
+                isSeekFocused ? theme.colors.focusBackgroundPrimary : theme.colors.primaryBackground
+              }
               maximumTrackTintColor={theme.colors.secondaryBackground}
-              thumbTintColor={theme.colors.primaryBackground}
+              thumbTintColor={
+                isSeekFocused ? theme.colors.focusBackgroundPrimary : theme.colors.primaryBackground
+              }
+              disabled={effectiveDuration <= 0}
             />
           </Box>
 
