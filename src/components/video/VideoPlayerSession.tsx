@@ -25,6 +25,8 @@ import {
   SKIP_FORWARD_SECONDS,
   SKIP_BACKWARD_SECONDS,
   PLAYBACK_RATIO_PERSIST_INTERVAL,
+  UPNEXT_POPUP_SERIES_RATIO,
+  UPNEXT_POPUP_MOVIE_RATIO,
 } from '@/constants/playback';
 import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { useDebugLogger } from '@/utils/debug';
@@ -136,10 +138,44 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
 
-  const progressRatio = useMemo(() => {
+  // Throttled progress ratio for UpNextPopup - only updates at meaningful thresholds
+  // This prevents UpNextPopup from re-evaluating visibility on every 250ms progress tick
+  const upNextThreshold =
+    mediaType === 'series' ? UPNEXT_POPUP_SERIES_RATIO : UPNEXT_POPUP_MOVIE_RATIO;
+  const lastThrottledRatioRef = useRef(0);
+
+  const throttledProgressRatio = useMemo(() => {
     if (duration <= 0) return 0;
-    return currentTime / duration;
-  }, [currentTime, duration]);
+    const rawRatio = currentTime / duration;
+
+    // Only update when:
+    // 1. Crossing the upnext threshold (either direction)
+    // 2. At significant intervals (every 5%) before threshold
+    const lastRatio = lastThrottledRatioRef.current;
+    const crossedThreshold =
+      (lastRatio < upNextThreshold && rawRatio >= upNextThreshold) ||
+      (lastRatio >= upNextThreshold && rawRatio < upNextThreshold);
+
+    if (crossedThreshold) {
+      lastThrottledRatioRef.current = rawRatio;
+      return rawRatio;
+    }
+
+    // Once past threshold, update more frequently for accurate countdown
+    if (rawRatio >= upNextThreshold) {
+      lastThrottledRatioRef.current = rawRatio;
+      return rawRatio;
+    }
+
+    // Before threshold, only update at 5% intervals to reduce re-renders
+    const interval = 0.05;
+    if (Math.floor(rawRatio / interval) !== Math.floor(lastRatio / interval)) {
+      lastThrottledRatioRef.current = rawRatio;
+      return rawRatio;
+    }
+
+    return lastRatio;
+  }, [currentTime, duration, upNextThreshold]);
 
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
@@ -587,7 +623,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         metaId={metaId}
         mediaType={mediaType}
         videoId={videoId}
-        progressRatio={progressRatio}
+        progressRatio={throttledProgressRatio}
         dismissed={upNextDismissed}
         autoplayCancelled={autoplayCancelled}
         controlsVisible={controlsVisible}
