@@ -23,6 +23,7 @@ import {
 } from '@/utils/languages';
 import { useDebugLogger } from '@/utils/debug';
 import { ControlButton } from '@/components/video/controls/ControlButton';
+import { useBreakpointValue, useResponsiveLayout } from '@/hooks/useBreakpoint';
 
 interface PlayerControlsProps {
   // Playback state
@@ -95,6 +96,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   onVisibilityChange,
 }) => {
   const theme = useTheme<Theme>();
+  const { isPlatformTV } = useResponsiveLayout();
   const debug = useDebugLogger('PlayerControls');
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
@@ -155,22 +157,6 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       })
       .map((x) => x.item);
   }, [audioTracks, preferredAudioLanguages]);
-
-  // Auto-hide controls after inactivity
-  useEffect(() => {
-    if (visible && !paused && !isSeeking && !showAudioTracks && !showTextTracks) {
-      const timeout = setTimeout(() => {
-        setVisible(false);
-      }, PLAYER_CONTROLS_AUTO_HIDE_MS);
-      return () => clearTimeout(timeout);
-    }
-  }, [visible, paused, isSeeking, showAudioTracks, showTextTracks, interactionId]);
-
-  const showControls = useCallback(() => {
-    registerInteraction();
-  }, [registerInteraction]);
-
-  const handleButtonFocusChange = useCallback(() => registerInteraction(), [registerInteraction]);
 
   const handleBack = useCallback(() => {
     registerInteraction();
@@ -233,6 +219,25 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     registerInteraction();
     setVisible(!visible);
   }, [debug, registerInteraction, visible]);
+
+  // Auto-hide controls after inactivity
+  useEffect(() => {
+    if (visible && !paused && !isSeeking && !showAudioTracks && !showTextTracks) {
+      const timeout = setTimeout(() => {
+        setVisible(false);
+      }, PLAYER_CONTROLS_AUTO_HIDE_MS);
+      return () => clearTimeout(timeout);
+    }
+  }, [visible, paused, isSeeking, showAudioTracks, showTextTracks, interactionId]);
+
+  const showControls = useCallback(() => {
+    registerInteraction();
+    if (isPlatformTV && !paused) {
+      handlePlayPause();
+    }
+  }, [handlePlayPause, isPlatformTV, paused, registerInteraction]);
+
+  const handleButtonFocusChange = useCallback(() => registerInteraction(), [registerInteraction]);
 
   if (!visible) {
     // Invisible touchable area to show controls
