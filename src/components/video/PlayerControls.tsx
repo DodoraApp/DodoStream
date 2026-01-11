@@ -1,5 +1,5 @@
-import React, { FC, useState, useEffect, useCallback, useMemo } from 'react';
-import { StyleSheet, Pressable } from 'react-native';
+import React, { FC, useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
@@ -23,29 +23,24 @@ import {
 } from '@/utils/languages';
 import { useDebugLogger } from '@/utils/debug';
 import { ControlButton } from '@/components/video/controls/ControlButton';
-import { useBreakpointValue, useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface PlayerControlsProps {
-  // Playback state
   paused: boolean;
   currentTime: number;
   duration: number;
   showLoadingIndicator: boolean;
-
-  // Title
   title?: string;
-
-  // Tracks
   audioTracks: AudioTrack[];
   textTracks: TextTrack[];
   selectedAudioTrack?: AudioTrack;
   selectedTextTrack?: TextTrack;
-
-  // Subtitle sync
   subtitleDelay: number;
   onSubtitleDelayChange: (delay: number) => void;
-
-  // Callbacks
   onPlayPause: () => void;
   onSeek: (time: number) => void;
   onSkipBackward: () => void;
@@ -59,6 +54,52 @@ interface PlayerControlsProps {
   onVisibilityChange?: (visible: boolean) => void;
 }
 
+interface TimeDisplayProps {
+  currentTime: number;
+  duration: number;
+  isSeeking: boolean;
+  seekTime: number;
+}
+
+interface SeekBarProps {
+  currentTime: number;
+  duration: number;
+  onSeekStart: () => void;
+  onSeekChange: (value: number) => void;
+  onSeekEnd: (value: number) => void;
+}
+
+interface PlaybackControlsProps {
+  paused: boolean;
+  showLoadingIndicator: boolean;
+  onPlayPause: () => void;
+  onSkipBackward: () => void;
+  onSkipForward: () => void;
+  onFocusChange: () => void;
+}
+
+interface SkipEpisodeControlProps {
+  showSkipEpisode: boolean;
+  skipEpisodeLabel?: string;
+  showLoadingIndicator: boolean;
+  onSkipEpisode?: () => void;
+  onFocusChange: () => void;
+}
+
+interface TrackControlsProps {
+  showLoadingIndicator: boolean;
+  selectedAudioTrack?: AudioTrack;
+  selectedTextTrack?: TextTrack;
+  hasTextTracks: boolean;
+  onToggleAudioTracks: () => void;
+  onToggleTextTracks: () => void;
+  onFocusChange: () => void;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
 const formatTime = (seconds: number): string => {
   if (!isFinite(seconds)) return '0:00';
   const hours = Math.floor(seconds / 3600);
@@ -70,6 +111,228 @@ const formatTime = (seconds: number): string => {
   }
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
+
+// ============================================================================
+// Sub-Components (Memoized for performance)
+// ============================================================================
+
+/**
+ * Displays current time / duration. Only re-renders when time values change.
+ */
+const TimeDisplay = memo<TimeDisplayProps>(({ currentTime, duration, isSeeking, seekTime }) => {
+  const displayTime = isSeeking ? seekTime : currentTime;
+
+  return (
+    <Box
+      flexDirection="row"
+      alignItems="center"
+      justifyContent="space-between"
+      paddingHorizontal="s">
+      <Text variant="body" color="mainForeground" fontSize={14}>
+        {formatTime(displayTime)}
+      </Text>
+      <Text variant="body" color="mainForeground" fontSize={14}>
+        {formatTime(duration)}
+      </Text>
+    </Box>
+  );
+});
+
+TimeDisplay.displayName = 'TimeDisplay';
+
+/**
+ * Seek bar slider. Uses internal state to prevent parent re-renders during drag.
+ * Only syncs with external currentTime when not actively seeking.
+ */
+const SeekBar = memo<SeekBarProps>(
+  ({ currentTime, duration, onSeekStart, onSeekChange, onSeekEnd }) => {
+    const theme = useTheme<Theme>();
+    const [internalValue, setInternalValue] = useState(currentTime);
+    const isSeekingRef = useRef(false);
+
+    // Sync internal value with external currentTime only when not seeking
+    useEffect(() => {
+      if (!isSeekingRef.current) {
+        setInternalValue(currentTime);
+      }
+    }, [currentTime]);
+
+    const handleSlidingStart = useCallback(() => {
+      isSeekingRef.current = true;
+      onSeekStart();
+    }, [onSeekStart]);
+
+    const handleValueChange = useCallback(
+      (value: number) => {
+        setInternalValue(value);
+        onSeekChange(value);
+      },
+      [onSeekChange]
+    );
+
+    const handleSlidingComplete = useCallback(
+      (value: number) => {
+        isSeekingRef.current = false;
+        setInternalValue(value);
+        onSeekEnd(value);
+      },
+      [onSeekEnd]
+    );
+
+    return (
+      <Slider
+        style={{ width: '100%', height: 40 }}
+        minimumValue={0}
+        maximumValue={duration || 1}
+        value={internalValue}
+        onSlidingStart={handleSlidingStart}
+        onValueChange={handleValueChange}
+        onSlidingComplete={handleSlidingComplete}
+        minimumTrackTintColor={theme.colors.primaryBackground}
+        maximumTrackTintColor={theme.colors.secondaryBackground}
+        thumbTintColor={theme.colors.primaryBackground}
+      />
+    );
+  }
+);
+
+SeekBar.displayName = 'SeekBar';
+
+/**
+ * Center playback controls (skip back, play/pause, skip forward).
+ */
+const PlaybackControls = memo<PlaybackControlsProps>(
+  ({ paused, showLoadingIndicator, onPlayPause, onSkipBackward, onSkipForward, onFocusChange }) => (
+    <Box flexDirection="row" alignItems="center" gap="s">
+      <ControlButton
+        onPress={onSkipBackward}
+        icon="rotate-left"
+        iconComponent={MaterialCommunityIcons}
+        disabled={showLoadingIndicator}
+        label={`-${SKIP_BACKWARD_SECONDS}s`}
+        onFocusChange={onFocusChange}
+      />
+      <ControlButton
+        onPress={onPlayPause}
+        icon={paused ? 'play' : 'pause'}
+        iconComponent={Ionicons}
+        disabled={showLoadingIndicator}
+        hasTVPreferredFocus
+        onFocusChange={onFocusChange}
+        variant="primary"
+        label={paused ? 'Play' : 'Pause'}
+      />
+      <ControlButton
+        onPress={onSkipForward}
+        icon="rotate-right"
+        iconComponent={MaterialCommunityIcons}
+        disabled={showLoadingIndicator}
+        label={`+${SKIP_FORWARD_SECONDS}s`}
+        onFocusChange={onFocusChange}
+      />
+    </Box>
+  )
+);
+
+PlaybackControls.displayName = 'PlaybackControls';
+
+/**
+ * Skip episode button (left side control).
+ */
+const SkipEpisodeControl = memo<SkipEpisodeControlProps>(
+  ({ showSkipEpisode, skipEpisodeLabel, showLoadingIndicator, onSkipEpisode, onFocusChange }) => {
+    if (!showSkipEpisode) return <Box />;
+
+    return (
+      <ControlButton
+        onPress={onSkipEpisode ?? (() => {})}
+        icon="skip-next"
+        iconComponent={MaterialCommunityIcons}
+        disabled={showLoadingIndicator || !onSkipEpisode}
+        label="Skip"
+        onFocusChange={onFocusChange}
+        badge={skipEpisodeLabel}
+        badgeVariant="tertiary"
+      />
+    );
+  }
+);
+
+SkipEpisodeControl.displayName = 'SkipEpisodeControl';
+
+/**
+ * Audio and subtitle track controls (right side).
+ */
+const TrackControls = memo<TrackControlsProps>(
+  ({
+    showLoadingIndicator,
+    selectedAudioTrack,
+    selectedTextTrack,
+    hasTextTracks,
+    onToggleAudioTracks,
+    onToggleTextTracks,
+    onFocusChange,
+  }) => {
+    const audioBadge = selectedAudioTrack?.language
+      ? (normalizeLanguageCode(selectedAudioTrack.language)?.toUpperCase() ??
+        selectedAudioTrack.language.substring(0, 2).toUpperCase())
+      : undefined;
+
+    const subtitleBadge = selectedTextTrack?.language
+      ? (normalizeLanguageCode(selectedTextTrack.language)?.toUpperCase() ??
+        selectedTextTrack.language.substring(0, 2).toUpperCase())
+      : undefined;
+
+    return (
+      <Box flexDirection="row" alignItems="center" gap="s">
+        <ControlButton
+          onPress={onToggleAudioTracks}
+          icon="globe"
+          iconComponent={Ionicons}
+          disabled={showLoadingIndicator}
+          onFocusChange={onFocusChange}
+          label="Audio"
+          badge={audioBadge}
+          badgeVariant="tertiary"
+        />
+        {hasTextTracks && (
+          <ControlButton
+            onPress={onToggleTextTracks}
+            icon="subtitles"
+            iconComponent={MaterialCommunityIcons}
+            disabled={showLoadingIndicator}
+            onFocusChange={onFocusChange}
+            label="Subtitles"
+            badge={subtitleBadge}
+            badgeVariant="tertiary"
+          />
+        )}
+      </Box>
+    );
+  }
+);
+
+TrackControls.displayName = 'TrackControls';
+
+/**
+ * Top bar with back button and title.
+ */
+const TopBar = memo<{ title?: string; onBack: () => void }>(({ title, onBack }) => (
+  <Box flexDirection="row" alignItems="center" paddingHorizontal="l" paddingVertical="m" gap="m">
+    <ControlButton onPress={onBack} icon="arrow-back" iconComponent={Ionicons} />
+    <Box flex={1}>
+      <Text variant="cardTitle" color="mainForeground" numberOfLines={1}>
+        {title || 'Play'}
+      </Text>
+    </Box>
+  </Box>
+));
+
+TopBar.displayName = 'TopBar';
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export const PlayerControls: FC<PlayerControlsProps> = ({
   paused,
@@ -95,7 +358,6 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   onSelectTextTrack,
   onVisibilityChange,
 }) => {
-  const theme = useTheme<Theme>();
   const { isPlatformTV } = useResponsiveLayout();
   const debug = useDebugLogger('PlayerControls');
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -116,7 +378,9 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   const [seekTime, setSeekTime] = useState(0);
   const [showAudioTracks, setShowAudioTracks] = useState(false);
   const [showTextTracks, setShowTextTracks] = useState(false);
-  const [interactionId, setInteractionId] = useState(0);
+
+  // Use ref to track interaction for auto-hide without causing re-renders
+  const lastInteractionRef = useRef(Date.now());
 
   // Notify parent when visibility changes
   useEffect(() => {
@@ -124,7 +388,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   }, [visible, onVisibilityChange]);
 
   const registerInteraction = useCallback(() => {
-    setInteractionId((prev) => prev + 1);
+    lastInteractionRef.current = Date.now();
     setVisible(true);
   }, []);
 
@@ -158,6 +422,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       .map((x) => x.item);
   }, [audioTracks, preferredAudioLanguages]);
 
+  // Stable callbacks that register interaction
   const handleBack = useCallback(() => {
     registerInteraction();
     onBack?.();
@@ -189,7 +454,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     registerInteraction();
     setIsSeeking(true);
     if (!paused) {
-      onPlayPause(); // Pause video while seeking
+      onPlayPause();
     }
   }, [debug, paused, onPlayPause, registerInteraction]);
 
@@ -208,7 +473,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       setIsSeeking(false);
       onSeek(value);
       if (paused) {
-        onPlayPause(); // Resume video after seeking
+        onPlayPause();
       }
     },
     [debug, paused, onSeek, onPlayPause, registerInteraction]
@@ -217,18 +482,55 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   const toggleControls = useCallback(() => {
     debug('toggleControls');
     registerInteraction();
-    setVisible(!visible);
-  }, [debug, registerInteraction, visible]);
+    setVisible((prev) => !prev);
+  }, [debug, registerInteraction]);
+
+  const handleToggleAudioTracks = useCallback(() => {
+    registerInteraction();
+    setShowAudioTracks((prev) => !prev);
+  }, [registerInteraction]);
+
+  const handleToggleTextTracks = useCallback(() => {
+    registerInteraction();
+    setShowTextTracks((prev) => !prev);
+  }, [registerInteraction]);
+
+  const handleSelectAudioTrack = useCallback(
+    (value: string | number) => {
+      registerInteraction();
+      onSelectAudioTrack(Number(value));
+    },
+    [onSelectAudioTrack, registerInteraction]
+  );
+
+  const handleSelectTextTrack = useCallback(
+    (index?: number) => {
+      registerInteraction();
+      onSelectTextTrack(index);
+    },
+    [onSelectTextTrack, registerInteraction]
+  );
+
+  const handleButtonFocusChange = useCallback(() => {
+    registerInteraction();
+  }, [registerInteraction]);
 
   // Auto-hide controls after inactivity
   useEffect(() => {
-    if (visible && !paused && !isSeeking && !showAudioTracks && !showTextTracks) {
-      const timeout = setTimeout(() => {
-        setVisible(false);
-      }, PLAYER_CONTROLS_AUTO_HIDE_MS);
-      return () => clearTimeout(timeout);
+    if (!visible || paused || isSeeking || showAudioTracks || showTextTracks) {
+      return;
     }
-  }, [visible, paused, isSeeking, showAudioTracks, showTextTracks, interactionId]);
+
+    const checkInactivity = () => {
+      const elapsed = Date.now() - lastInteractionRef.current;
+      if (elapsed >= PLAYER_CONTROLS_AUTO_HIDE_MS) {
+        setVisible(false);
+      }
+    };
+
+    const interval = setInterval(checkInactivity, 1000);
+    return () => clearInterval(interval);
+  }, [visible, paused, isSeeking, showAudioTracks, showTextTracks]);
 
   const showControls = useCallback(() => {
     registerInteraction();
@@ -237,10 +539,8 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     }
   }, [handlePlayPause, isPlatformTV, paused, registerInteraction]);
 
-  const handleButtonFocusChange = useCallback(() => registerInteraction(), [registerInteraction]);
-
+  // Hidden state - just show invisible pressable
   if (!visible) {
-    // Invisible touchable area to show controls
     return (
       <Pressable
         testID="player-controls-invisible-area"
@@ -259,21 +559,8 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       onPress={toggleControls}>
       <Box flex={1} justifyContent="space-between">
         {/* Top Bar */}
-        <Box
-          flexDirection="row"
-          alignItems="center"
-          paddingHorizontal="l"
-          paddingVertical="m"
-          gap="m">
-          <ControlButton onPress={handleBack} icon="arrow-back" iconComponent={Ionicons} />
-          <Text
-            variant="cardTitle"
-            color="mainForeground"
-            numberOfLines={1}
-            style={{ flex: 1, fontFamily: 'Outfit_700Bold' }}>
-            {title || 'Play'}
-          </Text>
-        </Box>
+        <TopBar title={title} onBack={handleBack} />
+
         {/* Loading Indicator */}
         {showLoadingIndicator && (
           <Box width="100%" alignItems="center" justifyContent="center">
@@ -286,127 +573,57 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           paddingHorizontal="m"
           paddingVertical="m"
           gap="s"
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          }}>
+          backgroundColor="semiTransparentBackground">
+          {/* Time Display and Seek Bar */}
           <Box>
-            {/* Time Display */}
-            <Box
-              flexDirection="row"
-              alignItems="center"
-              justifyContent="space-between"
-              paddingHorizontal="s">
-              <Text variant="body" color="mainForeground" fontSize={14}>
-                {isSeeking ? formatTime(seekTime) : formatTime(currentTime)}
-              </Text>
-              <Text variant="body" color="mainForeground" fontSize={14}>
-                {formatTime(duration)}
-              </Text>
-            </Box>
-
-            {/* Seek Bar - Full Width */}
-            <Slider
-              style={{ width: '100%', height: 40 }}
-              minimumValue={0}
-              maximumValue={duration || 0}
-              value={currentTime}
-              onSlidingStart={handleSeekStart}
-              onValueChange={handleSeekChange}
-              onSlidingComplete={handleSeekEnd}
-              minimumTrackTintColor={theme.colors.primaryBackground}
-              maximumTrackTintColor={theme.colors.secondaryBackground}
-              thumbTintColor={theme.colors.primaryBackground}
+            <TimeDisplay
+              currentTime={currentTime}
+              duration={duration}
+              isSeeking={isSeeking}
+              seekTime={seekTime}
+            />
+            <SeekBar
+              currentTime={currentTime}
+              duration={duration}
+              onSeekStart={handleSeekStart}
+              onSeekChange={handleSeekChange}
+              onSeekEnd={handleSeekEnd}
             />
           </Box>
 
-          {/* Control Buttons */}
+          {/* Control Buttons Row */}
           <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-            {/* Left side: Skip Episode */}
+            {/* Left: Skip Episode */}
             <Box>
-              {showSkipEpisode && (
-                <ControlButton
-                  onPress={handleSkipEpisode}
-                  icon="skip-next"
-                  iconComponent={MaterialCommunityIcons}
-                  disabled={showLoadingIndicator || !onSkipEpisode}
-                  label="Skip"
-                  onFocusChange={handleButtonFocusChange}
-                  badge={skipEpisodeLabel}
-                  badgeVariant="tertiary"
-                />
-              )}
-            </Box>
-            {/* Center: Playback controls */}
-            <Box flexDirection="row" alignItems="center" gap="s">
-              <ControlButton
-                onPress={handleSkipBackward}
-                icon="rotate-left"
-                iconComponent={MaterialCommunityIcons}
-                disabled={showLoadingIndicator}
-                label={`-${SKIP_BACKWARD_SECONDS}s`}
-                onFocusChange={handleButtonFocusChange}
-              />
-              <ControlButton
-                onPress={handlePlayPause}
-                icon={paused ? 'play' : 'pause'}
-                iconComponent={Ionicons}
-                disabled={showLoadingIndicator}
-                hasTVPreferredFocus
-                onFocusChange={handleButtonFocusChange}
-                variant="primary"
-                label={paused ? 'Play' : 'Pause'}
-              />
-              <ControlButton
-                onPress={handleSkipForward}
-                icon="rotate-right"
-                iconComponent={MaterialCommunityIcons}
-                disabled={showLoadingIndicator}
-                label={`+${SKIP_FORWARD_SECONDS}s`}
+              <SkipEpisodeControl
+                showSkipEpisode={showSkipEpisode}
+                skipEpisodeLabel={skipEpisodeLabel}
+                showLoadingIndicator={showLoadingIndicator}
+                onSkipEpisode={handleSkipEpisode}
                 onFocusChange={handleButtonFocusChange}
               />
             </Box>
 
-            {/* Right side: Audio and subtitle controls */}
-            <Box flexDirection="row" alignItems="center" gap="s">
-              <ControlButton
-                onPress={() => {
-                  registerInteraction();
-                  setShowAudioTracks(!showAudioTracks);
-                }}
-                icon="globe"
-                iconComponent={Ionicons}
-                disabled={showLoadingIndicator}
-                onFocusChange={handleButtonFocusChange}
-                label="Audio"
-                badge={
-                  selectedAudioTrack?.language
-                    ? (normalizeLanguageCode(selectedAudioTrack.language)?.toUpperCase() ??
-                      selectedAudioTrack.language.substring(0, 2).toUpperCase())
-                    : undefined
-                }
-                badgeVariant="tertiary"
-              />
-              {textTracks.length > 0 && (
-                <ControlButton
-                  onPress={() => {
-                    registerInteraction();
-                    setShowTextTracks(!showTextTracks);
-                  }}
-                  icon="subtitles"
-                  iconComponent={MaterialCommunityIcons}
-                  disabled={showLoadingIndicator}
-                  onFocusChange={handleButtonFocusChange}
-                  label="Subtitles"
-                  badge={
-                    selectedTextTrack?.language
-                      ? (normalizeLanguageCode(selectedTextTrack.language)?.toUpperCase() ??
-                        selectedTextTrack.language.substring(0, 2).toUpperCase())
-                      : undefined
-                  }
-                  badgeVariant="tertiary"
-                />
-              )}
-            </Box>
+            {/* Center: Playback Controls */}
+            <PlaybackControls
+              paused={paused}
+              showLoadingIndicator={showLoadingIndicator}
+              onPlayPause={handlePlayPause}
+              onSkipBackward={handleSkipBackward}
+              onSkipForward={handleSkipForward}
+              onFocusChange={handleButtonFocusChange}
+            />
+
+            {/* Right: Track Controls */}
+            <TrackControls
+              showLoadingIndicator={showLoadingIndicator}
+              selectedAudioTrack={selectedAudioTrack}
+              selectedTextTrack={selectedTextTrack}
+              hasTextTracks={textTracks.length > 0}
+              onToggleAudioTracks={handleToggleAudioTracks}
+              onToggleTextTracks={handleToggleTextTracks}
+              onFocusChange={handleButtonFocusChange}
+            />
           </Box>
         </Box>
 
@@ -418,10 +635,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           icon="language"
           items={audioTrackItems}
           selectedValue={selectedAudioTrack?.index}
-          onValueChange={(value) => {
-            registerInteraction();
-            onSelectAudioTrack(Number(value));
-          }}
+          onValueChange={handleSelectAudioTrack}
           getItemGroupId={(item) => item.groupId ?? null}
           getGroupLabel={(id) => getLanguageDisplayName(id)}
           preferredGroupIds={getPreferredLanguageCodes(preferredAudioLanguages)}
@@ -433,10 +647,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           onClose={() => setShowTextTracks(false)}
           tracks={textTracks}
           selectedTrack={selectedTextTrack}
-          onSelectTrack={(index) => {
-            registerInteraction();
-            onSelectTextTrack(index);
-          }}
+          onSelectTrack={handleSelectTextTrack}
           preferredLanguages={preferredSubtitleLanguages}
           currentTime={currentTime}
           delay={subtitleDelay}
