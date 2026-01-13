@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@/theme/theme';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 
 import { RNVideoPlayer } from './RNVideoPlayer';
 import { VLCPlayer } from './VLCPlayer';
@@ -421,20 +421,18 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       if (automaticFallback && playerType === usedPlayerType) {
         const newPlayer = usedPlayerType === 'exoplayer' ? 'vlc' : 'exoplayer';
         debug('attemptingFallback', { from: usedPlayerType, to: newPlayer });
-        Burnt.toast({
+        showToast({
           title: `Switching to ${newPlayer === 'vlc' ? 'VLC' : 'ExoPlayer'}`,
-          preset: 'error',
-          haptic: 'warning',
+          preset: 'warning',
           duration: TOAST_DURATION_MEDIUM,
         });
         setIsVideoLoading(true);
         setUsedPlayerType(newPlayer);
       } else {
-        Burnt.toast({
+        showToast({
           title: 'Playback Error',
           message: message,
           preset: 'error',
-          haptic: 'error',
           duration: TOAST_DURATION_LONG,
         });
         onError?.(message);

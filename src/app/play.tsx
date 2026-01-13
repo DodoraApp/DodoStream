@@ -2,7 +2,7 @@ import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Box } from '@/theme/theme';
-import { Alert } from 'react-native';
+import { showToast } from '@/store/toast.store';
 import type { ContentType } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
@@ -72,7 +72,7 @@ const Play = () => {
   const handleError = useCallback(
     (message: string) => {
       debug('handleError', { message });
-      Alert.alert(message);
+      showToast({ title: 'Playback Error', message, preset: 'error' });
       if (shouldReturnToStreams) {
         returnToStreams();
         return;
@@ -83,7 +83,7 @@ const Play = () => {
   );
 
   if (!metaId || !type) {
-    Alert.alert('Missing playback info');
+    showToast({ title: 'Missing playback info', preset: 'error' });
     router.back();
     return null;
   }

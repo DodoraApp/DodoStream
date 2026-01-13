@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@shopify/restyle';
 
 import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 
 interface ProfileEditorProps {
   profile?: Profile; // undefined for creating new profile
@@ -33,31 +33,28 @@ export const ProfileEditor: FC<ProfileEditorProps> = ({ profile, onClose, onSave
 
   const handleSave = useCallback(() => {
     if (!name.trim()) {
-      Burnt.toast({
+      showToast({
         title: 'Profile name required',
         preset: 'error',
-        haptic: 'error',
       });
       return;
     }
 
     const normalizedPin = pin.trim();
     if (normalizedPin.length > 0 && normalizedPin.length < 4) {
-      Burnt.toast({
+      showToast({
         title: 'Invalid PIN',
         message: 'PIN must be at least 4 digits',
         preset: 'error',
-        haptic: 'error',
       });
       return;
     }
 
     if (normalizedPin.length > 0 && !/^\d+$/.test(normalizedPin)) {
-      Burnt.toast({
+      showToast({
         title: 'Invalid PIN',
         message: 'PIN can only contain digits',
         preset: 'error',
-        haptic: 'error',
       });
       return;
     }

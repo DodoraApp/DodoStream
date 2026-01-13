@@ -13,9 +13,9 @@ jest.mock('expo-router', () => ({
     }),
 }));
 
-const mockToast = jest.fn();
-jest.mock('burnt', () => ({
-    toast: (...args: any[]) => mockToast(...args),
+const mockShowToast = jest.fn();
+jest.mock('@/store/toast.store', () => ({
+    showToast: (...args: any[]) => mockShowToast(...args),
 }));
 
 describe('useMediaNavigation', () => {
@@ -85,7 +85,7 @@ describe('useMediaNavigation', () => {
             type: 'external',
             value: 'https://example.com',
         });
-        expect(mockToast).not.toHaveBeenCalled();
+        expect(mockShowToast).not.toHaveBeenCalled();
     });
 
     it('openStreamTarget opens and persists yt targets', async () => {
@@ -125,7 +125,7 @@ describe('useMediaNavigation', () => {
         });
 
         expect(ok).toBe(false);
-        expect(mockToast).toHaveBeenCalled();
+        expect(mockShowToast).toHaveBeenCalled();
         expect(mockSetLastStreamTarget).not.toHaveBeenCalled();
         expect(onExternalOpenFailed).toHaveBeenCalled();
     });

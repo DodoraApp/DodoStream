@@ -1,7 +1,7 @@
 import { FC, memo, useCallback, useState } from 'react';
-import { ScrollView, Alert } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import * as Updates from 'expo-updates';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -37,7 +37,7 @@ export const DeveloperSettingsContent: FC = memo(() => {
     // Save the DSN
     setSentryDsn(dsnInput.trim());
 
-    Burnt.toast({
+    showToast({
       title: 'Sentry DSN saved',
       message: 'Restarting app to apply changes...',
       duration: TOAST_DURATION_SHORT,
@@ -51,12 +51,12 @@ export const DeveloperSettingsContent: FC = memo(() => {
         await Updates.reloadAsync();
       } catch (error) {
         debug('restartError', { error });
-        // If expo-updates reload fails (dev mode), show an alert
-        Alert.alert(
-          'Restart Required',
-          'Please close and reopen the app to apply the new Sentry DSN.',
-          [{ text: 'OK' }]
-        );
+        // If expo-updates reload fails (dev mode), show a toast
+        showToast({
+          title: 'Restart Required',
+          message: 'Please close and reopen the app to apply the new Sentry DSN.',
+          preset: 'warning',
+        });
         setIsRestarting(false);
       }
     }, 500);
@@ -67,7 +67,7 @@ export const DeveloperSettingsContent: FC = memo(() => {
     resetSentryDsn();
     setDsnInput(process.env.EXPO_PUBLIC_SENTRY_DSN ?? '');
 
-    Burnt.toast({
+    showToast({
       title: 'DSN reset',
       message: 'Restart the app to apply changes.',
       duration: TOAST_DURATION_SHORT,

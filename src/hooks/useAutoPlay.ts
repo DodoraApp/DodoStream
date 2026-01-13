@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { Stream as StreamType, ContentType } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
@@ -92,10 +92,9 @@ export const useAutoPlay = ({
       : playableStreams;
 
     if (!candidates.length) {
-      Burnt.toast({
+      showToast({
         title: 'No playable stream found',
         preset: 'error',
-        haptic: 'error',
         duration: TOAST_DURATION_MEDIUM,
       });
       setAutoPlayFailed(true);

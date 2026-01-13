@@ -65,7 +65,7 @@ npx expo install    # Install packages (always use this, not npm/pnpm add)
 - Define TypeScript interfaces for props
 - Use React Query for data fetching
 - Add debug logs for business logic decisions
-- Show Burnt toasts for user feedback
+- Show toasts for user feedback
 - Prefer **Moti** for UI animations (fade/slide/scale/skeleton); use **Reanimated** directly if Moti can’t express the behavior/performance needs
 - Keep animation timings in `src/constants/ui.ts` (no magic timing numbers)
 

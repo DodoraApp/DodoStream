@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import * as Linking from 'expo-linking';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
@@ -127,7 +127,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
             await Linking.openURL(latestRelease.htmlUrl);
         } catch (error) {
             debug('failedToOpenReleaseUrl', { error, url: latestRelease.htmlUrl });
-            Burnt.toast({
+            showToast({
                 title: 'Could not open release',
                 message: 'Please try again later.',
                 duration: TOAST_DURATION_SHORT,

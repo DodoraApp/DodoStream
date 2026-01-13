@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import type { ContentType, Stream } from '@/types/stremio';
@@ -135,11 +135,10 @@ export const useMediaNavigation = () => {
                 onExternalOpened?.();
                 return true;
             } catch {
-                Burnt.toast({
+                showToast({
                     title: 'Unable to open link',
                     message: url,
                     preset: 'error',
-                    haptic: 'error',
                     duration: TOAST_DURATION_MEDIUM,
                 });
                 onExternalOpenFailed?.();

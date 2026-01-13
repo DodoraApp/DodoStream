@@ -6,7 +6,7 @@ import { Button } from '@/components/basic/Button';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 import { PINPrompt } from '@/components/profile/PINPrompt';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useRouter } from 'expo-router';
 import { SettingsCard } from '@/components/settings/SettingsCard';
@@ -41,11 +41,10 @@ export const ProfilesSettingsContent: FC = memo(() => {
       }
 
       switchProfile(profile.id);
-      Burnt.toast({
+      showToast({
         title: 'Profile switched',
         message: profile.name,
-        preset: 'done',
-        haptic: 'success',
+        preset: 'success',
         duration: TOAST_DURATION_SHORT,
       });
       router.replace('/');
@@ -58,19 +57,17 @@ export const ProfilesSettingsContent: FC = memo(() => {
 
     const ok = switchProfile(pendingSwitch.id, pinInput);
     if (!ok) {
-      Burnt.toast({
+      showToast({
         title: 'Wrong PIN',
         preset: 'error',
-        haptic: 'error',
       });
       return;
     }
 
-    Burnt.toast({
+    showToast({
       title: 'Profile switched',
       message: pendingSwitch.name,
-      preset: 'done',
-      haptic: 'success',
+      preset: 'success',
       duration: TOAST_DURATION_SHORT,
     });
     setPendingSwitch(undefined);
@@ -81,20 +78,18 @@ export const ProfilesSettingsContent: FC = memo(() => {
   const handleDelete = useCallback(
     (profile: Profile) => {
       if (profile.id === activeProfileId) {
-        Burnt.toast({
+        showToast({
           title: 'Cannot delete active profile',
           preset: 'error',
-          haptic: 'error',
         });
         return;
       }
 
       deleteProfile(profile.id);
-      Burnt.toast({
+      showToast({
         title: 'Profile deleted',
         message: profile.name,
-        preset: 'done',
-        haptic: 'success',
+        preset: 'success',
         duration: TOAST_DURATION_SHORT,
       });
     },

@@ -2,7 +2,7 @@ import { FC, memo, useCallback, useMemo, useRef } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import { useTheme } from '@shopify/restyle';
 import { useRouter } from 'expo-router';
 import type { Theme } from '@/theme/theme';
@@ -157,7 +157,7 @@ export const AboutSettingsContent: FC = memo(() => {
     const remaining = DEVELOPER_TAP_COUNT - tapCountRef.current;
 
     if (remaining > 0 && remaining <= 3) {
-      Burnt.toast({
+      showToast({
         title: `${remaining} tap${remaining === 1 ? '' : 's'} to developer mode`,
         duration: TOAST_DURATION_SHORT,
       });
@@ -176,7 +176,7 @@ export const AboutSettingsContent: FC = memo(() => {
         await Linking.openURL(item.url);
       } catch (error) {
         debug('failedToOpenLink', { error, url: item.url, id: item.id });
-        Burnt.toast({
+        showToast({
           title: 'Could not open link',
           message: 'Please try again later.',
           duration: TOAST_DURATION_SHORT,
@@ -188,7 +188,7 @@ export const AboutSettingsContent: FC = memo(() => {
 
   const handleCheckForUpdates = useCallback(async () => {
     if (!releaseStatus.canCheck) {
-      Burnt.toast({
+      showToast({
         title: 'Update check unavailable',
         message: 'GitHub releases URL is not configured for this build.',
         duration: TOAST_DURATION_SHORT,
@@ -198,7 +198,7 @@ export const AboutSettingsContent: FC = memo(() => {
 
     const result = await releaseStatus.checkNow();
     if (!result?.latestVersion) {
-      Burnt.toast({
+      showToast({
         title: 'No release info',
         message: 'Please try again later.',
         duration: TOAST_DURATION_SHORT,
@@ -207,7 +207,7 @@ export const AboutSettingsContent: FC = memo(() => {
     }
 
     if (result.isUpdateAvailable) {
-      Burnt.toast({
+      showToast({
         title: 'Update available',
         message: `Latest: ${result.latestVersion}`,
         duration: TOAST_DURATION_SHORT,
@@ -215,7 +215,7 @@ export const AboutSettingsContent: FC = memo(() => {
       return;
     }
 
-    Burnt.toast({
+    showToast({
       title: 'Up to date',
       message: `Installed: ${info.appVersion}`,
       duration: TOAST_DURATION_SHORT,

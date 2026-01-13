@@ -25,6 +25,7 @@ import { useAppSettingsStore } from '@/store/app-settings.store';
 import { Container } from '@/components/basic/Container';
 import { Button } from '@/components/basic/Button';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
+import { ToastContainer } from '@/components/basic/Toast';
 import * as Sentry from '@sentry/react-native';
 import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
 import { createDebugLogger } from '@/utils/debug';
@@ -146,6 +147,7 @@ function Layout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
+        <ToastContainer />
         {showProfileSelector ? (
           <ProfileSelector onSelect={handleProfileSelect} />
         ) : (

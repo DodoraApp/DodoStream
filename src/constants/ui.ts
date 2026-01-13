@@ -1,7 +1,16 @@
-// Toast durations (seconds) for Burnt toast notifications
-export const TOAST_DURATION_SHORT = 2;
-export const TOAST_DURATION_MEDIUM = 3;
-export const TOAST_DURATION_LONG = 4;
+// Toast durations (milliseconds) for toast notifications
+export const TOAST_DURATION_SHORT = 2000;
+export const TOAST_DURATION_MEDIUM = 3000;
+export const TOAST_DURATION_LONG = 4000;
+
+// Toast animation timings (milliseconds)
+export const TOAST_ENTER_DURATION_MS = 250;
+export const TOAST_EXIT_DURATION_MS = 200;
+
+// Toast layout
+export const TOAST_MAX_WIDTH = 400;
+export const TOAST_STACK_GAP = 8;
+export const TOAST_MAX_VISIBLE = 5;
 
 // Loading animation timings
 export const LOADING_LOGO_ANIMATION_DURATION_MS = 800;

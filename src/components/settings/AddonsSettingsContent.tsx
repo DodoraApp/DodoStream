@@ -10,7 +10,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useAddonStore } from '@/store/addon.store';
 import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
-import { toast } from 'burnt';
+import { showToast } from '@/store/toast.store';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 
 /**
@@ -32,24 +32,25 @@ export const AddonsSettingsContent: FC = memo(() => {
 
   const handleInstall = async () => {
     if (!manifestUrl.trim()) {
-      Alert.alert('Error', 'Please enter a manifest URL');
+      showToast({ title: 'Error', message: 'Please enter a manifest URL', preset: 'error' });
       return;
     }
 
     if (!manifestUrl.endsWith('manifest.json')) {
-      Alert.alert('Error', 'URL must end with manifest.json');
+      showToast({ title: 'Error', message: 'URL must end with manifest.json', preset: 'error' });
       return;
     }
 
     try {
       await installAddon.mutateAsync(manifestUrl);
       setManifestUrl('');
-      Alert.alert('Success', 'Addon installed successfully');
+      showToast({ title: 'Success', message: 'Addon installed successfully', preset: 'success' });
     } catch (error) {
-      Alert.alert(
-        'Installation Failed',
-        error instanceof Error ? error.message : 'Failed to install addon'
-      );
+      showToast({
+        title: 'Installation Failed',
+        message: error instanceof Error ? error.message : 'Failed to install addon',
+        preset: 'error',
+      });
     }
   };
 
@@ -67,10 +68,9 @@ export const AddonsSettingsContent: FC = memo(() => {
   const onConfigure = (url: string) => {
     const configureUrl = url.replace(/manifest\.json$/, 'configure');
     Linking.openURL(configureUrl).catch(() => {
-      toast({
+      showToast({
         title: 'Failed to open configuration URL',
         preset: 'error',
-        haptic: 'error',
       });
     });
   };

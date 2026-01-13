@@ -7,8 +7,8 @@ import { View as mockView } from 'react-native';
 
 import { VideoPlayerSession } from '../VideoPlayerSession';
 
-const mockToast = jest.fn();
-jest.mock('burnt', () => ({ toast: (...args: any[]) => mockToast(...args) }));
+const mockShowToast = jest.fn();
+jest.mock('@/store/toast.store', () => ({ showToast: (...args: any[]) => mockShowToast(...args) }));
 
 const mockReplaceToStreams = jest.fn();
 jest.mock('@/hooks/useMediaNavigation', () => ({
@@ -103,7 +103,7 @@ describe('VideoPlayerSession', () => {
     mockSeekTo.mockReset();
     mockUpsertItem.mockReset();
     mockSetLastStreamTarget.mockReset();
-    mockToast.mockReset();
+    mockShowToast.mockReset();
     mockReplaceToStreams.mockReset();
     watchHistoryState.byProfile.p1 = {};
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
@@ -239,7 +239,7 @@ describe('VideoPlayerSession', () => {
 
     // Assert
     expect(setUsedPlayerType).toHaveBeenCalledWith('vlc');
-    expect(mockToast).toHaveBeenCalledWith(
+    expect(mockShowToast).toHaveBeenCalledWith(
       expect.objectContaining({
         title: expect.stringContaining('Switching to'),
       })

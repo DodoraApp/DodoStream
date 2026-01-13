@@ -46,7 +46,4 @@ These are general ideas for DodoStream that are undescribed and unplanned.
 
 ## Technical
 
-- [ ] Replace Burnt with custom Toasts or another library
 - [ ] Auto-updater for Android APKs
-- [ ] Crash Reporting
-- [ ] Performance Profiling

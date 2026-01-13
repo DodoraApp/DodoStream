@@ -12,7 +12,7 @@ import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 import { resetProgressToStart } from '@/utils/playback';
 
 interface MediaButtonsProps {
@@ -42,19 +42,18 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const isInMyList = useMyListStore((state) => state.isInMyList(metaId, type));
   const toggleMyList = useMyListStore((state) => state.toggleMyList);
 
-  const handleToggleMyList = (mediaName?: string) => {
+  const handleToggleMyList = useCallback(() => {
     const nowInList = toggleMyList({
       id: metaId,
       type,
     });
-    Burnt.toast({
+    showToast({
       title: nowInList ? 'Added to My List' : 'Removed from My List',
-      message: mediaName ?? '',
-      preset: 'done',
-      haptic: 'success',
+      message: media.name,
+      preset: 'success',
       duration: TOAST_DURATION_SHORT,
     });
-  };
+  }, [metaId, type, toggleMyList, media.name]);
 
   // Handlers for single-video content
   const handlePlay = useCallback(() => {

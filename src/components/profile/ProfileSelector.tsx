@@ -11,7 +11,7 @@ import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
 import { PROFILE_EXIT_ANIMATION_MS } from '@/constants/ui';
 
-import * as Burnt from 'burnt';
+import { showToast } from '@/store/toast.store';
 
 interface ProfileSelectorProps {
   onSelect: () => void;
@@ -81,10 +81,9 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
       return;
     }
 
-    Burnt.toast({
+    showToast({
       title: 'Wrong PIN',
       preset: 'error',
-      haptic: 'error',
     });
   }, [selectedProfileForPIN, switchProfile, pinInput, onSelect]);
 

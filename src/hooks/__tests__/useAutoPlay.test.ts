@@ -1,13 +1,13 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useAutoPlay } from '../useAutoPlay';
-import * as burnt from 'burnt';
+import * as toastStore from '@/store/toast.store';
 import * as streamsApi from '@/api/stremio';
 import * as mediaNav from '@/hooks/useMediaNavigation';
 import * as profileStore from '@/store/profile-settings.store';
 import * as watchHistoryStore from '@/store/watch-history.store';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 
-jest.mock('burnt', () => ({ toast: jest.fn() }));
+jest.mock('@/store/toast.store', () => ({ showToast: jest.fn() }));
 jest.mock('@/api/stremio');
 jest.mock('@/hooks/useMediaNavigation');
 jest.mock('@/store/profile-settings.store');
@@ -103,7 +103,7 @@ describe('useAutoPlay', () => {
     expect(openStreamFromStream).not.toHaveBeenCalled();
   });
 
-  it('fails after max auto play attempts and triggers Burnt.toast', async () => {
+  it('fails after max auto play attempts and triggers showToast', async () => {
     (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockImplementation((selector) =>
       selector({
         activeProfileId: 'profile1',
@@ -121,7 +121,7 @@ describe('useAutoPlay', () => {
     renderHook(() => useAutoPlay(defaultProps));
 
     await waitFor(() => {
-      expect(burnt.toast).toHaveBeenCalledWith(
+      expect(toastStore.showToast).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'No playable stream found',
           preset: 'error',
