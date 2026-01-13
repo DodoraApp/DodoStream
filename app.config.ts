@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             },
         },
         plugins: [
+            './plugins/withReactNativeTVOSPnpmFix',
             [
                 'expo-build-properties',
                 {
