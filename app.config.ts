@@ -102,6 +102,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             supportsTablet: true,
             bundleIdentifier: iosBundleIdentifier,
             backgroundColor: appBackgroundColor,
+            infoPlist: {
+                ITSAppUsesNonExemptEncryption: false
+            }
         },
         android: {
             userInterfaceStyle: 'dark',

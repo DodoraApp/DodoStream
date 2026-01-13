@@ -98,5 +98,10 @@
       ]
     }
   },
+  "pnpm": {
+    "patchedDependencies": {
+      "react-native-tvos@0.81.5-1": "patches/react-native-tvos.patch"
+    }
+  },
   "private": true
 }

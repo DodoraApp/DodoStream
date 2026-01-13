@@ -1,0 +1,42 @@
+diff --git a/scripts/codegen/templates/RCTThirdPartyComponentsProviderMM.template b/scripts/codegen/templates/RCTThirdPartyComponentsProviderMM.template
+index 4ce5107..4206416 100644
+--- a/scripts/codegen/templates/RCTThirdPartyComponentsProviderMM.template
++++ b/scripts/codegen/templates/RCTThirdPartyComponentsProviderMM.template
+@@ -11,6 +11,15 @@
+ #import "RCTThirdPartyComponentsProvider.h"
+ #import <React/RCTComponentViewProtocol.h>
+ 
++// Workaround to avoid nils in literal
++#import <objc/runtime.h>
++
++#undef NSClassFromString
++#define NSClassFromString(name) ({              \
++  Class _cls = objc_getClass([name UTF8String]);\
++  _cls ? _cls : (id)[NSNull null];              \
++})
++
+ @implementation RCTThirdPartyComponentsProvider
+ 
+ + (NSDictionary<NSString *, Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents
+@@ -19,9 +28,20 @@
+   static dispatch_once_t nativeComponentsToken;
+ 
+   dispatch_once(&nativeComponentsToken, ^{
+-    thirdPartyComponents = @{
++    NSDictionary<NSString *, id> *rawMap = @{
+ {thirdPartyComponentsMapping}
+     };
++
++    NSMutableDictionary<NSString *, Class<RCTComponentViewProtocol>> *validComponents = [NSMutableDictionary new];
++    [rawMap enumerateKeysAndObjectsUsingBlock:^(NSString *key, id obj, BOOL *stop) {
++      if ([obj isKindOfClass:[NSNull class]]) {
++        NSLog(@"[RCTThirdPartyComponentsProvider] ⚠️ Component \"%@\" not found", key);
++      } else {
++        validComponents[key] = (Class<RCTComponentViewProtocol>)obj;
++      }
++    }];
++
++    thirdPartyComponents = [validComponents copy];
+   });
+ 
+   return thirdPartyComponents;
