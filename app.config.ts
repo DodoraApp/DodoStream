@@ -34,8 +34,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 {
                     android: {
                         usesCleartextTraffic: true,
-                        buildArchs: ['armeabi-v7a', 'arm64-v8a'],
+                        buildArchs: ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'],
                         minSdkVersion: 26,
+                        enableSeparateBuildPerCPUArchitecture: true,
+                        enableProguardInReleaseBuilds: true
                     },
                 },
             ],
@@ -70,8 +72,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                     androidExtensions: {
                         useExoplayerRtsp: false,
                         useExoplayerSmoothStreaming: false,
-                        useExoplayerHls: false,
-                        useExoplayerDash: false,
+                        useExoplayerHls: true,
+                        useExoplayerDash: true,
                     },
                 },
             ],

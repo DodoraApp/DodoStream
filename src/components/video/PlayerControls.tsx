@@ -1,11 +1,11 @@
 import React, { FC, useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
-import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { AudioTrack, TextTrack } from '@/types/player';
+import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
 import { PickerItem, PickerModal } from '@/components/basic/PickerModal';
 import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
@@ -51,6 +51,8 @@ interface PlayerControlsProps {
   onBack?: () => void;
   onSelectAudioTrack: (index: number) => void;
   onSelectTextTrack: (index?: number) => void;
+  fitMode: VideoFitMode;
+  onToggleFitMode: () => void;
   onVisibilityChange?: (visible: boolean) => void;
 }
 
@@ -93,6 +95,13 @@ interface TrackControlsProps {
   hasTextTracks: boolean;
   onToggleAudioTracks: () => void;
   onToggleTextTracks: () => void;
+  onFocusChange: () => void;
+}
+
+interface FitModeControlProps {
+  fitMode: VideoFitMode;
+  showLoadingIndicator: boolean;
+  onToggleFitMode: () => void;
   onFocusChange: () => void;
 }
 
@@ -315,6 +324,48 @@ const TrackControls = memo<TrackControlsProps>(
 TrackControls.displayName = 'TrackControls';
 
 /**
+ * Video fit mode control (contain, cover, stretch).
+ */
+const FitModeControl = memo<FitModeControlProps>(
+  ({ fitMode, showLoadingIndicator, onToggleFitMode, onFocusChange }) => {
+    const icon = (() => {
+      switch (fitMode) {
+        case 'cover':
+          return 'fullscreen';
+        case 'stretch':
+          return 'arrow-expand-all';
+        default:
+          return 'aspect-ratio';
+      }
+    })();
+
+    const label = (() => {
+      switch (fitMode) {
+        case 'cover':
+          return 'Cover';
+        case 'stretch':
+          return 'Stretch';
+        default:
+          return 'Contain';
+      }
+    })();
+
+    return (
+      <ControlButton
+        onPress={onToggleFitMode}
+        icon={icon}
+        iconComponent={MaterialCommunityIcons}
+        disabled={showLoadingIndicator}
+        label={label}
+        onFocusChange={onFocusChange}
+      />
+    );
+  }
+);
+
+FitModeControl.displayName = 'FitModeControl';
+
+/**
  * Top bar with back button and title.
  */
 const TopBar = memo<{ title?: string; onBack: () => void }>(({ title, onBack }) => (
@@ -356,6 +407,8 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   onBack,
   onSelectAudioTrack,
   onSelectTextTrack,
+  fitMode,
+  onToggleFitMode,
   onVisibilityChange,
 }) => {
   const { isPlatformTV } = useResponsiveLayout();
@@ -515,6 +568,11 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     registerInteraction();
   }, [registerInteraction]);
 
+  const handleToggleFitMode = useCallback(() => {
+    registerInteraction();
+    onToggleFitMode();
+  }, [onToggleFitMode, registerInteraction]);
+
   // Auto-hide controls after inactivity
   useEffect(() => {
     if (!visible || paused || isSeeking || showAudioTracks || showTextTracks) {
@@ -594,12 +652,18 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           {/* Control Buttons Row */}
           <Box flexDirection="row" alignItems="center" justifyContent="space-between">
             {/* Left: Skip Episode */}
-            <Box>
+            <Box flexDirection="row" alignItems="center" gap="s">
               <SkipEpisodeControl
                 showSkipEpisode={showSkipEpisode}
                 skipEpisodeLabel={skipEpisodeLabel}
                 showLoadingIndicator={showLoadingIndicator}
                 onSkipEpisode={handleSkipEpisode}
+                onFocusChange={handleButtonFocusChange}
+              />
+              <FitModeControl
+                fitMode={fitMode}
+                showLoadingIndicator={showLoadingIndicator}
+                onToggleFitMode={handleToggleFitMode}
                 onFocusChange={handleButtonFocusChange}
               />
             </Box>

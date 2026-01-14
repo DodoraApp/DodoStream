@@ -9,7 +9,7 @@ import React, {
   memo,
 } from 'react';
 import { LibVlcPlayerView, LibVlcPlayerViewRef } from 'expo-libvlc-player';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import type { SubtitleStyle } from '@/types/subtitles';
 import { useProfileStore } from '@/store/profile.store';
@@ -100,6 +100,7 @@ export const VLCPlayer = memo(
         selectedAudioTrack,
         selectedTextTrack,
         // Note: subtitleStyle prop is ignored for VLC - we use profile settings directly
+        fitMode = 'contain',
       },
       ref
     ) => {
@@ -107,6 +108,7 @@ export const VLCPlayer = memo(
       const playerRef = useRef<LibVlcPlayerViewRef>(null);
       const [forceRemount, setForceRemount] = useState(false);
       const [vlcKey, setVlcKey] = useState('vlc-initial');
+      const { width, height } = useWindowDimensions();
 
       // Get subtitle style from profile settings for VLC freetype options
       const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -121,6 +123,22 @@ export const VLCPlayer = memo(
         () => getVLCSubtitleOptions(subtitleStyleFromStore),
         [subtitleStyleFromStore]
       );
+
+      const screenAspectRatio = useMemo(() => {
+        if (!width || !height) return undefined;
+        return `${Math.round(width)}:${Math.round(height)}`;
+      }, [height, width]);
+
+      const effectiveFitMode = useMemo(
+        () => (fitMode === 'stretch' ? 'stretch' : 'contain'),
+        [fitMode]
+      );
+
+      const aspectRatio = useMemo(() => {
+        if (effectiveFitMode !== 'stretch') return undefined;
+        return screenAspectRatio ?? null;
+      }, [effectiveFitMode, screenAspectRatio]);
+
       // Track playing state - use ref for synchronous checks in callbacks
       const isPlayingRef = useRef(false);
       // Track whether the player is ready (after onFirstPlay has fired)
@@ -336,6 +354,8 @@ export const VLCPlayer = memo(
           style={styles.player}
           autoplay={false}
           options={vlcSubtitleOptions}
+          scale={0}
+          aspectRatio={aspectRatio}
           tracks={{
             audio: selectedAudioTrack?.index,
             subtitle: selectedTextTrack?.playerIndex ?? selectedTextTrack?.index ?? -1,

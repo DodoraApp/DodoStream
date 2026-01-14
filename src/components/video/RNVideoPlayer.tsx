@@ -38,6 +38,7 @@ export const RNVideoPlayer = memo(
       selectedAudioTrack,
       selectedTextTrack,
       subtitleStyle,
+      fitMode = 'contain',
     } = props;
     const videoRef = useRef<VideoRef>(null);
     useImperativeHandle(ref, () => ({
@@ -138,7 +139,7 @@ export const RNVideoPlayer = memo(
         style={{ flex: 1 }}
         paused={paused}
         controls={false}
-        resizeMode="contain"
+        resizeMode={fitMode}
         maxBitRate={0} // 0 = no limit, let adaptive streaming decide (best for VOD)
         automaticallyWaitsToMinimizeStalling={true}
         // Network and caching

@@ -2,6 +2,8 @@ export type PlayerType = 'vlc' | 'exoplayer';
 
 export type TextTrackSource = 'video' | 'addon';
 
+export type VideoFitMode = 'contain' | 'cover' | 'stretch';
+
 export interface PlayerRef {
     seekTo: (time: number, duration: number) => void;
 }
@@ -75,6 +77,8 @@ export interface NativeSubtitleStyle {
 export interface PlayerProps {
     source: string;
     paused: boolean;
+    /** Video scaling mode (contain, cover, stretch) */
+    fitMode?: VideoFitMode;
     onProgress?: (data: { currentTime: number; duration?: number }) => void;
     onLoad?: (data: { duration: number }) => void;
     onBuffer?: (buffering: boolean) => void;
