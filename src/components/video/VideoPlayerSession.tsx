@@ -9,7 +9,7 @@ import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
 import { CustomSubtitles } from './CustomSubtitles';
 import { PlayerLoadingScreen } from './PlayerLoadingScreen';
 
-import { AudioTrack, PlayerRef, TextTrack } from '@/types/player';
+import { AudioTrack, PlayerRef, TextTrack, VideoFitMode } from '@/types/player';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
@@ -28,7 +28,7 @@ import {
   UPNEXT_POPUP_SERIES_RATIO,
   UPNEXT_POPUP_MOVIE_RATIO,
 } from '@/constants/playback';
-import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM } from '@/constants/ui';
+import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM, TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { getVideoSessionId } from '@/utils/stream';
@@ -86,6 +86,32 @@ const useSubtitleCombiner = (mediaType: ContentType, metaId: string, videoId?: s
   };
 };
 
+const getNextFitMode = (current: VideoFitMode, allowCover: boolean): VideoFitMode => {
+  if (!allowCover) {
+    return current === 'stretch' ? 'contain' : 'stretch';
+  }
+
+  switch (current) {
+    case 'contain':
+      return 'cover';
+    case 'cover':
+      return 'stretch';
+    default:
+      return 'contain';
+  }
+};
+
+const getFitModeLabel = (mode: VideoFitMode): string => {
+  switch (mode) {
+    case 'cover':
+      return 'Cover';
+    case 'stretch':
+      return 'Stretch';
+    default:
+      return 'Contain';
+  }
+};
+
 export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   source,
   title,
@@ -137,6 +163,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [duration, setDuration] = useState(0);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [fitMode, setFitMode] = useState<VideoFitMode>('contain');
+  const allowCoverFit = usedPlayerType !== 'vlc';
 
   // Throttled progress ratio for UpNextPopup - only updates at meaningful thresholds
   // This prevents UpNextPopup from re-evaluating visibility on every 250ms progress tick
@@ -339,6 +367,22 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     },
     [debug]
   );
+
+  useEffect(() => {
+    if (!allowCoverFit && fitMode === 'cover') {
+      setFitMode('contain');
+    }
+  }, [allowCoverFit, fitMode]);
+
+  const handleCycleFitMode = useCallback(() => {
+    const nextMode = getNextFitMode(fitMode, allowCoverFit);
+    debug('fitModeChanged', { from: fitMode, to: nextMode });
+    setFitMode(nextMode);
+    showToast({
+      title: `Video fit: ${getFitModeLabel(nextMode)}`,
+      duration: TOAST_DURATION_SHORT,
+    });
+  }, [allowCoverFit, debug, fitMode]);
 
   const handleLoad = useCallback(
     (data: { duration: number }) => {
@@ -563,6 +607,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         ref={playerRef}
         source={source}
         paused={paused}
+        fitMode={fitMode}
         onProgress={handleProgress}
         onLoad={handleLoad}
         onBuffer={handleBuffering}
@@ -612,6 +657,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
           onBack={onStop}
           onSelectAudioTrack={handleSelectAudioTrack}
           onSelectTextTrack={handleSelectTextTrack}
+          fitMode={fitMode}
+          onToggleFitMode={handleCycleFitMode}
           onVisibilityChange={setControlsVisible}
         />
       )}
