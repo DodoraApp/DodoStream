@@ -188,7 +188,7 @@ const theme = createTheme({
             paddingHorizontal: 'l',
         },
         secondary: {
-            backgroundColor: 'secondaryBackground',
+            backgroundColor: 'semiTransparentBackground',
             borderRadius: 'full',
             height: 50,
             justifyContent: 'center',

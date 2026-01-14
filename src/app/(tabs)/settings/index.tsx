@@ -12,6 +12,7 @@ import { ProfilesSettingsContent } from '@/components/settings/ProfilesSettingsC
 import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
 import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
 import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSettingsContent';
+import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
 import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
 import { SettingsLink } from '@/components/settings/SettingsLink';
 
@@ -27,6 +28,8 @@ export default function Settings() {
   // Render content based on selected page (for wide layout)
   const renderContent = () => {
     switch (selectedPage) {
+      case 'home':
+        return <HomeSettingsContent />;
       case 'playback':
         return <PlaybackSettingsContent />;
       case 'subtitles':

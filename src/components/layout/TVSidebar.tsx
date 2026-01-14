@@ -35,19 +35,31 @@ export const TVSidebar: FC<TVSidebarProps> = ({ onItemFocus }) => {
           borderRightColor: theme.colors.cardBorder,
         },
       ]}>
-      <Box flex={1} paddingVertical="l" gap="l">
-        <Box alignItems="center" marginTop="m">
+      <Box flex={1} paddingVertical="s" gap="l">
+        <Box alignItems="center">
           <AppLogo size={theme.sizes.stickyLogoHeight} />
         </Box>
-        <Box flex={1} gap="m" justifyContent="space-evenly">
-          {NAV_ITEMS.map((item) => (
-            <SidebarItem
-              key={item.id}
-              item={item}
-              onPress={() => handlePress(item.route)}
-              onFocus={onItemFocus}
-            />
-          ))}
+        <Box flex={1} gap="m" justifyContent="space-between">
+          <Box gap="s">
+            {NAV_ITEMS.filter((i) => i.location === 'top').map((item) => (
+              <SidebarItem
+                key={item.id}
+                item={item}
+                onPress={() => handlePress(item.route)}
+                onFocus={onItemFocus}
+              />
+            ))}
+          </Box>
+          <Box gap="s">
+            {NAV_ITEMS.filter((i) => i.location === 'bottom').map((item) => (
+              <SidebarItem
+                key={item.id}
+                item={item}
+                onPress={() => handlePress(item.route)}
+                onFocus={onItemFocus}
+              />
+            ))}
+          </Box>
         </Box>
       </Box>
     </TVFocusGuideView>

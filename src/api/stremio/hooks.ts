@@ -9,10 +9,11 @@ import {
     fetchSubtitles,
 } from './client';
 import { useAddonStore } from '@/store/addon.store';
-import { AddonSubtitle, ContentType, InstalledAddon, Stream } from '@/types/stremio';
+import { AddonSubtitle, ContentType, InstalledAddon, MetaPreview, Stream } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
 import { sortVideosBySeason } from '@/utils/video';
 import { StremioApiError } from '@/api/errors';
+import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 
 // Normalize `stremio://` scheme to `https://`
 const normalizeManifestUrl = (url: string): string => url.replace(/^stremio:\/\//i, 'https://');
@@ -490,5 +491,90 @@ export function useSubtitles(
         isLoading,
         isError,
         error: rawError ? toStremioApiError(rawError, 'useSubtitles') : undefined,
+    };
+}
+
+/**
+ * Stable key for hero random selection caching
+ */
+const heroSelectionKey = (sources: { manifestUrl: string; type: string; catalogId: string }[], itemCount: number) =>
+    ['hero-selection', ...sources.map((s) => `${s.manifestUrl}-${s.type}-${s.catalogId}`), itemCount] as const;
+
+/**
+ * Fisher-Yates shuffle for picking random items
+ */
+function shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+/**
+ * Hook to fetch hero content from selected catalog sources
+ * Picks random items from available catalogs and caches the selection
+ * The random selection is refreshed based on HERO_CONTENT_REFRESH_MS
+ */
+export function useHeroCatalogContent(
+    sources: { manifestUrl: string; type: string; catalogId: string }[],
+    itemCount: number,
+    enabled: boolean = true
+) {
+    // Fetch catalog data
+    const catalogResults = useQueries({
+        queries: sources.map((source) => ({
+            queryKey: stremioKeys.catalog(source.manifestUrl, source.type, source.catalogId, 0),
+            queryFn: () => fetchCatalogWithPagination(source.manifestUrl, source.type, source.catalogId, 0),
+            enabled: enabled && sources.length > 0,
+            staleTime: 1000 * 60 * 10, // 10 minutes - catalog content doesn't change often
+            gcTime: 1000 * 60 * 30, // 30 minutes
+            refetchOnMount: false,
+        })),
+    });
+
+    // Collect all available metas from catalogs
+    const allMetas = useMemo(() => {
+        const metas: MetaPreview[] = [];
+        const seenIds = new Set<string>();
+
+        catalogResults.forEach((result) => {
+            if (result.isSuccess && result.data?.metas) {
+                result.data.metas.forEach((meta) => {
+                    if (!seenIds.has(meta.id)) {
+                        seenIds.add(meta.id);
+                        metas.push(meta);
+                    }
+                });
+            }
+        });
+
+        return metas;
+    }, [catalogResults]);
+
+    const catalogsLoaded = catalogResults.every((r) => !r.isLoading) && allMetas.length > 0;
+
+    // Use a separate query to cache the random selection
+    // This ensures the same random items are shown until the cache expires
+    const { data: selectedMetas } = useQuery({
+        queryKey: heroSelectionKey(sources, itemCount),
+        queryFn: () => {
+            // Pick random items from available metas
+            const shuffled = shuffleArray(allMetas);
+            return shuffled.slice(0, itemCount);
+        },
+        enabled: catalogsLoaded && allMetas.length > 0,
+        staleTime: HERO_CONTENT_REFRESH_MS,
+        gcTime: HERO_CONTENT_REFRESH_MS * 2,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+
+    return {
+        data: selectedMetas ?? [],
+        isLoading: catalogResults.some((r) => r.isLoading),
+        isError: catalogResults.length > 0 && catalogResults.every((r) => r.isError),
+        hasData: (selectedMetas?.length ?? 0) > 0,
     };
 }

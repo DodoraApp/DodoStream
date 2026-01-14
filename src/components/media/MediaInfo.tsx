@@ -215,7 +215,7 @@ export const MediaInfo = ({
               <Box flexGrow={1} flexShrink={1} alignItems="flex-end" style={{ minWidth: 0 }}>
                 <Box flexDirection="row" flexWrap="wrap" justifyContent="flex-end" gap="s">
                   {genres.map((g) => (
-                    <Tag key={g} label={g} focusable={false} />
+                    <Tag key={g} label={g} variant="glass" focusable={false} />
                   ))}
                 </Box>
               </Box>
@@ -250,7 +250,7 @@ export const MediaInfo = ({
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <Box flexDirection="row" gap="s" paddingRight="l">
               {genres.map((g) => (
-                <Tag key={g} label={g} />
+                <Tag key={g} label={g} variant="glass" />
               ))}
             </Box>
           </ScrollView>

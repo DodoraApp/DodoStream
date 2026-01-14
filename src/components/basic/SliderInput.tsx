@@ -76,11 +76,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
     const canIncrement = value < maximumValue;
 
     return (
-      <Box
-        gap="s"
-        opacity={disabled ? 0.5 : 1}
-        height={theme.sizes.inputHeight}
-        justifyContent="space-between">
+      <Box gap="s" opacity={disabled ? 0.5 : 1} justifyContent="space-between">
         {label && (
           <Box flexDirection="row" justifyContent="space-between" alignItems="center">
             <Text variant="body" color="textPrimary">

@@ -8,6 +8,7 @@ import { usePlaybackStore } from '@/store/playback.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { useContinueWatchingStore } from '@/store/continue-watching.store';
+import { useHomeStore } from '@/store/home.store';
 
 export interface Profile extends ProfileOptions {
     id: string;
@@ -201,6 +202,7 @@ const syncActiveProfileId = (profileId?: string) => {
     useProfileSettingsStore.getState().setActiveProfileId(profileId);
     useWatchHistoryStore.getState().setActiveProfileId(profileId);
     useContinueWatchingStore.getState().setActiveProfileId(profileId);
+    useHomeStore.getState().setActiveProfileId(profileId);
 };
 
 let lastSyncedProfileId: string | undefined = useProfileStore.getState().activeProfileId;

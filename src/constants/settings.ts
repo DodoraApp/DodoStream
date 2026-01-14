@@ -9,6 +9,13 @@ export const SETTINGS_PROFILE_MENU_ITEMS: SettingsMenuItem[] = [
         href: '/settings/profiles',
     },
     {
+        id: 'home',
+        title: 'Home',
+        description: 'Customize the home screen hero section',
+        icon: 'home-outline',
+        href: '/settings/home',
+    },
+    {
         id: 'playback',
         title: 'Playback',
         description: 'Playback and language preferences for the active profile',
@@ -49,6 +56,7 @@ export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
 
 /** Map settings page ID to route path */
 export const SETTINGS_ROUTES: Record<string, string> = {
+    home: '/settings/home',
     playback: '/settings/playback',
     profiles: '/settings/profiles',
     subtitles: '/settings/subtitles',

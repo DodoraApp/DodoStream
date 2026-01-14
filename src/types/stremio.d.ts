@@ -1,5 +1,5 @@
 import type {
-    MetaPreview,
+    MetaPreview as SDKMetaPreview,
     MetaDetail,
     MetaLink,
     MetaVideo as SDKMetaVideo,
@@ -9,6 +9,10 @@ import type {
     Subtitle,
     ContentType
 } from '@types/stremio-addon-sdk';
+
+export interface MetaPreview extends SDKMetaPreview {
+    genres?: string[];
+}
 
 export interface MetaVideo extends SDKMetaVideo {
     name?: string;
@@ -56,4 +60,4 @@ export interface InstalledAddon {
     useForSubtitles: boolean;
 }
 
-export { MetaLink, MetaVideo, Manifest, ManifestCatalog, Subtitle, ContentType, MetaPreview, MetaDetail };
+export { MetaLink, MetaVideo, Manifest, ManifestCatalog, Subtitle, ContentType, MetaDetail };

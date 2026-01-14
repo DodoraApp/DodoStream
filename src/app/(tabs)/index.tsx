@@ -1,10 +1,9 @@
 import { Container } from '@/components/basic/Container';
-import { SearchInput } from '@/components/basic/SearchInput';
-import { PageHeader } from '@/components/basic/PageHeader';
-import { Platform, SectionList } from 'react-native';
+import { Platform, SectionList, View } from 'react-native';
 import theme, { Box, Text } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
-import { useMemo, useCallback, memo, useRef, useState } from 'react';
+import { useMemo, useCallback, memo, useRef, useState, useEffect } from 'react';
+import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
 import { MetaPreview } from '@/types/stremio';
 import { FlashList } from '@shopify/flash-list';
 import { HorizontalSpacer } from '@/components/basic/Spacer';
@@ -16,6 +15,8 @@ import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
 import { CatalogSection } from '@/components/media/CatalogSection';
 import { PickerModal } from '@/components/basic/PickerModal';
 import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
+import { HeroSection } from '@/components/media/HeroSection';
+import { useHomeStore } from '@/store/home.store';
 
 interface CatalogSectionData {
   manifestUrl: string;
@@ -36,14 +37,22 @@ type HomeSectionItemData =
   | { kind: 'catalog'; item: CatalogSectionData };
 
 export default function Home() {
+  return (
+    <HomeScrollProvider>
+      <HomeContent />
+    </HomeScrollProvider>
+  );
+}
+
+function HomeContent() {
   const { navigateToDetails } = useMediaNavigation();
   const isTV = Platform.isTV;
 
-  const sectionListRef = useRef<SectionList<HomeSectionItemData, SectionModel>>(null);
-  const lastScrolledSectionKeyRef = useRef<string | null>(null);
+  const { scrollToSection, sectionListRef, setSectionIndexMap } = useHomeScroll();
 
   const addons = useAddonStore((state) => state.addons);
   const hasAddons = useAddonStore((state) => state.hasAddons);
+  const heroEnabled = useHomeStore((state) => state.getActiveSettings().heroEnabled);
   const continueWatching = useContinueWatching();
   const [visibleContinueWatchingCount, setVisibleContinueWatchingCount] = useState<number>(
     CONTINUE_WATCHING_PAGE_SIZE
@@ -118,25 +127,15 @@ export default function Home() {
     return map;
   }, [sections]);
 
+  useEffect(() => {
+    setSectionIndexMap(sectionIndexByKey);
+  }, [sectionIndexByKey, setSectionIndexMap]);
+
   const handleSectionFocused = useCallback(
     (sectionKey: string) => {
-      if (!isTV) return;
-
-      if (lastScrolledSectionKeyRef.current === sectionKey) return;
-      lastScrolledSectionKeyRef.current = sectionKey;
-
-      const sectionIndex = sectionIndexByKey[sectionKey];
-      if (sectionIndex === undefined) return;
-
-      sectionListRef.current?.scrollToLocation({
-        sectionIndex,
-        itemIndex: 0,
-        viewPosition: 0,
-        viewOffset: 0,
-        animated: true,
-      });
+      scrollToSection(sectionKey);
     },
-    [isTV, sectionIndexByKey]
+    [scrollToSection]
   );
 
   const renderSectionItem = useCallback(
@@ -157,12 +156,9 @@ export default function Home() {
             onEndReached={handleContinueWatchingEndReached}
             onSectionFocused={handleSectionFocused}
             onLongPressEntry={continueWatchingActions.openActions}
-            hasTVPreferredFocus={isTV}
           />
         );
       }
-
-      const sectionIndex = sectionIndexByKey[section.key] ?? 0;
 
       return (
         <CatalogSection
@@ -171,7 +167,6 @@ export default function Home() {
           catalogId={item.item.catalogId}
           catalogName={item.item.catalogName}
           onMediaPress={handleMediaPress}
-          hasTVPreferredFocus={isTV && !hasContinueWatching && sectionIndex === 0 && index === 0}
           sectionKey={section.key}
           onSectionFocused={handleSectionFocused}
         />
@@ -183,9 +178,6 @@ export default function Home() {
       handleContinueWatchingEndReached,
       handleMediaPress,
       handleSectionFocused,
-      hasContinueWatching,
-      isTV,
-      sectionIndexByKey,
     ]
   );
 
@@ -205,7 +197,7 @@ export default function Home() {
           if (item.kind === 'continue-watching') return `continue-watching-${index}`;
           return `${item.item.manifestUrl}-${item.item.catalogId}-${index}`;
         }}
-        ListHeaderComponent={<HomeHeader />}
+        ListHeaderComponent={heroEnabled ? <HeroSection hasTVPreferredFocus={isTV} /> : null}
         ListEmptyComponent={
           !hasAnyAddons ? (
             <Box backgroundColor="cardBackground" padding="m" borderRadius="m" margin="m">
@@ -236,16 +228,6 @@ export default function Home() {
     </Container>
   );
 }
-
-const HomeHeader = memo(() => {
-  return (
-    <Box gap="m" paddingTop="m">
-      <Box marginHorizontal="m">
-        <PageHeader title="Home" rightElement={<SearchInput placeholder="Search..." />} />
-      </Box>
-    </Box>
-  );
-});
 
 interface ContinueWatchingSectionRowProps {
   sectionKey: string;

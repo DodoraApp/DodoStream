@@ -30,5 +30,14 @@ export const ANIMATION_SKELETON_PULSE_DURATION_MS = 1200;
 // Fade-in timing for content after data loads
 export const ANIMATION_FADE_IN_MS = 400;
 
+export const HERO_HEIGHT = 500;
+// Hero section animation timings
+export const HERO_AUTO_SCROLL_INTERVAL_MS = 8000;
+export const HERO_CROSSFADE_DURATION_MS = 800;
+export const HERO_CONTENT_SLIDE_DURATION_MS = 500;
+export const HERO_CONTENT_SLIDE_DELAY_MS = 150;
+export const HERO_DOT_ANIMATION_MS = 300;
+export const HERO_CONTENT_REFRESH_MS = 1000 * 60 * 30; // 30 minutes - how often to pick new random items
+
 // Network timeouts
 export const ADDON_MANIFEST_FETCH_TIMEOUT_MS = 10_000;

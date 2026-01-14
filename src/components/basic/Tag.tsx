@@ -6,8 +6,12 @@ import type { Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
+type TagVariant = 'default' | 'glass';
+
 interface TagProps {
   label: string;
+  /** Visual variant: 'default' has border, 'glass' is semi-transparent without border */
+  variant?: TagVariant;
   selected?: boolean;
   isFocused?: boolean;
   disabled?: boolean;
@@ -23,6 +27,7 @@ interface TagProps {
 export const Tag = memo(
   ({
     label,
+    variant = 'default',
     selected = false,
     focusable = false,
     disabled = false,
@@ -34,14 +39,22 @@ export const Tag = memo(
   }: TagProps) => {
     const theme = useTheme<Theme>();
 
+    const isGlass = variant === 'glass';
+
     const renderContent = (isFocused: boolean) => (
       <Box
-        backgroundColor={getFocusableBackgroundColor({ isActive: selected, isFocused })}
-        paddingHorizontal="m"
+        backgroundColor={
+          isGlass
+            ? isFocused
+              ? 'focusBackground'
+              : 'semiTransparentBackground'
+            : getFocusableBackgroundColor({ isActive: selected, isFocused })
+        }
+        paddingHorizontal={isGlass ? 's' : 'm'}
         paddingVertical="xs"
         borderRadius="s"
-        borderWidth={1}
-        borderColor="cardBorder"
+        borderWidth={isGlass ? 0 : 1}
+        borderColor={isGlass ? 'transparent' : 'cardBorder'}
         opacity={disabled ? 0.5 : 1}
         justifyContent="center"
         alignItems="center"
@@ -50,7 +63,9 @@ export const Tag = memo(
         focusable={focusable}>
         <Text
           variant="caption"
-          color={getFocusableForegroundColor({ isActive: selected, isFocused })}
+          color={
+            isGlass ? 'textPrimary' : getFocusableForegroundColor({ isActive: selected, isFocused })
+          }
           style={{ includeFontPadding: false }}>
           {label}
         </Text>
