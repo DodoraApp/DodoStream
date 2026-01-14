@@ -56,6 +56,8 @@ describe('PlayerControls', () => {
         onSelectTextTrack={() => {}}
         subtitleDelay={0}
         onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
       />
     );
 
@@ -113,6 +115,8 @@ describe('PlayerControls', () => {
         onSelectTextTrack={() => {}}
         subtitleDelay={0}
         onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
       />
     );
 
