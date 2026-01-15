@@ -52,7 +52,7 @@ export const WizardStep: FC<WizardStepProps> = memo(
     hasTVPreferredFocus = false,
   }) => {
     return (
-      <Box flex={1} gap="s" paddingHorizontal="l">
+      <Box flex={1} gap="s" paddingHorizontal="l" marginTop="m">
         {/* Header with progress */}
         <WizardProgress currentStep={step} />
 
