@@ -2,13 +2,10 @@ import { FC, memo, useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Box, Text } from '@/theme/theme';
 import { SettingsCard } from '@/components/settings/SettingsCard';
-import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
-import { Focusable } from '@/components/basic/Focusable';
 import { OrderableListSection, OrderableItem } from '@/components/settings/OrderableListSection';
 import { HeroCatalogSource, useHomeStore } from '@/store/home.store';
 import { useAddonStore } from '@/store/addon.store';
-import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 import { SliderInput } from '@/components/basic/SliderInput';
 import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 
@@ -19,11 +16,16 @@ interface CatalogOrderableItem extends OrderableItem {
   catalogType: string;
 }
 
+export interface HomeSettingsContentProps {
+  /** Whether to wrap content in ScrollView (default: true) */
+  scrollable?: boolean;
+}
+
 /**
  * Home settings content component
  * Allows customizing the home screen hero section per profile
  */
-export const HomeSettingsContent: FC = memo(() => {
+export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrollable = true }) => {
   const {
     heroEnabled,
     heroItemCount,
@@ -126,47 +128,51 @@ export const HomeSettingsContent: FC = memo(() => {
     [setHeroItemCount]
   );
 
-  return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-        <SettingsCard title="Hero Section">
-          <SettingsSwitch
-            label="Show Hero Section"
-            description="Display a featured content carousel at the top of the home screen"
-            value={heroEnabled}
-            onValueChange={setHeroEnabled}
-          />
+  const content = (
+    <Box paddingVertical="m" paddingHorizontal="m" gap="l">
+      <SettingsCard title="Hero Section">
+        <SettingsSwitch
+          label="Show Hero Section"
+          description="Display a featured content carousel at the top of the home screen"
+          value={heroEnabled}
+          onValueChange={setHeroEnabled}
+        />
 
-          <Box gap="s">
-            <SliderInput
-              minimumValue={3}
-              maximumValue={15}
-              step={1}
-              value={heroItemCount}
-              label="Number of Items"
-              onValueChange={handleItemCountChange}
-              showButtons
-            />
-          </Box>
-        </SettingsCard>
-
-        <SettingsCard title="Hero Content Sources">
-          <Text variant="bodySmall" color="textPrimary" marginBottom="m">
-            Configure which catalogs provide content for the hero section. Random items will be
-            selected and refreshed every {HERO_CONTENT_REFRESH_MS / 1000 / 60} minutes.
-          </Text>
-          <OrderableListSection
-            selectedItems={selectedCatalogs}
-            availableItems={availableCatalogs}
-            onChange={handleCatalogChange}
-            selectedLabel="Selected catalogs"
-            availableLabel="Add catalog"
-            emptyPlaceholder="No catalogs selected"
+        <Box gap="s">
+          <SliderInput
+            minimumValue={3}
+            maximumValue={15}
+            step={1}
+            value={heroItemCount}
+            label="Number of Items"
+            onValueChange={handleItemCountChange}
+            showButtons
           />
-        </SettingsCard>
-      </Box>
-    </ScrollView>
+        </Box>
+      </SettingsCard>
+
+      <SettingsCard title="Hero Content Sources">
+        <Text variant="bodySmall" color="textPrimary" marginBottom="m">
+          Configure which catalogs provide content for the hero section. Random items will be
+          selected and refreshed every {HERO_CONTENT_REFRESH_MS / 1000 / 60} minutes.
+        </Text>
+        <OrderableListSection
+          selectedItems={selectedCatalogs}
+          availableItems={availableCatalogs}
+          onChange={handleCatalogChange}
+          selectedLabel="Selected catalogs"
+          availableLabel="Add catalog"
+          emptyPlaceholder="No catalogs selected"
+        />
+      </SettingsCard>
+    </Box>
   );
+
+  if (scrollable) {
+    return <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>;
+  }
+
+  return content;
 });
 
 HomeSettingsContent.displayName = 'HomeSettingsContent';

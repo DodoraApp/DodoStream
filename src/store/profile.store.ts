@@ -36,6 +36,7 @@ interface ProfileState {
     getActiveProfile: () => Profile | undefined;
     clearActiveProfile: () => void;
     getProfilesList: () => Profile[];
+    hasProfiles: () => boolean;
     setInitialized: (isInitialized: boolean) => void;
 }
 
@@ -182,6 +183,11 @@ export const useProfileStore = create<ProfileState>()(
                 return Object.values(profiles).sort((a, b) => b.lastUsedAt - a.lastUsedAt);
             },
 
+            hasProfiles: () => {
+                const { profiles } = get();
+                return Object.keys(profiles).length > 0;
+            },
+
             setInitialized: (isInitialized: boolean) => {
                 set({ isInitialized });
             },
@@ -217,18 +223,13 @@ useProfileStore.subscribe((state) => {
 
 // Initialize profiles system on app start
 export const initializeProfiles = async () => {
-    const { profiles, setInitialized, clearActiveProfile, createProfile, switchProfile, isInitialized } = useProfileStore.getState();
+    const { setInitialized, clearActiveProfile, isInitialized } = useProfileStore.getState();
 
     // IMPORTANT: initializeProfiles can be called more than once (e.g. remounts).
     // Never clear the active profile after the app has already initialized.
     if (isInitialized) return;
 
-    // If no profiles exist, create a default one
-    if (Object.keys(profiles).length === 0) {
-        const defaultProfileId = createProfile('Default');
-        switchProfile(defaultProfileId);
-    }
-
+    // Clear active profile on startup so user must select (or go through setup wizard if no profiles)
     clearActiveProfile();
     setInitialized(true);
 };

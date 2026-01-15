@@ -41,3 +41,7 @@ export const HERO_CONTENT_REFRESH_MS = 1000 * 60 * 30; // 30 minutes - how often
 
 // Network timeouts
 export const ADDON_MANIFEST_FETCH_TIMEOUT_MS = 10_000;
+
+// Setup Wizard
+export const WIZARD_STEP_ANIMATION_MS = 300;
+export const WIZARD_CONTENT_FADE_MS = 250;

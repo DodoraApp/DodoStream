@@ -18,64 +18,73 @@ import { PLAYER_PICKER_ITEMS } from '@/constants/playback';
 import { COMMON_LANGUAGE_CODES } from '@/constants/languages';
 import { getDevicePreferredLanguageCodes } from '@/utils/languages';
 
+export interface PlaybackSettingsContentProps {
+  /** Whether to show the player selection section (default: true) */
+  showPlayerSelection?: boolean;
+  /** Whether to show the language preferences section (default: true) */
+  showLanguages?: boolean;
+  /** Whether to wrap content in ScrollView (default: true) */
+  scrollable?: boolean;
+}
+
 /**
  * Playback settings content component
  * Extracted for use in both standalone page and split layout
  */
-export const PlaybackSettingsContent: FC = memo(() => {
-  const [showPlayerPicker, setShowPlayerPicker] = useState(false);
-  const [showAudioLanguagePicker, setShowAudioLanguagePicker] = useState(false);
-  const [showSubtitleLanguagePicker, setShowSubtitleLanguagePicker] = useState(false);
-  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
+  ({ showPlayerSelection = true, showLanguages = true, scrollable = true }) => {
+    const [showPlayerPicker, setShowPlayerPicker] = useState(false);
+    const [showAudioLanguagePicker, setShowAudioLanguagePicker] = useState(false);
+    const [showSubtitleLanguagePicker, setShowSubtitleLanguagePicker] = useState(false);
+    const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-  const {
-    player,
-    automaticFallback,
-    autoPlayFirstStream,
-    preferredAudioLanguages,
-    preferredSubtitleLanguages,
-    setPlayerForProfile,
-    setAutomaticFallbackForProfile,
-    setAutoPlayFirstStreamForProfile,
-    setPreferredAudioLanguagesForProfile,
-    setPreferredSubtitleLanguagesForProfile,
-  } = useProfileSettingsStore((state) => ({
-    player:
-      (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
-      DEFAULT_PROFILE_PLAYBACK_SETTINGS.player,
-    automaticFallback:
-      (activeProfileId ? state.byProfile[activeProfileId]?.automaticFallback : undefined) ??
-      DEFAULT_PROFILE_PLAYBACK_SETTINGS.automaticFallback,
-    autoPlayFirstStream:
-      (activeProfileId ? state.byProfile[activeProfileId]?.autoPlayFirstStream : undefined) ??
-      DEFAULT_PROFILE_PLAYBACK_SETTINGS.autoPlayFirstStream,
-    preferredAudioLanguages: activeProfileId
-      ? (state.byProfile[activeProfileId]?.preferredAudioLanguages ?? [])
-      : [],
-    preferredSubtitleLanguages: activeProfileId
-      ? (state.byProfile[activeProfileId]?.preferredSubtitleLanguages ?? [])
-      : [],
-    setPlayerForProfile: state.setPlayerForProfile,
-    setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
-    setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
-    setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
-    setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
-  }));
+    const {
+      player,
+      automaticFallback,
+      autoPlayFirstStream,
+      preferredAudioLanguages,
+      preferredSubtitleLanguages,
+      setPlayerForProfile,
+      setAutomaticFallbackForProfile,
+      setAutoPlayFirstStreamForProfile,
+      setPreferredAudioLanguagesForProfile,
+      setPreferredSubtitleLanguagesForProfile,
+    } = useProfileSettingsStore((state) => ({
+      player:
+        (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.player,
+      automaticFallback:
+        (activeProfileId ? state.byProfile[activeProfileId]?.automaticFallback : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.automaticFallback,
+      autoPlayFirstStream:
+        (activeProfileId ? state.byProfile[activeProfileId]?.autoPlayFirstStream : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.autoPlayFirstStream,
+      preferredAudioLanguages: activeProfileId
+        ? (state.byProfile[activeProfileId]?.preferredAudioLanguages ?? [])
+        : [],
+      preferredSubtitleLanguages: activeProfileId
+        ? (state.byProfile[activeProfileId]?.preferredSubtitleLanguages ?? [])
+        : [],
+      setPlayerForProfile: state.setPlayerForProfile,
+      setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
+      setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
+      setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
+      setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
+    }));
 
-  const deviceLanguageCodes = getDevicePreferredLanguageCodes();
-  const availableLanguageCodes = Array.from(
-    new Set([...deviceLanguageCodes, ...COMMON_LANGUAGE_CODES])
-  );
+    const deviceLanguageCodes = getDevicePreferredLanguageCodes();
+    const availableLanguageCodes = Array.from(
+      new Set([...deviceLanguageCodes, ...COMMON_LANGUAGE_CODES])
+    );
 
-  const renderLanguageSummary = (codes: string[]) => {
-    if (!codes || codes.length === 0) return 'Device default';
-    return codes.join(', ');
-  };
+    const renderLanguageSummary = (codes: string[]) => {
+      if (!codes || codes.length === 0) return 'Device default';
+      return codes.join(', ');
+    };
 
-  return (
-    <>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Box paddingVertical="m" paddingHorizontal="m" gap="l">
+    const content = (
+      <Box paddingVertical="m" paddingHorizontal="m" gap="l">
+        {showPlayerSelection && (
           <SettingsCard title="Playback">
             <SettingsRow label="Player">
               <TouchableOpacity onPress={() => setShowPlayerPicker(true)}>
@@ -112,7 +121,9 @@ export const PlaybackSettingsContent: FC = memo(() => {
               }
             />
           </SettingsCard>
+        )}
 
+        {showLanguages && (
           <SettingsCard title="Languages">
             <SettingsRow
               label="Preferred audio languages"
@@ -158,42 +169,60 @@ export const PlaybackSettingsContent: FC = memo(() => {
               </TouchableOpacity>
             </SettingsRow>
           </SettingsCard>
-        </Box>
-      </ScrollView>
+        )}
+      </Box>
+    );
 
-      <PickerModal
-        visible={showPlayerPicker}
-        onClose={() => setShowPlayerPicker(false)}
-        label="Select Player"
-        icon="play"
-        items={PLAYER_PICKER_ITEMS}
-        selectedValue={player}
-        onValueChange={(value: PlayerType) =>
-          activeProfileId && setPlayerForProfile(activeProfileId, value)
-        }
-      />
+    const scrollableContent = scrollable ? (
+      <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>
+    ) : (
+      content
+    );
 
-      <LanguagePreferenceModal
-        visible={showAudioLanguagePicker}
-        onClose={() => setShowAudioLanguagePicker(false)}
-        title="Preferred audio languages"
-        selectedLanguageCodes={preferredAudioLanguages}
-        availableLanguageCodes={availableLanguageCodes}
-        onChange={(next) =>
-          activeProfileId && setPreferredAudioLanguagesForProfile(activeProfileId, next)
-        }
-      />
+    return (
+      <>
+        {scrollableContent}
 
-      <LanguagePreferenceModal
-        visible={showSubtitleLanguagePicker}
-        onClose={() => setShowSubtitleLanguagePicker(false)}
-        title="Preferred subtitle languages"
-        selectedLanguageCodes={preferredSubtitleLanguages}
-        availableLanguageCodes={availableLanguageCodes}
-        onChange={(next) =>
-          activeProfileId && setPreferredSubtitleLanguagesForProfile(activeProfileId, next)
-        }
-      />
-    </>
-  );
-});
+        {showPlayerSelection && (
+          <PickerModal
+            visible={showPlayerPicker}
+            onClose={() => setShowPlayerPicker(false)}
+            label="Select Player"
+            icon="play"
+            items={PLAYER_PICKER_ITEMS}
+            selectedValue={player}
+            onValueChange={(value: PlayerType) =>
+              activeProfileId && setPlayerForProfile(activeProfileId, value)
+            }
+          />
+        )}
+
+        {showLanguages && (
+          <>
+            <LanguagePreferenceModal
+              visible={showAudioLanguagePicker}
+              onClose={() => setShowAudioLanguagePicker(false)}
+              title="Preferred audio languages"
+              selectedLanguageCodes={preferredAudioLanguages}
+              availableLanguageCodes={availableLanguageCodes}
+              onChange={(next) =>
+                activeProfileId && setPreferredAudioLanguagesForProfile(activeProfileId, next)
+              }
+            />
+
+            <LanguagePreferenceModal
+              visible={showSubtitleLanguagePicker}
+              onClose={() => setShowSubtitleLanguagePicker(false)}
+              title="Preferred subtitle languages"
+              selectedLanguageCodes={preferredSubtitleLanguages}
+              availableLanguageCodes={availableLanguageCodes}
+              onChange={(next) =>
+                activeProfileId && setPreferredSubtitleLanguagesForProfile(activeProfileId, next)
+              }
+            />
+          </>
+        )}
+      </>
+    );
+  }
+);
