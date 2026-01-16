@@ -1,7 +1,7 @@
-const { withDangerousMod } = require('@expo/config-plugins');
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
+import { ConfigPlugin, withDangerousMod } from 'expo/config-plugins';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Expo config plugin to fix React Native TVOS with pnpm compatibility issues
@@ -10,7 +10,7 @@ const { execSync } = require('child_process');
  * 1. Modifies the Podfile to set REACT_NATIVE_NODE_MODULES_DIR before any requires
  * 2. Creates a symlink from react-native to react-native-tvos in pnpm's node_modules
  */
-const withReactNativeTVOSPnpmFix = (config) => {
+const withReactNativeTVOSPnpmFix: ConfigPlugin = (config) => {
     return withDangerousMod(config, [
         'ios',
         async (config) => {
@@ -80,7 +80,7 @@ ENV['REACT_NATIVE_PATH'] = react_native_path
                     }
                 }
             } catch (error) {
-                console.warn('⚠️  Could not create react-native symlink:', error.message);
+                console.warn('⚠️  Could not create react-native symlink:', error);
                 console.warn('   The build may fail. Try running: pnpm run postinstall');
             }
 
@@ -89,4 +89,4 @@ ENV['REACT_NATIVE_PATH'] = react_native_path
     ]);
 };
 
-module.exports = withReactNativeTVOSPnpmFix;
+export default withReactNativeTVOSPnpmFix;

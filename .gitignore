@@ -13,8 +13,8 @@ web-build/
 expo-env.d.ts
 
 
-ios
-android
+/ios
+/android
 
 # macOS
 .DS_Store

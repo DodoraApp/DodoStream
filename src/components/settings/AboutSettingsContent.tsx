@@ -166,7 +166,7 @@ export const AboutSettingsContent: FC = memo(() => {
     if (tapCountRef.current >= DEVELOPER_TAP_COUNT) {
       tapCountRef.current = 0;
       debug('developerModeActivated');
-      router.push('/(tabs)/settings/developer');
+      router.push('/(app)/(tabs)/settings/developer');
     }
   }, [debug, router]);
 

@@ -1,9 +1,11 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { Box } from '@/theme/theme';
 import { showToast } from '@/store/toast.store';
 
 import { RNVideoPlayer } from './RNVideoPlayer';
 import { VLCPlayer } from './VLCPlayer';
+import { MPVPlayer } from './MPVPlayer';
 import { PlayerControls } from './PlayerControls';
 import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
 import { CustomSubtitles } from './CustomSubtitles';
@@ -34,6 +36,7 @@ import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { getVideoSessionId } from '@/utils/stream';
 import { useSubtitles } from '@/api/stremio';
 import { useNativeSubtitleStyle } from '@/hooks/useSubtitleStyle';
+import { classifyPlayerError } from '@/utils/player-errors';
 
 export interface VideoPlayerProps {
   source: string;
@@ -52,9 +55,9 @@ export interface VideoPlayerProps {
 }
 
 export interface VideoPlayerSessionProps extends VideoPlayerProps {
-  usedPlayerType: 'vlc' | 'exoplayer';
-  setUsedPlayerType: (next: 'vlc' | 'exoplayer') => void;
-  playerType: 'vlc' | 'exoplayer';
+  usedPlayerType: 'vlc' | 'exoplayer' | 'mpv';
+  setUsedPlayerType: (next: 'vlc' | 'exoplayer' | 'mpv') => void;
+  playerType: 'vlc' | 'exoplayer' | 'mpv';
   automaticFallback: boolean;
 }
 
@@ -164,6 +167,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
   const [fitMode, setFitMode] = useState<VideoFitMode>('contain');
+  // MPV supports all fit modes, VLC only supports contain/stretch
   const allowCoverFit = usedPlayerType !== 'vlc';
 
   // Throttled progress ratio for UpNextPopup - only updates at meaningful thresholds
@@ -462,25 +466,63 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     (message: string) => {
       debug('error', { message, automaticFallback, playerType, usedPlayerType });
 
-      if (automaticFallback && playerType === usedPlayerType) {
-        const newPlayer = usedPlayerType === 'exoplayer' ? 'vlc' : 'exoplayer';
-        debug('attemptingFallback', { from: usedPlayerType, to: newPlayer });
-        showToast({
-          title: `Switching to ${newPlayer === 'vlc' ? 'VLC' : 'ExoPlayer'}`,
-          preset: 'warning',
-          duration: TOAST_DURATION_MEDIUM,
-        });
-        setIsVideoLoading(true);
-        setUsedPlayerType(newPlayer);
-      } else {
-        showToast({
-          title: 'Playback Error',
-          message: message,
-          preset: 'error',
-          duration: TOAST_DURATION_LONG,
-        });
-        onError?.(message);
+      // Classify error to determine if fallback is appropriate
+      const errorClassification = classifyPlayerError(message);
+      debug('errorClassification', errorClassification);
+
+      // Only fallback for codec/decoding errors, not network or source errors
+      const shouldAttemptFallback =
+        automaticFallback && playerType === usedPlayerType && errorClassification.shouldFallback;
+
+      if (shouldAttemptFallback) {
+        // Fallback order depends on platform:
+        // Android: exoplayer -> mpv -> vlc -> (give up)
+        // Other platforms: exoplayer -> vlc -> (give up)
+        const isAndroid = Platform.OS === 'android';
+        let newPlayer: 'vlc' | 'exoplayer' | 'mpv' | null = null;
+
+        switch (usedPlayerType) {
+          case 'exoplayer':
+            newPlayer = isAndroid ? 'mpv' : 'vlc';
+            break;
+          case 'mpv':
+            // MPV is Android-only, fallback to VLC
+            newPlayer = 'vlc';
+            break;
+          case 'vlc':
+            newPlayer = null; // All players exhausted
+            break;
+        }
+
+        if (newPlayer) {
+          debug('attemptingFallback', {
+            from: usedPlayerType,
+            to: newPlayer,
+            reason: errorClassification.type,
+          });
+          const playerNames = { vlc: 'VLC', exoplayer: 'ExoPlayer', mpv: 'MPV' };
+          showToast({
+            title: `Switching to ${playerNames[newPlayer]}`,
+            message: errorClassification.userMessage,
+            preset: 'warning',
+            duration: TOAST_DURATION_MEDIUM,
+          });
+          setIsVideoLoading(true);
+          setUsedPlayerType(newPlayer);
+          return;
+        }
       }
+
+      // Show error to user
+      // Use classified message for better UX, or fall back to raw message
+      const displayMessage = errorClassification.userMessage || message;
+      showToast({
+        title: 'Playback Error',
+        message: displayMessage,
+        preset: 'error',
+        duration: TOAST_DURATION_LONG,
+      });
+      onError?.(message);
     },
     [automaticFallback, debug, playerType, usedPlayerType, setUsedPlayerType, onError]
   );
@@ -595,7 +637,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     [activeProfileId, combinedSubtitles, debug, selectedTextTrack]
   );
 
-  const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
+  const PlayerComponent =
+    usedPlayerType === 'vlc' ? VLCPlayer : usedPlayerType === 'mpv' ? MPVPlayer : RNVideoPlayer;
   const isLoading = isVideoLoading || areSubtitlesLoading;
 
   // Show custom loading screen on first load if background/logo is available

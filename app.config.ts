@@ -1,3 +1,4 @@
+import 'tsx/cjs';
 import { ExpoConfig, ConfigContext } from 'expo/config';
 const packageJson = require('./package.json');
 
@@ -12,7 +13,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     const appName = isDevVariant ? 'DodoStream (Dev)' : 'DodoStream';
     const iosBundleIdentifier = isDevVariant ? 'app.dodora.dodostream.dev' : 'app.dodora.dodostream';
     const androidPackage = isDevVariant ? 'app.dodora.dodostream.dev' : 'app.dodora.dodostream';
-
     return {
         ...config,
         name: appName,
@@ -124,9 +124,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
         runtimeVersion: {
             policy: 'appVersion',
-        },
-        updates: {
-            url: 'https://u.expo.dev/c7e4f244-2ba8-42dc-a3f6-c197df3d8236',
         },
     };
 };

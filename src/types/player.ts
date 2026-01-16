@@ -1,4 +1,4 @@
-export type PlayerType = 'vlc' | 'exoplayer';
+export type PlayerType = 'vlc' | 'exoplayer' | 'mpv';
 
 export type TextTrackSource = 'video' | 'addon';
 

@@ -1,5 +1,6 @@
 import { PickerItem } from '@/components/basic/PickerModal';
 import type { PlayerType } from '@/types/player';
+import { Platform } from 'react-native';
 
 // Playback ratios
 // Used across watch-history, continue-watching, and autoplay decisions.
@@ -21,7 +22,15 @@ export const PLAYER_CONTROLS_AUTO_HIDE_MS = 5000;
 export const SKIP_FORWARD_SECONDS = 15;
 export const SKIP_BACKWARD_SECONDS = 15;
 
-export const PLAYER_PICKER_ITEMS: PickerItem<PlayerType>[] = [
+// All available players (MPV is Android-only)
+const ALL_PLAYER_PICKER_ITEMS: PickerItem<PlayerType>[] = [
   { label: 'ExoPlayer', value: 'exoplayer' },
+  { label: 'MPV (Experimental)', value: 'mpv' },
   { label: 'VLC', value: 'vlc' },
 ];
+
+// Filtered player items based on platform (MPV only on Android)
+export const PLAYER_PICKER_ITEMS: PickerItem<PlayerType>[] =
+  Platform.OS === 'android'
+    ? ALL_PLAYER_PICKER_ITEMS
+    : ALL_PLAYER_PICKER_ITEMS.filter((item) => item.value !== 'mpv');
