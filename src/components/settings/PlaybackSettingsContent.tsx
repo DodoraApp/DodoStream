@@ -98,7 +98,9 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
                   gap="s"
                   minWidth={140}>
                   <Ionicons name="play" size={20} color={theme.colors.textSecondary} />
-                  <Text variant="body">{player === 'exoplayer' ? 'ExoPlayer' : 'VLC'}</Text>
+                  <Text variant="body">
+                    {PLAYER_PICKER_ITEMS.find((item) => item.value === player)?.label || 'Unknown'}
+                  </Text>
                   <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
                 </Box>
               </TouchableOpacity>

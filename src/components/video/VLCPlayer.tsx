@@ -42,6 +42,23 @@ const getVLCFontFamilyOption = (fontFamily: SubtitleStyle['fontFamily']): string
 };
 
 /**
+ * Get platform-specific VLC performance options for mobile.
+ * Only includes options that are confirmed to work with expo-libvlc-player.
+ * These help reduce stuttering through better buffering/caching.
+ */
+const getVLCPerformanceOptions = (): string[] => {
+  const options: string[] = [];
+
+  // Buffering/caching for smoother playback
+  // These are the most universally supported options in mobile LibVLC
+  options.push('--file-caching=1000'); // 1 second file cache
+  options.push('--network-caching=2000'); // 2 seconds network cache
+  options.push('--live-caching=1000'); // 1 second live stream cache
+
+  return options;
+};
+
+/**
  * Convert SubtitleStyle to VLC freetype options.
  */
 const getVLCSubtitleOptions = (style: SubtitleStyle | undefined): string[] => {
@@ -118,11 +135,12 @@ export const VLCPlayer = memo(
           : DEFAULT_SUBTITLE_STYLE
       );
 
-      // Compute VLC subtitle options from subtitle style
-      const vlcSubtitleOptions = useMemo(
-        () => getVLCSubtitleOptions(subtitleStyleFromStore),
-        [subtitleStyleFromStore]
-      );
+      // Compute VLC options: combine performance/quality and subtitle options
+      const vlcOptions = useMemo(() => {
+        const performanceOptions = getVLCPerformanceOptions();
+        const subtitleOptions = getVLCSubtitleOptions(subtitleStyleFromStore);
+        return [...performanceOptions, ...subtitleOptions];
+      }, [subtitleStyleFromStore]);
 
       const screenAspectRatio = useMemo(() => {
         if (!width || !height) return undefined;
@@ -353,7 +371,7 @@ export const VLCPlayer = memo(
           source={processedSource}
           style={styles.player}
           autoplay={false}
-          options={vlcSubtitleOptions}
+          options={vlcOptions}
           scale={0}
           aspectRatio={aspectRatio}
           tracks={{
