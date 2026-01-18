@@ -8,6 +8,9 @@ patchedDependencies:
   react-native-tvos@0.81.5-1:
     hash: e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df
     path: patches/react-native-tvos.patch
+  react-native-video@6.18.0:
+    hash: 92f8d539ff5e658feaee8775ae67bbb73f1549febb950bb031366a21cdb4a2ba
+    path: patches/react-native-video.patch
 
 importers:
 
@@ -141,7 +144,7 @@ importers:
         version: 15.12.1(react-native-tvos@0.81.5-1)(react@19.1.0)
       react-native-video:
         specifier: ^6.18.0
-        version: 6.18.0(react-native-tvos@0.81.5-1)(react@19.1.0)
+        version: 6.18.0(patch_hash=92f8d539ff5e658feaee8775ae67bbb73f1549febb950bb031366a21cdb4a2ba)(react-native-tvos@0.81.5-1)(react@19.1.0)
       react-native-web:
         specifier: ^0.21.0
         version: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -10946,7 +10949,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  react-native-video@6.18.0(react-native-tvos@0.81.5-1)(react@19.1.0):
+  react-native-video@6.18.0(patch_hash=92f8d539ff5e658feaee8775ae67bbb73f1549febb950bb031366a21cdb4a2ba)(react-native-tvos@0.81.5-1)(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)

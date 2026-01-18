@@ -28,7 +28,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             },
         },
         plugins: [
-            './plugins/withReactNativeTVOSPnpmFix',
             [
                 'expo-build-properties',
                 {
@@ -84,7 +83,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                     organization: process.env.SENTRY_ORG ?? 'dodora',
                     project: process.env.SENTRY_PROJECT ?? 'dodostream',
                 }
-            ]
+            ],
+            './plugins/withReactNativeTVOSPnpmFix',
+            './plugins/withMediaLibFFmpegDependency'
         ],
         experiments: {
             typedRoutes: true,
