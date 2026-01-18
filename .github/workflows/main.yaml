@@ -229,18 +229,72 @@ jobs:
           )
         run: |
           export NODE_OPTIONS="--openssl-legacy-provider --max_old_space_size=4096"
-          ARTIFACT="DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}.${{ matrix.ext }}"
-          echo "Building artifact: $ARTIFACT"
-          eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} --local --non-interactive --output="./$ARTIFACT"
+          echo "Building for ${{ matrix.channel }}"
+          eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} --local --non-interactive --output ./output.tar.gz
         env:
           NODE_ENV: ${{ matrix.node_env }}
 
-      - name: 📦 Upload build artifact
-        if: steps.eas_build.outcome == 'success'
+      - name: 📦 Prepare APK artifacts
+        id: prepare_artifacts
+        if: steps.eas_build.outcome == 'success' && matrix.platform == 'android'
+        shell: bash
+        run: |
+          mkdir -p dist
+          VERSION="${{ steps.app_version.outputs.version }}"
+          CHANNEL="${{ matrix.channel }}"
+          NODE_ENV="${{ matrix.node_env }}"
+
+          # Extract the output archive
+          echo "Extracting output.tar.gz..."
+          tar -xzf output.tar.gz
+
+          # Determine build type (debug or release) based on NODE_ENV
+          if [[ "$NODE_ENV" == "production" ]]; then
+            BUILD_TYPE="release"
+          else
+            BUILD_TYPE="debug"
+          fi
+
+          echo "Looking for APKs in outputs/apk/${BUILD_TYPE}/"
+
+          # Find all APKs in the extracted directory
+          find outputs/apk/${BUILD_TYPE} -name "*.apk" -type f 2>/dev/null | while read apk; do
+            filename=$(basename "$apk")
+            echo "Found APK: $filename"
+            
+            # Extract ABI from filename (e.g., app-arm64-v8a-release.apk -> arm64-v8a)
+            if [[ $filename =~ -([a-z0-9_-]+)-(release|debug)\.apk$ ]]; then
+              abi="${BASH_REMATCH[1]}"
+              # Rename to our format: DodoStream-<version>-<channel>-<abi>.apk
+              new_name="DodoStream-${VERSION}-${CHANNEL}-${abi}.apk"
+              cp "$apk" "dist/$new_name"
+              echo "Copied to: dist/$new_name"
+            elif [[ $filename =~ app-(release|debug)\.apk$ ]]; then
+              # Universal APK without ABI suffix
+              new_name="DodoStream-${VERSION}-${CHANNEL}-universal.apk"
+              cp "$apk" "dist/$new_name"
+              echo "Copied to: dist/$new_name"
+            fi
+          done
+
+          # List all prepared artifacts
+          echo "Prepared artifacts:"
+          ls -lh dist/
+
+          # Set output for upload step
+          if [ -n "$(ls -A dist/ 2>/dev/null)" ]; then
+            echo "artifacts_exist=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No artifacts found!"
+            exit 1
+          fi
+
+      - name: 📦 Upload build artifacts
+        if: steps.prepare_artifacts.outputs.artifacts_exist == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}.${{ matrix.ext }}
-          path: ./DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}.${{ matrix.ext }}
+          name: DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}
+          path: dist/*.apk
           retention-days: 7
 
   expo_update:

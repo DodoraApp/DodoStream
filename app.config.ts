@@ -34,9 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                     android: {
                         usesCleartextTraffic: true,
                         buildArchs: ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'],
-                        minSdkVersion: 26,
-                        enableSeparateBuildPerCPUArchitecture: true,
-                        enableProguardInReleaseBuilds: true
+                        minSdkVersion: 26
                     },
                 },
             ],
@@ -85,7 +83,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 }
             ],
             './plugins/withReactNativeTVOSPnpmFix',
-            './plugins/withMediaLibFFmpegDependency'
+            './plugins/withMediaLibFFmpegDependency',
+            './plugins/withAndroidBuildOptimizations',
         ],
         experiments: {
             typedRoutes: true,
