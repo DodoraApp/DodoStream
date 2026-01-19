@@ -1,4 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef, useCallback, memo } from 'react';
+import { Platform } from 'react-native';
 import Video, {
   VideoRef,
   OnLoadData,
@@ -8,9 +9,15 @@ import Video, {
   SelectedTrack,
   SelectedTrackType,
   OnVideoErrorData,
+  OnVideoStatisticsData,
 } from 'react-native-video';
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import { useDebugLogger } from '@/utils/debug';
+import { useProfileStore } from '@/store/profile.store';
+import {
+  useProfileSettingsStore,
+  DEFAULT_PROFILE_PLAYBACK_SETTINGS,
+} from '@/store/profile-settings.store';
 
 const composeErrorString = (error: OnVideoErrorData['error']): string => {
   const errorParts: string[] = [
@@ -41,6 +48,22 @@ export const RNVideoPlayer = memo(
       fitMode = 'contain',
     } = props;
     const videoRef = useRef<VideoRef>(null);
+
+    const activeProfileId = useProfileStore((state) => state.activeProfileId);
+    const { tunneled, audioPassthrough, enableWorkarounds } = useProfileSettingsStore((state) => {
+      const settings = activeProfileId
+        ? state.byProfile[activeProfileId]
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
+      return {
+        tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
+        audioPassthrough:
+          settings?.audioPassthrough ??
+          (Platform.isTV ? true : DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough),
+        enableWorkarounds:
+          settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
+      };
+    });
+
     useImperativeHandle(ref, () => ({
       seekTo: (time: number) => {
         videoRef.current?.seek(time);
@@ -102,6 +125,13 @@ export const RNVideoPlayer = memo(
       [debug, onTextTracks]
     );
 
+    const handleVideoStatistics = useCallback(
+      (data: OnVideoStatisticsData) => {
+        debug('videoStatistics', data);
+      },
+      [debug]
+    );
+
     const audioTrackSelection: SelectedTrack | undefined = selectedAudioTrack
       ? {
           type: 'index' as SelectedTrackType,
@@ -136,6 +166,11 @@ export const RNVideoPlayer = memo(
             minBufferMemoryReservePercent: 0.2, // Keep 20% forward buffer
           },
         }}
+        tunneled={tunneled}
+        audioPassthrough={audioPassthrough}
+        enableWorkarounds={enableWorkarounds}
+        reportStatistics={false}
+        onVideoStatistics={handleVideoStatistics}
         style={{ flex: 1 }}
         paused={paused}
         controls={false}

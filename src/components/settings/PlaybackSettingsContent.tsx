@@ -44,11 +44,17 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       autoPlayFirstStream,
       preferredAudioLanguages,
       preferredSubtitleLanguages,
+      tunneled,
+      audioPassthrough,
+      enableWorkarounds,
       setPlayerForProfile,
       setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile,
       setPreferredAudioLanguagesForProfile,
       setPreferredSubtitleLanguagesForProfile,
+      setTunneledForProfile,
+      setAudioPassthroughForProfile,
+      setEnableWorkaroundsForProfile,
     } = useProfileSettingsStore((state) => ({
       player:
         (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
@@ -65,11 +71,23 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       preferredSubtitleLanguages: activeProfileId
         ? (state.byProfile[activeProfileId]?.preferredSubtitleLanguages ?? [])
         : [],
+      tunneled:
+        (activeProfileId ? state.byProfile[activeProfileId]?.tunneled : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
+      audioPassthrough:
+        (activeProfileId ? state.byProfile[activeProfileId]?.audioPassthrough : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough,
+      enableWorkarounds:
+        (activeProfileId ? state.byProfile[activeProfileId]?.enableWorkarounds : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
       setPlayerForProfile: state.setPlayerForProfile,
       setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
       setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
       setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
+      setTunneledForProfile: state.setTunneledForProfile,
+      setAudioPassthroughForProfile: state.setAudioPassthroughForProfile,
+      setEnableWorkaroundsForProfile: state.setEnableWorkaroundsForProfile,
     }));
 
     const deviceLanguageCodes = getDevicePreferredLanguageCodes();
@@ -124,6 +142,36 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             />
           </SettingsCard>
         )}
+
+        <SettingsCard title="Android & ExoPlayer">
+          <Text variant="caption" color="textSecondary">
+            Advanced settings for Android ExoPlayer
+          </Text>
+          <SettingsSwitch
+            label="Tunneled Playback"
+            description="Use tunneled video playback mode for better performance on some devices"
+            value={tunneled}
+            onValueChange={(value) =>
+              activeProfileId && setTunneledForProfile(activeProfileId, value)
+            }
+          />
+          <SettingsSwitch
+            label="Audio Passthrough"
+            description="Enable audio passthrough for surround sound (recommended for TV)"
+            value={audioPassthrough}
+            onValueChange={(value) =>
+              activeProfileId && setAudioPassthroughForProfile(activeProfileId, value)
+            }
+          />
+          <SettingsSwitch
+            label="Enable Workarounds"
+            description="Apply compatibility workarounds for certain video formats"
+            value={enableWorkarounds}
+            onValueChange={(value) =>
+              activeProfileId && setEnableWorkaroundsForProfile(activeProfileId, value)
+            }
+          />
+        </SettingsCard>
 
         {showLanguages && (
           <SettingsCard title="Languages">
