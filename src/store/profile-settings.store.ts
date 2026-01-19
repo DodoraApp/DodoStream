@@ -11,6 +11,10 @@ export interface ProfilePlaybackSettings {
   preferredAudioLanguages?: string[];
   preferredSubtitleLanguages?: string[];
   subtitleStyle?: SubtitleStyle;
+  // Android & ExoPlayer-specific settings
+  tunneled: boolean;
+  audioPassthrough: boolean;
+  enableWorkarounds: boolean;
 }
 
 interface ProfileSettingsState {
@@ -30,6 +34,9 @@ interface ProfileSettingsState {
   setPreferredAudioLanguages: (languages: string[]) => void;
   setPreferredSubtitleLanguages: (languages: string[]) => void;
   setSubtitleStyle: (style: SubtitleStyle) => void;
+  setTunneled: (tunneled: boolean) => void;
+  setAudioPassthrough: (audioPassthrough: boolean) => void;
+  setEnableWorkarounds: (enableWorkarounds: boolean) => void;
 
   // Mutations (specific profile)
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
@@ -38,12 +45,18 @@ interface ProfileSettingsState {
   setPreferredAudioLanguagesForProfile: (profileId: string, languages: string[]) => void;
   setPreferredSubtitleLanguagesForProfile: (profileId: string, languages: string[]) => void;
   setSubtitleStyleForProfile: (profileId: string, style: SubtitleStyle) => void;
+  setTunneledForProfile: (profileId: string, tunneled: boolean) => void;
+  setAudioPassthroughForProfile: (profileId: string, audioPassthrough: boolean) => void;
+  setEnableWorkaroundsForProfile: (profileId: string, enableWorkarounds: boolean) => void;
 }
 
 export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   player: 'exoplayer',
   automaticFallback: true,
   autoPlayFirstStream: false,
+  tunneled: false,
+  audioPassthrough: false,
+  enableWorkarounds: true,
 };
 
 export const useProfileSettingsStore = create<ProfileSettingsState>()(
@@ -96,6 +109,24 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setSubtitleStyleForProfile(profileId, style);
+      },
+
+      setTunneled: (tunneled) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setTunneledForProfile(profileId, tunneled);
+      },
+
+      setAudioPassthrough: (audioPassthrough) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setAudioPassthroughForProfile(profileId, audioPassthrough);
+      },
+
+      setEnableWorkarounds: (enableWorkarounds) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setEnableWorkaroundsForProfile(profileId, enableWorkarounds);
       },
 
       setPlayerForProfile: (profileId, player) => {
@@ -169,12 +200,48 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
           },
         }));
       },
+
+      setTunneledForProfile: (profileId, tunneled) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              tunneled,
+            },
+          },
+        }));
+      },
+
+      setAudioPassthroughForProfile: (profileId, audioPassthrough) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              audioPassthrough,
+            },
+          },
+        }));
+      },
+
+      setEnableWorkaroundsForProfile: (profileId, enableWorkarounds) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              enableWorkarounds,
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'profile-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ byProfile: state.byProfile }),
-      version: 1,
+      version: 2,
       migrate: (persistedState, version) => {
         if (!persistedState) return persistedState;
         const state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
@@ -184,6 +251,23 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
             migratedByProfile[profileId] = {
               ...settings,
               autoPlayFirstStream: settings.autoPlayFirstStream ?? false,
+
+              tunneled: false,
+              audioPassthrough: false,
+              enableWorkarounds: true,
+            };
+          }
+          return { ...persistedState, byProfile: migratedByProfile };
+        }
+
+        if (version === 1) {
+          const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
+          for (const [profileId, settings] of Object.entries(state.byProfile)) {
+            migratedByProfile[profileId] = {
+              ...settings,
+              tunneled: settings.tunneled ?? false,
+              audioPassthrough: settings.audioPassthrough ?? false,
+              enableWorkarounds: settings.enableWorkarounds ?? true,
             };
           }
           return { ...persistedState, byProfile: migratedByProfile };
