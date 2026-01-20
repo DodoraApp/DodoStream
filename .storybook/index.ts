@@ -1,0 +1,1 @@
+export { StorybookUIWrapper as default } from './storybook-ui-wrapper';
