@@ -75,6 +75,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 },
             ],
             'expo-libvlc-player',
+            '@react-native-community/datetimepicker',
             [
                 "@sentry/react-native/expo",
                 {
@@ -117,6 +118,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             ],
         },
         extra: {
+            storybookEnabled: process.env.STORYBOOK_ENABLED,
             router: {},
             eas: {
                 projectId: 'c7e4f244-2ba8-42dc-a3f6-c197df3d8236',

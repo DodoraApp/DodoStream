@@ -26,6 +26,7 @@ import { ToastContainer } from '@/components/basic/Toast';
 import * as Sentry from '@sentry/react-native';
 import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
 import { createDebugLogger } from '@/utils/debug';
+import Constants from 'expo-constants';
 
 const debug = createDebugLogger('layout');
 if (isSentryEnabled) {
@@ -129,4 +130,14 @@ function Layout() {
 }
 
 const AppLayout = isSentryEnabled ? Sentry.wrap(Layout) : Layout;
-export default AppLayout;
+
+// Default to rendering your app
+let AppEntryPoint = AppLayout;
+
+// Render Storybook if storybookEnabled is true
+if (Constants.expoConfig?.extra?.storybookEnabled === 'true') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  AppEntryPoint = require('../../.storybook').default;
+}
+
+export default AppEntryPoint;
