@@ -83,7 +83,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 }
             ],
             './plugins/withReactNativeTVOSPnpmFix',
-            './plugins/withMediaLibFFmpegDependency',
             './plugins/withAndroidBuildOptimizations',
         ],
         experiments: {
