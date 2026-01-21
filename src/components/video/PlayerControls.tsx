@@ -24,6 +24,8 @@ import {
 import { useDebugLogger } from '@/utils/debug';
 import { ControlButton } from '@/components/video/controls/ControlButton';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { Modal } from '@/components/basic/Modal';
+import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
 
 // ============================================================================
 // Types
@@ -35,6 +37,7 @@ interface PlayerControlsProps {
   duration: number;
   showLoadingIndicator: boolean;
   title?: string;
+  statistics?: Record<string, string>;
   audioTracks: AudioTrack[];
   textTracks: TextTrack[];
   selectedAudioTrack?: AudioTrack;
@@ -368,7 +371,11 @@ FitModeControl.displayName = 'FitModeControl';
 /**
  * Top bar with back button and title.
  */
-const TopBar = memo<{ title?: string; onBack: () => void }>(({ title, onBack }) => (
+const TopBar = memo<{
+  title?: string;
+  onBack: () => void;
+  onOpenSettings: () => void;
+}>(({ title, onBack, onOpenSettings }) => (
   <Box flexDirection="row" alignItems="center" paddingHorizontal="l" paddingVertical="m" gap="m">
     <ControlButton onPress={onBack} icon="arrow-back" iconComponent={Ionicons} />
     <Box flex={1}>
@@ -376,6 +383,12 @@ const TopBar = memo<{ title?: string; onBack: () => void }>(({ title, onBack }) 
         {title || 'Play'}
       </Text>
     </Box>
+    <ControlButton
+      onPress={onOpenSettings}
+      icon="settings"
+      iconComponent={Ionicons}
+      label="Settings"
+    />
   </Box>
 ));
 
@@ -431,6 +444,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   const [seekTime, setSeekTime] = useState(0);
   const [showAudioTracks, setShowAudioTracks] = useState(false);
   const [showTextTracks, setShowTextTracks] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Use ref to track interaction for auto-hide without causing re-renders
   const lastInteractionRef = useRef(Date.now());
@@ -573,6 +587,16 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     onToggleFitMode();
   }, [onToggleFitMode, registerInteraction]);
 
+  const handleOpenSettings = useCallback(() => {
+    registerInteraction();
+    setShowSettingsModal(true);
+  }, [registerInteraction]);
+
+  const handleCloseSettings = useCallback(() => {
+    registerInteraction();
+    setShowSettingsModal(false);
+  }, [registerInteraction]);
+
   // Auto-hide controls after inactivity
   useEffect(() => {
     if (!visible || paused || isSeeking || showAudioTracks || showTextTracks) {
@@ -617,7 +641,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       onPress={toggleControls}>
       <Box flex={1} justifyContent="space-between">
         {/* Top Bar */}
-        <TopBar title={title} onBack={handleBack} />
+        <TopBar title={title} onBack={handleBack} onOpenSettings={handleOpenSettings} />
 
         {/* Loading Indicator */}
         {showLoadingIndicator && (
@@ -717,6 +741,12 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           delay={subtitleDelay}
           onDelayChange={onSubtitleDelayChange}
         />
+
+        <Modal visible={showSettingsModal} onClose={handleCloseSettings}>
+          <Box backgroundColor="cardBackground" borderRadius="l">
+            <PlaybackSettingsContent />
+          </Box>
+        </Modal>
       </Box>
     </Pressable>
   );

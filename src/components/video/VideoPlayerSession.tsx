@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
-import { Box } from '@/theme/theme';
+import { Platform, StyleSheet } from 'react-native';
+import { Box, Text, Theme } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
 import { showToast } from '@/store/toast.store';
 
 import { RNVideoPlayer } from './RNVideoPlayer';
@@ -14,7 +15,10 @@ import { PlayerLoadingScreen } from './PlayerLoadingScreen';
 import { AudioTrack, PlayerRef, TextTrack, VideoFitMode } from '@/types/player';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import {
+  DEFAULT_PROFILE_PLAYBACK_SETTINGS,
+  useProfileSettingsStore,
+} from '@/store/profile-settings.store';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { usePlaybackStore } from '@/store/playback.store';
 import {
@@ -132,6 +136,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   automaticFallback,
 }) => {
   const debug = useDebugLogger('VideoPlayer');
+  const theme = useTheme<Theme>();
 
   const playerRef = useRef<PlayerRef>(null);
   const { replaceToStreams } = useMediaNavigation();
@@ -141,13 +146,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const isFirstLoadRef = useRef(true);
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
-  const { preferredAudioLanguages } = useProfileSettingsStore((state) => ({
+  const { preferredAudioLanguages, showVideoStatistics } = useProfileSettingsStore((state) => ({
     preferredAudioLanguages: activeProfileId
       ? state.byProfile[activeProfileId]?.preferredAudioLanguages
       : undefined,
-    preferredSubtitleLanguages: activeProfileId
-      ? state.byProfile[activeProfileId]?.preferredSubtitleLanguages
-      : undefined,
+    showVideoStatistics: activeProfileId
+      ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
+      : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
   }));
 
   const nativeSubtitleStyle = useNativeSubtitleStyle();
@@ -212,6 +218,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
   const [selectedTextTrack, setSelectedTextTrack] = useState<TextTrack>();
+  const [videoStatistics, setVideoStatistics] = useState<Record<string, string>>({});
 
   const { combinedSubtitles, areSubtitlesLoading, setVideoSubtitles } = useSubtitleCombiner(
     mediaType,
@@ -368,6 +375,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     (buffering: boolean) => {
       debug('buffering', { buffering });
       setIsBuffering(buffering);
+    },
+    [debug]
+  );
+
+  const handleStatistics = useCallback(
+    (statistics: Record<string, string>) => {
+      debug('videoStatistics', statistics);
+      setVideoStatistics(statistics);
     },
     [debug]
   );
@@ -658,10 +673,51 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onError={handleError}
         onAudioTracks={handleAudioTracksLoaded}
         onTextTracks={handleTextTracksLoaded}
+        onStatistics={handleStatistics}
         selectedAudioTrack={selectedAudioTrack}
         selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
         subtitleStyle={nativeSubtitleStyle}
       />
+
+      {showVideoStatistics && Object.keys(videoStatistics).length > 0 && (
+        <Box
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: theme.spacing.m,
+            left: theme.spacing.m,
+          }}>
+          <Box
+            style={{
+              position: 'relative',
+              borderRadius: theme.borderRadii.m,
+              overflow: 'hidden',
+            }}>
+            <Box
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  backgroundColor: theme.colors.mainBackground,
+                  opacity: 0.75,
+                  borderRadius: theme.borderRadii.m,
+                },
+              ]}
+            />
+            <Box padding="s" gap="xs">
+              {Object.entries(videoStatistics).map(([key, value]) => (
+                <Box key={key} flexDirection="row" gap="s">
+                  <Text variant="caption" color="mainForeground">
+                    {key}:
+                  </Text>
+                  <Text variant="caption" color="mainForeground">
+                    {value}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       {/* Custom subtitles overlay for addon-provided subtitles */}
       {selectedTextTrack?.source === 'addon' && selectedTextTrack.uri && (
@@ -684,6 +740,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
           duration={duration}
           showLoadingIndicator={isLoading || isBuffering}
           title={title}
+          statistics={videoStatistics}
           audioTracks={audioTracks}
           textTracks={combinedSubtitles}
           selectedAudioTrack={selectedAudioTrack}

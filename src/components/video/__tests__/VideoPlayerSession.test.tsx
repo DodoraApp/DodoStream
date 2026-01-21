@@ -20,6 +20,15 @@ jest.mock('@/store/profile.store', () => ({
 }));
 
 jest.mock('@/store/profile-settings.store', () => ({
+  DEFAULT_PROFILE_PLAYBACK_SETTINGS: {
+    player: 'exoplayer',
+    automaticFallback: true,
+    autoPlayFirstStream: false,
+    showVideoStatistics: false,
+    tunneled: false,
+    audioPassthrough: false,
+    enableWorkarounds: true,
+  },
   useProfileSettingsStore: jest.fn((selector: any) =>
     selector({
       byProfile: {

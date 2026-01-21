@@ -42,6 +42,7 @@ export const RNVideoPlayer = memo(
       onError,
       onAudioTracks,
       onTextTracks,
+      onStatistics,
       selectedAudioTrack,
       selectedTextTrack,
       subtitleStyle,
@@ -127,9 +128,9 @@ export const RNVideoPlayer = memo(
 
     const handleVideoStatistics = useCallback(
       (data: OnVideoStatisticsData) => {
-        debug('videoStatistics', data);
+        onStatistics?.(data);
       },
-      [debug]
+      [onStatistics]
     );
 
     const audioTrackSelection: SelectedTrack | undefined = selectedAudioTrack
@@ -169,7 +170,7 @@ export const RNVideoPlayer = memo(
         tunneled={tunneled}
         audioPassthrough={audioPassthrough}
         enableWorkarounds={enableWorkarounds}
-        reportStatistics={false}
+        reportStatistics={true}
         onVideoStatistics={handleVideoStatistics}
         style={{ flex: 1 }}
         paused={paused}

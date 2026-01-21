@@ -86,6 +86,7 @@ export interface PlayerProps {
     onError?: (message: string) => void;
     onAudioTracks?: (tracks: AudioTrack[]) => void;
     onTextTracks?: (tracks: TextTrack[]) => void;
+    onStatistics?: (statistics: Record<string, string>) => void;
     selectedAudioTrack?: AudioTrack;
     selectedTextTrack?: TextTrack;
     /** Native subtitle style (limited platform support) */
