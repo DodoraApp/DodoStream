@@ -140,8 +140,8 @@ importers:
         specifier: 15.12.1
         version: 15.12.1(react-native-tvos@0.81.5-1)(react@19.1.0)
       react-native-video:
-        specifier: DodoraApp/react-native-video#52c1074749cf34aa2358b0c0ea996f72d897a27e
-        version: https://codeload.github.com/DodoraApp/react-native-video/tar.gz/52c1074749cf34aa2358b0c0ea996f72d897a27e(react-native-tvos@0.81.5-1)(react@19.1.0)
+        specifier: DodoraApp/react-native-video#920ca4e0d069f330749a17460d1836dca7f9ac37
+        version: https://codeload.github.com/DodoraApp/react-native-video/tar.gz/920ca4e0d069f330749a17460d1836dca7f9ac37(react-native-tvos@0.81.5-1)(react@19.1.0)
       react-native-web:
         specifier: ^0.21.0
         version: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -4640,8 +4640,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-native-video@https://codeload.github.com/DodoraApp/react-native-video/tar.gz/52c1074749cf34aa2358b0c0ea996f72d897a27e:
-    resolution: {tarball: https://codeload.github.com/DodoraApp/react-native-video/tar.gz/52c1074749cf34aa2358b0c0ea996f72d897a27e}
+  react-native-video@https://codeload.github.com/DodoraApp/react-native-video/tar.gz/920ca4e0d069f330749a17460d1836dca7f9ac37:
+    resolution: {tarball: https://codeload.github.com/DodoraApp/react-native-video/tar.gz/920ca4e0d069f330749a17460d1836dca7f9ac37}
     version: 6.18.0
     peerDependencies:
       react: '*'
@@ -11013,7 +11013,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  react-native-video@https://codeload.github.com/DodoraApp/react-native-video/tar.gz/52c1074749cf34aa2358b0c0ea996f72d897a27e(react-native-tvos@0.81.5-1)(react@19.1.0):
+  react-native-video@https://codeload.github.com/DodoraApp/react-native-video/tar.gz/920ca4e0d069f330749a17460d1836dca7f9ac37(react-native-tvos@0.81.5-1)(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
