@@ -8,6 +8,7 @@ export interface ProfilePlaybackSettings {
   player: PlayerType;
   automaticFallback: boolean;
   autoPlayFirstStream: boolean;
+  showVideoStatistics: boolean;
   preferredAudioLanguages?: string[];
   preferredSubtitleLanguages?: string[];
   subtitleStyle?: SubtitleStyle;
@@ -31,6 +32,7 @@ interface ProfileSettingsState {
   setPlayer: (player: PlayerType) => void;
   setAutomaticFallback: (automaticFallback: boolean) => void;
   setAutoPlayFirstStream: (autoPlayFirstStream: boolean) => void;
+  setShowVideoStatistics: (showVideoStatistics: boolean) => void;
   setPreferredAudioLanguages: (languages: string[]) => void;
   setPreferredSubtitleLanguages: (languages: string[]) => void;
   setSubtitleStyle: (style: SubtitleStyle) => void;
@@ -42,6 +44,7 @@ interface ProfileSettingsState {
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
   setAutomaticFallbackForProfile: (profileId: string, automaticFallback: boolean) => void;
   setAutoPlayFirstStreamForProfile: (profileId: string, autoPlayFirstStream: boolean) => void;
+  setShowVideoStatisticsForProfile: (profileId: string, showVideoStatistics: boolean) => void;
   setPreferredAudioLanguagesForProfile: (profileId: string, languages: string[]) => void;
   setPreferredSubtitleLanguagesForProfile: (profileId: string, languages: string[]) => void;
   setSubtitleStyleForProfile: (profileId: string, style: SubtitleStyle) => void;
@@ -54,6 +57,7 @@ export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   player: 'exoplayer',
   automaticFallback: true,
   autoPlayFirstStream: false,
+  showVideoStatistics: false,
   tunneled: false,
   audioPassthrough: false,
   enableWorkarounds: true,
@@ -91,6 +95,12 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setAutoPlayFirstStreamForProfile(profileId, autoPlayFirstStream);
+      },
+
+      setShowVideoStatistics: (showVideoStatistics) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setShowVideoStatisticsForProfile(profileId, showVideoStatistics);
       },
 
       setPreferredAudioLanguages: (languages) => {
@@ -160,6 +170,18 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
             [profileId]: {
               ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
               autoPlayFirstStream,
+            },
+          },
+        }));
+      },
+
+      setShowVideoStatisticsForProfile: (profileId, showVideoStatistics) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              showVideoStatistics,
             },
           },
         }));
@@ -241,7 +263,7 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
       name: 'profile-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ byProfile: state.byProfile }),
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
         if (!persistedState) return persistedState;
         const state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
@@ -251,6 +273,7 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
             migratedByProfile[profileId] = {
               ...settings,
               autoPlayFirstStream: settings.autoPlayFirstStream ?? false,
+              showVideoStatistics: settings.showVideoStatistics ?? false,
 
               tunneled: false,
               audioPassthrough: false,
@@ -265,9 +288,21 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
           for (const [profileId, settings] of Object.entries(state.byProfile)) {
             migratedByProfile[profileId] = {
               ...settings,
+              showVideoStatistics: settings.showVideoStatistics ?? false,
               tunneled: settings.tunneled ?? false,
               audioPassthrough: settings.audioPassthrough ?? false,
               enableWorkarounds: settings.enableWorkarounds ?? true,
+            };
+          }
+          return { ...persistedState, byProfile: migratedByProfile };
+        }
+
+        if (version === 2) {
+          const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
+          for (const [profileId, settings] of Object.entries(state.byProfile)) {
+            migratedByProfile[profileId] = {
+              ...settings,
+              showVideoStatistics: settings.showVideoStatistics ?? false,
             };
           }
           return { ...persistedState, byProfile: migratedByProfile };

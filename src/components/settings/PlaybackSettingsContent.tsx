@@ -42,6 +42,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       player,
       automaticFallback,
       autoPlayFirstStream,
+      showVideoStatistics,
       preferredAudioLanguages,
       preferredSubtitleLanguages,
       tunneled,
@@ -50,6 +51,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setPlayerForProfile,
       setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile,
+      setShowVideoStatisticsForProfile,
       setPreferredAudioLanguagesForProfile,
       setPreferredSubtitleLanguagesForProfile,
       setTunneledForProfile,
@@ -65,6 +67,9 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       autoPlayFirstStream:
         (activeProfileId ? state.byProfile[activeProfileId]?.autoPlayFirstStream : undefined) ??
         DEFAULT_PROFILE_PLAYBACK_SETTINGS.autoPlayFirstStream,
+      showVideoStatistics:
+        (activeProfileId ? state.byProfile[activeProfileId]?.showVideoStatistics : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
       preferredAudioLanguages: activeProfileId
         ? (state.byProfile[activeProfileId]?.preferredAudioLanguages ?? [])
         : [],
@@ -83,6 +88,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setPlayerForProfile: state.setPlayerForProfile,
       setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
+      setShowVideoStatisticsForProfile: state.setShowVideoStatisticsForProfile,
       setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
       setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
       setTunneledForProfile: state.setTunneledForProfile,
@@ -169,6 +175,17 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             value={enableWorkarounds}
             onValueChange={(value) =>
               activeProfileId && setEnableWorkaroundsForProfile(activeProfileId, value)
+            }
+          />
+        </SettingsCard>
+
+        <SettingsCard title="Diagnostics">
+          <SettingsSwitch
+            label="Show video statistics"
+            description="Display a live stats overlay during playback"
+            value={showVideoStatistics}
+            onValueChange={(value) =>
+              activeProfileId && setShowVideoStatisticsForProfile(activeProfileId, value)
             }
           />
         </SettingsCard>
