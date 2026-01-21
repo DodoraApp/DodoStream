@@ -16,6 +16,7 @@ export interface ProfilePlaybackSettings {
   tunneled: boolean;
   audioPassthrough: boolean;
   enableWorkarounds: boolean;
+  matchFrameRate: boolean;
 }
 
 interface ProfileSettingsState {
@@ -39,6 +40,7 @@ interface ProfileSettingsState {
   setTunneled: (tunneled: boolean) => void;
   setAudioPassthrough: (audioPassthrough: boolean) => void;
   setEnableWorkarounds: (enableWorkarounds: boolean) => void;
+  setMatchFrameRate: (matchFrameRate: boolean) => void;
 
   // Mutations (specific profile)
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
@@ -51,6 +53,7 @@ interface ProfileSettingsState {
   setTunneledForProfile: (profileId: string, tunneled: boolean) => void;
   setAudioPassthroughForProfile: (profileId: string, audioPassthrough: boolean) => void;
   setEnableWorkaroundsForProfile: (profileId: string, enableWorkarounds: boolean) => void;
+  setMatchFrameRateForProfile: (profileId: string, matchFrameRate: boolean) => void;
 }
 
 export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
@@ -61,6 +64,7 @@ export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   tunneled: false,
   audioPassthrough: false,
   enableWorkarounds: true,
+  matchFrameRate: false,
 };
 
 export const useProfileSettingsStore = create<ProfileSettingsState>()(
@@ -137,6 +141,12 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setEnableWorkaroundsForProfile(profileId, enableWorkarounds);
+      },
+
+      setMatchFrameRate: (matchFrameRate) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setMatchFrameRateForProfile(profileId, matchFrameRate);
       },
 
       setPlayerForProfile: (profileId, player) => {
@@ -258,12 +268,24 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
           },
         }));
       },
+
+      setMatchFrameRateForProfile: (profileId, matchFrameRate) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              matchFrameRate,
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'profile-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ byProfile: state.byProfile }),
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => {
         if (!persistedState) return persistedState;
         const state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
@@ -303,6 +325,17 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
             migratedByProfile[profileId] = {
               ...settings,
               showVideoStatistics: settings.showVideoStatistics ?? false,
+            };
+          }
+          return { ...persistedState, byProfile: migratedByProfile };
+        }
+
+        if (version === 3) {
+          const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
+          for (const [profileId, settings] of Object.entries(state.byProfile)) {
+            migratedByProfile[profileId] = {
+              ...settings,
+              matchFrameRate: false,
             };
           }
           return { ...persistedState, byProfile: migratedByProfile };

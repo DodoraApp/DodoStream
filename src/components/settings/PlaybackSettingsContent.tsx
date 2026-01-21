@@ -48,6 +48,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       tunneled,
       audioPassthrough,
       enableWorkarounds,
+      matchFrameRate,
       setPlayerForProfile,
       setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile,
@@ -57,6 +58,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setTunneledForProfile,
       setAudioPassthroughForProfile,
       setEnableWorkaroundsForProfile,
+      setMatchFrameRateForProfile,
     } = useProfileSettingsStore((state) => ({
       player:
         (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
@@ -85,6 +87,9 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       enableWorkarounds:
         (activeProfileId ? state.byProfile[activeProfileId]?.enableWorkarounds : undefined) ??
         DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
+      matchFrameRate:
+        (activeProfileId ? state.byProfile[activeProfileId]?.matchFrameRate : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
       setPlayerForProfile: state.setPlayerForProfile,
       setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
@@ -94,6 +99,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setTunneledForProfile: state.setTunneledForProfile,
       setAudioPassthroughForProfile: state.setAudioPassthroughForProfile,
       setEnableWorkaroundsForProfile: state.setEnableWorkaroundsForProfile,
+      setMatchFrameRateForProfile: state.setMatchFrameRateForProfile,
     }));
 
     const deviceLanguageCodes = getDevicePreferredLanguageCodes();
@@ -175,6 +181,14 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             value={enableWorkarounds}
             onValueChange={(value) =>
               activeProfileId && setEnableWorkaroundsForProfile(activeProfileId, value)
+            }
+          />
+          <SettingsSwitch
+            label="Match Frame Rate"
+            description="Automatically match screen refresh rate and resolution to video (supported TV devices only)"
+            value={matchFrameRate}
+            onValueChange={(value) =>
+              activeProfileId && setMatchFrameRateForProfile(activeProfileId, value)
             }
           />
         </SettingsCard>
