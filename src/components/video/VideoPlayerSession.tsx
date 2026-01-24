@@ -6,13 +6,12 @@ import { showToast } from '@/store/toast.store';
 
 import { RNVideoPlayer } from './RNVideoPlayer';
 import { VLCPlayer } from './VLCPlayer';
-import { MPVPlayer } from './MPVPlayer';
 import { PlayerControls } from './PlayerControls';
 import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
 import { CustomSubtitles } from './CustomSubtitles';
 import { PlayerLoadingScreen } from './PlayerLoadingScreen';
 
-import { AudioTrack, PlayerRef, TextTrack, VideoFitMode } from '@/types/player';
+import { AudioTrack, PlayerRef, PlayerType, TextTrack, VideoFitMode } from '@/types/player';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
 import {
@@ -59,9 +58,9 @@ export interface VideoPlayerProps {
 }
 
 export interface VideoPlayerSessionProps extends VideoPlayerProps {
-  usedPlayerType: 'vlc' | 'exoplayer' | 'mpv';
-  setUsedPlayerType: (next: 'vlc' | 'exoplayer' | 'mpv') => void;
-  playerType: 'vlc' | 'exoplayer' | 'mpv';
+  usedPlayerType: PlayerType;
+  setUsedPlayerType: (next: PlayerType) => void;
+  playerType: PlayerType;
   automaticFallback: boolean;
 }
 
@@ -173,7 +172,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
   const [fitMode, setFitMode] = useState<VideoFitMode>('contain');
-  // MPV supports all fit modes, VLC only supports contain/stretch
+  // VLC only supports contain/stretch
   const allowCoverFit = usedPlayerType !== 'vlc';
 
   // Throttled progress ratio for UpNextPopup - only updates at meaningful thresholds
@@ -490,18 +489,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         automaticFallback && playerType === usedPlayerType && errorClassification.shouldFallback;
 
       if (shouldAttemptFallback) {
-        // Fallback order depends on platform:
-        // Android: exoplayer -> mpv -> vlc -> (give up)
-        // Other platforms: exoplayer -> vlc -> (give up)
-        const isAndroid = Platform.OS === 'android';
-        let newPlayer: 'vlc' | 'exoplayer' | 'mpv' | null = null;
-
+        let newPlayer: PlayerType | null = null;
         switch (usedPlayerType) {
           case 'exoplayer':
-            newPlayer = isAndroid ? 'mpv' : 'vlc';
-            break;
-          case 'mpv':
-            // MPV is Android-only, fallback to VLC
             newPlayer = 'vlc';
             break;
           case 'vlc':
@@ -515,7 +505,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
             to: newPlayer,
             reason: errorClassification.type,
           });
-          const playerNames = { vlc: 'VLC', exoplayer: 'ExoPlayer', mpv: 'MPV' };
+          const playerNames = { vlc: 'VLC', exoplayer: 'ExoPlayer' };
           showToast({
             title: `Switching to ${playerNames[newPlayer]}`,
             message: errorClassification.userMessage,
@@ -653,7 +643,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const PlayerComponent =
-    usedPlayerType === 'vlc' ? VLCPlayer : usedPlayerType === 'mpv' ? MPVPlayer : RNVideoPlayer;
+    usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
   const isLoading = isVideoLoading || areSubtitlesLoading;
 
   // Show custom loading screen on first load if background/logo is available
