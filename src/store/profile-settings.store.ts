@@ -285,7 +285,7 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
       name: 'profile-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ byProfile: state.byProfile }),
-      version: 4,
+      version: 5,
       migrate: (persistedState, version) => {
         if (!persistedState) return persistedState;
         const state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
@@ -336,6 +336,17 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
             migratedByProfile[profileId] = {
               ...settings,
               matchFrameRate: false,
+            };
+          }
+          return { ...persistedState, byProfile: migratedByProfile };
+        }
+
+        if (version === 4) {
+          const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
+          for (const [profileId, settings] of Object.entries(state.byProfile)) {
+            migratedByProfile[profileId] = {
+              ...settings,
+              player: (settings.player as unknown) === 'mpv' ? 'exoplayer' : settings.player,
             };
           }
           return { ...persistedState, byProfile: migratedByProfile };
