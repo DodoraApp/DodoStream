@@ -187,9 +187,11 @@ export const useAddonStore = create<AddonState>()(
             partialize: (state) => ({ addons: state.addons }),
             version: 1,
             migrate: (persistedState, version) => {
-                const state = persistedState as { addons: Record<string, InstalledAddon> };
+                let state = persistedState as { addons: Record<string, InstalledAddon> };
+
+                // Apply migrations sequentially from stored version to current
                 // v0 -> v1: Add useForSubtitles=true to all existing addons
-                if (version === 0 && state.addons) {
+                if (version < 1 && state.addons) {
                     const migratedAddons: Record<string, InstalledAddon> = {};
                     for (const [id, addon] of Object.entries(state.addons)) {
                         migratedAddons[id] = {
@@ -197,8 +199,9 @@ export const useAddonStore = create<AddonState>()(
                             useForSubtitles: addon.useForSubtitles ?? true,
                         };
                     }
-                    return { addons: migratedAddons };
+                    state = { addons: migratedAddons };
                 }
+
                 return state;
             },
         }

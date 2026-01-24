@@ -52,6 +52,8 @@ export const useComputedSubtitleStyle = (containerHeight: number): ComputedSubti
 export const useNativeSubtitleStyle = () => {
     const style = useSubtitleStyle();
 
+    console.log("Style", style)
+
     return useMemo(
         () => ({
             fontSize: style.fontSize,

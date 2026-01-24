@@ -8,7 +8,7 @@ import React, {
   useMemo,
   memo,
 } from 'react';
-import { LibVlcPlayerView, LibVlcPlayerViewRef } from 'expo-libvlc-player';
+import { LibVlcPlayerView, LibVlcPlayerViewRef, MediaInfo } from 'expo-libvlc-player';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import type { SubtitleStyle } from '@/types/subtitles';
@@ -300,14 +300,7 @@ export const VLCPlayer = memo(
       );
 
       const handleFirstPlay = useCallback(
-        (event: {
-          length: number;
-          tracks: {
-            audio: { id: number; name: string }[];
-            video: { id: number; name: string }[];
-            subtitle: { id: number; name: string }[];
-          };
-        }) => {
+        (event: MediaInfo) => {
           debug('firstPlay', { lengthMs: event.length });
           // length is in milliseconds, convert to seconds
           const durationInSeconds = event.length / 1000;

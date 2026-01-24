@@ -49,6 +49,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       audioPassthrough,
       enableWorkarounds,
       matchFrameRate,
+      enableVideoSoftwareDecoding,
       setPlayerForProfile,
       setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile,
@@ -59,6 +60,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setAudioPassthroughForProfile,
       setEnableWorkaroundsForProfile,
       setMatchFrameRateForProfile,
+      setEnableVideoSoftwareDecodingForProfile,
     } = useProfileSettingsStore((state) => ({
       player:
         (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
@@ -90,6 +92,10 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       matchFrameRate:
         (activeProfileId ? state.byProfile[activeProfileId]?.matchFrameRate : undefined) ??
         DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
+      enableVideoSoftwareDecoding:
+        (activeProfileId
+          ? state.byProfile[activeProfileId]?.enableVideoSoftwareDecoding
+          : undefined) ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
       setPlayerForProfile: state.setPlayerForProfile,
       setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
@@ -100,6 +106,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setAudioPassthroughForProfile: state.setAudioPassthroughForProfile,
       setEnableWorkaroundsForProfile: state.setEnableWorkaroundsForProfile,
       setMatchFrameRateForProfile: state.setMatchFrameRateForProfile,
+      setEnableVideoSoftwareDecodingForProfile: state.setEnableVideoSoftwareDecodingForProfile,
     }));
 
     const deviceLanguageCodes = getDevicePreferredLanguageCodes();
@@ -189,6 +196,14 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             value={matchFrameRate}
             onValueChange={(value) =>
               activeProfileId && setMatchFrameRateForProfile(activeProfileId, value)
+            }
+          />
+          <SettingsSwitch
+            label="Software Video Decoding"
+            description="Use software decoder instead of hardware (may help with compatibility issues but uses more CPU, not recommended on low-end devices such as streaming sticks, set-top boxes and older phones). Disable this if you experience playback stuttering."
+            value={enableVideoSoftwareDecoding}
+            onValueChange={(value) =>
+              activeProfileId && setEnableVideoSoftwareDecodingForProfile(activeProfileId, value)
             }
           />
         </SettingsCard>
