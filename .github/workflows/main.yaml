@@ -57,10 +57,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🏗 Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
         with:
-          version: 10
-          package_json_file: package.json
+          cache: true
           run_install: false
 
       - name: 🏗 Setup Node.js

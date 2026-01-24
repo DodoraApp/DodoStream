@@ -17,6 +17,7 @@ export interface ProfilePlaybackSettings {
   audioPassthrough: boolean;
   enableWorkarounds: boolean;
   matchFrameRate: boolean;
+  enableVideoSoftwareDecoding: boolean;
 }
 
 interface ProfileSettingsState {
@@ -41,6 +42,7 @@ interface ProfileSettingsState {
   setAudioPassthrough: (audioPassthrough: boolean) => void;
   setEnableWorkarounds: (enableWorkarounds: boolean) => void;
   setMatchFrameRate: (matchFrameRate: boolean) => void;
+  setEnableVideoSoftwareDecoding: (enableVideoSoftwareDecoding: boolean) => void;
 
   // Mutations (specific profile)
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
@@ -54,6 +56,7 @@ interface ProfileSettingsState {
   setAudioPassthroughForProfile: (profileId: string, audioPassthrough: boolean) => void;
   setEnableWorkaroundsForProfile: (profileId: string, enableWorkarounds: boolean) => void;
   setMatchFrameRateForProfile: (profileId: string, matchFrameRate: boolean) => void;
+  setEnableVideoSoftwareDecodingForProfile: (profileId: string, enableVideoSoftwareDecoding: boolean) => void;
 }
 
 export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
@@ -65,6 +68,7 @@ export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   audioPassthrough: false,
   enableWorkarounds: true,
   matchFrameRate: false,
+  enableVideoSoftwareDecoding: false,
 };
 
 export const useProfileSettingsStore = create<ProfileSettingsState>()(
@@ -147,6 +151,12 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setMatchFrameRateForProfile(profileId, matchFrameRate);
+      },
+
+      setEnableVideoSoftwareDecoding: (enableVideoSoftwareDecoding) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setEnableVideoSoftwareDecodingForProfile(profileId, enableVideoSoftwareDecoding);
       },
 
       setPlayerForProfile: (profileId, player) => {
@@ -280,6 +290,18 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
           },
         }));
       },
+
+      setEnableVideoSoftwareDecodingForProfile: (profileId, enableVideoSoftwareDecoding) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              enableVideoSoftwareDecoding,
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'profile-settings-storage',
@@ -288,24 +310,25 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
       version: 5,
       migrate: (persistedState, version) => {
         if (!persistedState) return persistedState;
-        const state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
-        if (version === 0) {
+        let state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
+
+        // Apply migrations sequentially from stored version to current
+        if (version < 1) {
           const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
           for (const [profileId, settings] of Object.entries(state.byProfile)) {
             migratedByProfile[profileId] = {
               ...settings,
               autoPlayFirstStream: settings.autoPlayFirstStream ?? false,
               showVideoStatistics: settings.showVideoStatistics ?? false,
-
               tunneled: false,
               audioPassthrough: false,
               enableWorkarounds: true,
             };
           }
-          return { ...persistedState, byProfile: migratedByProfile };
+          state = { ...state, byProfile: migratedByProfile };
         }
 
-        if (version === 1) {
+        if (version < 2) {
           const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
           for (const [profileId, settings] of Object.entries(state.byProfile)) {
             migratedByProfile[profileId] = {
@@ -316,10 +339,10 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
               enableWorkarounds: settings.enableWorkarounds ?? true,
             };
           }
-          return { ...persistedState, byProfile: migratedByProfile };
+          state = { ...state, byProfile: migratedByProfile };
         }
 
-        if (version === 2) {
+        if (version < 3) {
           const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
           for (const [profileId, settings] of Object.entries(state.byProfile)) {
             migratedByProfile[profileId] = {
@@ -327,10 +350,10 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
               showVideoStatistics: settings.showVideoStatistics ?? false,
             };
           }
-          return { ...persistedState, byProfile: migratedByProfile };
+          state = { ...state, byProfile: migratedByProfile };
         }
 
-        if (version === 3) {
+        if (version < 4) {
           const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
           for (const [profileId, settings] of Object.entries(state.byProfile)) {
             migratedByProfile[profileId] = {
@@ -338,21 +361,22 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
               matchFrameRate: false,
             };
           }
-          return { ...persistedState, byProfile: migratedByProfile };
+          state = { ...state, byProfile: migratedByProfile };
         }
 
-        if (version === 4) {
+        if (version < 5) {
           const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
           for (const [profileId, settings] of Object.entries(state.byProfile)) {
             migratedByProfile[profileId] = {
               ...settings,
               player: (settings.player as unknown) === 'mpv' ? 'exoplayer' : settings.player,
+              enableVideoSoftwareDecoding: false,
             };
           }
-          return { ...persistedState, byProfile: migratedByProfile };
+          state = { ...state, byProfile: migratedByProfile };
         }
 
-        return persistedState;
+        return state;
       },
     }
   )

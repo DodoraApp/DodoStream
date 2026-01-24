@@ -38,7 +38,7 @@
     "@shopify/flash-list": "^2.0.2",
     "@shopify/restyle": "^2.4.5",
     "@tanstack/react-query": "^5.90.12",
-    "expo": "^54.0.31",
+    "expo": "^54.0.32",
     "expo-build-disk-cache": "^0.7.2",
     "expo-build-properties": "^1.0.10",
     "expo-constants": "~18.0.13",
@@ -68,7 +68,7 @@
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
-    "react-native-video": "DodoraApp/react-native-video#ea4b81538c8bfac7913a6fdf1668708a2c25b5f8",
+    "react-native-video": "DodoraApp/react-native-video#e9017e60e07474ec22e78819c1e29ab23d7b348a",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "0.5.1",
     "zustand": "^4.5.1"
@@ -105,5 +105,6 @@
       "react-native-tvos@0.81.5-1": "patches/react-native-tvos.patch"
     }
   },
+  "packageManager": "pnpm@10.28.0",
   "private": true
 }

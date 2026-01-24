@@ -13,6 +13,7 @@ export interface AudioTrack {
     title?: string;
     language?: string;
     type?: string;
+    selected?: boolean;
 }
 
 /**

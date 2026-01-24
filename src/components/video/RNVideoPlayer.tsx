@@ -51,22 +51,33 @@ export const RNVideoPlayer = memo(
     const videoRef = useRef<VideoRef>(null);
 
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
-    const { tunneled, audioPassthrough, enableWorkarounds, matchFrameRate } =
-      useProfileSettingsStore((state) => {
-        const settings = activeProfileId
-          ? state.byProfile[activeProfileId]
-          : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
-        return {
-          tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
-          audioPassthrough:
-            settings?.audioPassthrough ??
-            (Platform.isTV ? true : DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough),
-          enableWorkarounds:
-            settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
-          matchFrameRate:
-            settings?.matchFrameRate ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
-        };
-      });
+    const {
+      tunneled,
+      audioPassthrough,
+      enableWorkarounds,
+      showVideoStatistics,
+      matchFrameRate,
+      enableVideoSoftwareDecoding,
+    } = useProfileSettingsStore((state) => {
+      const settings = activeProfileId
+        ? state.byProfile[activeProfileId]
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
+      return {
+        tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
+        audioPassthrough:
+          settings?.audioPassthrough ??
+          (Platform.isTV ? true : DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough),
+        enableWorkarounds:
+          settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
+        showVideoStatistics:
+          settings?.showVideoStatistics ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+        matchFrameRate:
+          settings?.matchFrameRate ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
+        enableVideoSoftwareDecoding:
+          settings?.enableVideoSoftwareDecoding ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
+      };
+    });
 
     useImperativeHandle(ref, () => ({
       seekTo: (time: number) => {
@@ -174,7 +185,8 @@ export const RNVideoPlayer = memo(
         audioPassthrough={audioPassthrough}
         enableWorkarounds={enableWorkarounds}
         matchFrameRate={matchFrameRate}
-        reportStatistics={true}
+        enableVideoSoftwareDecoding={enableVideoSoftwareDecoding}
+        reportStatistics={showVideoStatistics}
         onVideoStatistics={handleVideoStatistics}
         style={{ flex: 1 }}
         paused={paused}

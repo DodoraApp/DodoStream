@@ -286,10 +286,20 @@ export const getLanguageDisplayName = (languageCode: string): string => {
     return languageCode;
 };
 
-export const findBestTrackByLanguage = <T extends { language?: string }>(
+export const findBestTrackByLanguage = <T extends { language?: string; selected?: boolean }>(
     tracks: T[],
     preferredLanguageCodes: string[]
 ): T | undefined => {
+    // First check if there's a selected track with a preferred language
+    const selectedTrack = tracks.find((track) => track.selected === true);
+    if (selectedTrack) {
+        const normalizedLanguage = normalizeLanguageCode(selectedTrack.language);
+        if (normalizedLanguage && preferredLanguageCodes.includes(normalizedLanguage)) {
+            return selectedTrack;
+        }
+    }
+
+    // Fall back to finding the first track matching preferred languages
     for (const preferred of preferredLanguageCodes) {
         const match = tracks.find((track) => normalizeLanguageCode(track.language) === preferred);
         if (match) return match;

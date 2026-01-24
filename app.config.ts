@@ -9,6 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     // Set via EAS build profile env: APP_VARIANT=dev|prod
     const appVariant = (process.env.APP_VARIANT ?? 'prod').toLowerCase();
     const isDevVariant = appVariant !== 'prod';
+    const isTVVariant = process.env.EXPO_TV === '1';
 
     const appName = isDevVariant ? 'DodoStream (Dev)' : 'DodoStream';
     const iosBundleIdentifier = isDevVariant ? 'app.dodora.dodostream.dev' : 'app.dodora.dodostream';
@@ -43,6 +44,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 '@react-native-tvos/config-tv',
                 {
                     androidTVBanner: "assets/app/banner.png",
+                    androidTVRequired: isTVVariant,
                 }
             ],
             'expo-router',
@@ -84,6 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             ],
             './plugins/withReactNativeTVOSPnpmFix',
             './plugins/withAndroidBuildOptimizations',
+            './plugins/withAndroidConfigChanges',
         ],
         experiments: {
             typedRoutes: true,
