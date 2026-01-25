@@ -66,7 +66,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: pnpm install
@@ -171,15 +170,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🏗 Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
         with:
-          version: 10
+          cache: true
 
       - name: 🏗 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: |
@@ -310,15 +308,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🏗 Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
         with:
-          version: 10
+          cache: true
 
       - name: 🏗 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: |
@@ -341,15 +338,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🏗 Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
         with:
-          version: 10
+          cache: true
 
       - name: 🏗 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: |
