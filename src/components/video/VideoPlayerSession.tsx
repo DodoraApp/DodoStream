@@ -365,7 +365,11 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         setDuration(data.duration);
         lastKnownDurationRef.current = data.duration;
       }
-      persistProgress(data.currentTime, lastKnownDurationRef.current ?? 0);
+      // Only persist if we have a valid duration
+      const currentDuration = lastKnownDurationRef.current ?? 0;
+      if (currentDuration > 0) {
+        persistProgress(data.currentTime, currentDuration);
+      }
     },
     [persistProgress]
   );
@@ -642,8 +646,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     [activeProfileId, combinedSubtitles, debug, selectedTextTrack]
   );
 
-  const PlayerComponent =
-    usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
+  const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
   const isLoading = isVideoLoading || areSubtitlesLoading;
 
   // Show custom loading screen on first load if background/logo is available
