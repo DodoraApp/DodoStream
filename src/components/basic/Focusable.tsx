@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useState } from 'react';
+import { FC, ReactNode, useCallback, useState, useRef } from 'react';
 import { Pressable, PressableProps, ViewStyle } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { useRecyclingState } from '@shopify/flash-list';
@@ -78,6 +78,11 @@ export const Focusable: FC<FocusableProps> = ({
 }) => {
   const theme = useTheme<Theme>();
 
+  // Optimization: Use ref for focus state when children is not a render function
+  // This avoids re-renders when focus changes but children don't need the focus state
+  const isFocusedRef = useRef(false);
+  const needsRenderOnFocusChange = typeof children === 'function';
+
   const [standardIsFocused, setStandardIsFocused] = useState(false);
   const [recyclingIsFocused, setRecyclingIsFocused] = useRecyclingState(false, [recyclingKey]);
 
@@ -86,20 +91,44 @@ export const Focusable: FC<FocusableProps> = ({
 
   const handleFocus = useCallback(
     (e: Parameters<NonNullable<PressableProps['onFocus']>>[0]) => {
-      setIsFocused(true);
+      isFocusedRef.current = true;
+      // Only trigger state update if children needs it for rendering
+      if (needsRenderOnFocusChange || withScale || withOutline || focusStyle) {
+        setIsFocused(true);
+      }
       onFocusChange?.(true);
       onFocus?.(e);
     },
-    [onFocusChange, onFocus, setIsFocused]
+    [
+      onFocusChange,
+      onFocus,
+      setIsFocused,
+      needsRenderOnFocusChange,
+      withScale,
+      withOutline,
+      focusStyle,
+    ]
   );
 
   const handleBlur = useCallback(
     (e: Parameters<NonNullable<PressableProps['onBlur']>>[0]) => {
-      setIsFocused(false);
+      isFocusedRef.current = false;
+      // Only trigger state update if children needs it for rendering
+      if (needsRenderOnFocusChange || withScale || withOutline || focusStyle) {
+        setIsFocused(false);
+      }
       onFocusChange?.(false);
       onBlur?.(e);
     },
-    [onFocusChange, onBlur, setIsFocused]
+    [
+      onFocusChange,
+      onBlur,
+      setIsFocused,
+      needsRenderOnFocusChange,
+      withScale,
+      withOutline,
+      focusStyle,
+    ]
   );
 
   // Wrapper focus style (scale only, no outline by default)
