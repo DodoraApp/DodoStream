@@ -30,7 +30,7 @@ describe('WatchHistoryStore', () => {
             expect(storedItem?.progressSeconds).toBe(item.progressSeconds);
         });
 
-        it('should not upsert item with very low progress (below threshold)', () => {
+        it('should upsert item with very low progress (no minimum threshold)', () => {
             // Arrange
             const item = {
                 id: 'tt1234567',
@@ -44,7 +44,8 @@ describe('WatchHistoryStore', () => {
 
             // Assert
             const storedItem = useWatchHistoryStore.getState().getItem(item.id);
-            expect(storedItem).toBeUndefined();
+            expect(storedItem).toBeDefined();
+            expect(storedItem?.progressSeconds).toBe(10);
         });
 
         it('should separate history by profile', () => {

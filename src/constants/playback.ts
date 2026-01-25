@@ -3,8 +3,6 @@ import type { PlayerType } from '@/types/player';
 import { Platform } from 'react-native';
 
 // Playback ratios
-// Used across watch-history, continue-watching, and autoplay decisions.
-export const PLAYBACK_CONTINUE_WATCHING_MIN_RATIO = 0.05;
 export const PLAYBACK_FINISHED_RATIO = 0.9;
 
 // Up Next popup thresholds (shown earlier than continue watching threshold)
