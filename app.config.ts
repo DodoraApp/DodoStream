@@ -91,6 +91,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         experiments: {
             typedRoutes: true,
             tsconfigPaths: true,
+            reactCompiler: true
         },
         orientation: 'portrait',
         icon: './assets/app/icon.png',
