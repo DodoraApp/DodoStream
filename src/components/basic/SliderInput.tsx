@@ -1,4 +1,5 @@
-import React, { FC, memo, useCallback, useMemo } from 'react';
+import React, { FC, memo, useCallback, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
 import { Theme, Box, Text } from '@/theme/theme';
@@ -47,6 +48,11 @@ export const SliderInput: FC<SliderInputProps> = memo(
     showButtons = true,
   }) => {
     const theme = useTheme<Theme>();
+    const [isSliderFocused, setIsSliderFocused] = useState(false);
+
+    // On TV we generally prefer D-pad interaction through +/- buttons.
+    // If buttons are hidden, the slider must be focusable so the user can scrub.
+    const isSliderFocusable = !Platform.isTV || !showButtons;
 
     const displayValue = useMemo(() => {
       const formatted = formatValue ? formatValue(value) : value.toString();
@@ -88,7 +94,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
           </Box>
         )}
 
-        <Box flexDirection="row" alignItems="center" gap="xs">
+        <Box flexDirection="row" alignItems="center" gap="xs" height={theme.sizes.inputHeight}>
           {showButtons && (
             <Focusable onPress={handleDecrement} disabled={disabled || !canDecrement}>
               {({ isFocused }) => (
@@ -128,11 +134,21 @@ export const SliderInput: FC<SliderInputProps> = memo(
               step={step}
               value={value}
               onValueChange={handleSliderChange}
-              minimumTrackTintColor={theme.colors.primaryBackground}
+              minimumTrackTintColor={
+                isSliderFocused
+                  ? theme.colors.focusBackgroundPrimary
+                  : theme.colors.primaryBackground
+              }
               maximumTrackTintColor={theme.colors.secondaryBackground}
-              thumbTintColor={theme.colors.primaryBackground}
+              thumbTintColor={
+                isSliderFocused
+                  ? theme.colors.focusBackgroundPrimary
+                  : theme.colors.primaryBackground
+              }
               disabled={disabled}
-              focusable={false}
+              focusable={isSliderFocusable}
+              onFocus={isSliderFocusable ? () => setIsSliderFocused(true) : undefined}
+              onBlur={isSliderFocusable ? () => setIsSliderFocused(false) : undefined}
             />
           </Box>
 
