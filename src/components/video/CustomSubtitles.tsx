@@ -35,7 +35,8 @@ const SubtitleDisplay = memo<SubtitleDisplayProps>(({ text, containerHeight }) =
         { bottom: computedStyle.bottomOffset + (Platform.OS === 'ios' ? 20 : 0) },
       ]}
       paddingHorizontal="l"
-      pointerEvents="none">
+      pointerEvents="none"
+      focusable={false}>
       <Box
         borderRadius="m"
         style={[
