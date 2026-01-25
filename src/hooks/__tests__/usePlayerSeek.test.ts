@@ -193,7 +193,7 @@ describe('usePlayerSeek', () => {
             });
         });
 
-        it('handleSeekChange starts seeking and pauses on first value change', () => {
+        it('handleSeekChange starts seeking but does not pause (TVSeekBar handles pause)', () => {
             const options = createDefaultOptions({ paused: false, currentTime: 30 });
             const { result } = renderHook(() => usePlayerSeek(options));
 
@@ -203,7 +203,7 @@ describe('usePlayerSeek', () => {
 
             expect(result.current.isSeeking).toBe(true);
             expect(result.current.seekTime).toBe(35);
-            expect(options.onPlayPause).toHaveBeenCalledTimes(1); // paused
+            expect(options.onPlayPause).not.toHaveBeenCalled(); // TVSeekBar handles pause/resume
         });
 
         it('debounces multiple rapid D-pad value changes', () => {
@@ -229,7 +229,7 @@ describe('usePlayerSeek', () => {
             expect(options.onSeek).toHaveBeenCalledWith(50);
         });
 
-        it('commits seek after debounce and resumes if was playing', async () => {
+        it('commits seek after debounce (TVSeekBar handles pause/resume)', async () => {
             const options = createDefaultOptions({ paused: false, currentTime: 30 });
             const { result } = renderHook(() => usePlayerSeek(options));
 
@@ -237,15 +237,15 @@ describe('usePlayerSeek', () => {
                 result.current.handleSeekChange(60);
             });
 
-            // Paused during seek
-            expect(options.onPlayPause).toHaveBeenCalledTimes(1);
+            // TVSeekBar handles pause/resume, not the hook
+            expect(options.onPlayPause).not.toHaveBeenCalled();
 
             act(() => {
                 jest.advanceTimersByTime(PLAYER_SEEK_DEBOUNCE_MS);
             });
 
             expect(options.onSeek).toHaveBeenCalledWith(60);
-            expect(options.onPlayPause).toHaveBeenCalledTimes(2); // resumed
+            expect(options.onPlayPause).not.toHaveBeenCalled(); // Still not called
         });
 
         it('clamps seek value to duration', () => {
@@ -310,19 +310,19 @@ describe('usePlayerSeek', () => {
             expect(result.current.isSeeking).toBe(false);
         });
 
-        it('simulates complete TV remote seeking flow', () => {
+        it('simulates complete TV remote seeking flow (display only, TVSeekBar handles commits)', () => {
             const options = createDefaultOptions({ paused: false, currentTime: 30, duration: 120 });
             const { result, rerender } = renderHook(
                 (props: UsePlayerSeekOptions) => usePlayerSeek(props),
                 { initialProps: options }
             );
 
-            // 1. User starts scrubbing with D-pad
+            // 1. User starts scrubbing with D-pad (just updates display, TVSeekBar handles pause)
             act(() => {
                 result.current.handleSeekChange(35);
             });
             expect(result.current.isSeeking).toBe(true);
-            expect(options.onPlayPause).toHaveBeenCalledTimes(1); // Paused
+            expect(options.onPlayPause).not.toHaveBeenCalled(); // TVSeekBar handles pause
 
             // 2. User continues scrubbing rapidly
             act(() => {
@@ -336,7 +336,7 @@ describe('usePlayerSeek', () => {
                 jest.advanceTimersByTime(PLAYER_SEEK_DEBOUNCE_MS);
             });
             expect(options.onSeek).toHaveBeenCalledWith(45);
-            expect(options.onPlayPause).toHaveBeenCalledTimes(2); // Resumed
+            expect(options.onPlayPause).not.toHaveBeenCalled(); // TVSeekBar handles resume
 
             // 4. Playback catches up
             rerender({ ...options, currentTime: 45 });
