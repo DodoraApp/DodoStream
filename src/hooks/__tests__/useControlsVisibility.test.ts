@@ -21,18 +21,18 @@ describe('useControlsVisibility', () => {
     });
 
     describe('initial state', () => {
-        it('starts with controls visible', () => {
+        it('starts with controls invisible', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
 
-            expect(result.current.visible).toBe(true);
+            expect(result.current.visible).toBe(false);
         });
 
         it('calls onVisibilityChange with initial state', () => {
             const options = createDefaultOptions();
             renderHook(() => useControlsVisibility(options));
 
-            expect(options.onVisibilityChange).toHaveBeenCalledWith(true);
+            expect(options.onVisibilityChange).toHaveBeenCalledWith(false);
         });
     });
 
@@ -41,6 +41,10 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions({ paused: false });
             const { result } = renderHook(() => useControlsVisibility(options));
 
+            // Start invisible, show them first
+            act(() => {
+                result.current.showControls();
+            });
             expect(result.current.visible).toBe(true);
 
             act(() => {
@@ -55,6 +59,12 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions({ paused: true });
             const { result } = renderHook(() => useControlsVisibility(options));
 
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
+
             act(() => {
                 jest.advanceTimersByTime(PLAYER_CONTROLS_AUTO_HIDE_MS + 1000);
             });
@@ -65,6 +75,12 @@ describe('useControlsVisibility', () => {
         it('does not auto-hide when seeking', () => {
             const options = createDefaultOptions({ isSeeking: true });
             const { result } = renderHook(() => useControlsVisibility(options));
+
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
 
             act(() => {
                 jest.advanceTimersByTime(PLAYER_CONTROLS_AUTO_HIDE_MS + 1000);
@@ -77,6 +93,12 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions({ isModalOpen: true });
             const { result } = renderHook(() => useControlsVisibility(options));
 
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
+
             act(() => {
                 jest.advanceTimersByTime(PLAYER_CONTROLS_AUTO_HIDE_MS + 1000);
             });
@@ -88,6 +110,12 @@ describe('useControlsVisibility', () => {
             const customDelay = 2000;
             const options = createDefaultOptions({ autoHideDelayMs: customDelay });
             const { result } = renderHook(() => useControlsVisibility(options));
+
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
 
             act(() => {
                 jest.advanceTimersByTime(customDelay - 100);
@@ -105,6 +133,12 @@ describe('useControlsVisibility', () => {
         it('resets auto-hide timer on interaction', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
+
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
 
             // Advance halfway through auto-hide timer
             act(() => {
@@ -134,10 +168,7 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
 
-            // Hide controls
-            act(() => {
-                jest.advanceTimersByTime(PLAYER_CONTROLS_AUTO_HIDE_MS);
-            });
+            // Already hidden by default
             expect(result.current.visible).toBe(false);
 
             // Register interaction to show
@@ -153,10 +184,7 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
 
-            // Hide first
-            act(() => {
-                jest.advanceTimersByTime(PLAYER_CONTROLS_AUTO_HIDE_MS);
-            });
+            // Already hidden by default
             expect(result.current.visible).toBe(false);
 
             act(() => {
@@ -171,6 +199,10 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
 
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
             expect(result.current.visible).toBe(true);
 
             act(() => {
@@ -183,13 +215,10 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
 
-            // Hide first
-            act(() => {
-                result.current.toggleControls();
-            });
+            // Already hidden by default
             expect(result.current.visible).toBe(false);
 
-            // Toggle back on
+            // Toggle to show
             act(() => {
                 result.current.toggleControls();
             });
@@ -202,6 +231,10 @@ describe('useControlsVisibility', () => {
             const options = createDefaultOptions();
             const { result } = renderHook(() => useControlsVisibility(options));
 
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
             expect(result.current.visible).toBe(true);
 
             act(() => {
@@ -218,19 +251,19 @@ describe('useControlsVisibility', () => {
             const { result } = renderHook(() => useControlsVisibility(options));
 
             // Initial call
-            expect(options.onVisibilityChange).toHaveBeenCalledWith(true);
-
-            // Hide
-            act(() => {
-                result.current.toggleControls();
-            });
-            expect(options.onVisibilityChange).toHaveBeenLastCalledWith(false);
+            expect(options.onVisibilityChange).toHaveBeenCalledWith(false);
 
             // Show
             act(() => {
                 result.current.toggleControls();
             });
             expect(options.onVisibilityChange).toHaveBeenLastCalledWith(true);
+
+            // Hide
+            act(() => {
+                result.current.toggleControls();
+            });
+            expect(options.onVisibilityChange).toHaveBeenLastCalledWith(false);
         });
     });
 
@@ -241,6 +274,12 @@ describe('useControlsVisibility', () => {
                 (props: UseControlsVisibilityOptions) => useControlsVisibility(props),
                 { initialProps: options }
             );
+
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
 
             // Should not hide while paused
             act(() => {
@@ -264,6 +303,12 @@ describe('useControlsVisibility', () => {
                 (props: UseControlsVisibilityOptions) => useControlsVisibility(props),
                 { initialProps: options }
             );
+
+            // Show controls first
+            act(() => {
+                result.current.showControls();
+            });
+            expect(result.current.visible).toBe(true);
 
             // Advance halfway
             act(() => {

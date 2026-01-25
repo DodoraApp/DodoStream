@@ -43,7 +43,7 @@ export const useControlsVisibility = ({
     onVisibilityChange,
     autoHideDelayMs = PLAYER_CONTROLS_AUTO_HIDE_MS,
 }: UseControlsVisibilityOptions): UseControlsVisibilityResult => {
-    const [visible, setVisible] = useState(true);
+    const [visible, setVisible] = useState(false);
     // Interaction counter to trigger auto-hide timer reset
     const [interactionId, setInteractionId] = useState(0);
     const autoHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

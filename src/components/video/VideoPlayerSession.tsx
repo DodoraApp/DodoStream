@@ -730,7 +730,6 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         duration={duration}
         showLoadingIndicator={!showCustomLoadingScreen && (isVideoLoading || isBuffering)}
         title={title}
-        statistics={videoStatistics}
         audioTracks={audioTracks}
         textTracks={combinedSubtitles}
         selectedAudioTrack={selectedAudioTrack}
