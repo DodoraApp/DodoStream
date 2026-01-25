@@ -68,7 +68,7 @@ describe('useContinueWatching', () => {
             expect(result.current).toEqual([]);
         });
 
-        it('filters out items that are not "continue watching" (too early or finished)', () => {
+        it('filters out items that are not "continue watching" (finished)', () => {
             // Arrange
             setActiveProfileId(profileId);
             setWatchHistoryNested(profileId, [
@@ -98,9 +98,10 @@ describe('useContinueWatching', () => {
             // Act
             const { result } = renderHook(() => useContinueWatching());
 
-            // Assert
-            expect(result.current).toHaveLength(1);
+            // Assert - Finished items are filtered out, but low progress items are included
+            expect(result.current).toHaveLength(2);
             expect(result.current[0].metaId).toBe('movie-valid');
+            expect(result.current[1].metaId).toBe('movie-early');
         });
 
         it('selects the latest episode for a series (same meta ID)', () => {

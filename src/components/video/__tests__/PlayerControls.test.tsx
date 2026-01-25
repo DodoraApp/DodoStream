@@ -61,13 +61,19 @@ describe('PlayerControls', () => {
       />
     );
 
-    // Assert (initial)
+    // Assert (initial - controls are hidden)
+    expect(queryByText('My Title')).toBeNull();
+
+    // Act - press to show controls
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+
+    // Assert - controls are now visible
     expect(getByText('My Title')).toBeTruthy();
 
-    // Act
+    // Act - press overlay to hide controls
     fireEvent.press(getByTestId('player-controls-overlay'));
 
-    // Assert
+    // Assert - controls are hidden again
     expect(queryByText('My Title')).toBeNull();
   });
 
@@ -98,7 +104,7 @@ describe('PlayerControls', () => {
       { source: 'video', index: 3, title: 'Video ES', language: 'es' },
     ];
 
-    const { getByText } = renderWithProviders(
+    const { getByText, getByTestId } = renderWithProviders(
       <PlayerControls
         paused={true}
         currentTime={0}
@@ -119,6 +125,9 @@ describe('PlayerControls', () => {
         onToggleFitMode={() => {}}
       />
     );
+
+    // First show controls
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
 
     // Open subtitles modal
     fireEvent.press(getByText('Subtitles'));
