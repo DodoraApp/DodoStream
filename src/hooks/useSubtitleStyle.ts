@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Dimensions } from 'react-native';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import {
@@ -48,23 +49,26 @@ export const useComputedSubtitleStyle = (containerHeight: number): ComputedSubti
 /**
  * Get native player subtitle style for react-native-video.
  * Returns style props compatible with the Video component's SubtitleStyle.
+ * Scales font size based on actual screen height relative to 1080p reference.
  */
 export const useNativeSubtitleStyle = () => {
     const style = useSubtitleStyle();
 
-    console.log("Style", style)
+    return useMemo(() => {
+        const screenHeight = Dimensions.get('window').height;
+        // Scale font size based on screen height relative to 1080p reference
+        const scaleFactor = screenHeight / SUBTITLE_REFERENCE_HEIGHT;
+        const scaledFontSize = style.fontSize * scaleFactor;
 
-    return useMemo(
-        () => ({
-            fontSize: style.fontSize,
-            paddingTop: style.fontSize * SUBTITLE_PADDING_RATIO.vertical,
-            // Convert percentage bottomPosition into pixels using the 1080p reference height.
-            paddingBottom: (style.bottomPosition / 100) * SUBTITLE_REFERENCE_HEIGHT,
-            paddingLeft: style.fontSize * SUBTITLE_PADDING_RATIO.horizontal,
-            paddingRight: style.fontSize * SUBTITLE_PADDING_RATIO.horizontal,
+        return {
+            fontSize: scaledFontSize,
+            paddingTop: scaledFontSize * SUBTITLE_PADDING_RATIO.vertical,
+            // Convert percentage bottomPosition into pixels using actual screen height
+            paddingBottom: (style.bottomPosition / 100) * screenHeight,
+            paddingLeft: scaledFontSize * SUBTITLE_PADDING_RATIO.horizontal,
+            paddingRight: scaledFontSize * SUBTITLE_PADDING_RATIO.horizontal,
             opacity: style.fontOpacity,
             subtitlesFollowVideo: true,
-        }),
-        [style.fontSize, style.fontOpacity, style.bottomPosition]
-    );
+        };
+    }, [style.fontSize, style.fontOpacity, style.bottomPosition]);
 };

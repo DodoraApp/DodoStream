@@ -388,6 +388,7 @@ const TopBar = memo<{
       icon="settings"
       iconComponent={Ionicons}
       label="Settings"
+      labelPosition="bottom"
     />
   </Box>
 ));

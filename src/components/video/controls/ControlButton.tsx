@@ -10,6 +10,7 @@ export interface ControlButtonProps extends Pick<
 > {
   onPress: () => void;
   label?: string;
+  labelPosition?: 'top' | 'bottom';
   hasTVPreferredFocus?: boolean;
   disabled?: boolean;
   onFocusChange?: (focused: boolean) => void;
@@ -29,6 +30,7 @@ export const ControlButton = memo(
     variant = 'secondary',
     badge,
     badgeVariant = 'primary',
+    labelPosition = 'top',
     ...buttonProps
   }: ControlButtonProps) => {
     const theme = useTheme<Theme>();
@@ -47,7 +49,10 @@ export const ControlButton = memo(
     return (
       <Box alignItems="center" justifyContent="center" position="relative">
         {!disabled && label && isFocused && (
-          <Box position="absolute" top={-theme.spacing.l}>
+          <Box
+            position="absolute"
+            top={labelPosition === 'top' ? -theme.spacing.l : undefined}
+            bottom={labelPosition === 'bottom' ? -theme.spacing.l : undefined}>
             <Text variant="caption" color="mainForeground">
               {label}
             </Text>
