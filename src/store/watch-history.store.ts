@@ -2,10 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { ContentType } from '@/types/stremio';
-import {
-  PLAYBACK_CONTINUE_WATCHING_MIN_RATIO,
-  PLAYBACK_FINISHED_RATIO,
-} from '@/constants/playback';
+import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { createDebugLogger } from '@/utils/debug';
 import { useContinueWatchingStore } from '@/store/continue-watching.store';
 
@@ -94,8 +91,8 @@ export const isContinueWatching = (
 ): boolean => {
   if (durationSeconds <= 0) return false;
   const ratio = progressSeconds / durationSeconds;
-  // In-progress items
-  if (ratio >= PLAYBACK_CONTINUE_WATCHING_MIN_RATIO && ratio < PLAYBACK_FINISHED_RATIO) return true;
+  // In-progress items (any progress > 0)
+  if (ratio > 0 && ratio < PLAYBACK_FINISHED_RATIO) return true;
   // Finished item can still be an Up Next candidate if it references a specific video.
   if (ratio >= PLAYBACK_FINISHED_RATIO && !!videoId) return true;
   return false;
@@ -205,24 +202,10 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
         const videoKey = getVideoKey(item.videoId);
 
         const existingBefore = get().byProfile[profileId]?.[item.id]?.[videoKey];
-        // Don't create new history entries for tiny progress.
-        // This avoids a short-started episode becoming the latest-by-show and hiding
-        // a legitimate continue-watching entry for the same series.
+        // Don't create new history entries with invalid duration or zero progress.
         if (!existingBefore) {
           if (item.durationSeconds <= 0) return;
-          const ratio = item.progressSeconds / item.durationSeconds;
-          if (ratio < PLAYBACK_CONTINUE_WATCHING_MIN_RATIO) {
-            debug('skipUpsertBelowThreshold', {
-              metaId: item.id,
-              videoKey,
-              videoId: item.videoId,
-              progressSeconds: item.progressSeconds,
-              durationSeconds: item.durationSeconds,
-              ratio,
-              minContinueRatio: PLAYBACK_CONTINUE_WATCHING_MIN_RATIO,
-            });
-            return;
-          }
+          if (item.progressSeconds <= 0) return;
         }
 
         debug('upsertItem', {
