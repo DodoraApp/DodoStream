@@ -439,7 +439,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     })
   );
 
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
   const [showAudioTracks, setShowAudioTracks] = useState(false);

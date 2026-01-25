@@ -647,10 +647,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
-  const isLoading = isVideoLoading || areSubtitlesLoading;
-
   // Show custom loading screen on first load if background/logo is available
-  const showCustomLoadingScreen = isLoading && isFirstLoadRef.current && hasBackgroundOrLogo;
+  const showCustomLoadingScreen = isVideoLoading && isFirstLoadRef.current && hasBackgroundOrLogo;
   return (
     <Box flex={1} backgroundColor="playerBackground">
       <PlayerComponent
@@ -726,35 +724,33 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         <PlayerLoadingScreen backgroundImage={backgroundImage} logoImage={logoImage} />
       )}
 
-      {!showCustomLoadingScreen && (
-        <PlayerControls
-          paused={paused}
-          currentTime={currentTime}
-          duration={duration}
-          showLoadingIndicator={isLoading || isBuffering}
-          title={title}
-          statistics={videoStatistics}
-          audioTracks={audioTracks}
-          textTracks={combinedSubtitles}
-          selectedAudioTrack={selectedAudioTrack}
-          selectedTextTrack={selectedTextTrack}
-          subtitleDelay={subtitleDelay}
-          onSubtitleDelayChange={setSubtitleDelay}
-          onPlayPause={handlePlayPause}
-          onSeek={handleSeek}
-          onSkipBackward={handleSkipBackward}
-          onSkipForward={handleSkipForward}
-          showSkipEpisode={!!upNextResolved?.videoId}
-          skipEpisodeLabel={upNextResolved?.episodeLabel}
-          onSkipEpisode={startNextEpisode}
-          onBack={onStop}
-          onSelectAudioTrack={handleSelectAudioTrack}
-          onSelectTextTrack={handleSelectTextTrack}
-          fitMode={fitMode}
-          onToggleFitMode={handleCycleFitMode}
-          onVisibilityChange={setControlsVisible}
-        />
-      )}
+      <PlayerControls
+        paused={paused}
+        currentTime={currentTime}
+        duration={duration}
+        showLoadingIndicator={!showCustomLoadingScreen && (isVideoLoading || isBuffering)}
+        title={title}
+        statistics={videoStatistics}
+        audioTracks={audioTracks}
+        textTracks={combinedSubtitles}
+        selectedAudioTrack={selectedAudioTrack}
+        selectedTextTrack={selectedTextTrack}
+        subtitleDelay={subtitleDelay}
+        onSubtitleDelayChange={setSubtitleDelay}
+        onPlayPause={handlePlayPause}
+        onSeek={handleSeek}
+        onSkipBackward={handleSkipBackward}
+        onSkipForward={handleSkipForward}
+        showSkipEpisode={!!upNextResolved?.videoId}
+        skipEpisodeLabel={upNextResolved?.episodeLabel}
+        onSkipEpisode={startNextEpisode}
+        onBack={onStop}
+        onSelectAudioTrack={handleSelectAudioTrack}
+        onSelectTextTrack={handleSelectTextTrack}
+        fitMode={fitMode}
+        onToggleFitMode={handleCycleFitMode}
+        onVisibilityChange={setControlsVisible}
+      />
 
       <UpNextPopup
         enabled={!didStartNextRef.current}
