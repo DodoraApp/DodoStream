@@ -38,6 +38,7 @@ import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { getVideoSessionId } from '@/utils/stream';
 import { useSubtitles } from '@/api/stremio';
+import { useIntro } from '@/api/introdb';
 import { useNativeSubtitleStyle } from '@/hooks/useSubtitleStyle';
 import { classifyPlayerError } from '@/utils/player-errors';
 
@@ -145,7 +146,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const isFirstLoadRef = useRef(true);
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
-  const { preferredAudioLanguages, showVideoStatistics } = useProfileSettingsStore((state) => ({
+  const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } = useProfileSettingsStore((state) => ({
     preferredAudioLanguages: activeProfileId
       ? state.byProfile[activeProfileId]?.preferredAudioLanguages
       : undefined,
@@ -153,6 +154,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
         DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
       : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+    skipIntroEnabled: activeProfileId
+      ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
+      : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
   }));
 
   const nativeSubtitleStyle = useNativeSubtitleStyle();
@@ -217,13 +222,18 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
   const [selectedTextTrack, setSelectedTextTrack] = useState<TextTrack>();
-  const [videoStatistics, setVideoStatistics] = useState<Record<string, string>>({});
+  const [videoStatistics, setVideoStatistics] = useState<Record<string, string | number | object | undefined>>({});
 
   const { combinedSubtitles, areSubtitlesLoading, setVideoSubtitles } = useSubtitleCombiner(
     mediaType,
     metaId,
     videoId
   );
+
+  // Fetch intro data from IntroDB (only for series)
+  const { data: introData } = useIntro(metaId, videoId, mediaType, {
+    enabled: skipIntroEnabled,
+  });
 
   const lastPersistAtRef = useRef(0);
   const lastKnownTimeRef = useRef(0);
@@ -295,6 +305,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [autoplayCancelled, setAutoplayCancelled] = useState(false);
   const [upNextDismissed, setUpNextDismissed] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [introSkipped, setIntroSkipped] = useState(false);
 
   const upNextVideoIdRef = useRef<string | undefined>(undefined);
   const [upNextResolved, setUpNextResolved] = useState<UpNextResolved | undefined>(undefined);
@@ -383,7 +394,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const handleStatistics = useCallback(
-    (statistics: Record<string, string>) => {
+    (statistics: Record<string, string | number | object | undefined>) => {
       debug('videoStatistics', statistics);
       setVideoStatistics(statistics);
     },
@@ -564,6 +575,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     handleSeek(newTime);
   }, [currentTime, debug, duration, handleSeek]);
 
+  const handleSkipIntro = useCallback(() => {
+    if (!introData) return;
+    const introEndSec = introData.end_ms / 1000;
+    debug('skipIntro', { from: currentTime, to: introEndSec });
+    setIntroSkipped(true);
+    handleSeek(introEndSec);
+  }, [currentTime, debug, handleSeek, introData]);
+
   const handleAudioTracksLoaded = useCallback(
     (tracks: AudioTrack[]) => {
       debug('audioTracksLoaded', { count: tracks.length });
@@ -701,7 +720,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
                     {key}:
                   </Text>
                   <Text variant="caption" color="mainForeground">
-                    {value}
+                    {JSON.stringify(value)}
                   </Text>
                 </Box>
               ))}
@@ -749,6 +768,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         fitMode={fitMode}
         onToggleFitMode={handleCycleFitMode}
         onVisibilityChange={setControlsVisible}
+        introData={skipIntroEnabled && introData ? introData : undefined}
+        introSkipped={introSkipped}
+        onSkipIntro={handleSkipIntro}
       />
 
       <UpNextPopup
