@@ -18,6 +18,8 @@ export interface ProfilePlaybackSettings {
   enableWorkarounds: boolean;
   matchFrameRate: boolean;
   enableVideoSoftwareDecoding: boolean;
+  // Skip intro feature (IntroDB)
+  skipIntroEnabled: boolean;
 }
 
 interface ProfileSettingsState {
@@ -43,6 +45,7 @@ interface ProfileSettingsState {
   setEnableWorkarounds: (enableWorkarounds: boolean) => void;
   setMatchFrameRate: (matchFrameRate: boolean) => void;
   setEnableVideoSoftwareDecoding: (enableVideoSoftwareDecoding: boolean) => void;
+  setSkipIntroEnabled: (skipIntroEnabled: boolean) => void;
 
   // Mutations (specific profile)
   setPlayerForProfile: (profileId: string, player: PlayerType) => void;
@@ -57,6 +60,7 @@ interface ProfileSettingsState {
   setEnableWorkaroundsForProfile: (profileId: string, enableWorkarounds: boolean) => void;
   setMatchFrameRateForProfile: (profileId: string, matchFrameRate: boolean) => void;
   setEnableVideoSoftwareDecodingForProfile: (profileId: string, enableVideoSoftwareDecoding: boolean) => void;
+  setSkipIntroEnabledForProfile: (profileId: string, skipIntroEnabled: boolean) => void;
 }
 
 export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
@@ -69,6 +73,7 @@ export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   enableWorkarounds: true,
   matchFrameRate: false,
   enableVideoSoftwareDecoding: false,
+  skipIntroEnabled: false,
 };
 
 export const useProfileSettingsStore = create<ProfileSettingsState>()(
@@ -157,6 +162,12 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setEnableVideoSoftwareDecodingForProfile(profileId, enableVideoSoftwareDecoding);
+      },
+
+      setSkipIntroEnabled: (skipIntroEnabled) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setSkipIntroEnabledForProfile(profileId, skipIntroEnabled);
       },
 
       setPlayerForProfile: (profileId, player) => {
@@ -302,12 +313,24 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
           },
         }));
       },
+
+      setSkipIntroEnabledForProfile: (profileId, skipIntroEnabled) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              skipIntroEnabled,
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'profile-settings-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ byProfile: state.byProfile }),
-      version: 5,
+      version: 6,
       migrate: (persistedState, version) => {
         if (!persistedState) return persistedState;
         let state = persistedState as { byProfile: Record<string, ProfilePlaybackSettings> };
@@ -371,6 +394,17 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
               ...settings,
               player: (settings.player as unknown) === 'mpv' ? 'exoplayer' : settings.player,
               enableVideoSoftwareDecoding: false,
+            };
+          }
+          state = { ...state, byProfile: migratedByProfile };
+        }
+
+        if (version < 6) {
+          const migratedByProfile: Record<string, ProfilePlaybackSettings> = {};
+          for (const [profileId, settings] of Object.entries(state.byProfile)) {
+            migratedByProfile[profileId] = {
+              ...settings,
+              skipIntroEnabled: false,
             };
           }
           state = { ...state, byProfile: migratedByProfile };

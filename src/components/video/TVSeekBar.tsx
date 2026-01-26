@@ -40,6 +40,8 @@ interface TVSeekBarProps {
   /** Called when focus changes */
   onFocus?: () => void;
   onBlur?: () => void;
+  /** Whether this element should receive focus on TV */
+  hasTVPreferredFocus?: boolean;
 }
 
 // ============================================================================
@@ -56,6 +58,7 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
     onSeekComplete,
     onFocus,
     onBlur,
+    hasTVPreferredFocus,
   }) => {
     const theme = useTheme<Theme>();
     const [isFocused, setIsFocused] = useState(false);
@@ -308,6 +311,7 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
         disabled={disabled}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        hasTVPreferredFocus={hasTVPreferredFocus}
         style={styles.pressable}>
         <Box
           height={theme.sizes.inputHeight}

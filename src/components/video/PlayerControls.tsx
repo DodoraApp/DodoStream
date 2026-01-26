@@ -1,5 +1,5 @@
-import React, { FC, useState, useCallback, useMemo, memo, useRef } from 'react';
-import { StyleSheet, Pressable, Platform } from 'react-native';
+import React, { FC, useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
+import { StyleSheet, Pressable, Platform, useTVEventHandler, HWEvent } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
@@ -19,8 +19,10 @@ import { formatPlaybackTime } from '@/utils/format';
 import { sortAudioTracksByPreference, getTrackBadge } from '@/utils/tracks';
 import { ControlButton } from '@/components/video/controls/ControlButton';
 import { TVSeekBar } from '@/components/video/TVSeekBar';
+import { SkipIntroButton } from '@/components/video/SkipIntroButton';
 import { usePlayerSeek } from '@/hooks/usePlayerSeek';
 import { useControlsVisibility } from '@/hooks/useControlsVisibility';
+import type { IntroData } from '@/types/introdb';
 
 // ============================================================================
 // Types
@@ -51,6 +53,12 @@ interface PlayerControlsProps {
   fitMode: VideoFitMode;
   onToggleFitMode: () => void;
   onVisibilityChange?: (visible: boolean) => void;
+  /** Intro data for skip intro feature */
+  introData?: IntroData;
+  /** Whether the intro was already skipped */
+  introSkipped?: boolean;
+  /** Called when skip intro button is pressed */
+  onSkipIntro?: () => void;
 }
 
 // ============================================================================
@@ -141,6 +149,7 @@ interface SeekBarProps {
   onTVSeekStart?: () => void;
   onTVSeekComplete?: (value: number) => void;
   onTVValueChange?: (value: number) => void;
+  hasTVPreferredFocus?: boolean;
 }
 
 const SeekBar = memo<SeekBarProps>(
@@ -157,6 +166,7 @@ const SeekBar = memo<SeekBarProps>(
     onTVSeekStart,
     onTVSeekComplete,
     onTVValueChange,
+    hasTVPreferredFocus,
   }) => {
     const theme = useTheme<Theme>();
 
@@ -172,6 +182,7 @@ const SeekBar = memo<SeekBarProps>(
           onSeekComplete={onTVSeekComplete}
           onFocus={onFocus}
           onBlur={onBlur}
+          hasTVPreferredFocus={hasTVPreferredFocus}
         />
       );
     }
@@ -254,10 +265,11 @@ interface PlaybackControlsProps {
   onSkipBackward: () => void;
   onSkipForward: () => void;
   onFocusChange: () => void;
+  hasTVPreferredFocus?: boolean;
 }
 
 const PlaybackControls = memo<PlaybackControlsProps>(
-  ({ paused, showLoadingIndicator, onPlayPause, onSkipBackward, onSkipForward, onFocusChange }) => (
+  ({ paused, showLoadingIndicator, onPlayPause, onSkipBackward, onSkipForward, onFocusChange, hasTVPreferredFocus }) => (
     <Box flexDirection="row" alignItems="center" gap="s">
       <ControlButton
         onPress={onSkipBackward}
@@ -272,7 +284,7 @@ const PlaybackControls = memo<PlaybackControlsProps>(
         icon={paused ? 'play' : 'pause'}
         iconComponent={Ionicons}
         disabled={showLoadingIndicator}
-        hasTVPreferredFocus
+        hasTVPreferredFocus={hasTVPreferredFocus}
         onFocusChange={onFocusChange}
         variant="primary"
         label={paused ? 'Play' : 'Pause'}
@@ -367,6 +379,9 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   fitMode,
   onToggleFitMode,
   onVisibilityChange,
+  introData,
+  introSkipped,
+  onSkipIntro,
 }) => {
   const theme = useTheme<Theme>();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -387,6 +402,9 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
   const [showTextTracks, setShowTextTracks] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const isModalOpen = showAudioTracks || showTextTracks || showSettingsModal;
+
+  // Track which element should receive focus when controls become visible
+  const [focusTarget, setFocusTarget] = useState<'play-pause' | 'seek' | null>(null);
 
   const {
     isSeeking,
@@ -415,6 +433,41 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     isModalOpen,
     onVisibilityChange,
   });
+
+  const showSkipIntroButton = introData && !introSkipped;
+
+  // Listen for TV D-pad events when controls are hidden to determine focus target
+  const handleTVEvent = useCallback(
+    (event: HWEvent) => {
+      if (!visible) {
+        if (event.eventType === 'up' || event.eventType === 'down') {
+          setFocusTarget('play-pause');
+          showControls();
+        } else if (event.eventType === 'left' || event.eventType === 'right') {
+          setFocusTarget('seek');
+          showControls();
+        } else if (event.eventType === 'select') {
+          // Don't intercept select if Skip Intro button is showing - let it handle the press
+          if (!showSkipIntroButton) {
+            setFocusTarget('play-pause');
+            showControls();
+          }
+        }
+      }
+    },
+    [visible, showControls, showSkipIntroButton]
+  );
+
+  // Enable TV event handler
+  useTVEventHandler(handleTVEvent);
+
+  // Clear focus target after controls become visible
+  useEffect(() => {
+    if (visible && focusTarget) {
+      const timer = setTimeout(() => setFocusTarget(null), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, focusTarget]);
 
   // Memoized sorted audio tracks
   const audioTrackItems = useMemo(
@@ -514,6 +567,11 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     onSkipEpisode();
   }, [onSkipEpisode, registerInteraction]);
 
+  const handleSkipIntro = useCallback(() => {
+    if (!onSkipIntro) return;
+    onSkipIntro();
+  }, [onSkipIntro]);
+
   const handleToggleAudioTracks = useCallback(() => {
     registerInteraction();
     setShowAudioTracks((prev) => !prev);
@@ -555,16 +613,25 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
     [onSelectTextTrack, registerInteraction]
   );
 
-  // When hidden, render minimal touchable area
+  // When hidden, render minimal touchable area + skip intro button
   if (!visible) {
     return (
-      <Pressable
-        testID="player-controls-invisible-area"
-        style={StyleSheet.absoluteFill}
-        onPress={showControls}
-        hasTVPreferredFocus>
-        <Box flex={1} />
-      </Pressable>
+      <>
+        <Pressable
+          testID="player-controls-invisible-area"
+          style={StyleSheet.absoluteFill}
+          onPress={showControls}
+          hasTVPreferredFocus={!showSkipIntroButton}
+        />
+        {/* Skip Intro button shown even when controls are hidden */}
+        {showSkipIntroButton && (
+          <SkipIntroButton
+            introData={introData}
+            currentTime={currentTime}
+            onSkipIntro={handleSkipIntro}
+          />
+        )}
+      </>
     );
   }
 
@@ -583,6 +650,17 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
             <LoadingIndicator />
           </Box>
         )}
+
+        {/* Center area - contains Skip Intro button */}
+        <Box flex={1}>
+          {showSkipIntroButton && (
+            <SkipIntroButton
+              introData={introData}
+              currentTime={currentTime}
+              onSkipIntro={handleSkipIntro}
+            />
+          )}
+        </Box>
 
         {/* Bottom Controls */}
         <Box
@@ -606,6 +684,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
               onTVSeekStart={handleTVSeekStart}
               onTVSeekComplete={handleTVSeekComplete}
               onTVValueChange={handleTVValueChange}
+              hasTVPreferredFocus={focusTarget === 'seek'}
             />
           </Box>
 
@@ -628,6 +707,7 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
               onSkipBackward={handleSkipBackward}
               onSkipForward={handleSkipForward}
               onFocusChange={handleButtonFocusChange}
+              hasTVPreferredFocus={focusTarget === 'play-pause'}
             />
 
             <RightControls

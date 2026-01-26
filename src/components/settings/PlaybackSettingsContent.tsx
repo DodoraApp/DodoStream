@@ -1,5 +1,5 @@
-import { FC, memo, useState } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { FC, memo, useState, useCallback } from 'react';
+import { TouchableOpacity, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import theme, { Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,6 +50,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       enableWorkarounds,
       matchFrameRate,
       enableVideoSoftwareDecoding,
+      skipIntroEnabled,
       setPlayerForProfile,
       setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile,
@@ -61,6 +62,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setEnableWorkaroundsForProfile,
       setMatchFrameRateForProfile,
       setEnableVideoSoftwareDecodingForProfile,
+      setSkipIntroEnabledForProfile,
     } = useProfileSettingsStore((state) => ({
       player:
         (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
@@ -96,6 +98,9 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
         (activeProfileId
           ? state.byProfile[activeProfileId]?.enableVideoSoftwareDecoding
           : undefined) ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
+      skipIntroEnabled:
+        (activeProfileId ? state.byProfile[activeProfileId]?.skipIntroEnabled : undefined) ??
+        DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
       setPlayerForProfile: state.setPlayerForProfile,
       setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
       setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
@@ -107,6 +112,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setEnableWorkaroundsForProfile: state.setEnableWorkaroundsForProfile,
       setMatchFrameRateForProfile: state.setMatchFrameRateForProfile,
       setEnableVideoSoftwareDecodingForProfile: state.setEnableVideoSoftwareDecodingForProfile,
+      setSkipIntroEnabledForProfile: state.setSkipIntroEnabledForProfile,
     }));
 
     const deviceLanguageCodes = getDevicePreferredLanguageCodes();
@@ -118,6 +124,10 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       if (!codes || codes.length === 0) return 'Device default';
       return codes.join(', ');
     };
+
+    const handleOpenIntroDB = useCallback(() => {
+      Linking.openURL('https://introdb.app');
+    }, []);
 
     const content = (
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
@@ -161,6 +171,26 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             />
           </SettingsCard>
         )}
+
+        <SettingsCard title="Skip Intro">
+          <SettingsSwitch
+            label="Enable Skip Intro"
+            description="Show a skip button during TV show intros"
+            value={skipIntroEnabled}
+            onValueChange={(value) =>
+              activeProfileId && setSkipIntroEnabledForProfile(activeProfileId, value)
+            }
+          />
+          <Text variant="caption" color="textSecondary">
+            When enabled, episode information (IMDb ID, season, episode) is sent to IntroDB to fetch
+            intro timestamps.
+          </Text>
+          <TouchableOpacity onPress={handleOpenIntroDB}>
+            <Text variant="caption" color="textLink">
+              Powered by IntroDB
+            </Text>
+          </TouchableOpacity>
+        </SettingsCard>
 
         <SettingsCard title="Android & ExoPlayer">
           <Text variant="caption" color="textSecondary">
