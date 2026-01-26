@@ -364,37 +364,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: DodoStream-*-production*
-          path: dist-raw
+          path: dist
           merge-multiple: true
 
       - name: 📂 Extract and prepare artifacts
         id: prepare-artifacts
         shell: bash
         run: |
-          mkdir -p dist
-
-          echo "Listing downloaded artifacts:"
-          ls -lh dist-raw/ || { echo "ERROR: No artifacts downloaded!"; exit 1; }
-
-          echo "Extracting ZIP archives..."
-          find dist-raw/ -name "*.zip" -type f 2>/dev/null | while read zip; do
-            echo "Extracting: $(basename "$zip")"
-            unzip -q -o "$zip" -d dist/
-          done
-
           echo "Final list of APK artifacts:"
-          if [ -d "dist" ]; then
-            find dist/ -name "*.apk" -type f -exec ls -lh {} \;
-            
-            apk_count=$(find dist/ -name "*.apk" -type f 2>/dev/null | wc -l)
-            echo "Total APKs ready for release: $apk_count"
-            
-            if [ "$apk_count" -eq 0 ]; then
-              echo "ERROR: No APK files found after extraction!"
-              exit 1
-            fi
-          else
-            echo "ERROR: dist/ directory not found after extraction!"
+          find dist/ -name "*.apk" -type f -exec ls -lh {} \;
+          
+          apk_count=$(find dist/ -name "*.apk" -type f 2>/dev/null | wc -l)
+          echo "Total APKs ready for release: $apk_count"
+          
+          if [ "$apk_count" -eq 0 ]; then
+            echo "ERROR: No APK files found!"
             exit 1
           fi
 
