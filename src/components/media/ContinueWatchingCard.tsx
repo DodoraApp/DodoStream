@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, useRef } from 'react';
+import { Animated, Easing } from 'react-native';
 import { Image } from 'expo-image';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -11,9 +12,11 @@ import { ProgressBar } from '@/components/basic/ProgressBar';
 import { getImageSource } from '@/utils/image';
 import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel, formatEpisodeCardTitle } from '@/utils/format';
+import { CARD_ANIMATION_DURATION, CARD_SCALE_FOCUSED, CARD_SCALE_NORMAL } from '@/constants/media';
+
+const AnimatedBox = Animated.createAnimatedComponent(Box);
 
 interface ContinueWatchingCardProps {
-  /** The continue watching entry to display */
   entry: ContinueWatchingEntry;
   hideText?: boolean;
   onPress: () => void;
@@ -34,10 +37,19 @@ export const ContinueWatchingCard = memo(
     testID,
   }: ContinueWatchingCardProps) => {
     const theme = useTheme<Theme>();
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    const animateFocus = (focused: boolean) => {
+      Animated.timing(scaleAnim, {
+        toValue: focused ? CARD_SCALE_FOCUSED : CARD_SCALE_NORMAL,
+        duration: CARD_ANIMATION_DURATION,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }).start();
+    };
 
     const { isUpNext, progressRatio, video, metaName, imageUrl, key } = entry;
 
-    // Derive display values
     const clampedProgress = isUpNext ? 0 : Math.min(1, Math.max(0, progressRatio));
     const episodeLabel = formatSeasonEpisodeLabel(video);
     const title = metaName ?? '';
@@ -48,20 +60,29 @@ export const ContinueWatchingCard = memo(
       <Focusable
         onPress={onPress}
         onLongPress={onLongPress}
-        onFocus={() => onFocused?.()}
         hasTVPreferredFocus={hasTVPreferredFocus}
-        withOutline
-        testID={testID}>
-        {({ focusStyle }) => (
-          <Box width={theme.cardSizes.continueWatching.width} gap="s">
+        testID={testID}
+        onFocusChange={(isFocused) => {
+          animateFocus(isFocused);
+          if (isFocused) onFocused?.();
+        }}>
+        {() => (
+          <AnimatedBox
+            width={theme.cardSizes.continueWatching.width}
+            gap="s"
+            style={{ transform: [{ scale: scaleAnim }] }}
+            shadowColor="mainForeground"
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.3}
+            shadowRadius={6}
+            elevation={4}>
             <Box
               height={theme.cardSizes.continueWatching.height}
               width={theme.cardSizes.continueWatching.width}
               borderRadius="l"
               overflow="hidden"
               backgroundColor="cardBackground"
-              position="relative"
-              style={focusStyle}>
+              position="relative">
               <Image
                 source={finalImageSource}
                 style={{ width: '100%', height: '100%' }}
@@ -79,7 +100,7 @@ export const ContinueWatchingCard = memo(
                 {episodeLabel && <Badge label={episodeLabel} />}
               </Box>
 
-              {!isUpNext && clampedProgress > 0 && clampedProgress < 1 ? (
+              {!isUpNext && clampedProgress > 0 && clampedProgress < 1 && (
                 <Box position="absolute" left={0} right={0} bottom={0}>
                   <ProgressBar
                     testID="continue-watching-progress"
@@ -87,7 +108,7 @@ export const ContinueWatchingCard = memo(
                     height={theme.sizes.progressBarHeight}
                   />
                 </Box>
-              ) : null}
+              )}
             </Box>
 
             {!hideText && (
@@ -95,14 +116,14 @@ export const ContinueWatchingCard = memo(
                 <Text variant="cardTitle" numberOfLines={1}>
                   {title}
                 </Text>
-                {subtitle ? (
+                {subtitle && (
                   <Text variant="caption" numberOfLines={1} color="textSecondary">
                     {subtitle}
                   </Text>
-                ) : null}
+                )}
               </Box>
             )}
-          </Box>
+          </AnimatedBox>
         )}
       </Focusable>
     );
