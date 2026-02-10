@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -30,6 +30,11 @@ interface HeroSectionProps {
 export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionProps) => {
   const theme = useTheme<Theme>();
   const { pushToStreams, navigateToDetails } = useMediaNavigation();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
+  // In landscape, scale hero height to avoid consuming the entire viewport
+  const heroHeight = isLandscape ? Math.min(HERO_HEIGHT, height * 0.7) : HERO_HEIGHT;
 
   const [activeIndex, setActiveIndex] = useState(0);
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -162,7 +167,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   }
 
   return (
-    <Box height={HERO_HEIGHT} width="100%" overflow="hidden">
+    <Box height={heroHeight} width="100%" overflow="hidden">
       {/* Background Image with Fade Animation */}
       <MotiView
         key={activeItem.id}

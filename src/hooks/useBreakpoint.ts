@@ -5,16 +5,33 @@ import theme from '@/theme/theme';
 export type Breakpoint = 'mobile' | 'tablet' | 'tv';
 
 /**
- * Hook to detect current breakpoint based on window width
+ * Hook to detect current breakpoint based on window width.
+ *
+ * On TV platforms (`Platform.isTV`), always returns `'tv'` regardless of
+ * screen resolution to handle 720p Android TV devices correctly.
+ *
+ * On non-TV platforms, uses the *shorter* dimension (min of width/height)
+ * so that a phone rotated to landscape doesn't suddenly jump to the
+ * "tablet" breakpoint, and a tablet in landscape doesn't jump to "tv".
+ * This keeps the breakpoint stable across orientation changes while still
+ * allowing orientation-specific layout tweaks via `isLandscape` from
+ * `useResponsiveLayout`.
+ *
  * @returns Current breakpoint: 'mobile' | 'tablet' | 'tv'
  */
 export function useBreakpoint(): Breakpoint {
-    const { width } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
 
-    if (width >= theme.breakpoints.tv) {
+    // TV platform is always 'tv' regardless of resolution (e.g. 720p = 1280×720)
+    if (Platform.isTV) return 'tv';
+
+    // Use the shorter side so rotation doesn't change breakpoint tier
+    const shortSide = Math.min(width, height);
+
+    if (shortSide >= theme.breakpoints.tv) {
         return 'tv';
     }
-    if (width >= theme.breakpoints.tablet) {
+    if (shortSide >= theme.breakpoints.tablet) {
         return 'tablet';
     }
     return 'mobile';
@@ -58,11 +75,14 @@ export interface ResponsiveLayoutResult {
     /** True for tablet or TV (wide layouts that can show split views) */
     isWide: boolean;
 
+    /** True when the viewport is wider than it is tall */
+    isLandscape: boolean;
+
     /** Current window dimensions */
     width: number;
     height: number;
 
-    /** Number of grid columns appropriate for current breakpoint */
+    /** Number of grid columns appropriate for current breakpoint and orientation */
     columns: number;
 
     /** Maximum content width for current breakpoint */
@@ -115,20 +135,21 @@ export function useResponsiveLayout(): ResponsiveLayoutResult {
     const isTV = breakpoint === 'tv';
     const isWide = isTablet || isTV;
     const isPlatformTV = Platform.isTV;
+    const isLandscape = width > height;
 
-    // Grid columns based on breakpoint
+    // Grid columns based on breakpoint + orientation
     const columns = useMemo(() => {
-        if (isTV) return 4;
-        if (isTablet) return 3;
-        return 2;
-    }, [isTV, isTablet]);
+        if (isTV) return isLandscape ? 5 : 4;
+        if (isTablet) return isLandscape ? 5 : 3;
+        return isLandscape ? 3 : 2;
+    }, [isTV, isTablet, isLandscape]);
 
     // Max content width
     const containerMaxWidth = useMemo(() => {
         if (isTV) return Math.min(width * 0.7, 1200);
-        if (isTablet) return Math.min(width * 0.85, 900);
+        if (isTablet) return isLandscape ? Math.min(width * 0.9, 1100) : Math.min(width * 0.85, 900);
         return undefined; // Full width on mobile
-    }, [isTV, isTablet, width]);
+    }, [isTV, isTablet, isLandscape, width]);
 
     // Content padding
     const contentPadding = useMemo(() => {
@@ -167,6 +188,7 @@ export function useResponsiveLayout(): ResponsiveLayoutResult {
         isTablet,
         isTV,
         isWide,
+        isLandscape,
         width,
         height,
         columns,

@@ -5,9 +5,9 @@ import { ConfigPlugin, AndroidConfig, withAndroidManifest } from 'expo/config-pl
  * 
  * This prevents the activity from being recreated when certain configuration changes occur,
  * which fixes the "linking configured in multiple places" error with expo-router
- * and prevents app reloads when video display modes change.
+ * and prevents app reloads when video display modes or orientation change.
  * 
- * Adds: smallestScreenSize, density
+ * Adds: smallestScreenSize, density, orientation, screenSize
  */
 const withAndroidConfigChanges: ConfigPlugin = (config) => {
     return withAndroidManifest(config, (config) => {
@@ -17,7 +17,7 @@ const withAndroidConfigChanges: ConfigPlugin = (config) => {
         const existingConfigChanges = mainActivity.$?.['android:configChanges']?.split('|') || [];
 
         // Add our required config changes if not already present
-        const requiredChanges = ['smallestScreenSize', 'density'];
+        const requiredChanges = ['smallestScreenSize', 'density', 'orientation', 'screenSize'];
         const newConfigChanges = [...new Set([...existingConfigChanges, ...requiredChanges])];
 
         // Update the activity with the new configChanges
