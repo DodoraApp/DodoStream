@@ -1,4 +1,4 @@
-import { FC, memo, useState } from 'react';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { Alert, TouchableOpacity, Switch, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { FlashList } from '@shopify/flash-list';
@@ -9,9 +9,60 @@ import { Button } from '@/components/basic/Button';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useAddonStore } from '@/store/addon.store';
 import { useInstallAddon } from '@/api/stremio';
-import { InstalledAddon } from '@/types/stremio';
+import { InstalledAddon, Manifest } from '@/types/stremio';
 import { showToast } from '@/store/toast.store';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
+
+/** Checks if a manifest declares a given resource name */
+function hasResource(manifest: Manifest, resourceName: string): boolean {
+  return manifest.resources.some((resource) => {
+    if (typeof resource === 'string') return resource === resourceName;
+    return resource.name === resourceName;
+  });
+}
+
+/** Checks if a manifest has catalogs */
+function hasCatalogs(manifest: Manifest): boolean {
+  return Array.isArray(manifest.catalogs) && manifest.catalogs.length > 0;
+}
+
+interface AddonCapabilities {
+  hasCatalog: boolean;
+  hasMeta: boolean;
+  hasStream: boolean;
+  catalogAddons: string[];
+  metaAddons: string[];
+  streamAddons: string[];
+}
+
+/** Icons for each addon capability type */
+const CAPABILITY_ICONS = {
+  catalog: 'grid-outline' as const,
+  meta: 'information-circle-outline' as const,
+  stream: 'play-circle-outline' as const,
+};
+
+function getAddonCapabilities(addons: InstalledAddon[]): AddonCapabilities {
+  const catalogAddons: string[] = [];
+  const metaAddons: string[] = [];
+  const streamAddons: string[] = [];
+
+  for (const addon of addons) {
+    const { manifest } = addon;
+    if (hasCatalogs(manifest)) catalogAddons.push(manifest.name);
+    if (hasResource(manifest, 'meta')) metaAddons.push(manifest.name);
+    if (hasResource(manifest, 'stream')) streamAddons.push(manifest.name);
+  }
+
+  return {
+    hasCatalog: catalogAddons.length > 0,
+    hasMeta: metaAddons.length > 0,
+    hasStream: streamAddons.length > 0,
+    catalogAddons,
+    metaAddons,
+    streamAddons,
+  };
+}
 
 export interface AddonsSettingsContentProps {
   /** Whether to show the install addon section (default: true) */
@@ -29,16 +80,34 @@ export interface AddonsSettingsContentProps {
 export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
   ({ showInstall = true, showInstalled = true, scrollable = true }) => {
     const [manifestUrl, setManifestUrl] = useState('');
-    const {
-      removeAddon,
-      toggleUseCatalogsOnHome,
-      toggleUseCatalogsInSearch,
-      toggleUseForSubtitles,
-      error: storeError,
-      getAddonsList,
-    } = useAddonStore();
-    const addons = getAddonsList();
+    const addonsMap = useAddonStore((state) => state.addons);
+    const removeAddon = useAddonStore((state) => state.removeAddon);
+    const clearAllAddons = useAddonStore((state) => state.clearAllAddons);
+    const toggleUseCatalogsOnHome = useAddonStore((state) => state.toggleUseCatalogsOnHome);
+    const toggleUseCatalogsInSearch = useAddonStore((state) => state.toggleUseCatalogsInSearch);
+    const toggleUseForSubtitles = useAddonStore((state) => state.toggleUseForSubtitles);
+    const storeError = useAddonStore((state) => state.error);
+    const addons = useMemo(() => Object.values(addonsMap), [addonsMap]);
+    const capabilities = useMemo(() => getAddonCapabilities(addons), [addons]);
     const installAddon = useInstallAddon();
+
+    const handleClearAll = useCallback(() => {
+      Alert.alert(
+        'Remove All Addons',
+        `Are you sure you want to remove all ${addons.length} installed addons? This cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove All',
+            style: 'destructive',
+            onPress: () => {
+              clearAllAddons();
+              showToast({ title: 'All addons removed', preset: 'success' });
+            },
+          },
+        ]
+      );
+    }, [addons.length, clearAllAddons]);
 
     const handleInstall = async () => {
       if (!manifestUrl.trim()) {
@@ -111,10 +180,23 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
           </SettingsCard>
         )}
 
+        {/* Addon Setup Checklist */}
+        <AddonChecklist capabilities={capabilities} />
+
         {/* Installed Addons Section */}
         {showInstalled && (
           <Box gap="m" flex={1}>
-            <Text variant="subheader">Installed Addons ({addons.length})</Text>
+            <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+              <Text variant="subheader">Installed Addons ({addons.length})</Text>
+              {addons.length > 0 && (
+                <Button
+                  variant="tertiary"
+                  title="Clear All"
+                  icon="trash-outline"
+                  onPress={handleClearAll}
+                />
+              )}
+            </Box>
             {addons.length === 0 ? (
               <SettingsCard>
                 <Text variant="body" color="textSecondary">
@@ -163,6 +245,10 @@ interface AddonCardProps {
 
 const AddonCard: FC<AddonCardProps> = memo(
   ({ addon, onRemove, onToggleHome, onToggleSearch, onToggleSubtitles, onConfigure }) => {
+    const isCatalog = hasCatalogs(addon.manifest);
+    const isMeta = hasResource(addon.manifest, 'meta');
+    const isStream = hasResource(addon.manifest, 'stream');
+
     return (
       <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
         {/* Header with title and remove button */}
@@ -172,11 +258,12 @@ const AddonCard: FC<AddonCardProps> = memo(
             <Text variant="caption" color="textSecondary" numberOfLines={1}>
               {addon.manifestUrl}
             </Text>
-            {addon.manifest.catalogs && (
-              <Text variant="caption" color="textSecondary">
-                {addon.manifest.catalogs.length} catalog(s)
-              </Text>
-            )}
+            {/* Capability badges */}
+            <Box flexDirection="row" gap="s" marginTop="xs">
+              <CapabilityBadge icon={CAPABILITY_ICONS.catalog} label="Catalog" active={isCatalog} />
+              <CapabilityBadge icon={CAPABILITY_ICONS.meta} label="Meta" active={isMeta} />
+              <CapabilityBadge icon={CAPABILITY_ICONS.stream} label="Streams" active={isStream} />
+            </Box>
           </Box>
           <Box flexDirection="row" gap="xs">
             <TouchableOpacity onPress={() => onRemove(addon.id, addon.manifest.name)}>
@@ -215,3 +302,107 @@ const AddonCard: FC<AddonCardProps> = memo(
     );
   }
 );
+
+// ── Shared Capability Badge ─────────────────────────────────────────────────
+
+interface CapabilityBadgeProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  active: boolean;
+}
+
+const CapabilityBadge: FC<CapabilityBadgeProps> = memo(({ icon, label, active }) => (
+  <Box flexDirection="row" alignItems="center" gap="xs" opacity={active ? 1 : 0.35}>
+    <Ionicons
+      name={icon}
+      size={14}
+      color={active ? theme.colors.primaryBackground : theme.colors.textSecondary}
+    />
+    <Text variant="caption" color={active ? 'textPrimary' : 'textSecondary'}>
+      {label}
+    </Text>
+  </Box>
+));
+
+CapabilityBadge.displayName = 'CapabilityBadge';
+
+// ── Addon Setup Checklist ──────────────────────────────────────────────────
+
+interface ChecklistItemProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  description: string;
+  fulfilled: boolean;
+  count: number;
+}
+
+const ChecklistItem: FC<ChecklistItemProps> = memo(({ icon, label, description, fulfilled, count }) => (
+  <Box flexDirection="row" alignItems="center" gap="m" paddingVertical="xs">
+    <Ionicons
+      name={icon}
+      size={22}
+      color={fulfilled ? theme.colors.primaryBackground : theme.colors.danger}
+    />
+    <Box flex={1} gap="xs">
+      <Text variant="body" color={fulfilled ? 'textPrimary' : 'danger'}>
+        {label}
+      </Text>
+      <Text variant="caption" color="textSecondary" numberOfLines={2}>
+        {fulfilled
+          ? `${count} addon${count !== 1 ? 's' : ''}`
+          : description}
+      </Text>
+    </Box>
+  </Box>
+));
+
+ChecklistItem.displayName = 'ChecklistItem';
+
+interface AddonChecklistProps {
+  capabilities: AddonCapabilities;
+}
+
+const AddonChecklist: FC<AddonChecklistProps> = memo(({ capabilities }) => {
+  const allGood = capabilities.hasCatalog && capabilities.hasMeta && capabilities.hasStream;
+
+  return (
+    <SettingsCard title="Setup Checklist">
+      {allGood ? (
+        <Text variant="caption" color="textSecondary">
+          You have all the essential addon types installed. You're good to go!
+        </Text>
+      ) : (
+        <Text variant="caption" color="danger">
+          You're missing essential addon types. Install addons that provide the missing capabilities
+          below to get the full experience.
+        </Text>
+      )}
+
+      <Box gap="s">
+        <ChecklistItem
+          icon={CAPABILITY_ICONS.catalog}
+          label="Catalog"
+          description="Needed to browse and discover content on the home screen and search"
+          fulfilled={capabilities.hasCatalog}
+          count={capabilities.catalogAddons.length}
+        />
+        <ChecklistItem
+          icon={CAPABILITY_ICONS.meta}
+          label="Metadata"
+          description="Needed to show details like descriptions, cast, and episodes for content"
+          fulfilled={capabilities.hasMeta}
+          count={capabilities.metaAddons.length}
+        />
+        <ChecklistItem
+          icon={CAPABILITY_ICONS.stream}
+          label="Streams"
+          description="Needed to find playable sources for content. Nothing will play without this"
+          fulfilled={capabilities.hasStream}
+          count={capabilities.streamAddons.length}
+        />
+      </Box>
+    </SettingsCard>
+  );
+});
+
+AddonChecklist.displayName = 'AddonChecklist';

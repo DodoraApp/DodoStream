@@ -11,6 +11,7 @@ import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsC
 import { ProfilesSettingsContent } from '@/components/settings/ProfilesSettingsContent';
 import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
 import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
+import { SyncSettingsContent } from '@/components/settings/SyncSettingsContent';
 import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSettingsContent';
 import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
 import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
@@ -38,6 +39,8 @@ export default function Settings() {
         return <ProfilesSettingsContent />;
       case 'addons':
         return <AddonsSettingsContent />;
+      case 'sync':
+        return <SyncSettingsContent />;
       case 'about':
         return <AboutSettingsContent />;
       default:

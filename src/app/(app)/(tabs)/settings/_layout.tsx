@@ -56,6 +56,12 @@ export default function SettingsLayout() {
         }}
       />
       <Stack.Screen
+        name="sync"
+        options={{
+          title: 'Sync',
+        }}
+      />
+      <Stack.Screen
         name="about"
         options={{
           title: 'About',

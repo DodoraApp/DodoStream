@@ -40,6 +40,13 @@ export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
         href: '/settings/addons',
     },
     {
+        id: 'sync',
+        title: 'Sync',
+        description: 'Sync data from Stremio or a syncing server',
+        icon: 'sync-outline',
+        href: '/settings/sync',
+    },
+    {
         id: 'about',
         title: 'About',
         description: 'App info, version, and useful links',
@@ -61,5 +68,6 @@ export const SETTINGS_ROUTES: Record<string, string> = {
     profiles: '/settings/profiles',
     subtitles: '/settings/subtitles',
     addons: '/settings/addons',
+    sync: '/settings/sync',
     about: '/settings/about',
 };

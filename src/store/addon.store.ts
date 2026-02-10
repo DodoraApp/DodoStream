@@ -24,6 +24,7 @@ interface AddonState {
     hasAddons: () => boolean;
     hasAddon: (id: string) => boolean;
     getAddonsList: () => InstalledAddon[];
+    clearAllAddons: () => void;
     setLoading: (isLoading: boolean) => void;
     setInitialized: (isInitialized: boolean) => void;
     setError: (error: string | null) => void;
@@ -167,6 +168,10 @@ export const useAddonStore = create<AddonState>()(
 
             getAddonsList: () => {
                 return Object.values(get().addons);
+            },
+
+            clearAllAddons: () => {
+                set({ addons: {}, error: null });
             },
 
             setLoading: (isLoading: boolean) => {
