@@ -93,7 +93,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             tsconfigPaths: true,
             reactCompiler: true
         },
-        orientation: 'portrait',
+        orientation: 'default',
         icon: './assets/app/icon.png',
         backgroundColor: appBackgroundColor,
         userInterfaceStyle: 'dark',

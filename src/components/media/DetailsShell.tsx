@@ -13,6 +13,8 @@ import { MediaInfo } from '@/components/media/MediaInfo';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
 import FadeIn from '@/components/basic/FadeIn';
+import { NO_POSTER_PORTRAIT } from '@/constants/images';
+import { getImageSource } from '@/utils/image';
 
 interface DetailsShellProps {
   media: MetaDetail;
@@ -25,15 +27,82 @@ interface DetailsShellProps {
 export const DetailsShell = memo(
   ({ media, forceTVLayout, headerChildren, children }: PropsWithChildren<DetailsShellProps>) => {
     const theme = useTheme<Theme>();
-    const { isPlatformTV, width } = useResponsiveLayout();
+    const { isPlatformTV, isLandscape, isTablet, isMobile, width } = useResponsiveLayout();
 
     const useTVLayout = forceTVLayout ?? isPlatformTV;
+    const useLandscapeLayout = !useTVLayout && isLandscape && (isTablet || isMobile);
 
     const coverSource = useMemo(
       () => getDetailsCoverSource(media.background, media.poster),
       [media.background, media.poster]
     );
     const logoSource = useMemo(() => getDetailsLogoSource(media.logo), [media.logo]);
+
+    const posterSource = useMemo(
+      () => getImageSource(media.poster, NO_POSTER_PORTRAIT),
+      [media.poster]
+    );
+
+    // Landscape layout for phones/tablets: poster on the left, info + children on the right
+    if (useLandscapeLayout) {
+      return (
+        <Box flex={1}>
+          <AnimatedImage
+            source={coverSource}
+            contentFit="cover"
+            style={StyleSheet.absoluteFillObject}
+          />
+          <LinearGradient
+            colors={[theme.colors.semiTransparentBackground, theme.colors.mainBackground]}
+            locations={[0, 0.6]}
+            style={StyleSheet.absoluteFillObject}
+          />
+
+          <ScrollView>
+            <Box flexDirection="row" padding="l" gap="l" position="relative">
+              {/* Left column: poster */}
+              <Box width={isMobile ? 140 : 180}>
+                <Box
+                  borderRadius="l"
+                  overflow="hidden"
+                  backgroundColor="cardBackground"
+                  style={{ aspectRatio: 2 / 3 }}>
+                  <AnimatedImage
+                    source={posterSource}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                  />
+                </Box>
+              </Box>
+
+              {/* Right column: title, info, header children */}
+              <Box flex={1} gap="m" justifyContent="center">
+                {!!logoSource ? (
+                  <AnimatedImage
+                    source={logoSource}
+                    contentFit="contain"
+                    style={{
+                      width: Math.min(width * 0.4, theme.sizes.logoMaxWidth),
+                      height: theme.sizes.stickyLogoHeight,
+                    }}
+                  />
+                ) : (
+                  <FadeIn>
+                    <Text variant="header">{media.name}</Text>
+                  </FadeIn>
+                )}
+                <MediaInfo media={media} variant="compact" />
+                {headerChildren}
+              </Box>
+            </Box>
+
+            <Box paddingHorizontal="l" paddingBottom="l" gap="m">
+              {children}
+            </Box>
+          </ScrollView>
+        </Box>
+      );
+    }
 
     if (!useTVLayout) {
       return (

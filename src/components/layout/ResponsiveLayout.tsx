@@ -12,12 +12,13 @@ interface ResponsiveLayoutProps {
 
 export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth }) => {
   const breakpoint = useBreakpoint();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   // Show sidebar on tablet and TV
   const showSidebar = breakpoint === 'tablet' || breakpoint === 'tv';
 
-  // Calculate max width for content (50% on large screens)
+  // Calculate max width for content
   const contentMaxWidth: number | undefined =
     maxWidth !== undefined
       ? typeof maxWidth === 'number'
@@ -25,7 +26,9 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
         : undefined
       : breakpoint === 'tv'
         ? width * 0.5
-        : undefined;
+        : breakpoint === 'tablet' && isLandscape
+          ? Math.min(width * 0.75, 1000)
+          : undefined;
 
   // Handle TV back button to focus sidebar
   const handleBackPress = useCallback(() => {

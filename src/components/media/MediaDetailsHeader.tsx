@@ -1,5 +1,5 @@
 import { memo, PropsWithChildren, useMemo } from 'react';
-import { Dimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedImage } from '@/components/basic/AnimatedImage';
 import { Box, Text } from '@/theme/theme';
@@ -14,8 +14,6 @@ import { MEDIA_DETAILS_HEADER_COVER_HEIGHT } from '@/constants/media';
 import { Tag } from '@/components/basic/Tag';
 import FadeIn from '@/components/basic/FadeIn';
 
-const { width } = Dimensions.get('window');
-
 interface MediaDetailsHeaderProps {
   media: MetaDetail;
   video?: MetaVideo;
@@ -25,6 +23,13 @@ interface MediaDetailsHeaderProps {
 export const MediaDetailsHeader = memo(
   ({ media, video, variant = 'full', children }: PropsWithChildren<MediaDetailsHeaderProps>) => {
     const theme = useTheme<Theme>();
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
+
+    // Scale cover height in landscape to avoid consuming the whole viewport
+    const coverHeight = isLandscape
+      ? Math.min(MEDIA_DETAILS_HEADER_COVER_HEIGHT, height * 0.5)
+      : MEDIA_DETAILS_HEADER_COVER_HEIGHT;
 
     const coverSource = useMemo(() => {
       return getDetailsCoverSource(media.background, media.poster);
@@ -50,7 +55,7 @@ export const MediaDetailsHeader = memo(
     return (
       <Box>
         {variant !== 'minimal' && (
-          <Box height={MEDIA_DETAILS_HEADER_COVER_HEIGHT} width={width} position="relative">
+          <Box height={coverHeight} width={width} position="relative">
             <AnimatedImage
               source={coverSource}
               style={{ width: '100%', height: '100%' }}
