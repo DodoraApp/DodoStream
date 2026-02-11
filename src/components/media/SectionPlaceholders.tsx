@@ -13,7 +13,7 @@ interface SectionPlaceholderBaseProps {
   sectionType?: SectionType;
 }
 
-interface SectionLoadingPlaceholderProps extends SectionPlaceholderBaseProps {}
+type SectionLoadingPlaceholderProps = SectionPlaceholderBaseProps;
 
 const SectionPlaceholder = memo(
   ({ sectionType = 'media', children }: PropsWithChildren<SectionPlaceholderBaseProps>) => {
@@ -86,7 +86,7 @@ export const SectionErrorPlaceholder = memo(
 
 SectionErrorPlaceholder.displayName = 'SectionErrorPlaceholder';
 
-interface SectionEmptyPlaceholderProps extends SectionPlaceholderBaseProps {}
+type SectionEmptyPlaceholderProps = SectionPlaceholderBaseProps;
 
 /**
  * A placeholder for sections with no content.

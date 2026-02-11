@@ -1,6 +1,5 @@
 import { PickerItem } from '@/components/basic/PickerModal';
 import type { PlayerType } from '@/types/player';
-import { Platform } from 'react-native';
 
 // Playback ratios
 export const PLAYBACK_FINISHED_RATIO = 0.9;

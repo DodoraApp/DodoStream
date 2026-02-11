@@ -1,8 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { Box, Text, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import { Ionicons } from '@expo/vector-icons';
+import { Box, Text } from '@/theme/theme';
 import { MotiView } from 'moti';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { Button } from '@/components/basic/Button';
@@ -13,7 +11,6 @@ import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
  */
 export default function CompleteStep() {
   const router = useRouter();
-  const theme = useTheme<Theme>();
 
   const handleFinish = useCallback(() => {
     // Navigate to main app - replace so user can't go back to wizard

@@ -1,12 +1,11 @@
-import { memo, useCallback } from 'react';
-import { HWEvent, Platform, TVFocusGuideView, useTVEventHandler, View } from 'react-native';
+import { memo } from 'react';
+import { TVFocusGuideView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { MediaCard } from './MediaCard';
 import { MetaPreview } from '@/types/stremio';
 import { HorizontalSpacer } from '@/components/basic/Spacer';
-import { TV_DRAW_DISTANCE } from '@/constants/ui';
 
 interface MediaListProps {
   data: MetaPreview[];

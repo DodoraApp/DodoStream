@@ -1,9 +1,8 @@
-import React, { memo, useRef } from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { findCurrentCue } from '@/utils/subtitles';
 import { useSubtitleCues } from '@/hooks/useSubtitleCues';
-import { useDebugLogger } from '@/utils/debug';
 import { useComputedSubtitleStyle } from '@/hooks/useSubtitleStyle';
 import { SUBTITLE_MAX_LINES } from '@/constants/subtitles';
 

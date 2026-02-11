@@ -5,7 +5,6 @@ import { Box, Text, Theme } from '@/theme/theme';
 import { moveItem } from '@/utils/array';
 import { Focusable } from '@/components/basic/Focusable';
 import { Button } from '@/components/basic/Button';
-import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 import { ScrollView } from 'react-native-gesture-handler';
 
 export interface OrderableItem {

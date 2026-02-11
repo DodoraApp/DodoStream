@@ -1,5 +1,5 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import { showToast } from '@/store/toast.store';
@@ -146,19 +146,20 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const isFirstLoadRef = useRef(true);
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
-  const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } = useProfileSettingsStore((state) => ({
-    preferredAudioLanguages: activeProfileId
-      ? state.byProfile[activeProfileId]?.preferredAudioLanguages
-      : undefined,
-    showVideoStatistics: activeProfileId
-      ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
-      : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
-    skipIntroEnabled: activeProfileId
-      ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
-      : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
-  }));
+  const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } =
+    useProfileSettingsStore((state) => ({
+      preferredAudioLanguages: activeProfileId
+        ? state.byProfile[activeProfileId]?.preferredAudioLanguages
+        : undefined,
+      showVideoStatistics: activeProfileId
+        ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+      skipIntroEnabled: activeProfileId
+        ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
+    }));
 
   const nativeSubtitleStyle = useNativeSubtitleStyle();
 
@@ -222,7 +223,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
   const [selectedTextTrack, setSelectedTextTrack] = useState<TextTrack>();
-  const [videoStatistics, setVideoStatistics] = useState<Record<string, string | number | object | undefined>>({});
+  const [videoStatistics, setVideoStatistics] = useState<
+    Record<string, string | number | object | undefined>
+  >({});
 
   const { combinedSubtitles, areSubtitlesLoading, setVideoSubtitles } = useSubtitleCombiner(
     mediaType,
@@ -394,7 +397,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const handleStatistics = useCallback(
-    (statistics: Record<string, string | number | object | undefined>) => {
+    (statistics: Record<string, string | number | object | undefined>) => {
       debug('videoStatistics', statistics);
       setVideoStatistics(statistics);
     },

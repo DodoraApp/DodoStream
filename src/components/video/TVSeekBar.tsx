@@ -1,4 +1,4 @@
-import React, { FC, memo, useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { FC, memo, useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,7 +6,6 @@ import {
   Pressable,
   useTVEventHandler,
   HWEvent,
-  findNodeHandle,
   TVFocusGuideView,
 } from 'react-native';
 import { Box, Theme } from '@/theme/theme';

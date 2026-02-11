@@ -1,10 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
-import { StyleSheet } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-import { Box, Text } from '@/theme/theme';
 import { getLanguageEntry } from '@/utils/languages';
 import { uniqNormalizedStrings } from '@/utils/array';
-import { Button } from '@/components/basic/Button';
 import { Modal } from '@/components/basic/Modal';
 import { OrderableListSection, OrderableItem } from '@/components/settings/OrderableListSection';
 

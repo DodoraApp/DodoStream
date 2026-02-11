@@ -1,4 +1,4 @@
-import { FC, forwardRef, memo, useCallback, useMemo } from 'react';
+import { forwardRef, useCallback, useMemo } from 'react';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { useProfileStore } from '@/store/profile.store';

@@ -3,7 +3,6 @@ import { Platform, Switch, View } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
-import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 interface SettingsSwitchProps {
   /** Label text for the switch */

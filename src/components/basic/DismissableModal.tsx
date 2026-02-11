@@ -1,7 +1,6 @@
 import React from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 import { Button } from '@/components/basic/Button';
 import { Modal } from '@/components/basic/Modal';
 

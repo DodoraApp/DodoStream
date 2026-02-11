@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Container } from '@/components/basic/Container';
-import { TextInput, Platform } from 'react-native';
+import { TextInput } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';

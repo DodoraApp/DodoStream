@@ -1,5 +1,4 @@
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 import { Tag } from '@/components/basic/Tag';
 import { ExpandableSection } from '@/components/basic/ExpandableSection';
 import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
