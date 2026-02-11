@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { pushSyncOperation } from '@/api/sync/bridge';
 
 export interface ContinueWatchingProfileState {
     /** Hidden meta IDs (hide from the home Continue Watching row). */
@@ -73,6 +74,12 @@ export const useContinueWatchingStore = create<ContinueWatchingState>()(
                         },
                     };
                 });
+
+                pushSyncOperation({
+                    collection: 'continue_watching',
+                    action: 'set_hidden',
+                    payload: { metaId, hidden, profileId },
+                });
             },
 
             clearHidden: () => {
@@ -87,6 +94,12 @@ export const useContinueWatchingStore = create<ContinueWatchingState>()(
                         },
                     },
                 }));
+
+                pushSyncOperation({
+                    collection: 'continue_watching',
+                    action: 'clear_hidden',
+                    payload: { profileId },
+                });
             },
         }),
         {

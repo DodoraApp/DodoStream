@@ -42,7 +42,7 @@ export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
     {
         id: 'sync',
         title: 'Sync',
-        description: 'Sync data from Stremio or a syncing server',
+        description: 'Sync data across devices via a sync server',
         icon: 'sync-outline',
         href: '/settings/sync',
     },

@@ -5,6 +5,7 @@ import type { ContentType } from '@/types/stremio';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { createDebugLogger } from '@/utils/debug';
 import { useContinueWatchingStore } from '@/store/continue-watching.store';
+import { pushSyncOperation } from '@/api/sync/bridge';
 
 export interface WatchHistoryItem {
   id: string;
@@ -243,6 +244,22 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
             },
           };
         });
+
+        pushSyncOperation({
+          collection: 'watch_history',
+          action: 'upsert',
+          payload: {
+            id: item.id,
+            type: item.type,
+            videoId: item.videoId,
+            progressSeconds: item.progressSeconds,
+            durationSeconds: item.durationSeconds,
+            lastStreamTargetType: item.lastStreamTargetType,
+            lastStreamTargetValue: item.lastStreamTargetValue,
+            lastWatchedAt: item.lastWatchedAt ?? Date.now(),
+            profileId,
+          },
+        });
       },
 
       setLastStreamTarget: (
@@ -362,6 +379,12 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
             };
           }
         });
+
+        pushSyncOperation({
+          collection: 'watch_history',
+          action: 'remove',
+          payload: { id, videoId, profileId },
+        });
       },
 
       removeMeta: (id) => {
@@ -379,6 +402,12 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
               [profileId]: restMetas,
             },
           };
+        });
+
+        pushSyncOperation({
+          collection: 'watch_history',
+          action: 'remove_meta',
+          payload: { id, profileId },
         });
       },
     }),

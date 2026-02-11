@@ -5,6 +5,7 @@ import { InstalledAddon, Manifest } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { fetchWithTimeout } from '@/utils/network';
 import { ADDON_MANIFEST_FETCH_TIMEOUT_MS } from '@/constants/ui';
+import { pushSyncOperation } from '@/api/sync/bridge';
 
 const debug = createDebugLogger('AddonStore');
 
@@ -62,6 +63,20 @@ export const useAddonStore = create<AddonState>()(
                     addons: { ...addons, [id]: newAddon },
                     error: null,
                 });
+
+                pushSyncOperation({
+                    collection: 'addons',
+                    action: 'add',
+                    payload: {
+                        id,
+                        manifestUrl,
+                        manifest,
+                        installedAt: newAddon.installedAt,
+                        useCatalogsOnHome: newAddon.useCatalogsOnHome,
+                        useCatalogsInSearch: newAddon.useCatalogsInSearch,
+                        useForSubtitles: newAddon.useForSubtitles,
+                    },
+                });
             },
 
             removeAddon: (id: string) => {
@@ -71,6 +86,12 @@ export const useAddonStore = create<AddonState>()(
                         addons: rest,
                         error: null,
                     };
+                });
+
+                pushSyncOperation({
+                    collection: 'addons',
+                    action: 'remove',
+                    payload: { id },
                 });
             },
 
@@ -104,16 +125,24 @@ export const useAddonStore = create<AddonState>()(
                     return;
                 }
 
+                const newValue = !addon.useCatalogsOnHome;
+
                 set((state) => ({
                     addons: {
                         ...state.addons,
                         [id]: {
                             ...addon,
-                            useCatalogsOnHome: !addon.useCatalogsOnHome,
+                            useCatalogsOnHome: newValue,
                         },
                     },
                     error: null,
                 }));
+
+                pushSyncOperation({
+                    collection: 'addons',
+                    action: 'toggle_home',
+                    payload: { id, value: newValue },
+                });
             },
 
             toggleUseCatalogsInSearch: (id: string) => {
@@ -125,16 +154,24 @@ export const useAddonStore = create<AddonState>()(
                     return;
                 }
 
+                const newValue = !addon.useCatalogsInSearch;
+
                 set((state) => ({
                     addons: {
                         ...state.addons,
                         [id]: {
                             ...addon,
-                            useCatalogsInSearch: !addon.useCatalogsInSearch,
+                            useCatalogsInSearch: newValue,
                         },
                     },
                     error: null,
                 }));
+
+                pushSyncOperation({
+                    collection: 'addons',
+                    action: 'toggle_search',
+                    payload: { id, value: newValue },
+                });
             },
 
             toggleUseForSubtitles: (id: string) => {
@@ -146,16 +183,24 @@ export const useAddonStore = create<AddonState>()(
                     return;
                 }
 
+                const newValue = !addon.useForSubtitles;
+
                 set((state) => ({
                     addons: {
                         ...state.addons,
                         [id]: {
                             ...addon,
-                            useForSubtitles: !addon.useForSubtitles,
+                            useForSubtitles: newValue,
                         },
                     },
                     error: null,
                 }));
+
+                pushSyncOperation({
+                    collection: 'addons',
+                    action: 'toggle_subtitles',
+                    payload: { id, value: newValue },
+                });
             },
 
             hasAddons: () => {
@@ -172,6 +217,12 @@ export const useAddonStore = create<AddonState>()(
 
             clearAllAddons: () => {
                 set({ addons: {}, error: null });
+
+                pushSyncOperation({
+                    collection: 'addons',
+                    action: 'clear',
+                    payload: null,
+                });
             },
 
             setLoading: (isLoading: boolean) => {

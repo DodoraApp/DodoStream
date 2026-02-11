@@ -9,241 +9,307 @@ import { Button } from '@/components/basic/Button';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { showToast } from '@/store/toast.store';
-import { useAddonStore } from '@/store/addon.store';
-import { syncFromStremio, StremioSyncResult } from '@/api/stremio/sync';
+import { useSyncStore } from '@/store/sync.store';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
+import type { SyncConnectionState } from '@/api/sync/websocket';
+
+/** Maps connection state to a human-readable label */
+const CONNECTION_STATE_LABELS: Record<SyncConnectionState, string> = {
+  disconnected: 'Disconnected',
+  connecting: 'Connecting…',
+  connected: 'Connected',
+  authenticated: 'Syncing',
+  error: 'Error',
+};
+
+/** Maps connection state to an Ionicon name */
+const CONNECTION_STATE_ICONS: Record<SyncConnectionState, keyof typeof Ionicons.glyphMap> = {
+  disconnected: 'cloud-offline-outline',
+  connecting: 'cloud-outline',
+  connected: 'cloud-outline',
+  authenticated: 'cloud-done-outline',
+  error: 'alert-circle-outline',
+};
 
 /**
- * Sync settings content component
- * Provides UI for syncing addons from Stremio and a coming-soon sync server section
+ * Sync settings content component.
+ * Provides UI for connecting to a self-hosted sync server that keeps
+ * addons, watch history, my list, and continue watching in sync across devices.
  */
 export const SyncSettingsContent: FC = memo(() => {
   const theme = useTheme<Theme>();
   const debug = useDebugLogger('SyncSettingsContent');
 
-  const [email, setEmail] = useState('');
+  // Sync store state
+  const serverUrl = useSyncStore((s) => s.serverUrl);
+  const connectionState = useSyncStore((s) => s.connectionState);
+  const isEnabled = useSyncStore((s) => s.isEnabled);
+  const lastSyncAt = useSyncStore((s) => s.lastSyncAt);
+  const storeError = useSyncStore((s) => s.error);
+  const isTesting = useSyncStore((s) => s.isTesting);
+  const deviceStatus = useSyncStore((s) => s.deviceStatus);
+  const isPollingApproval = useSyncStore((s) => s.isPollingApproval);
+
+  // Actions
+  const setServerUrl = useSyncStore((s) => s.setServerUrl);
+  const connectToServer = useSyncStore((s) => s.connect);
+  const disconnectFromServer = useSyncStore((s) => s.disconnect);
+  const testConnection = useSyncStore((s) => s.testConnection);
+
+  // Local UI state
+  const [urlInput, setUrlInput] = useState(serverUrl);
   const [password, setPassword] = useState('');
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<StremioSyncResult | null>(null);
-  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; name?: string; version?: string; error?: string } | null>(null);
 
-  const addAddon = useAddonStore((state) => state.addAddon);
-  const hasAddon = useAddonStore((state) => state.hasAddon);
+  const isConnected = connectionState === 'authenticated' || connectionState === 'connected';
+  const isPendingApproval = deviceStatus === 'pending' && isEnabled;
 
-  const handleSyncFromStremio = useCallback(async () => {
-    if (!email.trim() || !password.trim()) {
-      showToast({
-        title: 'Missing credentials',
-        message: 'Please enter your Stremio email and password',
-        preset: 'error',
-      });
+  const handleTestConnection = useCallback(async () => {
+    if (!urlInput.trim()) {
+      showToast({ title: 'Missing URL', message: 'Enter a sync server URL', preset: 'error' });
       return;
     }
 
-    setIsSyncing(true);
-    setSyncResult(null);
-    setProgress(null);
+    setTestResult(null);
+    const result = await testConnection(urlInput.trim());
+    setTestResult(result);
 
-    try {
-      const result = await syncFromStremio(
-        email.trim(),
-        password.trim(),
-        addAddon,
-        hasAddon,
-        (current, total) => setProgress({ current, total }),
-      );
-
-      setSyncResult(result);
-      setPassword('');
-      setProgress(null);
-
-      if (result.installed > 0) {
-        showToast({
-          title: 'Sync complete',
-          message: `Installed ${result.installed} addon${result.installed !== 1 ? 's' : ''}`,
-          preset: 'success',
-          duration: TOAST_DURATION_MEDIUM,
-        });
-      } else if (result.alreadyInstalled === result.total) {
-        showToast({
-          title: 'Already up to date',
-          message: 'All addons are already installed',
-          duration: TOAST_DURATION_MEDIUM,
-        });
-      } else {
-        showToast({
-          title: 'Sync complete',
-          message: 'No new addons to install',
-          duration: TOAST_DURATION_MEDIUM,
-        });
-      }
-
-      debug('syncComplete', result);
-    } catch (error) {
-      setProgress(null);
-      const message = error instanceof Error ? error.message : 'Sync failed';
+    if (result.ok) {
       showToast({
-        title: 'Sync failed',
-        message,
+        title: 'Connection successful',
+        message: `${result.name ?? 'Sync Server'} v${result.version ?? '?'}`,
+        preset: 'success',
+        duration: TOAST_DURATION_MEDIUM,
+      });
+    } else {
+      showToast({
+        title: 'Connection failed',
+        message: result.error ?? 'Could not reach server',
         preset: 'error',
         duration: TOAST_DURATION_MEDIUM,
       });
-      debug('syncFailed', { error });
-    } finally {
-      setIsSyncing(false);
     }
-  }, [email, password, addAddon, hasAddon, debug]);
 
-  const buttonTitle = isSyncing
-    ? progress
-      ? `Syncing ${progress.current}/${progress.total}...`
-      : 'Logging in...'
-    : 'Sync from Stremio';
+    debug('testConnection', result);
+  }, [urlInput, testConnection, debug]);
+
+  const handleConnect = useCallback(async () => {
+    if (!urlInput.trim()) {
+      showToast({ title: 'Missing URL', message: 'Enter a sync server URL', preset: 'error' });
+      return;
+    }
+
+    setIsConnecting(true);
+    setServerUrl(urlInput.trim());
+
+    try {
+      await connectToServer(password || undefined);
+      showToast({
+        title: 'Connected',
+        message: 'Sync is now active across your devices',
+        preset: 'success',
+        duration: TOAST_DURATION_MEDIUM,
+      });
+    } catch {
+      showToast({
+        title: 'Connection failed',
+        message: storeError ?? 'Could not connect',
+        preset: 'error',
+        duration: TOAST_DURATION_MEDIUM,
+      });
+    } finally {
+      setIsConnecting(false);
+      setPassword('');
+    }
+  }, [urlInput, password, setServerUrl, connectToServer, storeError]);
+
+  const handleDisconnect = useCallback(() => {
+    disconnectFromServer();
+    showToast({ title: 'Disconnected', message: 'Sync has been turned off', duration: TOAST_DURATION_MEDIUM });
+  }, [disconnectFromServer]);
+
+  const stateColor = connectionState === 'authenticated'
+    ? theme.colors.primaryBackground
+    : connectionState === 'error'
+      ? theme.colors.danger
+      : theme.colors.textSecondary;
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-        {/* Stremio Sync */}
-        <SettingsCard title="Sync from Stremio">
+
+        {/* Pending Approval */}
+        {isPendingApproval && (
+          <SettingsCard title="Waiting for Approval">
+            <Box flexDirection="row" alignItems="center" gap="m">
+              <Ionicons
+                name="hourglass-outline"
+                size={28}
+                color={theme.colors.warning ?? '#fdcb6e'}
+              />
+              <Box flex={1} gap="xs">
+                <Text variant="body" color="textPrimary">
+                  Pending Admin Approval
+                </Text>
+                <Text variant="caption" color="textSecondary">
+                  Your device has been registered with the sync server.
+                  Ask the server admin to approve it from the dashboard.
+                </Text>
+                {isPollingApproval && (
+                  <Text variant="caption" color="textSecondary">
+                    Checking for approval…
+                  </Text>
+                )}
+              </Box>
+            </Box>
+
+            <Button
+              variant="tertiary"
+              title="Cancel"
+              icon="close-outline"
+              onPress={handleDisconnect}
+            />
+          </SettingsCard>
+        )}
+
+        {/* Connection Status */}
+        {isEnabled && !isPendingApproval && (
+          <SettingsCard title="Status">
+            <Box flexDirection="row" alignItems="center" gap="m">
+              <Ionicons
+                name={CONNECTION_STATE_ICONS[connectionState]}
+                size={28}
+                color={stateColor}
+              />
+              <Box flex={1} gap="xs">
+                <Text variant="body" color="textPrimary">
+                  {CONNECTION_STATE_LABELS[connectionState]}
+                </Text>
+                {lastSyncAt && (
+                  <Text variant="caption" color="textSecondary">
+                    Last synced: {new Date(lastSyncAt).toLocaleString()}
+                  </Text>
+                )}
+                {storeError && (
+                  <Text variant="caption" color="danger">
+                    {storeError}
+                  </Text>
+                )}
+              </Box>
+            </Box>
+
+            <Button
+              variant="tertiary"
+              title="Disconnect"
+              icon="log-out-outline"
+              onPress={handleDisconnect}
+            />
+          </SettingsCard>
+        )}
+
+        {/* Server Configuration */}
+        <SettingsCard title="Sync Server">
           <Text variant="caption" color="textSecondary">
-            Log in with your Stremio account to import your installed addons. Only third-party
-            addons will be synced official Stremio addons are skipped.
+            Connect to a self-hosted DodoStream sync server to keep your addons, watch history,
+            my list, and continue watching data synchronized across all your devices.
           </Text>
 
           <Box gap="s">
-            <Text variant="body">Email</Text>
+            <Text variant="body">Server URL</Text>
             <Input
-              icon="mail-outline"
-              placeholder="stremio@example.com"
-              value={email}
-              onChangeText={setEmail}
+              icon="globe-outline"
+              placeholder="http://192.168.1.100:8080"
+              value={urlInput}
+              onChangeText={setUrlInput}
               autoCapitalize="none"
               autoCorrect={false}
-              keyboardType="email-address"
-              editable={!isSyncing}
+              keyboardType="url"
+              editable={!isConnecting}
             />
           </Box>
 
           <Box gap="s">
-            <Text variant="body">Password</Text>
+            <Text variant="body">Server Password (optional)</Text>
             <Input
               icon="lock-closed-outline"
-              placeholder="Your Stremio password"
+              placeholder="Leave empty if none"
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
-              editable={!isSyncing}
+              editable={!isConnecting}
             />
           </Box>
 
-          <Button
-            variant="primary"
-            title={buttonTitle}
-            icon="sync-outline"
-            onPress={() => void handleSyncFromStremio()}
-            disabled={isSyncing}
-          />
+          <Box flexDirection="row" gap="s">
+            <Box flex={1}>
+              <Button
+                variant="secondary"
+                title={isTesting ? 'Testing…' : 'Test'}
+                icon="pulse-outline"
+                onPress={() => void handleTestConnection()}
+                disabled={isTesting || isConnecting}
+              />
+            </Box>
+            <Box flex={1}>
+              <Button
+                variant="primary"
+                title={isConnecting ? 'Connecting…' : isConnected ? 'Reconnect' : 'Connect'}
+                icon="sync-outline"
+                onPress={() => void handleConnect()}
+                disabled={isConnecting}
+              />
+            </Box>
+          </Box>
 
-          <Text variant="caption" color="textSecondary">
-            Your credentials are only used to authenticate with the Stremio API and are not stored.
-          </Text>
+          {/* Test result */}
+          {testResult && (
+            <Box
+              flexDirection="row"
+              alignItems="center"
+              gap="s"
+              padding="s"
+              backgroundColor="inputBackground"
+              borderRadius="m">
+              <Ionicons
+                name={testResult.ok ? 'checkmark-circle' : 'close-circle'}
+                size={18}
+                color={testResult.ok ? theme.colors.primaryBackground : theme.colors.danger}
+              />
+              <Text variant="caption" color={testResult.ok ? 'textPrimary' : 'danger'}>
+                {testResult.ok
+                  ? `${testResult.name ?? 'Server'} v${testResult.version ?? '?'} — reachable`
+                  : testResult.error ?? 'Unreachable'}
+              </Text>
+            </Box>
+          )}
         </SettingsCard>
 
-        {/* Sync Result */}
-        {syncResult && (
-          <SettingsCard title="Last Sync Result">
-            <SettingsRow label="Third-party addons found">
-              <Text variant="body" color="textSecondary">
-                {syncResult.total}
-              </Text>
-            </SettingsRow>
-
-            <SettingsRow label="Newly installed">
-              <Text variant="body" color="textSecondary">
-                {syncResult.installed}
-              </Text>
-            </SettingsRow>
-
-            <SettingsRow label="Already installed">
-              <Text variant="body" color="textSecondary">
-                {syncResult.alreadyInstalled}
-              </Text>
-            </SettingsRow>
-
-            {syncResult.failed > 0 && (
-              <SettingsRow label="Failed">
-                <Text variant="body" color="danger">
-                  {syncResult.failed}
-                </Text>
-              </SettingsRow>
-            )}
-
-            {syncResult.details.length > 0 && (
-              <Box gap="xs" marginTop="s">
-                <Text variant="body" color="textSecondary">
-                  Details
-                </Text>
-                {syncResult.details.map((detail) => (
-                  <Box
-                    key={detail.transportUrl}
-                    flexDirection="row"
-                    alignItems="center"
-                    gap="s"
-                    paddingVertical="xs">
-                    <Ionicons
-                      name={
-                        detail.status === 'installed'
-                          ? 'checkmark-circle'
-                          : detail.status === 'already_installed'
-                            ? 'ellipse-outline'
-                            : 'close-circle'
-                      }
-                      size={16}
-                      color={
-                        detail.status === 'installed'
-                          ? theme.colors.primaryBackground
-                          : detail.status === 'failed'
-                            ? theme.colors.danger
-                            : theme.colors.textSecondary
-                      }
-                    />
-                    <Box flex={1}>
-                      <Text variant="caption" color="textPrimary" numberOfLines={1}>
-                        {detail.name}
-                      </Text>
-                      {detail.reason && (
-                        <Text variant="caption" color="danger" numberOfLines={1}>
-                          {detail.reason}
-                        </Text>
-                      )}
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            )}
-          </SettingsCard>
-        )}
-
-        {/* Sync Server — Coming Soon */}
-        <SettingsCard title="Sync Server">
-          <Box
-            backgroundColor="inputBackground"
-            borderRadius="m"
-            padding="m"
-            alignItems="center"
-            gap="s">
-            <Ionicons name="cloud-outline" size={32} color={theme.colors.textSecondary} />
-            <Text variant="body" color="textSecondary">
-              Coming Soon
-            </Text>
-            <Text variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>
-              Connect to a syncing server to keep your data synchronized across devices. This
-              feature is currently in development.
-            </Text>
-          </Box>
+        {/* What Syncs */}
+        <SettingsCard title="What Gets Synced">
+          <SyncFeatureRow
+            icon="extension-puzzle-outline"
+            label="Addons"
+            description="Install or remove an addon on one device and it appears on all others"
+          />
+          <SyncFeatureRow
+            icon="time-outline"
+            label="Watch History"
+            description="Resume playback on any device from where you left off"
+          />
+          <SyncFeatureRow
+            icon="bookmark-outline"
+            label="My List"
+            description="Saved items stay in sync everywhere"
+          />
+          <SyncFeatureRow
+            icon="eye-off-outline"
+            label="Continue Watching"
+            description="Hidden items and progress are shared across devices"
+          />
         </SettingsCard>
       </Box>
     </ScrollView>
@@ -251,3 +317,30 @@ export const SyncSettingsContent: FC = memo(() => {
 });
 
 SyncSettingsContent.displayName = 'SyncSettingsContent';
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+interface SyncFeatureRowProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  description: string;
+}
+
+const SyncFeatureRow: FC<SyncFeatureRowProps> = memo(({ icon, label, description }) => {
+  const theme = useTheme<Theme>();
+  return (
+    <Box flexDirection="row" alignItems="center" gap="m" paddingVertical="xs">
+      <Ionicons name={icon} size={20} color={theme.colors.primaryBackground} />
+      <Box flex={1} gap="xs">
+        <Text variant="body" color="textPrimary">
+          {label}
+        </Text>
+        <Text variant="caption" color="textSecondary" numberOfLines={2}>
+          {description}
+        </Text>
+      </Box>
+    </Box>
+  );
+});
+
+SyncFeatureRow.displayName = 'SyncFeatureRow';

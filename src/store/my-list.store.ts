@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { ContentType } from '@/types/stremio';
+import { pushSyncOperation } from '@/api/sync/bridge';
 
 export interface MyListItem {
   id: string;
@@ -78,6 +79,12 @@ export const useMyListStore = create<MyListState>()(
             },
           },
         }));
+
+        pushSyncOperation({
+          collection: 'my_list',
+          action: 'add',
+          payload: { id: item.id, type: item.type, addedAt: withTimestamp.addedAt, profileId },
+        });
       },
 
       removeFromMyList: (id, type) => {
@@ -95,6 +102,12 @@ export const useMyListStore = create<MyListState>()(
               [profileId]: rest,
             },
           };
+        });
+
+        pushSyncOperation({
+          collection: 'my_list',
+          action: 'remove',
+          payload: { id, type, profileId },
         });
       },
 

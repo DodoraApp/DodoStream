@@ -19,6 +19,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
 import { initializeProfiles, useProfileStore } from '@/store/profile.store';
+import { initializeSyncOnStartup } from '@/store/sync.store';
 import { Container } from '@/components/basic/Container';
 import { Button } from '@/components/basic/Button';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
@@ -95,6 +96,7 @@ function Layout() {
       try {
         await initializeProfiles();
         await initializeAddons();
+        initializeSyncOnStartup();
       } catch (error) {
         console.warn('[boot] init failed', error);
         useProfileStore.getState().setInitialized(true);
