@@ -7,11 +7,14 @@ import { Focusable } from '@/components/basic/Focusable';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 type TagVariant = 'default' | 'glass';
+type TagSize = 'default' | 'large';
 
 interface TagProps {
   label: string;
   /** Visual variant: 'default' has border, 'glass' is semi-transparent without border */
   variant?: TagVariant;
+  /** Size variant: 'default' or 'large' for bigger padding and text */
+  size?: TagSize;
   selected?: boolean;
   isFocused?: boolean;
   disabled?: boolean;
@@ -28,6 +31,7 @@ export const Tag = memo(
   ({
     label,
     variant = 'default',
+    size = 'default',
     selected = false,
     focusable = false,
     disabled = false,
@@ -40,6 +44,7 @@ export const Tag = memo(
     const theme = useTheme<Theme>();
 
     const isGlass = variant === 'glass';
+    const isLarge = size === 'large';
 
     const renderContent = (isFocused: boolean) => (
       <Box
@@ -50,9 +55,9 @@ export const Tag = memo(
               : 'semiTransparentBackground'
             : getFocusableBackgroundColor({ isActive: selected, isFocused })
         }
-        paddingHorizontal={isGlass ? 's' : 'm'}
-        paddingVertical="xs"
-        borderRadius="s"
+        paddingHorizontal={isGlass ? 's' : isLarge ? 'l' : 'm'}
+        paddingVertical={isLarge ? 's' : 'xs'}
+        borderRadius={isLarge ? 'm' : 's'}
         borderWidth={isGlass ? 0 : 1}
         borderColor={isGlass ? 'transparent' : 'cardBorder'}
         opacity={disabled ? 0.5 : 1}
@@ -62,7 +67,7 @@ export const Tag = memo(
         gap="s"
         focusable={focusable}>
         <Text
-          variant="caption"
+          variant={isLarge ? 'body' : 'caption'}
           color={
             isGlass ? 'textPrimary' : getFocusableForegroundColor({ isActive: selected, isFocused })
           }

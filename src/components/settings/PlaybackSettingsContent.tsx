@@ -1,7 +1,8 @@
 import { FC, memo, useState, useCallback } from 'react';
 import { TouchableOpacity, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { PickerModal } from '@/components/basic/PickerModal';
 import { SettingsCard } from '@/components/settings/SettingsCard';
@@ -17,6 +18,8 @@ import { useProfileStore } from '@/store/profile.store';
 import { PLAYER_PICKER_ITEMS } from '@/constants/playback';
 import { COMMON_LANGUAGE_CODES } from '@/constants/languages';
 import { getDevicePreferredLanguageCodes } from '@/utils/languages';
+import { PickerInput } from '@/components/basic/PickerInput';
+import { Focusable } from '@/components/basic/Focusable';
 
 export interface PlaybackSettingsContentProps {
   /** Whether to show the player selection section (default: true) */
@@ -33,7 +36,7 @@ export interface PlaybackSettingsContentProps {
  */
 export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
   ({ showPlayerSelection = true, showLanguages = true, scrollable = true }) => {
-    const [showPlayerPicker, setShowPlayerPicker] = useState(false);
+    const theme = useTheme<Theme>();
     const [showAudioLanguagePicker, setShowAudioLanguagePicker] = useState(false);
     const [showSubtitleLanguagePicker, setShowSubtitleLanguagePicker] = useState(false);
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -134,23 +137,18 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
         {showPlayerSelection && (
           <SettingsCard title="Playback">
             <SettingsRow label="Player">
-              <TouchableOpacity onPress={() => setShowPlayerPicker(true)}>
-                <Box
-                  backgroundColor="inputBackground"
-                  borderRadius="m"
-                  paddingHorizontal="m"
-                  paddingVertical="s"
-                  flexDirection="row"
-                  alignItems="center"
-                  gap="s"
-                  minWidth={140}>
-                  <Ionicons name="play" size={20} color={theme.colors.textSecondary} />
-                  <Text variant="body">
-                    {PLAYER_PICKER_ITEMS.find((item) => item.value === player)?.label || 'Unknown'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
-                </Box>
-              </TouchableOpacity>
+              <PickerInput
+                label="Select Player"
+                icon="play"
+                items={PLAYER_PICKER_ITEMS}
+                selectedLabel={
+                  PLAYER_PICKER_ITEMS.find((item) => item.value === player)?.label || 'Unknown'
+                }
+                selectedValue={player}
+                onValueChange={(value: PlayerType) =>
+                  activeProfileId && setPlayerForProfile(activeProfileId, value)
+                }
+              />
             </SettingsRow>
 
             <SettingsSwitch
@@ -254,45 +252,71 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             <SettingsRow
               label="Preferred audio languages"
               description="The first available one is used">
-              <TouchableOpacity onPress={() => setShowAudioLanguagePicker(true)}>
+              <Focusable
+                onPress={() => setShowAudioLanguagePicker(true)}
+                variant="outline"
+                focusedStyle={{
+                  outlineWidth: theme.focus.borderWidthSmall,
+                  borderRadius: theme.borderRadii.m,
+                }}>
                 <Box
-                  backgroundColor="inputBackground"
+                  backgroundColor="cardBackground"
                   borderRadius="m"
                   paddingHorizontal="m"
                   paddingVertical="s"
                   flexDirection="row"
                   alignItems="center"
-                  gap="s"
-                  minWidth={180}>
-                  <Ionicons name="volume-high" size={20} color={theme.colors.textSecondary} />
-                  <Text variant="body" numberOfLines={1} style={{ maxWidth: 260 }}>
+                  gap="s">
+                  <Ionicons
+                    name="volume-high"
+                    size={theme.sizes.iconSmall}
+                    color={theme.colors.textSecondary}
+                  />
+                  <Text variant="body" numberOfLines={1}>
                     {renderLanguageSummary(preferredAudioLanguages)}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-down"
+                    size={theme.sizes.iconSmall}
+                    color={theme.colors.mainForeground}
+                  />
                 </Box>
-              </TouchableOpacity>
+              </Focusable>
             </SettingsRow>
 
             <SettingsRow
               label="Preferred subtitle languages"
               description="Shown first in the subtitle selector">
-              <TouchableOpacity onPress={() => setShowSubtitleLanguagePicker(true)}>
+              <Focusable
+                onPress={() => setShowSubtitleLanguagePicker(true)}
+                variant="outline"
+                focusedStyle={{
+                  outlineWidth: theme.focus.borderWidthSmall,
+                  borderRadius: theme.borderRadii.m,
+                }}>
                 <Box
-                  backgroundColor="inputBackground"
+                  backgroundColor="cardBackground"
                   borderRadius="m"
                   paddingHorizontal="m"
                   paddingVertical="s"
                   flexDirection="row"
                   alignItems="center"
-                  gap="s"
-                  minWidth={180}>
-                  <Ionicons name="text" size={20} color={theme.colors.textSecondary} />
-                  <Text variant="body" numberOfLines={1} style={{ maxWidth: 260 }}>
+                  gap="s">
+                  <Ionicons
+                    name="text"
+                    size={theme.sizes.iconSmall}
+                    color={theme.colors.textSecondary}
+                  />
+                  <Text variant="body" numberOfLines={1}>
                     {renderLanguageSummary(preferredSubtitleLanguages)}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-down"
+                    size={theme.sizes.iconSmall}
+                    color={theme.colors.mainForeground}
+                  />
                 </Box>
-              </TouchableOpacity>
+              </Focusable>
             </SettingsRow>
           </SettingsCard>
         )}
@@ -308,20 +332,6 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
     return (
       <>
         {scrollableContent}
-
-        {showPlayerSelection && (
-          <PickerModal
-            visible={showPlayerPicker}
-            onClose={() => setShowPlayerPicker(false)}
-            label="Select Player"
-            icon="play"
-            items={PLAYER_PICKER_ITEMS}
-            selectedValue={player}
-            onValueChange={(value: PlayerType) =>
-              activeProfileId && setPlayerForProfile(activeProfileId, value)
-            }
-          />
-        )}
 
         {showLanguages && (
           <>

@@ -80,7 +80,7 @@ export const DeveloperSettingsContent: FC = memo(() => {
     <ScrollView showsVerticalScrollIndicator={false}>
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
         <Box alignItems="center" gap="s" paddingTop="m">
-          <Ionicons name="code-slash" size={48} color={theme.colors.primaryBackground} />
+          <Ionicons name="code-slash" size={theme.sizes.iconXLarge} color={theme.colors.primaryBackground} />
           <Text variant="header">Developer Settings</Text>
           <Text variant="caption" color="textSecondary" textAlign="center">
             These settings are for development and debugging purposes.
@@ -115,7 +115,7 @@ export const DeveloperSettingsContent: FC = memo(() => {
                       alignItems="center"
                       justifyContent="center"
                       gap="s">
-                      <Ionicons name="refresh" size={20} color={theme.colors.textSecondary} />
+                      <Ionicons name="refresh" size={theme.sizes.iconMedium} color={theme.colors.textSecondary} />
                       <Text variant="body">Reset to Default</Text>
                     </Box>
                   )}
@@ -139,7 +139,7 @@ export const DeveloperSettingsContent: FC = memo(() => {
                       opacity={hasChanges ? 1 : 0.5}>
                       <Ionicons
                         name={isRestarting ? 'hourglass-outline' : 'save'}
-                        size={20}
+                        size={theme.sizes.iconMedium}
                         color={
                           hasChanges ? theme.colors.primaryForeground : theme.colors.textSecondary
                         }

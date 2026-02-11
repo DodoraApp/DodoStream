@@ -9,8 +9,6 @@ import type { MetaDetail, MetaVideo } from '@/types/stremio';
 import { MediaInfo } from '@/components/media/MediaInfo';
 import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
-
-import { MEDIA_DETAILS_HEADER_COVER_HEIGHT } from '@/constants/media';
 import { Tag } from '@/components/basic/Tag';
 import FadeIn from '@/components/basic/FadeIn';
 
@@ -50,7 +48,7 @@ export const MediaDetailsHeader = memo(
     return (
       <Box>
         {variant !== 'minimal' && (
-          <Box height={MEDIA_DETAILS_HEADER_COVER_HEIGHT} width={width} position="relative">
+          <Box height={theme.sizes.mediaDetailsHeader} width={width} position="relative">
             <AnimatedImage
               source={coverSource}
               style={{ width: '100%', height: '100%' }}

@@ -2,8 +2,7 @@ import { FC, ReactNode, useCallback } from 'react';
 import { Box } from '@/theme/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { TVSidebar } from './TVSidebar';
-import { useTVBackButton } from '@/hooks/useTVBackButton';
-import { Platform, TVFocusGuideView, useWindowDimensions } from 'react-native';
+import { TVFocusGuideView, useWindowDimensions } from 'react-native';
 
 interface ResponsiveLayoutProps {
   children: ReactNode;
@@ -27,18 +26,8 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
         ? width * 0.5
         : undefined;
 
-  // Handle TV back button to focus sidebar
-  const handleBackPress = useCallback(() => {
-    if (showSidebar && Platform.isTV) {
-      // TODO: Focus first item in sidebar
-      // This would require imperatively focusing the sidebar
-      // For now, return false to allow default back behavior
-      return false;
-    }
-    return false;
-  }, [showSidebar]);
-
-  useTVBackButton(handleBackPress);
+  // Get the active sidebar item's node handle for focus navigation
+  // FIXME const activeSidebarNodeHandle = useSidebarFocusStore((state) => state.activeSidebarNodeHandle);
 
   if (!showSidebar) {
     // Mobile layout: just render children

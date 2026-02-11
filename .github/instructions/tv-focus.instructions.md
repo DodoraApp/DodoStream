@@ -8,17 +8,44 @@ applyTo: '**/*.tsx'
 
 For TV focus handling, use the `<Focusable>` component from `src/components/basic/Focusable.tsx`.
 
+### Performance Optimization
+
+The `Focusable` component is optimized for performance:
+
+- **When children is NOT a function**: No re-renders on focus change. Focus styling (outline, background) is applied directly to the pressable.
+- **When children IS a function**: Re-renders only when `isFocused` changes, providing the focus state for custom styling.
+
 ### Focus Styling Rules
 
 **CRITICAL**: Only MediaCard and ContinueWatchingCard should have outline focus. All other components (buttons, tags, list items, settings, etc.) should use **background and/or text color changes** for focus indication.
 
-**Pattern 1: Color-based focus (DEFAULT for most components)**
+**Pattern 1: Simple focus (NO re-renders - best performance)**
 
-Use background/text color changes via render prop. This is the standard pattern for buttons, tags, list items, settings, etc.
+Use `variant` prop for automatic focus styling. Children don't need to know about focus state.
 
 ```tsx
-// CORRECT - Color-based focus (no outline)
-<Focusable onPress={handlePress}>
+// BEST - No re-renders, focus handled automatically via variant
+<Focusable variant="background" onPress={handlePress}>
+  <Box padding="m" borderRadius="l">
+    <Text>Card Content</Text>
+  </Box>
+</Focusable>
+
+// Outline focus for media cards (no re-renders)
+<Focusable variant="outline" focusedStyle={{ borderRadius: theme.borderRadii.l }} onPress={handlePress}>
+  <Box borderRadius="l" overflow="hidden">
+    <Image source={posterSource} />
+  </Box>
+</Focusable>
+```
+
+**Pattern 2: Custom focus handling (with render function)**
+
+Use render function only when you need custom focus behavior (e.g., changing text color, icons).
+
+```tsx
+// Only use when children need to react to focus state
+<Focusable variant="none" onPress={handlePress}>
   {({ isFocused }) => (
     <Box
       backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
@@ -30,50 +57,16 @@ Use background/text color changes via render prop. This is the standard pattern 
 </Focusable>
 ```
 
-**Pattern 2: Outline focus (ONLY for MediaCard/ContinueWatchingCard)**
-
-Use `withOutline` prop + render prop to get `focusStyle` for the image container.
+**WRONG - Using render function when not needed:**
 
 ```tsx
-// CORRECT - Outline focus for media cards only
-<Focusable onPress={handlePress} withOutline>
-  {({ focusStyle }) => (
-    <Box width={theme.cardSizes.media.width} gap="s">
-      {/* Apply focusStyle to image container */}
-      <Box borderRadius="l" overflow="hidden" backgroundColor="cardBackground" style={focusStyle}>
-        <Image source={posterSource} />
-      </Box>
-      <Text variant="cardTitle">{title}</Text>
-    </Box>
-  )}
-</Focusable>
-```
-
-**Pattern 3: Button with focus background**
-
-```tsx
-// CORRECT - Button changes background on focus
+// WRONG - Unnecessary re-renders, use variant="background" instead
 <Focusable onPress={handlePress}>
   {({ isFocused }) => (
-    <ButtonContainer
-      style={isFocused ? { backgroundColor: theme.colors.focusBackgroundPrimary } : undefined}>
-      <Text>Button</Text>
-    </ButtonContainer>
+    <Box backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}>
+      <Text>Static content</Text>
+    </Box>
   )}
-</Focusable>
-```
-
-**WRONG - Using outline focus on non-media components:**
-
-```tsx
-// WRONG - Don't use outline focus on buttons, tags, list items, etc.
-<Focusable
-  onPress={handlePress}
-  focusStyle={{
-    outlineWidth: theme.focus.borderWidth,
-    outlineColor: theme.colors.primaryBackground,
-  }}>
-  <Button />
 </Focusable>
 ```
 
@@ -90,7 +83,7 @@ Focus and active states must be visually distinct:
 
 ### Focus Visual Feedback
 
-- Only MediaCard/ContinueWatchingCard use outline focus (`withOutline` prop)
+- Only MediaCard/ContinueWatchingCard use outline focus (`variant="outline"` prop)
 - All other components use `focusBackground` and `focusForeground` theme colors
 - Use `theme.focus.scaleMedium` (1.05) for scale transform on TV when needed
 - Always test with D-pad/remote controls

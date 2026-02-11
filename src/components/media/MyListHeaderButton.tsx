@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Button } from '@/components/basic/Button';
+import { TVFocusGuideView } from 'react-native';
 
 export interface MyListHeaderButtonProps {
   isInMyList: boolean;
@@ -10,12 +11,14 @@ export interface MyListHeaderButtonProps {
 export const MyListHeaderButton = memo(
   ({ isInMyList, onPress, hasTVPreferredFocus = false }: MyListHeaderButtonProps) => {
     return (
-      <Button
-        variant="secondary"
-        icon={isInMyList ? 'bookmark' : 'bookmark-outline'}
-        onPress={onPress}
-        hasTVPreferredFocus={hasTVPreferredFocus}
-      />
+      <TVFocusGuideView trapFocusRight>
+        <Button
+          variant="secondary"
+          icon={isInMyList ? 'bookmark' : 'bookmark-outline'}
+          onPress={onPress}
+          hasTVPreferredFocus={hasTVPreferredFocus}
+        />
+      </TVFocusGuideView>
     );
   }
 );

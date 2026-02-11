@@ -1,6 +1,7 @@
 import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
@@ -13,8 +14,10 @@ import {
   SubtitleStyleControls,
   SubtitleStylePreview,
 } from '@/components/settings/SubtitleStyleSettings';
+import { PickerInput } from '@/components/basic/PickerInput';
 
 export const SubtitlesSettingsContent: FC = memo(() => {
+  const theme = useTheme<Theme>();
   const [showPresetPicker, setShowPresetPicker] = useState(false);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
@@ -68,37 +71,20 @@ export const SubtitlesSettingsContent: FC = memo(() => {
         <Box paddingVertical="m" paddingHorizontal="m" gap="l">
           <SettingsCard title="Subtitles">
             <SettingsRow label="Preset" description="Apply a predefined subtitle style">
-              <TouchableOpacity onPress={() => setShowPresetPicker(true)}>
-                <Box
-                  backgroundColor="inputBackground"
-                  borderRadius="m"
-                  paddingHorizontal="m"
-                  paddingVertical="s"
-                  flexDirection="row"
-                  alignItems="center"
-                  gap="s"
-                  minWidth={140}>
-                  <Ionicons name="color-palette" size={20} color={theme.colors.textSecondary} />
-                  <Text variant="body">{currentPresetLabel}</Text>
-                  <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
-                </Box>
-              </TouchableOpacity>
+              <PickerInput
+                label="Select Preset"
+                selectedLabel={currentPresetLabel}
+                icon="color-palette"
+                items={presetPickerItems}
+                selectedValue={currentPresetValue}
+                onValueChange={handlePresetChange}
+              />
             </SettingsRow>
 
             <SubtitleStyleControls />
           </SettingsCard>
         </Box>
       </ScrollView>
-
-      <PickerModal
-        visible={showPresetPicker}
-        onClose={() => setShowPresetPicker(false)}
-        label="Select Preset"
-        icon="color-palette"
-        items={presetPickerItems}
-        selectedValue={currentPresetValue}
-        onValueChange={handlePresetChange}
-      />
     </>
   );
 });

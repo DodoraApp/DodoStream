@@ -3,7 +3,7 @@ import { render, renderHook } from '@testing-library/react-native';
 import { ThemeProvider } from '@shopify/restyle';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import theme from '@/theme/theme';
+import { defaultTheme } from '@/theme/theme';
 
 const SAFE_AREA_INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 0, height: 0 },
@@ -31,7 +31,7 @@ export function renderWithProviders(
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     const themed = (
       <SafeAreaProvider initialMetrics={SAFE_AREA_INITIAL_METRICS}>
-        <ThemeProvider theme={theme}>{children}</ThemeProvider>
+        <ThemeProvider theme={defaultTheme}>{children}</ThemeProvider>
       </SafeAreaProvider>
     );
     return <QueryClientProvider client={queryClient}>{themed}</QueryClientProvider>;
@@ -51,7 +51,7 @@ export function renderHookWithProviders<TProps, TResult>(
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     const themed = (
       <SafeAreaProvider initialMetrics={SAFE_AREA_INITIAL_METRICS}>
-        <ThemeProvider theme={theme}>{children}</ThemeProvider>
+        <ThemeProvider theme={defaultTheme}>{children}</ThemeProvider>
       </SafeAreaProvider>
     );
     return <QueryClientProvider client={queryClient}>{themed}</QueryClientProvider>;

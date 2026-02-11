@@ -52,7 +52,11 @@ export const ControlButton = memo(
           <Box
             position="absolute"
             top={labelPosition === 'top' ? -theme.spacing.l : undefined}
-            bottom={labelPosition === 'bottom' ? -theme.spacing.l : undefined}>
+            bottom={labelPosition === 'bottom' ? -theme.spacing.l : undefined}
+            left={-200}
+            right={-200}
+            alignItems="center"
+            pointerEvents="none">
             <Text variant="caption" color="mainForeground">
               {label}
             </Text>

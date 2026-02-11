@@ -1,17 +1,22 @@
-import { FC, useCallback, useMemo } from 'react';
-import { TVFocusGuideView } from 'react-native';
-import theme, { Box, Text } from '@/theme/theme';
+import { FC, useCallback, useEffect, useMemo, useRef } from 'react';
+import { TVFocusGuideView, View, findNodeHandle } from 'react-native';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { NAV_ITEMS, NavItem } from '@/constants/navigation';
 import { Focusable } from '@/components/basic/Focusable';
 import { AppLogo } from '@/components/basic/AppLogo';
+import { useProfileStore } from '@/store/profile.store';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { useSidebarFocusStore } from '@/store/sidebar-focus.store';
 
 interface TVSidebarProps {
   onItemFocus?: () => void;
 }
 
 export const TVSidebar: FC<TVSidebarProps> = ({ onItemFocus }) => {
+  const theme = useTheme<Theme>();
   const router = useRouter();
 
   const handlePress = useCallback(
@@ -21,7 +26,6 @@ export const TVSidebar: FC<TVSidebarProps> = ({ onItemFocus }) => {
     [router]
   );
 
-  // TODO https://dev.to/amazonappdev/5-ways-of-managing-focus-in-react-native-3kfd
   return (
     <TVFocusGuideView
       trapFocusUp
@@ -39,6 +43,10 @@ export const TVSidebar: FC<TVSidebarProps> = ({ onItemFocus }) => {
         <Box alignItems="center">
           <AppLogo size={theme.sizes.stickyLogoHeight} />
         </Box>
+
+        {/* Profile Switcher */}
+        <SidebarProfileSwitcher />
+
         <Box flex={1} gap="m" justifyContent="space-between">
           <Box gap="s">
             {NAV_ITEMS.filter((i) => i.location === 'top').map((item) => (
@@ -66,14 +74,62 @@ export const TVSidebar: FC<TVSidebarProps> = ({ onItemFocus }) => {
   );
 };
 
+/** Compact profile switcher button for the sidebar */
+const SidebarProfileSwitcher: FC = () => {
+  const theme = useTheme<Theme>();
+  const profiles = useProfileStore((state) => state.profiles);
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const clearActiveProfile = useProfileStore((state) => state.clearActiveProfile);
+
+  const activeProfile = useMemo(() => {
+    if (!activeProfileId) return undefined;
+    return profiles[activeProfileId];
+  }, [activeProfileId, profiles]);
+
+  const canSwitch = useMemo(() => Object.keys(profiles).length > 1, [profiles]);
+
+  const handleSwitchProfile = useCallback(() => {
+    clearActiveProfile();
+    // No need to navigate - AppLayout will automatically show ProfileSelector
+  }, [clearActiveProfile]);
+
+  if (!activeProfile || !canSwitch) {
+    return null;
+  }
+
+  return (
+    <Box alignItems="center">
+      <Focusable
+        onPress={handleSwitchProfile}
+        disabled={!canSwitch}
+        variant="outline"
+        focusedStyle={{
+          borderRadius: theme.borderRadii.full,
+        }}>
+        <ProfileAvatar
+          icon={activeProfile.avatarIcon}
+          color={activeProfile.avatarColor}
+          size="small"
+        />
+      </Focusable>
+    </Box>
+  );
+};
+
 interface SidebarItemProps {
   item: NavItem;
   onPress: () => void;
   onFocus?: () => void;
+  onActiveRef?: (ref: View | null) => void;
 }
 
-const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus }) => {
+const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus, onActiveRef }) => {
+  const theme = useTheme<Theme>();
   const pathname = usePathname();
+  const nodeHandleRef = useRef<number>(null);
+  const setActiveSidebarNodeHandle = useSidebarFocusStore(
+    (state) => state.setActiveSidebarNodeHandle
+  );
 
   const isActive = useMemo(() => {
     if (item.route === '/') {
@@ -82,8 +138,25 @@ const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus }) => {
     return pathname.startsWith(item.route);
   }, [pathname, item.route]);
 
+  useEffect(() => {
+    if (isActive && nodeHandleRef.current) {
+      setActiveSidebarNodeHandle(nodeHandleRef.current);
+    }
+  }, [isActive, item.route, setActiveSidebarNodeHandle]);
+
+  // When this item becomes active, register its node handle
+  const handleRef = useCallback((ref: View | null) => {
+    if (ref) {
+      const handle = findNodeHandle(ref);
+      nodeHandleRef.current = handle;
+    }
+  }, []);
+
   return (
-    <Focusable onPress={onPress} onFocusChange={(isFocused) => isFocused && onFocus?.()}>
+    <Focusable
+      onPress={onPress}
+      onFocusChange={(isFocused) => isFocused && onFocus?.()}
+      onRef={handleRef}>
       {({ isFocused }) => {
         const iconColor = isActive
           ? theme.colors.primaryBackground
@@ -99,15 +172,8 @@ const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus }) => {
 
         return (
           <Box flexDirection="row" alignItems="center" gap="m" padding="m">
-            <Box width={32} alignItems="center" gap="xs">
-              <Ionicons name={item.icon} size={28} color={iconColor} />
-              {/* Focus indicator - rounded underline */}
-              <Box
-                width={24}
-                height={4}
-                borderRadius="full"
-                backgroundColor={isFocused ? 'primaryBackground' : 'transparent'}
-              />
+            <Box width={theme.sizes.iconMedium} alignItems="center" gap="xs">
+              <Ionicons name={item.icon} size={theme.sizes.iconMedium} color={iconColor} />
             </Box>
             <Text
               variant="body"

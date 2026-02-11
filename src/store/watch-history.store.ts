@@ -39,6 +39,25 @@ const MOVIE_VIDEO_KEY = '_';
 
 export type WatchState = 'not-watched' | 'in-progress' | 'watched';
 
+/**
+ * Summary of a meta's watch history (one entry per movie/series).
+ * Used for the History tab in the Library screen.
+ */
+export interface WatchedMetaSummary {
+  /** The meta ID */
+  id: string;
+  /** Content type (movie, series, etc.) */
+  type: ContentType;
+  /** Most recent watch timestamp across all episodes/the movie */
+  lastWatchedAt: number;
+  /** For series: the most recently watched video item (episode) */
+  latestItem?: WatchHistoryItem;
+  /** Total progress ratio for movies, or the latest episode's progress for series */
+  progressRatio: number;
+  /** Whether currently in-progress (not finished) */
+  isInProgress: boolean;
+}
+
 interface WatchHistoryState {
   activeProfileId?: string;
 
@@ -59,6 +78,8 @@ interface WatchHistoryState {
     id: string,
     videoId?: string
   ) => { type: 'url' | 'external' | 'yt'; value: string } | undefined;
+  /** Get all watched metas (one per movie/series), sorted by lastWatchedAt descending */
+  getAllWatchedMetas: () => WatchedMetaSummary[];
 
   // Mutations
   upsertItem: (item: Omit<WatchHistoryItem, 'lastWatchedAt'> & { lastWatchedAt?: number }) => void;
@@ -190,6 +211,44 @@ export const useWatchHistoryStore = create<WatchHistoryState>()(
       hasWatchedEpisode: (id, videoId) => {
         const ratio = get().getProgressRatio(id, videoId);
         return ratio >= PLAYBACK_FINISHED_RATIO;
+      },
+
+      getAllWatchedMetas: () => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return [];
+        const profileData = get().byProfile[profileId] ?? {};
+
+        const summaries: WatchedMetaSummary[] = [];
+
+        for (const [metaId, metaItems] of Object.entries(profileData)) {
+          const items = Object.values(metaItems);
+          if (items.length === 0) continue;
+
+          // Find the most recently watched item
+          const latestItem = items.reduce<WatchHistoryItem | undefined>(
+            (best, item) => (!best || item.lastWatchedAt > best.lastWatchedAt ? item : best),
+            undefined
+          );
+          if (!latestItem) continue;
+
+          // Calculate progress ratio for display
+          const progressRatio =
+            latestItem.durationSeconds > 0
+              ? latestItem.progressSeconds / latestItem.durationSeconds
+              : 0;
+          const isInProgress = progressRatio > 0 && progressRatio < PLAYBACK_FINISHED_RATIO;
+
+          summaries.push({
+            id: metaId,
+            type: latestItem.type,
+            lastWatchedAt: latestItem.lastWatchedAt,
+            latestItem: latestItem.videoId ? latestItem : undefined,
+            progressRatio,
+            isInProgress,
+          });
+        }
+
+        return summaries.sort((a, b) => b.lastWatchedAt - a.lastWatchedAt);
       },
 
       upsertItem: (item) => {

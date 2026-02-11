@@ -15,7 +15,7 @@ export default function WelcomeStep() {
   const router = useRouter();
 
   const handleNext = useCallback(() => {
-    router.push('/setup/profile');
+    router.push('/setup/ui');
   }, [router]);
 
   return (
@@ -58,13 +58,17 @@ function FeatureItem({ icon, title, delay = 0 }: FeatureItemProps) {
       transition={{ type: 'timing', duration: WIZARD_CONTENT_FADE_MS, delay }}>
       <Box flexDirection="row" gap="m" alignItems="center">
         <Box
-          width={48}
-          height={48}
+          width={theme.sizes.iconMedium * 2}
+          height={theme.sizes.iconMedium * 2}
           borderRadius="m"
           backgroundColor="cardBackground"
           justifyContent="center"
           alignItems="center">
-          <Ionicons name={icon} size={24} color={theme.colors.primaryBackground} />
+          <Ionicons
+            name={icon}
+            size={theme.sizes.iconMedium}
+            color={theme.colors.primaryBackground}
+          />
         </Box>
         <Box>
           <Text variant="cardTitle">{title}</Text>

@@ -393,3 +393,4 @@ jobs:
           allowUpdates: false
           skipIfReleaseExists: true
           generateReleaseNotes: true
+          prerelease: true

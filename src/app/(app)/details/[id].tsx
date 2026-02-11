@@ -1,5 +1,6 @@
 import { useLocalSearchParams, Stack } from 'expo-router';
-import theme from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import type { Theme } from '@/theme/theme';
 import { useMeta } from '@/api/stremio';
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
@@ -12,6 +13,7 @@ import FadeIn from '@/components/basic/FadeIn';
 import { MediaButtons } from '@/components/media/MediaButtons';
 
 export default function MediaDetails() {
+  const theme = useTheme<Theme>();
   const { id, type = 'movie' } = useLocalSearchParams<{ id: string; type?: ContentType }>();
   const { pushToStreams } = useMediaNavigation();
   const { data: meta, isLoading, isError } = useMeta(type, id);
@@ -26,7 +28,7 @@ export default function MediaDetails() {
       <Stack.Screen
         options={{
           headerTransparent: true,
-          headerTitle: '',
+          headerTitle: undefined,
           headerTintColor: theme.colors.mainForeground,
           headerStyle: {
             backgroundColor: 'transparent',

@@ -1,5 +1,6 @@
 import { useLocalSearchParams, Stack } from 'expo-router';
-import theme, { Box } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, type Theme } from '@/theme/theme';
 import { ContentType } from '@/types/stremio';
 import { Container } from '@/components/basic/Container';
 import { StreamList } from '@/components/media/StreamList';
@@ -14,6 +15,7 @@ import { formatPlayerTitle } from '@/utils/format';
 import { useAutoPlay } from '@/hooks/useAutoPlay';
 
 export default function StreamsPage() {
+  const theme = useTheme<Theme>();
   const {
     metaId,
     videoId,

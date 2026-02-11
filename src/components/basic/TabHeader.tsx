@@ -1,4 +1,5 @@
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -13,11 +14,12 @@ interface TabHeaderProps {
 
 export const TabHeader = ({ title, rightElement }: TabHeaderProps) => {
   const navigation = useNavigation<DrawerNavigationProp<any>>();
+  const theme = useTheme<Theme>();
 
   return (
     <Box flexDirection="row" alignItems="center" gap="m" marginBottom="m" marginTop="m">
       <TouchableOpacity onPress={() => navigation.openDrawer()}>
-        <Ionicons name="menu" size={28} color={theme.colors.mainForeground} />
+        <Ionicons name="menu" size={theme.sizes.iconLarge} color={theme.colors.mainForeground} />
       </TouchableOpacity>
       <>
         {!!title && <Text variant="header">{title}</Text>}

@@ -8,14 +8,11 @@ import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 import { useStreams } from '@/api/stremio';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { parseBooleanParam } from '@/utils/params';
 
 const isStreamAvailable = (stream: StreamType) =>
   Boolean(stream.url || stream.externalUrl || stream.ytId);
 
-const parseBooleanParam = (value?: string): boolean => {
-  if (!value) return false;
-  return value === '1' || value.toLowerCase() === 'true';
-};
 interface UseAutoPlayParams {
   metaId: string;
   videoId: string;

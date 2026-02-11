@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Box, Text } from '@/theme/theme';
-import { getLanguageDisplayName } from '@/utils/languages';
+import { getLanguageEntry } from '@/utils/languages';
 import { uniqNormalizedStrings } from '@/utils/array';
 import { Button } from '@/components/basic/Button';
 import { Modal } from '@/components/basic/Modal';
@@ -16,6 +16,27 @@ interface LanguagePreferenceModalProps {
   availableLanguageCodes: string[];
   onChange: (next: string[]) => void;
 }
+
+/**
+ * Creates an OrderableItem from a language code.
+ * Shows English name as label, with ISO code and native name as subtitle.
+ */
+const createLanguageItem = (code: string): OrderableItem => {
+  const entry = getLanguageEntry(code);
+  if (entry) {
+    return {
+      id: code,
+      label: entry.englishName,
+      secondaryLabel: `${code.toUpperCase()} · ${entry.name}`,
+    };
+  }
+  // Fallback for unknown codes
+  return {
+    id: code,
+    label: code.toUpperCase(),
+    secondaryLabel: undefined,
+  };
+};
 
 export function LanguagePreferenceModal({
   visible,
@@ -31,23 +52,15 @@ export function LanguagePreferenceModal({
   );
 
   // Convert language codes to OrderableItem format
+  // Selected items preserve their order
   const selectedItems = useMemo<OrderableItem[]>(
-    () =>
-      selected.map((code) => ({
-        id: code,
-        label: getLanguageDisplayName(code),
-        secondaryLabel: code.toUpperCase(),
-      })),
+    () => selected.map(createLanguageItem),
     [selected]
   );
 
+  // Available items sorted alphabetically by English name
   const availableItems = useMemo<OrderableItem[]>(
-    () =>
-      availableCodes.map((code) => ({
-        id: code,
-        label: getLanguageDisplayName(code),
-        secondaryLabel: code.toUpperCase(),
-      })),
+    () => availableCodes.map(createLanguageItem).sort((a, b) => a.label.localeCompare(b.label)),
     [availableCodes]
   );
 
@@ -60,35 +73,15 @@ export function LanguagePreferenceModal({
   );
 
   return (
-    <Modal visible={visible} onClose={onClose} animationType="slide">
-      <Box backgroundColor="cardBackground" borderRadius="l" padding="l" style={styles.card}>
-        <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-          <Text variant="subheader">{title}</Text>
-          <Button icon="close" onPress={onClose} />
-        </Box>
-
-        <ScrollView style={styles.scroll}>
-          <OrderableListSection
-            selectedItems={selectedItems}
-            availableItems={availableItems}
-            onChange={handleChange}
-            selectedLabel="Selected (in order)"
-            availableLabel="Add language"
-            emptyPlaceholder="Device default"
-          />
-        </ScrollView>
-      </Box>
+    <Modal visible={visible} onClose={onClose} label={title}>
+      <OrderableListSection
+        selectedItems={selectedItems}
+        availableItems={availableItems}
+        onChange={handleChange}
+        selectedLabel="Selected (in order)"
+        availableLabel="Add language"
+        emptyPlaceholder="Device default"
+      />
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    minWidth: 320,
-    maxWidth: 520,
-    maxHeight: 520,
-  },
-  scroll: {
-    marginTop: 12,
-  },
-});

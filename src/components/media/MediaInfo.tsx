@@ -1,4 +1,5 @@
-import { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { Tag } from '@/components/basic/Tag';
 import { ExpandableSection } from '@/components/basic/ExpandableSection';
 import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
@@ -75,12 +76,12 @@ const ImdbTag = ({ rating }: { rating: number }) => {
         paddingVertical="xs"
         style={{ backgroundColor: IMDB_YELLOW }}
         justifyContent="center">
-        <Text variant="caption" fontWeight="700" style={{ color: IMDB_BLACK, fontSize: 12 }}>
+        <Text variant="bodySmall" fontWeight="700" style={{ color: IMDB_BLACK }}>
           IMDb
         </Text>
       </Box>
       <Box paddingHorizontal="s" paddingVertical="xs" justifyContent="center">
-        <Text variant="caption" fontWeight="700" color="textSecondary" style={{ fontSize: 12 }}>
+        <Text variant="bodySmall" fontWeight="700" color="textSecondary">
           {rating.toFixed(1)}
         </Text>
       </Box>

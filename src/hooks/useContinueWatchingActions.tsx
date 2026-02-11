@@ -21,7 +21,7 @@ export const useContinueWatchingActions = () => {
   const [activeEntry, setActiveEntry] = useState<ContinueWatchingEntry | null>(null);
 
   const openActions = useCallback((entry: ContinueWatchingEntry) => {
-    if ((Platform.OS === 'ios' || Platform.OS === 'android') && !Platform.isTV) {
+    if (!Platform.isTV) {
       void Haptics.selectionAsync().catch(() => undefined);
     }
     setActiveEntry(entry);

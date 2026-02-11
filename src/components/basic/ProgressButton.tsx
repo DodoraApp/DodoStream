@@ -30,7 +30,12 @@ export const ProgressButton = ({
   const clampedProgress = Math.max(0, Math.min(1, progress));
 
   return (
-    <Focusable disabled={disabled} hasTVPreferredFocus={false} style={{ flex, minWidth }} {...rest}>
+    <Focusable
+      disabled={disabled}
+      hasTVPreferredFocus={false}
+      variant="none"
+      style={{ flex, minWidth }}
+      {...rest}>
       {({ isFocused }) => (
         <Box
           opacity={disabled ? 0.5 : 1}
@@ -38,7 +43,7 @@ export const ProgressButton = ({
           gap="s"
           borderRadius="full"
           overflow="hidden"
-          height={50}
+          height={theme.sizes.inputHeight}
           justifyContent="center"
           alignItems="center"
           paddingHorizontal="l">
@@ -71,7 +76,7 @@ export const ProgressButton = ({
           </View>
 
           {/* Content layer */}
-          {icon && <Ionicons name={icon} size={20} color={theme.colors.primaryForeground} />}
+          {icon && <Ionicons name={icon} size={theme.sizes.iconMedium} color={theme.colors.primaryForeground} />}
           <Text variant="button" color="primaryForeground">
             {title}
           </Text>

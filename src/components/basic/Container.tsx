@@ -1,5 +1,6 @@
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import theme, { Box } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, type Theme } from '@/theme/theme';
 import { FC, PropsWithChildren } from 'react';
 
 interface ContainerProps {
@@ -12,6 +13,8 @@ export const Container: FC<PropsWithChildren<ContainerProps>> = ({
   disablePadding,
   safeAreaEdges,
 }) => {
+  const theme = useTheme<Theme>();
+
   return (
     <SafeAreaView
       edges={safeAreaEdges}

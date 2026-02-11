@@ -1,4 +1,5 @@
 import type { Theme } from '@/theme/theme';
+import { ViewStyle } from 'react-native';
 
 type ColorName = keyof Theme['colors'];
 
@@ -7,6 +8,15 @@ interface FocusableColorOptions {
     isFocused?: boolean;
     defaultColor?: ColorName;
 }
+
+/**
+ * Focus style variants for different component types.
+ *
+ * - 'background': Changes background color (buttons, list items, settings, switches)
+ * - 'outline': Adds outline border (MediaCard, ContinueWatchingCard only)
+ * - 'none': No visual focus indicator (useful for custom implementations)
+ */
+export type FocusVariant = 'background' | 'outline' | 'none';
 
 /**
  * Returns the appropriate background color for a focusable element based on its active and focused state.
@@ -43,4 +53,30 @@ export function getFocusableForegroundColor({
         return 'primaryForeground';
     }
     return isFocused ? 'focusForeground' : defaultColor;
+}
+
+interface GetOutlineFocusStyleOptions {
+    isFocused: boolean;
+    theme: Theme;
+    borderRadius?: keyof Theme['borderRadii'];
+}
+
+/**
+ * Returns outline focus style for media cards (MediaCard, ContinueWatchingCard).
+ * Only use this for card components that display images.
+ *
+ * Returns undefined when not focused to avoid unnecessary style objects.
+ */
+export function getOutlineFocusStyle({
+    isFocused,
+    theme,
+    borderRadius = 'l',
+}: GetOutlineFocusStyleOptions): ViewStyle | undefined {
+    if (!isFocused) return undefined;
+
+    return {
+        outlineWidth: theme.focus.borderWidth,
+        outlineColor: theme.colors.primaryBackground,
+        borderRadius: theme.borderRadii[borderRadius],
+    };
 }

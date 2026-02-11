@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { ScrollView } from 'react-native';
+import { useState, useCallback, useRef } from 'react';
+import { ScrollView, TVFocusGuideView, View } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { Container } from '@/components/basic/Container';
 import { SettingsShell } from '@/components/settings/SettingsShell';
@@ -13,48 +13,31 @@ import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsConte
 import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
 import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSettingsContent';
 import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
+import { UISettingsContent } from '@/components/settings/UISettingsContent';
 import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
 import { SettingsLink } from '@/components/settings/SettingsLink';
 
 export default function Settings() {
   const { splitLayout } = useResponsiveLayout();
-
-  const [selectedPage, setSelectedPage] = useState('playback');
+  // Ref to the first menu item for TV focus navigation (used by SettingsShell)
+  const firstMenuItemRef = useRef<View>(null);
+  const [selectedPage, setSelectedPage] = useState('profiles');
 
   const handleSelectPage = useCallback((id: string) => {
     setSelectedPage(id);
   }, []);
-
-  // Render content based on selected page (for wide layout)
-  const renderContent = () => {
-    switch (selectedPage) {
-      case 'home':
-        return <HomeSettingsContent />;
-      case 'playback':
-        return <PlaybackSettingsContent />;
-      case 'subtitles':
-        return <SubtitlesSettingsContent />;
-      case 'profiles':
-        return <ProfilesSettingsContent />;
-      case 'addons':
-        return <AddonsSettingsContent />;
-      case 'about':
-        return <AboutSettingsContent />;
-      default:
-        return <PlaybackSettingsContent />;
-    }
-  };
 
   // Wide layout: use SettingsShell with split view
   if (splitLayout.enabled) {
     return (
       <Container disablePadding>
         <SettingsShell
+          firstMenuItemRef={firstMenuItemRef}
           menu={
             <ScrollView showsVerticalScrollIndicator={false}>
               <Box gap="m" paddingHorizontal="s">
                 <Text variant="subheader">Settings</Text>
-                <ProfileSwitcherCard />
+                <ProfileSwitcherCard ref={firstMenuItemRef} />
 
                 <Text variant="sectionLabel">Profile</Text>
                 <SettingsMenu
@@ -74,7 +57,9 @@ export default function Settings() {
               </Box>
             </ScrollView>
           }>
-          {renderContent()}
+          <TVFocusGuideView trapFocusUp trapFocusDown>
+            <PageContent selectedPage={selectedPage} />
+          </TVFocusGuideView>
         </SettingsShell>
       </Container>
     );
@@ -88,7 +73,7 @@ export default function Settings() {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Box paddingVertical="m" gap="m">
             <Text variant="sectionLabel">Profile</Text>
-            <ProfileSwitcherCard />
+            <ProfileSwitcherCard ref={firstMenuItemRef} />
 
             <Box gap="s">
               {SETTINGS_PROFILE_MENU_ITEMS.map((item) => (
@@ -120,3 +105,24 @@ export default function Settings() {
     </Container>
   );
 }
+
+const PageContent = ({ selectedPage }: { selectedPage: string }) => {
+  switch (selectedPage) {
+    case 'home':
+      return <HomeSettingsContent />;
+    case 'playback':
+      return <PlaybackSettingsContent />;
+    case 'subtitles':
+      return <SubtitlesSettingsContent />;
+    case 'profiles':
+      return <ProfilesSettingsContent />;
+    case 'ui':
+      return <UISettingsContent />;
+    case 'addons':
+      return <AddonsSettingsContent />;
+    case 'about':
+      return <AboutSettingsContent />;
+    default:
+      return <PlaybackSettingsContent />;
+  }
+};

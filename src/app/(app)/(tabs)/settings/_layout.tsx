@@ -1,8 +1,10 @@
 import { Stack } from 'expo-router';
-import theme from '@/theme/theme';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useTheme } from '@shopify/restyle';
+import { Theme } from '@/theme/theme';
 
 export default function SettingsLayout() {
+  const theme = useTheme<Theme>();
   const { splitLayout } = useResponsiveLayout();
 
   // On wide layouts, settings are shown in split view, so hide headers
@@ -65,6 +67,12 @@ export default function SettingsLayout() {
         name="developer"
         options={{
           title: 'Developer',
+        }}
+      />
+      <Stack.Screen
+        name="ui"
+        options={{
+          title: 'UI',
         }}
       />
     </Stack>

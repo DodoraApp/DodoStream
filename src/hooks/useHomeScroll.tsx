@@ -1,13 +1,15 @@
-import { HERO_HEIGHT } from '@/constants/ui';
+import { FlashListRef } from '@shopify/flash-list';
 import { createContext, useContext, useCallback, useRef, ReactNode } from 'react';
-import { Platform, SectionList, View } from 'react-native';
+import { Platform } from 'react-native';
 
 interface HomeScrollContextValue {
   /** Scroll to the very top of the home screen (show hero section) */
   scrollToTop: () => void;
   /** Scroll to a specific section by key */
-  scrollToSection: (sectionKey: string) => void;
-  sectionListRef: React.RefObject<SectionList<any, any> | null>;
+  scrollToSection: (sectionIndex: number) => void;
+  /** FlashList ref for the home screen */
+  flashListRef: React.RefObject<FlashListRef<any> | null>;
+  lastScrolledIndex: React.RefObject<number | null>;
   /** Register the section index map for scrollToSection */
   setSectionIndexMap: (map: Record<string, number>) => void;
 }
@@ -18,14 +20,17 @@ interface HomeScrollProviderProps {
   children: ReactNode;
 }
 
+// Debounce delay for scroll operations to prevent jitter during fast navigation
+const SCROLL_DEBOUNCE_MS = 100;
+
 /**
  * Provider for home screen scroll functionality.
- * Enables child components to scroll the home SectionList.
+ * Enables child components to scroll the home FlashList.
  */
 export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
-  const sectionListRef = useRef<SectionList<any, any> | null>(null);
+  const flashListRef = useRef<FlashListRef<any> | null>(null);
   const sectionIndexMapRef = useRef<Record<string, number>>({});
-  const lastScrolledKeyRef = useRef<string | null>(null);
+  const lastScrolledIndex = useRef<number | null>(null);
   const isTV = Platform.isTV;
 
   const setSectionIndexMap = useCallback((map: Record<string, number>) => {
@@ -35,32 +40,24 @@ export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
   const scrollToTop = useCallback(() => {
     if (!isTV) return;
     // Reset last scrolled key since we're going to top
-    lastScrolledKeyRef.current = null;
-    sectionListRef.current?.scrollToLocation({
-      sectionIndex: 0,
-      itemIndex: 0,
-      viewPosition: 0,
-      viewOffset: HERO_HEIGHT,
+    lastScrolledIndex.current = null;
+    flashListRef.current?.scrollToOffset({
+      offset: 0,
       animated: true,
     });
   }, [isTV]);
 
   const scrollToSection = useCallback(
-    (sectionKey: string) => {
+    (sectionIndex: number) => {
       if (!isTV) return;
       // Prevent duplicate scrolls to same section
-      if (lastScrolledKeyRef.current === sectionKey) return;
-      lastScrolledKeyRef.current = sectionKey;
+      if (lastScrolledIndex.current === sectionIndex) return;
 
-      const sectionIndex = sectionIndexMapRef.current[sectionKey];
-      if (sectionIndex === undefined) return;
-
-      sectionListRef.current?.scrollToLocation({
-        sectionIndex,
-        itemIndex: 0,
-        viewPosition: 0,
-        viewOffset: 0,
-        animated: true,
+      lastScrolledIndex.current = sectionIndex;
+      flashListRef.current?.scrollToIndex({
+        index: sectionIndex,
+        animated: false,
+        viewPosition: 0.5,
       });
     },
     [isTV]
@@ -72,7 +69,8 @@ export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
         scrollToTop,
         scrollToSection,
         setSectionIndexMap,
-        sectionListRef,
+        lastScrolledIndex,
+        flashListRef,
       }}>
       {children}
     </HomeScrollContext.Provider>

@@ -23,24 +23,6 @@ export default function CompleteStep() {
   return (
     <WizardContainer>
       <Box flex={1} paddingHorizontal="l" paddingVertical="m" justifyContent="center" gap="l">
-        {/* Success icon */}
-        <MotiView
-          from={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 15, delay: 100 }}>
-          <Box alignItems="center">
-            <Box
-              width={100}
-              height={100}
-              borderRadius="full"
-              backgroundColor="primaryBackground"
-              justifyContent="center"
-              alignItems="center">
-              <Ionicons name="checkmark" size={60} color={theme.colors.primaryForeground} />
-            </Box>
-          </Box>
-        </MotiView>
-
         {/* Title */}
         <MotiView
           from={{ opacity: 0, translateY: 20 }}

@@ -1,5 +1,6 @@
-import { FC, memo, useCallback, useMemo } from 'react';
-import theme, { Box, Text } from '@/theme/theme';
+import { FC, forwardRef, memo, useCallback, useMemo } from 'react';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { useProfileStore } from '@/store/profile.store';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Button } from '@/components/basic/Button';
@@ -9,8 +10,9 @@ interface ProfileSwitcherCardProps {
   title?: string;
 }
 
-export const ProfileSwitcherCard: FC<ProfileSwitcherCardProps> = memo(
-  ({ title = 'Current Profile' }) => {
+export const ProfileSwitcherCard = forwardRef<any, ProfileSwitcherCardProps>(
+  ({ title = 'Current Profile' }, ref) => {
+    const theme = useTheme<Theme>();
     const router = useRouter();
     const profiles = useProfileStore((state) => state.profiles);
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -45,6 +47,7 @@ export const ProfileSwitcherCard: FC<ProfileSwitcherCardProps> = memo(
         </Box>
 
         <Button
+          ref={ref}
           title="Switch Profile"
           variant="primary"
           icon="swap-horizontal"

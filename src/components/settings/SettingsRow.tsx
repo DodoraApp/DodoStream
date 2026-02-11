@@ -9,7 +9,14 @@ interface SettingsRowProps {
 
 export function SettingsRow({ label, description, children }: SettingsRowProps) {
   return (
-    <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap="m">
+    <Box
+      flexDirection="row"
+      alignItems="center"
+      justifyContent="space-between"
+      gap="m"
+      paddingHorizontal="s"
+      width="100%"
+      flexWrap="wrap">
       <Box flex={1} gap="xs">
         <Text variant="body">{label}</Text>
         {description && (

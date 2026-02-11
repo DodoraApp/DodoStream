@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import theme from '@/theme/theme';
+import { Theme } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
 
 export type Breakpoint = 'mobile' | 'tablet' | 'tv';
 
@@ -10,6 +11,7 @@ export type Breakpoint = 'mobile' | 'tablet' | 'tv';
  */
 export function useBreakpoint(): Breakpoint {
     const { width } = useWindowDimensions();
+    const theme = useTheme<Theme>()
 
     if (width >= theme.breakpoints.tv) {
         return 'tv';
@@ -50,38 +52,20 @@ export interface ResponsiveLayoutResult {
     /** Current breakpoint */
     breakpoint: Breakpoint;
 
-    /** Boolean checks for current breakpoint */
-    isMobile: boolean;
-    isTablet: boolean;
+    /** True for TV breakpoint */
     isTV: boolean;
 
     /** True for tablet or TV (wide layouts that can show split views) */
     isWide: boolean;
 
-    /** Current window dimensions */
+    /** Current window width */
     width: number;
-    height: number;
-
-    /** Number of grid columns appropriate for current breakpoint */
-    columns: number;
-
-    /** Maximum content width for current breakpoint */
-    containerMaxWidth: number | undefined;
-
-    /** Horizontal content padding for current breakpoint */
-    contentPadding: number;
 
     /** Whether device is a TV platform */
     isPlatformTV: boolean;
 
     /** Split layout configuration for settings-style pages */
     splitLayout: SplitLayoutConfig;
-
-    /**
-     * Select a value based on current breakpoint
-     * Falls back to smaller breakpoint values if not specified
-     */
-    select: <T>(values: { mobile: T; tablet?: T; tv?: T }) => T;
 }
 
 /**
@@ -91,10 +75,7 @@ export interface ResponsiveLayoutResult {
  * for building responsive UIs across mobile, tablet, and TV.
  *
  * @example
- * const { isWide, splitLayout, select } = useResponsiveLayout();
- *
- * // Responsive value selection
- * const fontSize = select({ mobile: 14, tablet: 16, tv: 18 });
+ * const { isWide, splitLayout } = useResponsiveLayout();
  *
  * // Split layout for settings
  * if (splitLayout.enabled) {
@@ -107,35 +88,13 @@ export interface ResponsiveLayoutResult {
  * }
  */
 export function useResponsiveLayout(): ResponsiveLayoutResult {
-    const { width, height } = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const breakpoint = useBreakpoint();
 
-    const isMobile = breakpoint === 'mobile';
     const isTablet = breakpoint === 'tablet';
     const isTV = breakpoint === 'tv';
     const isWide = isTablet || isTV;
     const isPlatformTV = Platform.isTV;
-
-    // Grid columns based on breakpoint
-    const columns = useMemo(() => {
-        if (isTV) return 4;
-        if (isTablet) return 3;
-        return 2;
-    }, [isTV, isTablet]);
-
-    // Max content width
-    const containerMaxWidth = useMemo(() => {
-        if (isTV) return Math.min(width * 0.7, 1200);
-        if (isTablet) return Math.min(width * 0.85, 900);
-        return undefined; // Full width on mobile
-    }, [isTV, isTablet, width]);
-
-    // Content padding
-    const contentPadding = useMemo(() => {
-        if (isTV) return theme.spacing.xl;
-        if (isTablet) return theme.spacing.l;
-        return theme.spacing.m;
-    }, [isTV, isTablet]);
 
     // Split layout config
     const splitLayout = useMemo<SplitLayoutConfig>(
@@ -147,33 +106,12 @@ export function useResponsiveLayout(): ResponsiveLayoutResult {
         [isWide, isTV]
     );
 
-    // Responsive value selector
-    const select = useCallback(
-        <T,>(values: { mobile: T; tablet?: T; tv?: T }): T => {
-            if (isTV && values.tv !== undefined) {
-                return values.tv;
-            }
-            if (isTablet && values.tablet !== undefined) {
-                return values.tablet;
-            }
-            return values.mobile;
-        },
-        [isTV, isTablet]
-    );
-
     return {
         breakpoint,
-        isMobile,
-        isTablet,
         isTV,
         isWide,
         width,
-        height,
-        columns,
-        containerMaxWidth,
-        contentPadding,
         isPlatformTV,
         splitLayout,
-        select,
     };
 }

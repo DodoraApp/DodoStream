@@ -17,10 +17,11 @@ export const Input = ({ icon, style, ...props }: InputProps) => {
       backgroundColor="inputBackground"
       borderRadius="m"
       paddingHorizontal="m"
+      flex={1}
       height={theme.sizes.inputHeight}>
       {icon && (
         <Box marginRight="s">
-          <Ionicons name={icon} size={20} color={theme.colors.textSecondary} />
+          <Ionicons name={icon} size={theme.sizes.iconSmall} color={theme.colors.textSecondary} />
         </Box>
       )}
       <TextInput
@@ -28,7 +29,7 @@ export const Input = ({ icon, style, ...props }: InputProps) => {
           {
             flex: 1,
             color: theme.colors.textPrimary,
-            fontSize: 16,
+            fontSize: theme.textVariants.body.fontSize,
             fontFamily: undefined, // Use system font or custom font if configured
           },
           style,

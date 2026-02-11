@@ -11,20 +11,19 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
     {
-        id: 'search',
-        label: 'Search',
-        icon: 'search',
-        route: '/search',
-        screenName: 'search',
-        location: 'top',
-
-    },
-    {
         id: 'home',
         label: 'Home',
         icon: 'home',
         route: '/',
         screenName: 'index',
+        location: 'top',
+    },
+    {
+        id: 'search',
+        label: 'Search',
+        icon: 'search',
+        route: '/search',
+        screenName: 'search',
         location: 'top',
     },
     // {
@@ -35,11 +34,11 @@ export const NAV_ITEMS: NavItem[] = [
     //     screenName: 'discover',
     // },
     {
-        id: 'my-list',
-        label: 'My List',
-        icon: 'bookmark-outline',
-        route: '/my-list',
-        screenName: 'my-list',
+        id: 'library',
+        label: 'Library',
+        icon: 'library-outline',
+        route: '/library',
+        screenName: 'library',
         location: 'top',
     },
     {

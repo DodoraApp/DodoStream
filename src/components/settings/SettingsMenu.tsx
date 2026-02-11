@@ -1,12 +1,12 @@
-import { FC, memo } from 'react';
-import { ScrollView } from 'react-native';
+import { FC, memo, useCallback, useEffect, useRef } from 'react';
+import { ScrollView, View, findNodeHandle } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Focusable } from '@/components/basic/Focusable';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { router } from 'expo-router';
-import { getFocusableBackgroundColor } from '@/utils/focus-colors';
+import { useSidebarFocusStore } from '@/store/sidebar-focus.store';
 
 export interface SettingsMenuItem {
   id: string;
@@ -73,41 +73,53 @@ interface SettingsMenuItemInnerProps {
 const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
   ({ item, isSelected, onPress, hasTVPreferredFocus = false }) => {
     const theme = useTheme<Theme>();
+    const setSelectedSettingsMenuNodeHandle = useSidebarFocusStore(
+      (state) => state.setSelectedSettingsMenuNodeHandle
+    );
 
     const iconContainerSize = theme.sizes.loadingIndicatorSizeSmall;
     const iconSize = theme.spacing.l;
 
+    // Store the node handle in a ref so it's available when selection changes
+    const nodeHandleRef = useRef<number | null>(null);
+
+    // Capture node handle immediately when ref is set
+    const handleRef = useCallback((ref: View | null) => {
+      if (ref) {
+        nodeHandleRef.current = findNodeHandle(ref);
+      }
+    }, []);
+
+    // Update the store when this item becomes selected
+    useEffect(() => {
+      if (isSelected && nodeHandleRef.current) {
+        setSelectedSettingsMenuNodeHandle(nodeHandleRef.current);
+      }
+    }, [isSelected, setSelectedSettingsMenuNodeHandle]);
+
     return (
-      <Focusable onPress={onPress} hasTVPreferredFocus={hasTVPreferredFocus}>
-        {({ isFocused }) => (
+      <Focusable onPress={onPress} hasTVPreferredFocus={hasTVPreferredFocus} onRef={handleRef}>
+        <Box borderRadius="m" padding="s" flexDirection="row" alignItems="center" gap="m">
           <Box
-            backgroundColor={getFocusableBackgroundColor({ isFocused })}
+            backgroundColor={isSelected ? 'primaryBackground' : undefined}
             borderRadius="m"
-            padding="s"
-            flexDirection="row"
-            alignItems="center"
-            gap="m">
-            <Box
-              backgroundColor={isSelected ? 'primaryBackground' : undefined}
-              borderRadius="m"
-              width={iconContainerSize}
-              height={iconContainerSize}
-              justifyContent="center"
-              alignItems="center">
-              <Ionicons name={item.icon} size={iconSize} color={theme.colors.primaryForeground} />
-            </Box>
-            <Box flex={1} gap="xs">
-              <Text variant="cardTitle" color="textPrimary">
-                {item.title}
-              </Text>
-              {item.description && (
-                <Text variant="caption" color="textSecondary" numberOfLines={1}>
-                  {item.description}
-                </Text>
-              )}
-            </Box>
+            width={iconContainerSize}
+            height={iconContainerSize}
+            justifyContent="center"
+            alignItems="center">
+            <Ionicons name={item.icon} size={iconSize} color={theme.colors.primaryForeground} />
           </Box>
-        )}
+          <Box flex={1} gap="xs">
+            <Text variant="cardTitle" color="textPrimary">
+              {item.title}
+            </Text>
+            {item.description && (
+              <Text variant="caption" color="textSecondary" numberOfLines={1}>
+                {item.description}
+              </Text>
+            )}
+          </Box>
+        </Box>
       </Focusable>
     );
   }

@@ -26,7 +26,7 @@ export const Badge = ({ label, variant = 'primary' }: BadgeProps) => {
       paddingHorizontal="s"
       paddingVertical="xs"
       borderRadius="s">
-      <Text variant="caption" fontWeight="700" color={foregroundColor} style={{ fontSize: 10 }}>
+      <Text variant="caption" fontWeight="700" color={foregroundColor}>
         {label}
       </Text>
     </Box>

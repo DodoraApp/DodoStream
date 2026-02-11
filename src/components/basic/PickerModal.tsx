@@ -99,10 +99,14 @@ const PickerListItem = memo(({ item, isSelected, onPress }: PickerListItemProps)
             <Box flexDirection="row" alignItems="center" gap="s" flex={1}>
               {item.icon && (
                 <Box>
-                  <Ionicons name={item.icon} size={24} color={theme.colors[foregroundColor]} />
+                  <Ionicons
+                    name={item.icon}
+                    size={theme.sizes.iconMedium}
+                    color={theme.colors[foregroundColor]}
+                  />
                 </Box>
               )}
-              <Text variant="body" color={foregroundColor} fontSize={16} style={{ flex: 1 }}>
+              <Text variant="body" color={foregroundColor} style={{ flex: 1 }}>
                 {item.label}
               </Text>
             </Box>
@@ -113,7 +117,7 @@ const PickerListItem = memo(({ item, isSelected, onPress }: PickerListItemProps)
                 paddingHorizontal="s"
                 paddingVertical="xs"
                 marginLeft="s">
-                <Text variant="caption" color="textSecondary" fontSize={12}>
+                <Text variant="caption" color="textSecondary">
                   {item.tag}
                 </Text>
               </Box>
@@ -139,8 +143,6 @@ export function PickerModal<T extends string | number = string | number>({
   getGroupLabel,
   preferredGroupIds,
 }: PickerModalProps<T>) {
-  const theme = useTheme<Theme>();
-
   const handleValueChange = useCallback(
     (value: T) => {
       onValueChange(value);
@@ -198,43 +200,23 @@ export function PickerModal<T extends string | number = string | number>({
   const keyExtractor = useCallback((item: PickerItem<T>) => item.value?.toString() ?? '', []);
 
   return (
-    <Modal visible={visible} onClose={onClose}>
-      <Box
-        backgroundColor="cardBackground"
-        borderRadius="l"
-        padding="l"
-        style={{
-          minWidth: theme.sizes.modalMinWidth,
-          maxWidth: theme.sizes.modalMaxWidth,
-        }}>
-        <Box gap="s" marginBottom="m">
-          {label && (
-            <Box flexDirection="row" alignItems="center" gap="s">
-              {icon && <Ionicons name={icon} size={24} color={theme.colors.mainForeground} />}
-              <Text variant="body" style={{ fontSize: 18, fontWeight: '600' }}>
-                {label}
-              </Text>
-            </Box>
-          )}
-          {/* Render filter header outside FlashList to prevent re-render/focus issues */}
-          {groups.length > 0 && (
-            <TagFilters
-              options={groups}
-              selectedId={selectedGroupId}
-              onSelectId={setSelectedGroupId}
-              includeAllOption
-              allLabel="All"
-            />
-          )}
-        </Box>
-        <FlashList
-          data={filteredItems}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          initialScrollIndex={initialScrollIndex}
-          showsVerticalScrollIndicator={false}
+    <Modal visible={visible} onClose={onClose} label={label} icon={icon}>
+      {groups.length > 0 && (
+        <TagFilters
+          options={groups}
+          selectedId={selectedGroupId}
+          onSelectId={setSelectedGroupId}
+          includeAllOption
+          allLabel="All"
         />
-      </Box>
+      )}
+      <FlashList
+        data={filteredItems}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        initialScrollIndex={initialScrollIndex}
+        showsVerticalScrollIndicator={false}
+      />
     </Modal>
   );
 }

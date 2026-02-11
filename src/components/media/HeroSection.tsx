@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TVFocusGuideView } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -17,7 +17,6 @@ import {
   HERO_CONTENT_SLIDE_DURATION_MS,
   HERO_CONTENT_SLIDE_DELAY_MS,
   HERO_DOT_ANIMATION_MS,
-  HERO_HEIGHT,
 } from '@/constants/ui';
 import { Button } from '@/components/basic/Button';
 
@@ -162,117 +161,133 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   }
 
   return (
-    <Box height={HERO_HEIGHT} width="100%" overflow="hidden">
-      {/* Background Image with Fade Animation */}
-      <MotiView
-        key={activeItem.id}
-        from={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: 'timing', duration: HERO_CROSSFADE_DURATION_MS }}
-        style={StyleSheet.absoluteFill}>
-        <Image source={{ uri: backdropImage }} style={StyleSheet.absoluteFill} contentFit="cover" />
-      </MotiView>
-
-      {/* Gradient Overlay */}
-      <LinearGradient
-        colors={[
-          'transparent',
-          theme.colors.semiTransparentBackground,
-          theme.colors.mainBackground,
-        ]}
-        locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Content */}
-      <Box style={StyleSheet.absoluteFill} justifyContent="flex-end" padding="m" paddingBottom="l">
-        {/* Genres */}
-        {genres.length > 0 && (
-          <Box flexDirection="row" gap="s" marginBottom="s">
-            {genres.map((genre) => (
-              <Box
-                key={genre}
-                backgroundColor="semiTransparentBackground"
-                paddingHorizontal="s"
-                paddingVertical="xs"
-                borderRadius="s">
-                <Text variant="caption" color="textPrimary">
-                  {genre}
-                </Text>
-              </Box>
-            ))}
-          </Box>
-        )}
-
-        {/* Title */}
+    <TVFocusGuideView autoFocus trapFocusRight trapFocusUp>
+      <Box height={theme.sizes.heroHeight} width="100%" overflow="hidden">
+        {/* Background Image with Fade Animation */}
         <MotiView
-          key={`title-${activeItem.id}`}
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: HERO_CONTENT_SLIDE_DURATION_MS }}>
-          <Text variant="header" numberOfLines={2} marginBottom="s">
-            {activeItem.name}
-          </Text>
+          key={activeItem.id}
+          from={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ type: 'timing', duration: HERO_CROSSFADE_DURATION_MS }}
+          style={StyleSheet.absoluteFill}>
+          <Image
+            source={{ uri: backdropImage }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
         </MotiView>
 
-        {/* Description */}
-        {activeItem.description && (
+        {/* Gradient Overlay */}
+        <LinearGradient
+          colors={[
+            'transparent',
+            theme.colors.semiTransparentBackground,
+            theme.colors.mainBackground,
+          ]}
+          locations={[0, 0.5, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Content */}
+        <Box
+          style={StyleSheet.absoluteFill}
+          justifyContent="flex-end"
+          padding="m"
+          paddingBottom="l">
+          {/* Genres */}
+          {genres.length > 0 && (
+            <Box flexDirection="row" gap="s" marginBottom="s">
+              {genres.map((genre) => (
+                <Box
+                  key={genre}
+                  backgroundColor="semiTransparentBackground"
+                  paddingHorizontal="s"
+                  paddingVertical="xs"
+                  borderRadius="s">
+                  <Text variant="caption" color="textPrimary">
+                    {genre}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Title */}
           <MotiView
-            key={`desc-${activeItem.id}`}
+            key={`title-${activeItem.id}`}
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{
-              type: 'timing',
-              duration: HERO_CONTENT_SLIDE_DURATION_MS,
-              delay: HERO_CONTENT_SLIDE_DELAY_MS,
-            }}>
-            <Text variant="bodySmall" numberOfLines={3} marginBottom="m" style={{ maxWidth: 600 }}>
-              {activeItem.description}
+            transition={{ type: 'timing', duration: HERO_CONTENT_SLIDE_DURATION_MS }}>
+            <Text variant="header" numberOfLines={2} marginBottom="s">
+              {activeItem.name}
             </Text>
           </MotiView>
-        )}
 
-        {/* Buttons Row */}
-        <Box flexDirection="row" gap="s" marginBottom="m">
-          <Button
-            variant="primary"
-            icon="play"
-            title="Play"
-            onPress={handlePlay}
-            hasTVPreferredFocus={hasTVPreferredFocus}
-            onFocusChange={handleHeroFocus}
-          />
-          <Button
-            variant="secondary"
-            icon="information-circle-outline"
-            title="Details"
-            onPress={handleDetails}
-            hasTVPreferredFocus={hasTVPreferredFocus}
-            onFocusChange={handleHeroFocus}
-          />
-        </Box>
-
-        {/* Pagination Dots - Centered */}
-        <Box flexDirection="row" gap="s" alignItems="center" justifyContent="center">
-          {heroItems.map((item, index) => (
+          {/* Description */}
+          {activeItem.description && (
             <MotiView
-              key={item.id}
-              animate={{
-                width: index === safeActiveIndex ? 24 : 8,
-                opacity: index === safeActiveIndex ? 1 : 0.5,
-              }}
-              transition={{ type: 'timing', duration: HERO_DOT_ANIMATION_MS }}>
-              <Box
-                height={8}
-                borderRadius="full"
-                backgroundColor={index === safeActiveIndex ? 'primaryBackground' : 'textSecondary'}
-                style={{ width: '100%' }}
-              />
+              key={`desc-${activeItem.id}`}
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{
+                type: 'timing',
+                duration: HERO_CONTENT_SLIDE_DURATION_MS,
+                delay: HERO_CONTENT_SLIDE_DELAY_MS,
+              }}>
+              <Text
+                variant="bodySmall"
+                numberOfLines={3}
+                marginBottom="m"
+                style={{ maxWidth: 600 }}>
+                {activeItem.description}
+              </Text>
             </MotiView>
-          ))}
+          )}
+
+          {/* Buttons Row */}
+          <Box flexDirection="row" gap="s" marginBottom="m">
+            <Button
+              variant="primary"
+              icon="play"
+              title="Play"
+              onPress={handlePlay}
+              hasTVPreferredFocus={hasTVPreferredFocus}
+              onFocusChange={handleHeroFocus}
+            />
+            <Button
+              variant="secondary"
+              icon="information-circle-outline"
+              title="Details"
+              onPress={handleDetails}
+              onFocusChange={handleHeroFocus}
+            />
+          </Box>
+
+          {/* Pagination Dots - Centered */}
+          <Box flexDirection="row" gap="s" alignItems="center" justifyContent="center">
+            {heroItems.map((item, index) => (
+              <MotiView
+                key={item.id}
+                animate={{
+                  width:
+                    index === safeActiveIndex ? theme.sizes.iconMedium : theme.sizes.iconMedium / 3,
+                  opacity: index === safeActiveIndex ? 1 : 0.5,
+                }}
+                transition={{ type: 'timing', duration: HERO_DOT_ANIMATION_MS }}>
+                <Box
+                  height={theme.sizes.iconMedium / 3}
+                  borderRadius="full"
+                  backgroundColor={
+                    index === safeActiveIndex ? 'primaryBackground' : 'textSecondary'
+                  }
+                  style={{ width: '100%' }}
+                />
+              </MotiView>
+            ))}
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </TVFocusGuideView>
   );
 });
 

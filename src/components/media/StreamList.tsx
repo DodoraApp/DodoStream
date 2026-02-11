@@ -1,7 +1,8 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 
 import { useStreams } from '@/api/stremio';
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
@@ -44,6 +45,7 @@ interface StreamListItemProps {
 }
 
 const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemProps) => {
+  const theme = useTheme<Theme>();
   const available = isStreamAvailable(stream);
 
   const recyclingKey = getStreamStableId(stream);
@@ -56,7 +58,7 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
       onPress={() => onSelect(stream)}
       disabled={!available}
       recyclingKey={recyclingKey}
-      focusStyle={{ borderRadius: theme.borderRadii.m }}>
+      focusedStyle={{ borderRadius: theme.borderRadii.m }}>
       {({ isFocused }) => (
         <Box
           backgroundColor={getFocusableBackgroundColor({ isFocused })}
@@ -74,7 +76,11 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
               )}
             </Box>
             {available && (
-              <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+              <Ionicons
+                name="chevron-forward"
+                size={theme.sizes.iconSmall}
+                color={theme.colors.textSecondary}
+              />
             )}
           </Box>
 
@@ -89,7 +95,11 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
           <Box justifyContent="center">
             {showCountry ? (
               <Box flexDirection="row" alignItems="center" gap="xs">
-                <Ionicons name="location" size={14} color={theme.colors.textSecondary} />
+                <Ionicons
+                  name="location"
+                  size={theme.sizes.iconSmall}
+                  color={theme.colors.textSecondary}
+                />
                 <Text variant="caption" color="textSecondary" numberOfLines={1}>
                   Available in: {stream.behaviorHints!.countryWhitelist!.join(', ').toUpperCase()}
                 </Text>

@@ -1,12 +1,14 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import theme, { Box } from '@/theme/theme';
+import type { Theme } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { NAV_ITEMS } from '@/constants/navigation';
 
 export default function TabsLayout() {
+  const theme = useTheme<Theme>();
   const { bottom } = useSafeAreaInsets();
   const breakpoint = useBreakpoint();
 
@@ -16,6 +18,7 @@ export default function TabsLayout() {
   return (
     <ResponsiveLayout>
       <Tabs
+        initialRouteName="index"
         screenOptions={{
           headerShown: false,
           tabBarStyle: showTabs
@@ -24,8 +27,8 @@ export default function TabsLayout() {
                 borderTopColor: theme.colors.cardBorder,
                 borderTopWidth: 1,
                 paddingBottom: bottom,
-                paddingTop: 10,
-                height: 65 + bottom,
+                paddingTop: theme.sizes.tabBarPaddingTop,
+                height: theme.sizes.tabBarHeight + bottom,
               }
             : {
                 display: 'none', // Hide tabs on tablet/TV
