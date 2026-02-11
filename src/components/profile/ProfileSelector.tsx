@@ -1,16 +1,15 @@
 import { FC, useState, useCallback } from 'react';
 import { ScrollView } from 'react-native';
+import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+import { Easing } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box, Text, Theme } from '@/theme/theme';
 import { ProfileCard } from './ProfileCard';
 import { ProfileEditor } from './ProfileEditor';
 import { PINPrompt } from './PINPrompt';
 import { useProfileStore, Profile } from '@/store/profile.store';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@shopify/restyle';
-import { MotiView } from 'moti';
-import { Easing } from 'react-native-reanimated';
 import { PROFILE_EXIT_ANIMATION_MS } from '@/constants/ui';
-
 import { showToast } from '@/store/toast.store';
 
 interface ProfileSelectorProps {
@@ -68,12 +67,10 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
     // Check PIN first before triggering exit
     const success = switchProfile(selectedProfileForPIN.id, pinInput);
     if (success) {
-      // PIN was correct, now undo the switch and do exit animation
-      // Actually, switchProfile already switched, so we proceed
+      // PIN was correct, close prompt and trigger exit animation
       setShowPINPrompt(false);
       setSelectedProfileForPIN(undefined);
       setPinInput('');
-      // Trigger exit animation
       setIsExiting(true);
       setTimeout(() => {
         onSelect();
@@ -115,16 +112,6 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
     [handleProfileSelect]
   );
 
-  if (showEditor) {
-    return (
-      <ProfileEditor
-        profile={editingProfile}
-        onClose={handleEditorClose}
-        onSave={handleEditorSave}
-      />
-    );
-  }
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.mainBackground }}>
       <MotiView
@@ -140,13 +127,9 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
         }}
         style={{ flex: 1 }}>
         <Box flex={1} backgroundColor="mainBackground" justifyContent="center" alignItems="center">
-          <Box width="100%" maxWidth={800} paddingHorizontal="l">
+          <Box width="100%" paddingHorizontal="l">
             <Box marginBottom="xl" alignItems="center">
-              <Text
-                variant="header"
-                color="mainForeground"
-                textAlign="center"
-                style={{ fontSize: 48, fontWeight: '700' }}>
+              <Text variant="header" color="mainForeground" textAlign="center">
                 Who&apos;s watching?
               </Text>
             </Box>
@@ -157,8 +140,8 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
                 flexDirection: 'row',
                 flexWrap: 'wrap',
                 justifyContent: 'center',
-                gap: 24,
-                paddingVertical: 16,
+                gap: theme.spacing.l,
+                paddingVertical: theme.spacing.m,
               }}>
               {profiles.map((profile) => (
                 <ProfileCard
@@ -173,6 +156,16 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
         </Box>
       </MotiView>
 
+      {/* Profile Editor Modal */}
+      {showEditor && (
+        <ProfileEditor
+          profile={editingProfile}
+          onClose={handleEditorClose}
+          onSave={handleEditorSave}
+        />
+      )}
+
+      {/* PIN Prompt Modal */}
       <PINPrompt
         visible={showPINPrompt}
         title={`Enter PIN for ${selectedProfileForPIN?.name ?? ''}`}

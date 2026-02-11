@@ -1,5 +1,8 @@
+import { Breakpoint } from '@/hooks/useBreakpoint';
 import { createTheme, createBox, createText } from '@shopify/restyle';
+import { DimensionValue } from 'react-native';
 
+const withScale = (value: number, scalingFactor: number) => value * scalingFactor;
 const palette = {
     // Green - Primary Brand Color
     // Slightly cooler emerald tones for a more modern look.
@@ -22,6 +25,8 @@ const palette = {
 
     // Functional
     red: '#FF3B30',
+    overlayBlack: 'rgba(0, 0, 0, 0.6)',
+    semiTransparentBlack: 'rgba(0, 0, 0, 0.4)',
     transparent: 'transparent',
 
     // Accent (contrast to green)
@@ -37,7 +42,8 @@ const fonts = {
     poppinsBold: 'Poppins_700Bold',
 };
 
-const theme = createTheme({
+const createAppTheme = (scalingFactor: number) => createTheme({
+    scalingFactor,
     breakpoints: {
         mobile: 0,
         tablet: 768,
@@ -72,8 +78,8 @@ const theme = createTheme({
         inputBackground: palette.dark2,
 
         // Overlay colors
-        overlayBackground: 'rgba(0, 0, 0, 0.6)',
-        semiTransparentBackground: 'rgba(0, 0, 0, 0.4)',
+        overlayBackground: palette.overlayBlack,
+        semiTransparentBackground: palette.semiTransparentBlack,
 
         playerBackground: palette.black,
 
@@ -83,98 +89,128 @@ const theme = createTheme({
         focusBackgroundPrimary: palette.greenLight,
     },
     spacing: {
-        xs: 4,
-        s: 8,
-        m: 16,
-        l: 24,
-        xl: 32,
-        xxl: 40,
+        xs: withScale(4, scalingFactor),
+        s: withScale(8, scalingFactor),
+        m: withScale(16, scalingFactor),
+        l: withScale(24, scalingFactor),
+        xl: withScale(32, scalingFactor),
+        xxl: withScale(40, scalingFactor),
     },
     borderRadii: {
-        s: 6,
-        m: 12,
-        l: 16,
-        xl: 24,
+        s: withScale(6, scalingFactor),
+        m: withScale(12, scalingFactor),
+        l: withScale(16, scalingFactor),
+        xl: withScale(24, scalingFactor),
         full: 999,
     },
     // Card sizes for consistent dimensions
     cardSizes: {
-        media: { width: 140, height: 200 },
-        continueWatching: { width: 240, height: 140 },
-        profile: { width: 140, height: 180 },
-        episode: { width: 240, imageHeight: 120 },
-        stream: { width: 340 },
+        media: { width: withScale(140, scalingFactor), height: withScale(200, scalingFactor) },
+        continueWatching: { width: withScale(240, scalingFactor), height: withScale(140, scalingFactor) },
+        profile: { width: withScale(140, scalingFactor), height: withScale(180, scalingFactor) },
+        episode: { width: withScale(240, scalingFactor), imageHeight: withScale(120, scalingFactor) },
+        stream: { width: withScale(340, scalingFactor) },
     },
     // General sizes
     sizes: {
-        inputHeight: 56,
-        modalMinWidth: 300,
-        modalMaxWidth: 500,
-        logoMaxWidth: 360,
-        logoHeight: 90,
-        stickyLogoHeight: 44,
-        loadingIndicatorSizeSmall: 44,
-        loadingIndicatorSizeLarge: 72,
-        loadingIndicatorLogoSizeSmall: 35,
-        loadingIndicatorLogoSizeLarge: 65,
-        progressBarHeight: 6,
+        inputHeight: withScale(56, scalingFactor),
+        iconSmall: withScale(16, scalingFactor),
+        iconMedium: withScale(24, scalingFactor),
+        iconLarge: withScale(32, scalingFactor),
+        iconXLarge: withScale(48, scalingFactor),
+        iconXXLarge: withScale(72, scalingFactor),
+        modalMinWidth: {
+            mobile: '100%',
+            tablet: withScale(400, scalingFactor),
+            tv: withScale(500, scalingFactor),
+        } as Record<Breakpoint, DimensionValue>,
+        modalMinWidthWide: {
+            mobile: '100%',
+            tablet: withScale(600, scalingFactor),
+            tv: withScale(900, scalingFactor),
+        } as Record<Breakpoint, DimensionValue>,
+        modalMaxWidth: {
+            mobile: '100%',
+            tablet: '100%',
+            tv: '100%',
+        } as Record<Breakpoint, DimensionValue>,
+        logoMaxWidth: withScale(360, scalingFactor),
+        logoHeight: withScale(90, scalingFactor),
+        stickyLogoHeight: withScale(44, scalingFactor),
+        loadingIndicatorSizeSmall: withScale(44, scalingFactor),
+        loadingIndicatorSizeLarge: withScale(72, scalingFactor),
+        loadingIndicatorLogoSizeSmall: withScale(35, scalingFactor),
+        loadingIndicatorLogoSizeLarge: withScale(65, scalingFactor),
+        progressBarHeight: withScale(6, scalingFactor),
+        mediaDetailsHeader: withScale(350, scalingFactor),
+        // Tab bar (mobile only)
+        tabBarHeight: withScale(65, scalingFactor),
+        tabBarPaddingTop: withScale(10, scalingFactor),
+        // Toast
+        toastMaxWidth: withScale(400, scalingFactor),
+        toastStackGap: withScale(8, scalingFactor),
+        // App start animation
+        appStartLogoSize: withScale(80, scalingFactor),
+        // Hero section
+        heroHeight: withScale(500, scalingFactor),
     },
     // Focus styling for TV
     focus: {
-        borderWidth: 4,
-        borderWidthSmall: 3,
+        borderWidth: withScale(4, scalingFactor),
+        borderWidthSmall: withScale(3, scalingFactor),
         scaleSmall: 1.01,
         scaleMedium: 1.05,
+        scaleLarge: 1.1,
     },
     fonts,
     textVariants: {
         header: {
             fontFamily: 'Outfit_700Bold',
-            fontSize: 32,
+            fontSize: withScale(32, scalingFactor),
             color: 'textPrimary',
         },
         subheader: {
             fontFamily: 'Outfit_600SemiBold',
-            fontSize: 24,
+            fontSize: withScale(24, scalingFactor),
             color: 'textPrimary',
         },
         sectionLabel: {
             fontFamily: 'Outfit_600SemiBold',
-            fontSize: 14,
+            fontSize: withScale(14, scalingFactor),
             color: 'textSecondary',
             textTransform: 'uppercase' as const,
-            letterSpacing: 0.5,
+            letterSpacing: withScale(.5, scalingFactor),
         },
         cardTitle: {
             fontFamily: 'Outfit_700Bold',
-            fontSize: 18,
+            fontSize: withScale(18, scalingFactor),
             color: 'textPrimary',
         },
         body: {
             fontFamily: 'Poppins_400Regular',
-            fontSize: 16,
-            lineHeight: 24,
+            fontSize: withScale(16, scalingFactor),
+            lineHeight: withScale(24, scalingFactor),
             color: 'textPrimary',
         },
         bodySmall: {
             fontFamily: 'Poppins_400Regular',
-            fontSize: 14,
-            lineHeight: 20,
+            fontSize: withScale(14, scalingFactor),
+            lineHeight: withScale(20, scalingFactor),
             color: 'textSecondary',
         },
         caption: {
             fontFamily: 'Poppins_400Regular',
-            fontSize: 14,
+            fontSize: withScale(14, scalingFactor),
             color: 'textSecondary',
         },
         button: {
             fontFamily: 'Outfit_600SemiBold',
-            fontSize: 16,
+            fontSize: withScale(16, scalingFactor),
             color: 'textPrimary',
         },
         defaults: {
             fontFamily: 'Poppins_400Regular',
-            fontSize: 16,
+            fontSize: withScale(16, scalingFactor),
             color: 'textPrimary',
         },
     },
@@ -182,25 +218,25 @@ const theme = createTheme({
         primary: {
             backgroundColor: 'primaryBackground',
             borderRadius: 'full',
-            height: 50,
+            height: withScale(50, scalingFactor),
             justifyContent: 'center',
             alignItems: 'center',
-            paddingHorizontal: 'l',
+            paddingHorizontal: 'm',
         },
         secondary: {
             backgroundColor: 'semiTransparentBackground',
             borderRadius: 'full',
-            height: 50,
+            height: withScale(50, scalingFactor),
             justifyContent: 'center',
             alignItems: 'center',
-            paddingHorizontal: 'l',
+            paddingHorizontal: 'm',
         },
         tertiary: {
             backgroundColor: 'transparent',
-            height: 50,
+            height: withScale(50, scalingFactor),
             justifyContent: 'center',
             alignItems: 'center',
-            paddingHorizontal: 'l',
+            paddingHorizontal: 'm',
         },
         defaults: {
             // Default styles applied if no variant matches
@@ -220,13 +256,15 @@ const theme = createTheme({
             borderRadius: 'm',
             padding: 'm',
             color: 'textPrimary',
-            fontSize: 14,
+            fontSize: withScale(14, scalingFactor),
         }
     }
 });
 
-export type Theme = typeof theme;
+const defaultTheme = createAppTheme(0.8);
+
+export type Theme = typeof defaultTheme;
 export const Box = createBox<Theme>();
 export const Text = createText<Theme>();
-export default theme;
+export { createAppTheme, defaultTheme };
 

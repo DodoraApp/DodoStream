@@ -1,8 +1,9 @@
 import React, { FC, memo, useCallback, useState } from 'react';
-import { Box, Text } from '@/theme/theme';
+import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
+import { useTheme } from '@shopify/restyle';
 
 /** Default color palette for general use */
 const DEFAULT_COLORS = [
@@ -40,20 +41,19 @@ interface ColorSwatchProps {
 }
 
 const ColorSwatch = memo<ColorSwatchProps>(({ color, isSelected, onPress }) => {
+  const theme = useTheme<Theme>();
+
   return (
-    <Focusable onPress={onPress}>
-      {({ isFocused }) => (
-        <Box
-          width={48}
-          height={48}
-          borderRadius="m"
-          borderWidth={isSelected ? 3 : isFocused ? 2 : 1}
-          borderColor={
-            isSelected ? 'primaryBackground' : isFocused ? 'focusForeground' : 'cardBorder'
-          }
-          style={{ backgroundColor: color }}
-        />
-      )}
+    <Focusable
+      onPress={onPress}
+      variant="outline"
+      focusedStyle={{ borderRadius: theme.borderRadii.m }}>
+      <Box
+        width={theme.sizes.inputHeight}
+        height={theme.sizes.inputHeight}
+        borderRadius="m"
+        style={{ backgroundColor: color }}
+      />
     </Focusable>
   );
 });
@@ -66,6 +66,7 @@ ColorSwatch.displayName = 'ColorSwatch';
  */
 export const ColorPicker: FC<ColorPickerProps> = memo(
   ({ value, onValueChange, label, colors = DEFAULT_COLORS, disabled = false }) => {
+    const theme = useTheme<Theme>();
     const [isModalVisible, setIsModalVisible] = useState(false);
 
     const handleOpen = useCallback(() => {
@@ -89,62 +90,42 @@ export const ColorPicker: FC<ColorPickerProps> = memo(
     return (
       <>
         {/* Color Preview Button */}
-        <Focusable onPress={handleOpen} disabled={disabled}>
-          {({ isFocused }) => (
+        <Focusable onPress={handleOpen} disabled={disabled} variant="outline">
+          <Box
+            flexDirection="row"
+            alignItems="center"
+            gap="s"
+            borderRadius="m"
+            paddingHorizontal="m"
+            paddingVertical="s"
+            opacity={disabled ? 0.5 : 1}>
             <Box
-              flexDirection="row"
-              alignItems="center"
-              gap="s"
-              backgroundColor={getFocusableBackgroundColor({
-                isActive: false,
-                isFocused,
-                defaultColor: 'inputBackground',
-              })}
-              borderRadius="m"
-              paddingHorizontal="m"
-              paddingVertical="s"
-              opacity={disabled ? 0.5 : 1}>
-              <Box
-                width={28}
-                height={28}
-                borderRadius="s"
-                borderWidth={1}
-                borderColor="cardBorder"
-                style={{ backgroundColor: value }}
-              />
-              {label && (
-                <Text variant="body" color="textPrimary">
-                  {label}
-                </Text>
-              )}
-            </Box>
-          )}
+              width={theme.sizes.iconMedium}
+              height={theme.sizes.iconMedium}
+              borderRadius="s"
+              borderWidth={1}
+              borderColor="cardBorder"
+              style={{ backgroundColor: value }}
+            />
+            {label && (
+              <Text variant="body" color="textPrimary">
+                {label}
+              </Text>
+            )}
+          </Box>
         </Focusable>
 
         {/* Color Picker Modal */}
-        <Modal visible={isModalVisible} onClose={handleClose}>
-          <Box
-            backgroundColor="cardBackground"
-            borderRadius="l"
-            padding="l"
-            margin="l"
-            maxWidth={400}>
-            <Box gap="m">
-              <Text variant="subheader" textAlign="center">
-                {label ?? 'Select Color'}
-              </Text>
-
-              <Box flexDirection="row" flexWrap="wrap" justifyContent="center" gap="s">
-                {colors.map((color) => (
-                  <ColorSwatch
-                    key={color}
-                    color={color}
-                    isSelected={value === color}
-                    onPress={() => handleSelectColor(color)}
-                  />
-                ))}
-              </Box>
-            </Box>
+        <Modal visible={isModalVisible} onClose={handleClose} label={label ?? 'Select Color'}>
+          <Box flexDirection="row" flexWrap="wrap" justifyContent="center" gap="s">
+            {colors.map((color) => (
+              <ColorSwatch
+                key={color}
+                color={color}
+                isSelected={value === color}
+                onPress={() => handleSelectColor(color)}
+              />
+            ))}
           </Box>
         </Modal>
       </>

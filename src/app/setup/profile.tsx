@@ -18,7 +18,7 @@ export default function ProfileStep() {
   const setCreatedProfileId = useSetupWizardStore((state) => state.setCreatedProfileId);
 
   const handleBack = useCallback(() => {
-    router.back();
+    router.push('/setup/ui');
   }, [router]);
 
   const handleSave = useCallback(

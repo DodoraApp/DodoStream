@@ -17,7 +17,6 @@ import { useDebugLogger } from '@/utils/debug';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 import { useAppSettingsStore } from '@/store/app-settings.store';
-import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface AboutLinkItem {
   id: string;
@@ -36,34 +35,37 @@ const AboutLinkRow: FC<AboutLinkRowProps> = memo(({ item, onPress }) => {
   const theme = useTheme<Theme>();
 
   return (
-    <Focusable onPress={() => onPress(item)}>
-      {({ isFocused }) => (
-        <Box
-          backgroundColor={getFocusableBackgroundColor({
-            isFocused,
-            defaultColor: 'inputBackground',
-          })}
-          borderRadius="m"
-          padding="m"
-          flexDirection="row"
-          alignItems="center"
-          gap="m">
-          <Ionicons name={item.icon} size={22} color={theme.colors.textSecondary} />
+    <Focusable onPress={() => onPress(item)} variant="background">
+      <Box
+        borderRadius="m"
+        padding="m"
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="center"
+        gap="m">
+        <Ionicons
+          name={item.icon}
+          size={theme.sizes.iconMedium}
+          color={theme.colors.textSecondary}
+        />
 
-          <Box flex={1} gap="xs">
-            <Text variant="body" numberOfLines={1}>
-              {item.title}
+        <Box flex={1} gap="xs">
+          <Text variant="body" numberOfLines={1}>
+            {item.title}
+          </Text>
+          {item.description ? (
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {item.description}
             </Text>
-            {item.description ? (
-              <Text variant="caption" color="textSecondary" numberOfLines={1}>
-                {item.description}
-              </Text>
-            ) : null}
-          </Box>
-
-          <Ionicons name="open-outline" size={20} color={theme.colors.textSecondary} />
+          ) : null}
         </Box>
-      )}
+
+        <Ionicons
+          name="open-outline"
+          size={theme.sizes.iconSmall}
+          color={theme.colors.textSecondary}
+        />
+      </Box>
     </Focusable>
   );
 });
@@ -231,15 +233,10 @@ export const AboutSettingsContent: FC = memo(() => {
         </Box>
 
         <SettingsCard title="App">
-          <Focusable onPress={handleVersionTap}>
-            {({ isFocused }) => (
-              <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap="m">
-                <Text variant="body">Version</Text>
-                <Text variant="body" color={isFocused ? 'primaryForeground' : 'textSecondary'}>
-                  {info.appVersion}
-                </Text>
-              </Box>
-            )}
+          <Focusable onPress={handleVersionTap} variant="background">
+            <SettingsRow label="Version">
+              <Text variant="body">{info.appVersion}</Text>
+            </SettingsRow>
           </Focusable>
 
           <SettingsRow label="Commit">
@@ -278,38 +275,22 @@ export const AboutSettingsContent: FC = memo(() => {
             </Text>
           </SettingsRow>
 
-          <Box gap="s">
-            <Focusable
-              disabled={releaseStatus.isFetching}
-              onPress={() => void handleCheckForUpdates()}>
-              {({ isFocused }) => (
-                <Box
-                  backgroundColor={getFocusableBackgroundColor({
-                    isFocused,
-                    defaultColor: 'inputBackground',
-                  })}
-                  borderRadius="m"
-                  paddingVertical="m"
-                  flexDirection="row"
-                  alignItems="center"
-                  justifyContent="space-between">
-                  <Text variant="body">Check for updates</Text>
-                  <Ionicons
-                    name={releaseStatus.isFetching ? 'hourglass-outline' : 'refresh'}
-                    size={20}
-                    color={theme.colors.textSecondary}
-                  />
-                </Box>
-              )}
-            </Focusable>
+          <Focusable onPress={handleCheckForUpdates} variant="background">
+            <SettingsRow label="Check for updates">
+              <Ionicons
+                name={releaseStatus.isFetching ? 'hourglass-outline' : 'refresh'}
+                size={theme.sizes.iconSmall}
+                color={theme.colors.textSecondary}
+              />
+            </SettingsRow>
+          </Focusable>
 
-            <SettingsSwitch
-              label="Check on startup"
-              description="Show an update prompt when a new release is available"
-              value={releaseCheckOnStartup}
-              onValueChange={setReleaseCheckOnStartup}
-            />
-          </Box>
+          <SettingsSwitch
+            label="Check on startup"
+            description="Show an update prompt when a new release is available"
+            value={releaseCheckOnStartup}
+            onValueChange={setReleaseCheckOnStartup}
+          />
         </SettingsCard>
 
         <SettingsCard title="Links">

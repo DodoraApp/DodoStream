@@ -1,15 +1,16 @@
 import { create } from 'zustand';
 
-export type SetupWizardStep = 'welcome' | 'profile' | 'addons' | 'home' | 'playback' | 'complete';
-
-export const WIZARD_STEPS: SetupWizardStep[] = [
+export const WIZARD_STEPS: string[] = [
     'welcome',
+    'ui',
     'profile',
     'addons',
     'home',
     'playback',
     'complete',
 ];
+export type SetupWizardStep = typeof WIZARD_STEPS[number];
+
 
 interface SetupWizardState {
     /** The profile ID created during setup (used for applying settings) */
@@ -17,8 +18,6 @@ interface SetupWizardState {
 
     // Actions
     setCreatedProfileId: (profileId: string) => void;
-    getStepIndex: (step: SetupWizardStep) => number;
-    getTotalSteps: () => number;
     isStepSkippable: (step: SetupWizardStep) => boolean;
 }
 
@@ -27,14 +26,6 @@ export const useSetupWizardStore = create<SetupWizardState>()((set, get) => ({
 
     setCreatedProfileId: (profileId: string) => {
         set({ createdProfileId: profileId });
-    },
-
-    getStepIndex: (step: SetupWizardStep) => {
-        return WIZARD_STEPS.indexOf(step);
-    },
-
-    getTotalSteps: () => {
-        return WIZARD_STEPS.length;
     },
 
     isStepSkippable: (step: SetupWizardStep) => {

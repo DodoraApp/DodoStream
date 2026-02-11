@@ -1,7 +1,8 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Slot, type ErrorBoundaryProps } from 'expo-router';
-import { ThemeProvider } from '@shopify/restyle';
-import theme, { Box, Text } from '@/theme/theme';
+import { ThemeProvider, useTheme } from '@shopify/restyle';
+import { defaultTheme, Box, Text, type Theme } from '@/theme/theme';
+import { AppThemeProvider } from '@/theme/ThemeContext';
 import {
   useFonts,
   Outfit_400Regular,
@@ -19,6 +20,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/query';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
 import { initializeProfiles, useProfileStore } from '@/store/profile.store';
+import { initializeUIStore, useUIStore } from '@/store/ui.store';
 import { Container } from '@/components/basic/Container';
 import { Button } from '@/components/basic/Button';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
@@ -49,7 +51,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   }, [retry]);
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={defaultTheme}>
       <Container>
         <Box flex={1} justifyContent="center" gap="m">
           <Box gap="xs">
@@ -82,7 +84,8 @@ function Layout() {
 
   const isAddonsInitialized = useAddonStore((state) => state.isInitialized);
   const isProfilesInitialized = useProfileStore((state) => state.isInitialized);
-  const storesInitialized = isAddonsInitialized && isProfilesInitialized;
+  const isUIInitialized = useUIStore((state) => state.isInitialized);
+  const storesInitialized = isAddonsInitialized && isProfilesInitialized && isUIInitialized;
 
   useEffect(() => {
     if (!fontsLoaded) return;
@@ -93,10 +96,12 @@ function Layout() {
 
     const init = async () => {
       try {
+        await initializeUIStore();
         await initializeProfiles();
         await initializeAddons();
       } catch (error) {
         console.warn('[boot] init failed', error);
+        useUIStore.getState().setInitialized(true);
         useProfileStore.getState().setInitialized(true);
         useAddonStore.getState().setInitialized(true);
       }
@@ -110,7 +115,7 @@ function Layout() {
 
   if (!storesInitialized) {
     return (
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={defaultTheme}>
         <AppStartAnimation />
       </ThemeProvider>
     );
@@ -118,13 +123,25 @@ function Layout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.mainBackground }}>
-          <ToastContainer />
-          <Slot />
-        </GestureHandlerRootView>
-      </ThemeProvider>
+      <AppThemeProvider>
+        <ThemedAppRoot />
+      </AppThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+/**
+ * Inner component that uses the dynamic theme from AppThemeProvider
+ */
+function ThemedAppRoot() {
+  const currentTheme = useTheme<Theme>();
+
+  return (
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: currentTheme.colors.mainBackground }}>
+      <ToastContainer />
+      <Slot />
+    </GestureHandlerRootView>
   );
 }
 

@@ -75,7 +75,7 @@ const SubtitleListItem = memo<SubtitleListItemProps>(({ item, isSelected, onPres
             isFocused,
             defaultColor: 'mainForeground',
           })}
-          fontSize={16}
+          flexWrap="nowrap"
           style={{ flex: 1 }}>
           {item.label}
         </Text>
@@ -86,7 +86,7 @@ const SubtitleListItem = memo<SubtitleListItemProps>(({ item, isSelected, onPres
             paddingHorizontal="s"
             paddingVertical="xs"
             marginLeft="s">
-            <Text variant="caption" color="textSecondary" fontSize={12}>
+            <Text variant="caption" color="textSecondary">
               {item.tag}
             </Text>
           </Box>
@@ -182,24 +182,17 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
   const keyExtractor = useCallback((item: SubtitlePickerItem) => item.value.toString(), []);
 
   return (
-    <Modal visible={visible} onClose={onClose}>
-      <Box
-        backgroundColor="cardBackground"
-        borderRadius="l"
-        padding="l"
-        flexDirection="row"
-        gap="l"
-        style={{
-          minWidth: 600,
-          maxWidth: 900,
-          minHeight: 400,
-          maxHeight: 600,
-        }}>
+    <Modal visible={visible} onClose={onClose} wide>
+      <Box flexDirection="row" gap="l" flex={1}>
         {/* Left Panel: Subtitle Selector */}
         <Box flex={1} gap="s">
           <Box flexDirection="row" alignItems="center" gap="s" marginBottom="s">
-            <Ionicons name="text" size={24} color={theme.colors.mainForeground} />
-            <Text variant="body" style={{ fontSize: 18, fontWeight: '600' }}>
+            <Ionicons
+              name="text"
+              size={theme.sizes.iconMedium}
+              color={theme.colors.mainForeground}
+            />
+            <Text variant="cardTitle" flexWrap="nowrap">
               Select Subtitles
             </Text>
           </Box>

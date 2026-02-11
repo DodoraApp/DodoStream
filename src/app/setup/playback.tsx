@@ -46,7 +46,7 @@ export default function PlaybackStep() {
               marginHorizontal="m">
               <Ionicons
                 name="information-circle-outline"
-                size={24}
+                size={theme.sizes.iconMedium}
                 color={theme.colors.textSecondary}
               />
               <Box flex={1}>

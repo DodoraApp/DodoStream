@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import {
   createRestyleComponent,
   createVariant,
@@ -16,7 +16,6 @@ import {
 import { Theme, Text, Box } from '@/theme/theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Focusable } from '@/components/basic/Focusable';
-import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 export type IconComponentType = typeof Ionicons | typeof MaterialCommunityIcons;
 
@@ -39,60 +38,48 @@ const ButtonContainer = createRestyleComponent<
 export type ButtonProps<T extends IconComponentType> = React.ComponentProps<
   typeof ButtonContainer
 > &
-  Omit<React.ComponentProps<typeof Focusable>, 'children'> & {
+  Omit<React.ComponentProps<typeof Focusable>, 'children' | 'variant'> & {
     title?: string;
     disabled?: boolean;
     icon?: IconName<T>;
     iconComponent?: T;
   };
 
-export const Button = <T extends IconComponentType = typeof Ionicons>({
-  title,
-  variant = 'primary',
-  disabled = false,
-  icon,
-  iconComponent: IconComponent = Ionicons as T,
-  style,
-  ...rest
-}: ButtonProps<T>) => {
-  const theme = useTheme<Theme>();
-  const textColor =
-    variant === 'primary'
-      ? 'primaryForeground'
-      : variant === 'secondary'
-        ? 'secondaryForeground'
-        : 'tertiaryForeground';
-
-  // Map button variants to whether they're considered "active" (primary style)
-  const isPrimaryVariant = variant === 'primary';
-
-  return (
-    <Focusable disabled={disabled} hasTVPreferredFocus={false} {...rest}>
-      {({ isFocused }) => (
-        <ButtonContainer
-          variant={variant}
-          opacity={disabled ? 0.5 : 1}
-          flexDirection="row"
-          gap="s"
-          borderRadius="full"
-          style={
-            isFocused && !disabled
-              ? {
-                  backgroundColor:
-                    theme.colors[
-                      getFocusableBackgroundColor({
-                        isActive: isPrimaryVariant,
-                        isFocused: true,
-                      })
-                    ],
-                }
-              : undefined
-          }>
+export const Button = forwardRef(
+  <T extends IconComponentType = typeof Ionicons>(
+    {
+      title,
+      variant = 'primary',
+      disabled = false,
+      icon,
+      iconComponent: IconComponent = Ionicons as T,
+      style,
+      ...rest
+    }: ButtonProps<T>,
+    ref: React.Ref<HTMLButtonElement>
+  ) => {
+    const theme = useTheme<Theme>();
+    const textColor =
+      variant === 'primary'
+        ? 'primaryForeground'
+        : variant === 'secondary'
+          ? 'secondaryForeground'
+          : 'tertiaryForeground';
+    return (
+      <Focusable
+        viewRef={ref as any}
+        disabled={disabled}
+        variant="outline"
+        focusedStyle={{
+          borderRadius: theme.borderRadii.full,
+        }}
+        {...rest}>
+        <ButtonContainer variant={variant} flexDirection="row" gap="s" borderRadius="full">
           {icon && (
             // @ts-expect-error: IconComponent type is generic and props are compatible for Ionicons/MaterialCommunityIcons
             <IconComponent
               name={icon as any}
-              size={20}
+              size={theme.sizes.iconMedium}
               color={theme.colors[textColor as keyof Theme['colors']]}
             />
           )}
@@ -102,7 +89,7 @@ export const Button = <T extends IconComponentType = typeof Ionicons>({
             </Text>
           )}
         </ButtonContainer>
-      )}
-    </Focusable>
-  );
-};
+      </Focusable>
+    );
+  }
+);

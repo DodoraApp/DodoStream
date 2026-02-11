@@ -12,7 +12,8 @@ import { useNextVideo, type ContinueWatchingEntry } from '@/hooks/useContinueWat
 import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { useDebugLogger } from '@/utils/debug';
 import { Button } from '@/components/basic/Button';
-import theme from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import type { Theme } from '@/theme/theme';
 
 export interface UpNextResolved {
   videoId: string;
@@ -51,6 +52,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
     onPlayNext,
     onUpNextResolved,
   }) => {
+    const theme = useTheme<Theme>();
     const debug = useDebugLogger('UpNextPopup');
 
     // Determine threshold based on media type (series = 95%, movie = 90%)

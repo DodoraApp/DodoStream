@@ -1,8 +1,9 @@
-import { FC, memo, useState } from 'react';
-import { Alert, TouchableOpacity, Switch, Linking } from 'react-native';
+import { FC, memo, useState, useCallback } from 'react';
+import { Alert, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { FlashList } from '@shopify/flash-list';
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/basic/Input';
 import { Button } from '@/components/basic/Button';
@@ -12,6 +13,8 @@ import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
 import { showToast } from '@/store/toast.store';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
+import { Focusable } from '@/components/basic/Focusable';
+import { VerticalSpacer } from '@/components/basic/Spacer';
 
 export interface AddonsSettingsContentProps {
   /** Whether to show the install addon section (default: true) */
@@ -29,18 +32,16 @@ export interface AddonsSettingsContentProps {
 export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
   ({ showInstall = true, showInstalled = true, scrollable = true }) => {
     const [manifestUrl, setManifestUrl] = useState('');
-    const {
-      removeAddon,
-      toggleUseCatalogsOnHome,
-      toggleUseCatalogsInSearch,
-      toggleUseForSubtitles,
-      error: storeError,
-      getAddonsList,
-    } = useAddonStore();
-    const addons = getAddonsList();
+    // Use proper selectors to subscribe to store changes
+    const addons = useAddonStore((state) => Object.values(state.addons));
+    const removeAddon = useAddonStore((state) => state.removeAddon);
+    const toggleUseCatalogsOnHome = useAddonStore((state) => state.toggleUseCatalogsOnHome);
+    const toggleUseCatalogsInSearch = useAddonStore((state) => state.toggleUseCatalogsInSearch);
+    const toggleUseForSubtitles = useAddonStore((state) => state.toggleUseForSubtitles);
+    const storeError = useAddonStore((state) => state.error);
     const installAddon = useInstallAddon();
 
-    const handleInstall = async () => {
+    const handleInstall = useCallback(async () => {
       if (!manifestUrl.trim()) {
         showToast({ title: 'Error', message: 'Please enter a manifest URL', preset: 'error' });
         return;
@@ -62,20 +63,23 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
           preset: 'error',
         });
       }
-    };
+    }, [manifestUrl, installAddon]);
 
-    const handleRemove = (id: string, name: string) => {
-      Alert.alert('Remove Addon', `Are you sure you want to remove "${name}"?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeAddon(id),
-        },
-      ]);
-    };
+    const handleRemove = useCallback(
+      (id: string, name: string) => {
+        Alert.alert('Remove Addon', `Are you sure you want to remove "${name}"?`, [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: () => removeAddon(id),
+          },
+        ]);
+      },
+      [removeAddon]
+    );
 
-    const onConfigure = (url: string) => {
+    const handleConfigure = useCallback((url: string) => {
       const configureUrl = url.replace(/manifest\.json$/, 'configure');
       Linking.openURL(configureUrl).catch(() => {
         showToast({
@@ -83,7 +87,7 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
           preset: 'error',
         });
       });
-    };
+    }, []);
 
     const content = (
       <Box padding="m" gap="l" flex={1}>
@@ -129,13 +133,13 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
                   <AddonCard
                     addon={item}
                     onRemove={handleRemove}
-                    onConfigure={onConfigure}
+                    onConfigure={handleConfigure}
                     onToggleHome={toggleUseCatalogsOnHome}
                     onToggleSearch={toggleUseCatalogsInSearch}
                     onToggleSubtitles={toggleUseForSubtitles}
                   />
                 )}
-                ItemSeparatorComponent={() => <Box height={8} />}
+                ItemSeparatorComponent={VerticalSpacer}
                 showsVerticalScrollIndicator={false}
               />
             )}
@@ -161,11 +165,37 @@ interface AddonCardProps {
   onConfigure: (url: string) => void;
 }
 
+/**
+ * Individual addon card with action buttons and toggles.
+ * Uses Focusable for all interactive elements to support TV navigation.
+ */
 const AddonCard: FC<AddonCardProps> = memo(
   ({ addon, onRemove, onToggleHome, onToggleSearch, onToggleSubtitles, onConfigure }) => {
+    const theme = useTheme<Theme>();
+
+    const handleRemove = useCallback(() => {
+      onRemove(addon.id, addon.manifest.name);
+    }, [addon.id, addon.manifest.name, onRemove]);
+
+    const handleConfigure = useCallback(() => {
+      onConfigure(addon.manifestUrl);
+    }, [addon.manifestUrl, onConfigure]);
+
+    const handleToggleHome = useCallback(() => {
+      onToggleHome(addon.id);
+    }, [addon.id, onToggleHome]);
+
+    const handleToggleSearch = useCallback(() => {
+      onToggleSearch(addon.id);
+    }, [addon.id, onToggleSearch]);
+
+    const handleToggleSubtitles = useCallback(() => {
+      onToggleSubtitles(addon.id);
+    }, [addon.id, onToggleSubtitles]);
+
     return (
       <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
-        {/* Header with title and remove button */}
+        {/* Header with title and action buttons */}
         <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
           <Box flex={1} gap="xs">
             <Text variant="cardTitle">{addon.manifest.name}</Text>
@@ -178,14 +208,20 @@ const AddonCard: FC<AddonCardProps> = memo(
               </Text>
             )}
           </Box>
-          <Box flexDirection="row" gap="xs">
-            <TouchableOpacity onPress={() => onRemove(addon.id, addon.manifest.name)}>
-              <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
-            </TouchableOpacity>
+
+          {/* Action buttons */}
+          <Box flexDirection="row" gap="s">
+            <AddonActionButton
+              iconName="trash-outline"
+              iconColor={theme.colors.danger}
+              onPress={handleRemove}
+            />
             {addon.manifest.behaviorHints?.configurable && (
-              <TouchableOpacity onPress={() => onConfigure(addon.manifestUrl)}>
-                <Ionicons name="settings-outline" size={20} color={theme.colors.mainForeground} />
-              </TouchableOpacity>
+              <AddonActionButton
+                iconName="settings-outline"
+                iconColor={theme.colors.mainForeground}
+                onPress={handleConfigure}
+              />
             )}
           </Box>
         </Box>
@@ -195,19 +231,19 @@ const AddonCard: FC<AddonCardProps> = memo(
           <SettingsSwitch
             label="Visible on Home"
             value={addon.useCatalogsOnHome}
-            onValueChange={() => onToggleHome(addon.id)}
+            onValueChange={handleToggleHome}
             description="Catalogs are visible on the Home screen"
           />
           <SettingsSwitch
             label="Use in Search"
             value={addon.useCatalogsInSearch}
-            onValueChange={() => onToggleSearch(addon.id)}
+            onValueChange={handleToggleSearch}
             description="Catalogs are used for searching"
           />
           <SettingsSwitch
             label="Use for Subtitles"
             value={addon.useForSubtitles}
-            onValueChange={() => onToggleSubtitles(addon.id)}
+            onValueChange={handleToggleSubtitles}
             description="Subtitles are fetched from this addon if available"
           />
         </Box>
@@ -215,3 +251,21 @@ const AddonCard: FC<AddonCardProps> = memo(
     );
   }
 );
+
+interface AddonActionButtonProps {
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  onPress: () => void;
+}
+
+/**
+ * Focusable icon button for addon actions (remove, configure).
+ * Uses background color change on focus for proper TV support.
+ */
+const AddonActionButton: FC<AddonActionButtonProps> = memo(({ iconName, iconColor, onPress }) => {
+  return (
+    <Focusable onPress={onPress} variant="outline">
+      <Button variant="tertiary" icon={iconName} onPress={onPress} />
+    </Focusable>
+  );
+});

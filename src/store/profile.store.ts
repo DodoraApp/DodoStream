@@ -18,8 +18,8 @@ export interface Profile extends ProfileOptions {
 }
 
 export interface ProfileOptions {
-    avatarIcon?: string;
-    avatarColor?: string;
+    avatarIcon: string;
+    avatarColor: string;
     pin?: string;
 }
 
@@ -119,6 +119,15 @@ export const useProfileStore = create<ProfileState>()(
                 });
                 AsyncStorage.removeItem(`profile-${id}-settings`).catch((error) => {
                     debug('removeProfileStorageFailed', { id, key: `profile-${id}-settings`, error });
+                });
+                AsyncStorage.removeItem(`profile-${id}-playback`).catch((error) => {
+                    debug('removeProfileStorageFailed', { id, key: `profile-${id}-playback`, error });
+                });
+                AsyncStorage.removeItem(`profile-${id}-continue-watching`).catch((error) => {
+                    debug('removeProfileStorageFailed', { id, key: `profile-${id}-continue-watching`, error });
+                });
+                AsyncStorage.removeItem(`profile-${id}-home`).catch((error) => {
+                    debug('removeProfileStorageFailed', { id, key: `profile-${id}-home`, error });
                 });
             },
 

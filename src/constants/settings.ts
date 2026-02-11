@@ -33,6 +33,13 @@ export const SETTINGS_PROFILE_MENU_ITEMS: SettingsMenuItem[] = [
 
 export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
     {
+        id: 'ui',
+        title: 'UI',
+        description: 'Theme and scaling preferences',
+        icon: 'color-palette-outline',
+        href: '/settings/ui',
+    },
+    {
         id: 'addons',
         title: 'Addons',
         description: 'Install and manage addons',
@@ -60,6 +67,7 @@ export const SETTINGS_ROUTES: Record<string, string> = {
     playback: '/settings/playback',
     profiles: '/settings/profiles',
     subtitles: '/settings/subtitles',
+    ui: '/settings/ui',
     addons: '/settings/addons',
     about: '/settings/about',
 };

@@ -34,64 +34,53 @@ export function DismissableModal({
   preferredAction = 'primary',
   onDismiss,
 }: DismissableModalProps) {
-  const theme = useTheme<Theme>();
-
   const showSecondary = !!secondaryActionText && !!onSecondaryAction;
   const showTertiary = !!tertiaryActionText && !!onTertiaryAction;
 
   return (
     <Modal visible={visible} onClose={onDismiss}>
-      <Box
-        backgroundColor="cardBackground"
-        borderRadius="l"
-        padding="l"
-        style={{
-          minWidth: theme.sizes.modalMinWidth,
-          maxWidth: theme.sizes.modalMaxWidth,
-        }}>
-        <Box gap="s">
-          <Box gap="xs">
-            <Text variant="header">{heading}</Text>
-            {subheading ? (
-              <Text variant="subheader" color="textSecondary">
-                {subheading}
-              </Text>
-            ) : null}
-          </Box>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <Text variant="body" color="mainForeground">
-              {body}
+      <Box gap="s">
+        <Box gap="xs">
+          <Text variant="header">{heading}</Text>
+          {subheading ? (
+            <Text variant="subheader" color="textSecondary">
+              {subheading}
             </Text>
-          </ScrollView>
+          ) : null}
+        </Box>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text variant="body" color="mainForeground">
+            {body}
+          </Text>
+        </ScrollView>
 
-          <Box flexDirection="row" gap="s" justifyContent="flex-end" flexWrap="wrap">
+        <Box flexDirection="row" gap="s" justifyContent="flex-end" flexWrap="wrap">
+          <Button
+            variant="primary"
+            title={primaryActionText}
+            onPress={onPrimaryAction}
+            hasTVPreferredFocus={preferredAction === 'primary'}
+            width="100%"
+          />
+          {showSecondary ? (
             <Button
-              variant="primary"
-              title={primaryActionText}
-              onPress={onPrimaryAction}
-              hasTVPreferredFocus={preferredAction === 'primary'}
+              variant="secondary"
+              title={secondaryActionText}
+              onPress={onSecondaryAction!}
+              hasTVPreferredFocus={preferredAction === 'secondary'}
               width="100%"
             />
-            {showSecondary ? (
-              <Button
-                variant="secondary"
-                title={secondaryActionText}
-                onPress={onSecondaryAction!}
-                hasTVPreferredFocus={preferredAction === 'secondary'}
-                width="100%"
-              />
-            ) : null}
+          ) : null}
 
-            {showTertiary ? (
-              <Button
-                variant="secondary"
-                title={tertiaryActionText}
-                onPress={onTertiaryAction!}
-                hasTVPreferredFocus={preferredAction === 'tertiary'}
-                width="100%"
-              />
-            ) : null}
-          </Box>
+          {showTertiary ? (
+            <Button
+              variant="secondary"
+              title={tertiaryActionText}
+              onPress={onTertiaryAction!}
+              hasTVPreferredFocus={preferredAction === 'tertiary'}
+              width="100%"
+            />
+          ) : null}
         </Box>
       </Box>
     </Modal>

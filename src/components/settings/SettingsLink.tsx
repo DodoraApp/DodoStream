@@ -1,10 +1,9 @@
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Focusable } from '@/components/basic/Focusable';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
-import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 
 interface SettingsLinkProps {
   title: string;
@@ -15,10 +14,10 @@ interface SettingsLinkProps {
 
 export function SettingsLink({ title, description, icon, href }: SettingsLinkProps) {
   const router = useRouter();
-  const restyleTheme = useTheme<Theme>();
+  const theme = useTheme<Theme>();
 
-  const iconContainerSize = restyleTheme.sizes.loadingIndicatorSizeSmall;
-  const iconSize = restyleTheme.spacing.l;
+  const iconContainerSize = theme.sizes.loadingIndicatorSizeSmall;
+  const iconSize = theme.spacing.l;
 
   return (
     <Focusable onPress={() => router.push(href as any)}>

@@ -2,14 +2,11 @@ import { FC, useRef } from 'react';
 import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
 import { Box, Text, Theme } from '@/theme/theme';
-import { AppLogo } from '@/components/basic/AppLogo';
 import { useTheme } from '@shopify/restyle';
 import {
   APP_START_LOGO_FADE_IN_MS,
-  APP_START_LOGO_SIZE,
   APP_START_TEXT_EXPAND_DELAY_MS,
   APP_START_TEXT_EXPAND_MS,
-  LOADING_LOGO_ANIMATION_DURATION_MS,
 } from '@/constants/ui';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 

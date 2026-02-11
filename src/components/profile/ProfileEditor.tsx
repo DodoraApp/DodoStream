@@ -1,13 +1,15 @@
 import { FC, useState, useCallback, memo } from 'react';
-import { Modal, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { ScrollView } from 'react-native';
+import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useProfileStore, Profile } from '@/store/profile.store';
 import { Button } from '@/components/basic/Button';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@shopify/restyle';
-
+import { Input } from '@/components/basic/Input';
+import { Modal } from '@/components/basic/Modal';
+import { ColorPicker } from '@/components/basic/ColorPicker';
+import { IconPicker } from '@/components/basic/IconPicker';
+import { SettingsRow } from '@/components/settings/SettingsRow';
 import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
 import { showToast } from '@/store/toast.store';
 
@@ -118,123 +120,52 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
           </Text>
         </Box>
 
-        {/* Name Input */}
-        <Box width="100%" maxWidth={400} gap="s">
-          <Text variant="body" color="mainForeground" style={{ fontWeight: '600' }}>
-            Profile Name
-          </Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter name"
-            placeholderTextColor={theme.colors.textPlaceholder}
-            maxLength={20}
-            style={{
-              backgroundColor: theme.colors.inputBackground,
-              color: theme.colors.textPrimary,
-              padding: 16,
-              borderRadius: 12,
-              fontSize: 16,
-              borderWidth: 1,
-              borderColor: theme.colors.cardBorder,
-            }}
-          />
-        </Box>
-
-        {/* PIN Input */}
-        {showPin && (
-          <Box width="100%" maxWidth={400} gap="s">
-            <Text variant="body" color="mainForeground" style={{ fontWeight: '600' }}>
-              PIN (optional)
-            </Text>
-            <TextInput
-              value={pin}
-              onChangeText={setPin}
-              placeholder="4+ digits"
-              placeholderTextColor={theme.colors.textPlaceholder}
-              keyboardType="number-pad"
-              maxLength={8}
-              secureTextEntry
-              style={{
-                backgroundColor: theme.colors.inputBackground,
-                color: theme.colors.textPrimary,
-                padding: 16,
-                borderRadius: 12,
-                fontSize: 16,
-                borderWidth: 1,
-                borderColor: theme.colors.cardBorder,
-              }}
+        {/* Settings Section */}
+        <Box width="100%" gap="m">
+          {/* Name Input */}
+          <SettingsRow label="Profile Name" description="Enter a name for this profile">
+            <Input
+              value={name}
+              onChangeText={setName}
+              placeholder="Enter name"
+              maxLength={20}
+              icon="person"
             />
-            <Text variant="caption" color="textSecondary">
-              Leave empty for no PIN
-            </Text>
-          </Box>
-        )}
+          </SettingsRow>
 
-        {/* Icon Selection */}
-        <Box width="100%" maxWidth={500} gap="s">
-          <Text variant="body" color="mainForeground" style={{ fontWeight: '600' }}>
-            Choose Icon
-          </Text>
-          <Box
-            flexDirection="row"
-            flexWrap="wrap"
-            gap="m"
-            justifyContent="center"
-            backgroundColor="cardBackground"
-            padding="m"
-            borderRadius="l">
-            {AVATAR_ICONS.map((icon) => (
-              <TouchableOpacity
-                key={icon}
-                onPress={() => setSelectedIcon(icon)}
-                style={{
-                  padding: 8,
-                  borderRadius: 12,
-                  backgroundColor:
-                    selectedIcon === icon
-                      ? theme.colors.primaryBackground
-                      : theme.colors.transparent,
-                }}>
-                <Ionicons name={icon as any} size={32} color={theme.colors.mainForeground} />
-              </TouchableOpacity>
-            ))}
-          </Box>
-        </Box>
-
-        {/* Color Selection */}
-        <Box width="100%" maxWidth={500} gap="s">
-          <Text variant="body" color="mainForeground" style={{ fontWeight: '600' }}>
-            Choose Color
-          </Text>
-          <Box
-            flexDirection="row"
-            flexWrap="wrap"
-            gap="m"
-            justifyContent="center"
-            backgroundColor="cardBackground"
-            padding="m"
-            borderRadius="l">
-            {AVATAR_COLORS.map((color) => (
-              <TouchableOpacity
-                key={color}
-                onPress={() => setSelectedColor(color)}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: color,
-                  borderWidth: selectedColor === color ? 3 : 0,
-                  borderColor: theme.colors.mainForeground,
-                }}
+          {/* PIN Input */}
+          {showPin && (
+            <SettingsRow label="PIN (optional)" description="4+ digits to protect this profile">
+              <Input
+                value={pin}
+                onChangeText={setPin}
+                placeholder="4+ digits"
+                keyboardType="number-pad"
+                maxLength={8}
+                secureTextEntry
+                icon="lock-closed"
               />
-            ))}
-          </Box>
+            </SettingsRow>
+          )}
+
+          {/* Icon Selection */}
+          <SettingsRow label="Avatar Icon" description="Choose an icon for your profile">
+            <IconPicker value={selectedIcon} onValueChange={setSelectedIcon} icons={AVATAR_ICONS} />
+          </SettingsRow>
+
+          {/* Color Selection */}
+          <SettingsRow label="Avatar Color" description="Choose a background color">
+            <ColorPicker
+              value={selectedColor}
+              onValueChange={setSelectedColor}
+              colors={AVATAR_COLORS}
+            />
+          </SettingsRow>
         </Box>
 
         {/* Save Button */}
         {showSaveButton && (
-          <Box width="100%" maxWidth={400} marginTop="m">
+          <Box width="100%" marginTop="m">
             <Button
               title={saveButtonLabel ?? (isEditing ? 'Save Changes' : 'Create Profile')}
               onPress={handleSave}
@@ -262,36 +193,22 @@ interface ProfileEditorProps {
 }
 
 /**
- * Profile editor modal - wraps ProfileEditorContent in a full-screen modal
+ * Profile editor modal - wraps ProfileEditorContent in a Modal
  */
 export const ProfileEditor: FC<ProfileEditorProps> = ({ profile, onClose, onSave }) => {
-  const theme = useTheme<Theme>();
   const isEditing = !!profile;
 
   return (
-    <Modal visible animationType="slide" presentationStyle="fullScreen">
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.mainBackground }}>
-        <Box flex={1} backgroundColor="mainBackground">
-          {/* Header */}
-          <Box
-            flexDirection="row"
-            justifyContent="space-between"
-            alignItems="center"
-            paddingHorizontal="l"
-            paddingVertical="m">
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={32} color={theme.colors.mainForeground} />
-            </TouchableOpacity>
-            <Text variant="subheader" color="mainForeground">
-              {isEditing ? 'Edit Profile' : 'Create Profile'}
-            </Text>
-            {/* Spacer for centering */}
-            <Box width={32} />
-          </Box>
-
-          <ProfileEditorContent profile={profile} onSave={onSave} />
-        </Box>
-      </SafeAreaView>
+    <Modal
+      visible
+      onClose={onClose}
+      label={isEditing ? 'Edit Profile' : 'Create Profile'}
+      icon="person"
+      animationType="slide"
+      closeOnBackdropPress={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ProfileEditorContent profile={profile} onSave={onSave} scrollable={false} />
+      </ScrollView>
     </Modal>
   );
 };

@@ -6,6 +6,7 @@ import { Theme, Box, Text } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { Ionicons } from '@expo/vector-icons';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
+import { Button } from '@/components/basic/Button';
 
 interface SliderInputProps {
   /** Current value */
@@ -96,34 +97,12 @@ export const SliderInput: FC<SliderInputProps> = memo(
 
         <Box flexDirection="row" alignItems="center" gap="xs" height={theme.sizes.inputHeight}>
           {showButtons && (
-            <Focusable onPress={handleDecrement} disabled={disabled || !canDecrement}>
-              {({ isFocused }) => (
-                <Box
-                  width={theme.sizes.inputHeight}
-                  height={theme.sizes.inputHeight}
-                  borderRadius="m"
-                  alignItems="center"
-                  justifyContent="center"
-                  backgroundColor={getFocusableBackgroundColor({
-                    isFocused,
-                    defaultColor: 'inputBackground',
-                  })}
-                  opacity={canDecrement ? 1 : 0.4}>
-                  <Ionicons
-                    name="remove"
-                    size={20}
-                    color={
-                      theme.colors[
-                        getFocusableForegroundColor({
-                          isFocused,
-                          defaultColor: 'textPrimary',
-                        })
-                      ]
-                    }
-                  />
-                </Box>
-              )}
-            </Focusable>
+            <Button
+              icon="remove"
+              onPress={handleDecrement}
+              disabled={disabled || !canDecrement}
+              variant="tertiary"
+            />
           )}
 
           <Box flex={1}>
@@ -134,6 +113,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
               step={step}
               value={value}
               onValueChange={handleSliderChange}
+              
               minimumTrackTintColor={
                 isSliderFocused
                   ? theme.colors.focusBackgroundPrimary
@@ -145,7 +125,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
                   ? theme.colors.focusBackgroundPrimary
                   : theme.colors.primaryBackground
               }
-              disabled={disabled}
+              disabled={disabled || !isSliderFocusable}
               focusable={isSliderFocusable}
               onFocus={isSliderFocusable ? () => setIsSliderFocused(true) : undefined}
               onBlur={isSliderFocusable ? () => setIsSliderFocused(false) : undefined}
@@ -153,34 +133,12 @@ export const SliderInput: FC<SliderInputProps> = memo(
           </Box>
 
           {showButtons && (
-            <Focusable onPress={handleIncrement} disabled={disabled || !canIncrement}>
-              {({ isFocused }) => (
-                <Box
-                  width={theme.sizes.inputHeight}
-                  height={theme.sizes.inputHeight}
-                  borderRadius="m"
-                  alignItems="center"
-                  justifyContent="center"
-                  backgroundColor={getFocusableBackgroundColor({
-                    isFocused,
-                    defaultColor: 'inputBackground',
-                  })}
-                  opacity={canIncrement ? 1 : 0.4}>
-                  <Ionicons
-                    name="add"
-                    size={20}
-                    color={
-                      theme.colors[
-                        getFocusableForegroundColor({
-                          isFocused,
-                          defaultColor: 'textPrimary',
-                        })
-                      ]
-                    }
-                  />
-                </Box>
-              )}
-            </Focusable>
+            <Button
+              icon="add"
+              onPress={handleIncrement}
+              disabled={disabled || !canIncrement}
+              variant="tertiary"
+            />
           )}
         </Box>
       </Box>

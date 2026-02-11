@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useQueries, useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import {
     fetchManifest,
@@ -147,6 +147,47 @@ export function usePrefetchCatalog() {
             staleTime: 1000 * 60 * 10,
         });
     };
+}
+
+/** Default page size for catalog pagination */
+const CATALOG_PAGE_SIZE = 100;
+
+/**
+ * Hook to fetch a catalog with infinite scroll support
+ * Uses useInfiniteQuery for automatic page management
+ * @param manifestUrl - The addon's manifest URL
+ * @param type - The content type (movie, series, etc.)
+ * @param id - The catalog ID
+ * @param enabled - Whether to run the query
+ */
+export function useInfiniteCatalog(
+    manifestUrl: string,
+    type: string,
+    id: string,
+    enabled: boolean = true
+) {
+    return useInfiniteQuery({
+        queryKey: [...stremioKeys.catalog(manifestUrl, type, id), 'infinite'],
+        queryFn: async ({ pageParam = 0 }) => {
+            const result = await fetchCatalogWithPagination(manifestUrl, type, id, pageParam);
+            return {
+                metas: result.metas,
+                skip: pageParam,
+                hasMore: result.metas.length >= CATALOG_PAGE_SIZE,
+            };
+        },
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => {
+            // If we got fewer items than page size, there's no more data
+            if (!lastPage.hasMore) {
+                return undefined;
+            }
+            // Return the next skip value
+            return lastPage.skip + CATALOG_PAGE_SIZE;
+        },
+        enabled: enabled && !!manifestUrl && !!type && !!id,
+        staleTime: 1000 * 60 * 10, // 10 minutes
+    });
 }
 
 /**

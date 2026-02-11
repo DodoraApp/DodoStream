@@ -53,7 +53,7 @@ export default function AddonsStep() {
               <Box flexDirection="row" alignItems="center" gap="s">
                 <Ionicons
                   name="information-circle"
-                  size={24}
+                  size={theme.sizes.iconMedium}
                   color={theme.colors.primaryBackground}
                 />
                 <Text variant="body" style={{ fontWeight: '600' }}>

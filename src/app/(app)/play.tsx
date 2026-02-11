@@ -8,11 +8,6 @@ import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useTVBackButton } from '@/hooks/useTVBackButton';
 
-const parseBooleanParam = (value?: string): boolean => {
-  if (!value) return false;
-  return value === '1' || value.toLowerCase() === 'true';
-};
-
 const Play = () => {
   const {
     source,
@@ -39,7 +34,7 @@ const Play = () => {
   const { replaceToStreams } = useMediaNavigation();
 
   const debug = useDebugLogger('Play');
-  const shouldReturnToStreams = parseBooleanParam(fromAutoPlay);
+  const shouldReturnToStreams = fromAutoPlay === '1';
 
   const returnToStreams = useCallback(() => {
     if (!metaId || !type || !videoId) {

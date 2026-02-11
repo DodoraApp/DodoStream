@@ -1,6 +1,7 @@
 import { FC, memo, useState, useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { useProfileStore, Profile } from '@/store/profile.store';
 import { Button } from '@/components/basic/Button';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
@@ -16,6 +17,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
  * Extracted for use in both standalone page and split layout
  */
 export const ProfilesSettingsContent: FC = memo(() => {
+  const theme = useTheme<Theme>();
   const profiles = useProfileStore((state) => state.profiles);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const switchProfile = useProfileStore((state) => state.switchProfile);

@@ -6,6 +6,7 @@ import { moveItem } from '@/utils/array';
 import { Focusable } from '@/components/basic/Focusable';
 import { Button } from '@/components/basic/Button';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export interface OrderableItem {
   /** Unique identifier for the item */
@@ -81,49 +82,51 @@ function OrderableListSectionImpl<T extends OrderableItem>({
   );
 
   return (
-    <Box gap="m">
-      {/* Selected items section */}
-      <Box gap="s">
-        <Text variant="caption" color="textPrimary">
-          {selectedLabel}
-        </Text>
-
-        {selectedItems.length === 0 ? (
-          <Text variant="body" color="textSecondary">
-            {emptyPlaceholder}
+    <ScrollView>
+      <Box gap="m">
+        {/* Selected items section */}
+        <Box gap="s">
+          <Text variant="caption" color="textPrimary">
+            {selectedLabel}
           </Text>
-        ) : (
+
+          {selectedItems.length === 0 ? (
+            <Text variant="body" color="textSecondary">
+              {emptyPlaceholder}
+            </Text>
+          ) : (
+            <Box gap="s">
+              {selectedItems.map((item, index) => (
+                <SelectedRow
+                  key={keyFn(item)}
+                  item={item}
+                  index={index}
+                  total={selectedItems.length}
+                  onMoveUp={() => handleMoveUp(index)}
+                  onMoveDown={() => handleMoveDown(index)}
+                  onRemove={() => handleRemove(item)}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {/* Available items section */}
+        {availableItems.length > 0 && (
           <Box gap="s">
-            {selectedItems.map((item, index) => (
-              <SelectedRow
-                key={keyFn(item)}
-                item={item}
-                index={index}
-                total={selectedItems.length}
-                onMoveUp={() => handleMoveUp(index)}
-                onMoveDown={() => handleMoveDown(index)}
-                onRemove={() => handleRemove(item)}
-              />
-            ))}
+            <Text variant="caption" color="textPrimary">
+              {availableLabel}
+            </Text>
+
+            <Box gap="s">
+              {availableItems.map((item) => (
+                <AddRow key={keyFn(item)} item={item} onAdd={() => handleAdd(item)} />
+              ))}
+            </Box>
           </Box>
         )}
       </Box>
-
-      {/* Available items section */}
-      {availableItems.length > 0 && (
-        <Box gap="s">
-          <Text variant="caption" color="textPrimary">
-            {availableLabel}
-          </Text>
-
-          <Box gap="s">
-            {availableItems.map((item) => (
-              <AddRow key={keyFn(item)} item={item} onAdd={() => handleAdd(item)} />
-            ))}
-          </Box>
-        </Box>
-      )}
-    </Box>
+    </ScrollView>
   );
 }
 
@@ -148,9 +151,6 @@ function SelectedRowImpl<T extends OrderableItem>({
   onMoveDown,
   onRemove,
 }: SelectedRowProps<T>) {
-  const theme = useTheme<Theme>();
-  const [isFocused, setIsFocused] = React.useState(false);
-
   return (
     <Box
       flexDirection="row"
@@ -160,10 +160,7 @@ function SelectedRowImpl<T extends OrderableItem>({
       paddingVertical="s"
       borderRadius="m"
       backgroundColor="inputBackground"
-      style={{
-        borderWidth: theme.focus.borderWidthSmall,
-        borderColor: isFocused ? theme.colors.primaryBackground : theme.colors.transparent,
-      }}>
+      flexWrap="wrap">
       <Box flex={1} gap="xs">
         <Text variant="body" numberOfLines={1}>
           {item.label}
@@ -176,26 +173,14 @@ function SelectedRowImpl<T extends OrderableItem>({
       </Box>
 
       <Box flexDirection="row" alignItems="center" gap="s">
-        <Button
-          icon="chevron-up"
-          disabled={index === 0}
-          onPress={onMoveUp}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-        />
+        <Button icon="chevron-up" disabled={index === 0} onPress={onMoveUp} variant="secondary" />
         <Button
           icon="chevron-down"
           disabled={index === total - 1}
           onPress={onMoveDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          variant="secondary"
         />
-        <Button
-          icon="trash"
-          onPress={onRemove}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-        />
+        <Button icon="trash" onPress={onRemove} variant="tertiary" />
       </Box>
     </Box>
   );
@@ -213,42 +198,23 @@ function AddRowImpl<T extends OrderableItem>({ item, onAdd }: AddRowProps<T>) {
 
   return (
     <Focusable onPress={onAdd}>
-      {({ isFocused }) => (
-        <Box
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="space-between"
-          paddingHorizontal="m"
-          paddingVertical="s"
-          borderRadius="m"
-          backgroundColor={getFocusableBackgroundColor({
-            isFocused,
-            defaultColor: 'inputBackground',
-          })}
-          style={{
-            borderWidth: theme.focus.borderWidthSmall,
-            borderColor: isFocused ? theme.colors.primaryBackground : theme.colors.transparent,
-          }}>
-          <Box flex={1} gap="xs">
-            <Text
-              variant="body"
-              numberOfLines={1}
-              color={getFocusableForegroundColor({ isFocused, defaultColor: 'textPrimary' })}>
-              {item.label}
+      <Box
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="space-between"
+        paddingHorizontal="m"
+        paddingVertical="s"
+        borderRadius="m">
+        <Box flex={1} gap="xs">
+          <Text variant="body">{item.label}</Text>
+          {item.secondaryLabel && (
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              {item.secondaryLabel}
             </Text>
-            {item.secondaryLabel && (
-              <Text variant="caption" color="textSecondary" numberOfLines={1}>
-                {item.secondaryLabel}
-              </Text>
-            )}
-          </Box>
-          <Ionicons
-            name="add"
-            size={20}
-            color={isFocused ? theme.colors.focusForeground : theme.colors.textSecondary}
-          />
+          )}
         </Box>
-      )}
+        <Ionicons name="add" size={theme.sizes.iconMedium} color={theme.colors.textSecondary} />
+      </Box>
     </Focusable>
   );
 }

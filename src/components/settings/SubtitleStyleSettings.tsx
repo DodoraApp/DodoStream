@@ -2,8 +2,7 @@ import React, { FC, memo, useCallback, useMemo, useState } from 'react';
 import { Platform, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Ionicons } from '@expo/vector-icons';
-import theme, { Box, Text } from '@/theme/theme';
-import type { Theme } from '@/theme/theme';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { ColorPicker } from '@/components/basic/ColorPicker';
 import { SliderInput } from '@/components/basic/SliderInput';
 import { PickerModal, PickerItem } from '@/components/basic/PickerModal';
@@ -23,6 +22,8 @@ import {
 } from '@/constants/subtitles';
 import type { SubtitleStyle, SubtitleFontFamily } from '@/types/subtitles';
 import { computeSubtitleStyle } from '@/utils/subtitle-style';
+import { PickerInput } from '@/components/basic/PickerInput';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 
 const PREVIEW_ASPECT_RATIO = 16 / 9;
 const PREVIEW_SAMPLE_TEXT = 'Sample subtitle text\nSecond line of dialogue';
@@ -31,22 +32,6 @@ interface SubtitlePreviewProps {
   style: SubtitleStyle;
   containerWidth: number;
 }
-
-/**
- * Get the platform-specific font family for the given subtitle font family.
- */
-const getFontFamily = (family: SubtitleFontFamily): string | undefined => {
-  switch (family) {
-    case 'System':
-      return undefined;
-    case 'Serif':
-      return Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' });
-    case 'Monospace':
-      return Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
-    default:
-      return family;
-  }
-};
 
 /**
  * Renders a 16:9 preview of subtitles with the current style settings.
@@ -59,16 +44,7 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
 
   const computed = useMemo(
     () => computeSubtitleStyle(style, previewHeight),
-    [
-      previewHeight,
-      style.fontFamily,
-      style.fontSize,
-      style.fontColor,
-      style.fontOpacity,
-      style.backgroundColor,
-      style.backgroundOpacity,
-      style.bottomPosition,
-    ]
+    [style, previewHeight]
   );
 
   return (
@@ -186,11 +162,15 @@ export const SubtitleStylePreview: FC = memo(() => {
   const restyleTheme = useTheme<Theme>();
   const { width: windowWidth } = useWindowDimensions();
   const { subtitleStyle } = useActiveProfileSubtitleStyle();
+  const { isWide } = useResponsiveLayout();
 
   const previewWidth = useMemo(() => {
-    const horizontalPadding = restyleTheme.spacing.m * 3;
-    return Math.min(windowWidth - horizontalPadding, 600);
-  }, [restyleTheme.spacing.m, windowWidth]);
+    const horizontalPadding = restyleTheme.spacing.m * 2;
+    return Math.min(
+      windowWidth - horizontalPadding,
+      isWide ? windowWidth / 2 : windowWidth - horizontalPadding
+    );
+  }, [isWide, restyleTheme.spacing.m, windowWidth]);
 
   return (
     <Box alignItems="center" marginBottom="m">
@@ -202,6 +182,7 @@ export const SubtitleStylePreview: FC = memo(() => {
 SubtitleStylePreview.displayName = 'SubtitleStylePreview';
 
 export const SubtitleStyleControls: FC = memo(() => {
+  const theme = useTheme<Theme>();
   const [showFontPicker, setShowFontPicker] = useState(false);
   const { subtitleStyle, updateStyle } = useActiveProfileSubtitleStyle();
 
@@ -224,21 +205,14 @@ export const SubtitleStyleControls: FC = memo(() => {
       <SectionLabel label="Font" />
 
       <SettingRow label="Font Family">
-        <TouchableOpacity onPress={() => setShowFontPicker(true)}>
-          <Box
-            backgroundColor="inputBackground"
-            borderRadius="m"
-            paddingHorizontal="m"
-            paddingVertical="s"
-            flexDirection="row"
-            alignItems="center"
-            gap="s"
-            minWidth={140}>
-            <Ionicons name="text" size={20} color={theme.colors.textSecondary} />
-            <Text variant="body">{currentFontLabel}</Text>
-            <Ionicons name="chevron-down" size={20} color={theme.colors.textSecondary} />
-          </Box>
-        </TouchableOpacity>
+        <PickerInput
+          icon="text"
+          label="Select Font"
+          items={fontFamilyItems}
+          selectedLabel={currentFontLabel}
+          selectedValue={subtitleStyle.fontFamily}
+          onValueChange={(value: SubtitleFontFamily) => updateStyle({ fontFamily: value })}
+        />
       </SettingRow>
 
       <SliderInput
@@ -299,19 +273,6 @@ export const SubtitleStyleControls: FC = memo(() => {
         maximumValue={SUBTITLE_POSITION_MAX}
         step={SUBTITLE_POSITION_STEP}
         unit="%"
-      />
-
-      <PickerModal
-        visible={showFontPicker}
-        onClose={() => setShowFontPicker(false)}
-        label="Select Font"
-        icon="text"
-        items={fontFamilyItems}
-        selectedValue={subtitleStyle.fontFamily}
-        onValueChange={(value: SubtitleFontFamily) => {
-          updateStyle({ fontFamily: value });
-          setShowFontPicker(false);
-        }}
       />
     </Box>
   );

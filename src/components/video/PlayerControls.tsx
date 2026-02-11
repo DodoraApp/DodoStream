@@ -125,10 +125,10 @@ interface TimeDisplayProps {
 
 const TimeDisplay = memo<TimeDisplayProps>(({ displayedTime, duration }) => (
   <Box flexDirection="row" alignItems="center" justifyContent="space-between" paddingHorizontal="s">
-    <Text variant="body" color="mainForeground" fontSize={14}>
+    <Text variant="body" color="mainForeground">
       {formatPlaybackTime(displayedTime)}
     </Text>
-    <Text variant="body" color="mainForeground" fontSize={14}>
+    <Text variant="body" color="mainForeground">
       {formatPlaybackTime(duration)}
     </Text>
   </Box>
@@ -269,7 +269,15 @@ interface PlaybackControlsProps {
 }
 
 const PlaybackControls = memo<PlaybackControlsProps>(
-  ({ paused, showLoadingIndicator, onPlayPause, onSkipBackward, onSkipForward, onFocusChange, hasTVPreferredFocus }) => (
+  ({
+    paused,
+    showLoadingIndicator,
+    onPlayPause,
+    onSkipBackward,
+    onSkipForward,
+    onFocusChange,
+    hasTVPreferredFocus,
+  }) => (
     <Box flexDirection="row" alignItems="center" gap="s">
       <ControlButton
         onPress={onSkipBackward}
@@ -748,10 +756,8 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           onDelayChange={onSubtitleDelayChange}
         />
 
-        <Modal visible={showSettingsModal} onClose={handleCloseSettings}>
-          <Box backgroundColor="cardBackground" borderRadius="l">
-            <PlaybackSettingsContent />
-          </Box>
+        <Modal visible={showSettingsModal} onClose={handleCloseSettings} disablePadding>
+          <PlaybackSettingsContent />
         </Modal>
       </Box>
     </Pressable>

@@ -8,15 +8,12 @@ export const TOAST_ENTER_DURATION_MS = 250;
 export const TOAST_EXIT_DURATION_MS = 200;
 
 // Toast layout
-export const TOAST_MAX_WIDTH = 400;
-export const TOAST_STACK_GAP = 8;
 export const TOAST_MAX_VISIBLE = 5;
 
 // Loading animation timings
 export const LOADING_LOGO_ANIMATION_DURATION_MS = 800;
 
 // App start animation
-export const APP_START_LOGO_SIZE = 80;
 export const APP_START_LOGO_FADE_IN_MS = 500;
 export const APP_START_TEXT_EXPAND_DELAY_MS = 600;
 export const APP_START_TEXT_EXPAND_MS = 400;
@@ -30,7 +27,6 @@ export const ANIMATION_SKELETON_PULSE_DURATION_MS = 1200;
 // Fade-in timing for content after data loads
 export const ANIMATION_FADE_IN_MS = 400;
 
-export const HERO_HEIGHT = 500;
 // Hero section animation timings
 export const HERO_AUTO_SCROLL_INTERVAL_MS = 8000;
 export const HERO_CROSSFADE_DURATION_MS = 800;
@@ -45,3 +41,12 @@ export const ADDON_MANIFEST_FETCH_TIMEOUT_MS = 10_000;
 // Setup Wizard
 export const WIZARD_STEP_ANIMATION_MS = 300;
 export const WIZARD_CONTENT_FADE_MS = 250;
+
+// TV Focus animation timing
+export const TV_FOCUS_ANIMATION_MS = 150;
+
+// TV FlashList configuration for smoother scrolling
+// drawDistance: Pre-render content ahead for smoother scrolling (pixels)
+// TV needs larger values because D-pad navigation can be faster than touch scrolling
+export const TV_DRAW_DISTANCE = 1500;
+export const MOBILE_DRAW_DISTANCE = 250;

@@ -1,4 +1,5 @@
-import theme, { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { AppLogo } from '@/components/basic/AppLogo';
 import { LOADING_LOGO_ANIMATION_DURATION_MS } from '@/constants/ui';
 // import { useEffect } from 'react';
@@ -13,14 +14,18 @@ interface LoadingIndicatorProps {
 }
 
 const SimpleLoadingIndicator = ({ size }: { size: 'small' | 'large' }) => {
+  const theme = useTheme<Theme>();
+
+  const usedSize = size === 'small' ? theme.sizes.iconSmall : theme.sizes.iconMedium;
   return (
     <Box justifyContent="center" alignItems="center">
-      <ActivityIndicator size={size} color={theme.colors.primaryBackground} />
+      <ActivityIndicator size={usedSize} color={theme.colors.primaryBackground} />
     </Box>
   );
 };
 
 const LogoLoadingIndicator = ({ size, message }: { size: 'small' | 'large'; message?: string }) => {
+  const theme = useTheme<Theme>();
   const containerSize =
     size === 'small'
       ? theme.sizes.loadingIndicatorSizeSmall

@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { Skeleton } from '@/components/basic/Skeleton';
 import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
-import { MEDIA_DETAILS_HEADER_COVER_HEIGHT } from '@/constants/media';
 import type { Theme } from '@/theme/theme';
 import { Box } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -39,7 +38,7 @@ export const MediaDetailsSkeleton = memo(({ variant = 'full' }: MediaDetailsSkel
   return (
     <Box>
       {variant !== 'minimal' && (
-        <Skeleton width="100%" height={MEDIA_DETAILS_HEADER_COVER_HEIGHT} borderRadius="m" />
+        <Skeleton width="100%" height={theme.sizes.mediaDetailsHeader} borderRadius="m" />
       )}
 
       <Box padding="l" gap="m">

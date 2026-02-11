@@ -8,12 +8,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Box, Text, Theme } from '@/theme/theme';
 import { useToastStore, Toast as ToastType, ToastPreset, ToastHaptic } from '@/store/toast.store';
-import {
-  TOAST_ENTER_DURATION_MS,
-  TOAST_EXIT_DURATION_MS,
-  TOAST_MAX_WIDTH,
-  TOAST_STACK_GAP,
-} from '@/constants/ui';
+import { TOAST_ENTER_DURATION_MS, TOAST_EXIT_DURATION_MS } from '@/constants/ui';
 
 const triggerHaptic = (haptic: ToastHaptic) => {
   if (Platform.isTV || haptic === 'none') return;
@@ -37,7 +32,8 @@ interface ToastIconProps {
 }
 
 const ToastIcon: FC<ToastIconProps> = memo(({ preset, color }) => {
-  const iconSize = 25;
+  const theme = useTheme<Theme>();
+  const iconSize = theme.sizes.iconMedium;
 
   switch (preset) {
     case 'success':
@@ -129,10 +125,12 @@ const ToastItem: FC<ToastItemProps> = memo(({ toast, index, onDismiss }) => {
       style={{
         width: '100%',
         alignItems: 'center',
-        marginBottom: TOAST_STACK_GAP,
-        maxWidth: TOAST_MAX_WIDTH,
+        marginBottom: theme.sizes.toastStackGap,
+        maxWidth: theme.sizes.toastMaxWidth,
       }}>
-      <Pressable onPress={handlePress} style={{ width: '100%', maxWidth: TOAST_MAX_WIDTH }}>
+      <Pressable
+        onPress={handlePress}
+        style={{ width: '100%', maxWidth: theme.sizes.toastMaxWidth }}>
         <Box
           flexDirection="row"
           alignItems="center"

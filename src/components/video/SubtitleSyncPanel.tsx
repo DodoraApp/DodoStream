@@ -59,8 +59,8 @@ export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
       <Box flex={1} gap="m">
         {/* Header */}
         <Box flexDirection="row" alignItems="center" gap="s" marginBottom="s">
-          <Ionicons name="sync" size={24} color={theme.colors.mainForeground} />
-          <Text variant="body" style={{ fontSize: 18, fontWeight: '600' }}>
+          <Ionicons name="sync" size={theme.sizes.iconMedium} color={theme.colors.mainForeground} />
+          <Text variant="cardTitle">
             Subtitle Sync
           </Text>
         </Box>

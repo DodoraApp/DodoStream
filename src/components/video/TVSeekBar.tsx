@@ -1,5 +1,14 @@
-import React, { FC, memo, useState, useRef, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Platform, Pressable, useTVEventHandler, HWEvent } from 'react-native';
+import React, { FC, memo, useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  Platform,
+  Pressable,
+  useTVEventHandler,
+  HWEvent,
+  findNodeHandle,
+  TVFocusGuideView,
+} from 'react-native';
 import { Box, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import {
@@ -76,6 +85,9 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
 
     // Ref to track if focused (avoids stale closure issues)
     const isFocusedRef = useRef(false);
+
+    // Ref for the pressable element and its node handle for trapping horizontal focus
+    const pressableRef = useRef<View>(null);
 
     // Keep ref in sync with state
     useEffect(() => {
@@ -307,62 +319,67 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
     }
 
     return (
-      <Pressable
-        disabled={disabled}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        hasTVPreferredFocus={hasTVPreferredFocus}
-        style={styles.pressable}>
-        <Box
-          height={theme.sizes.inputHeight}
-          justifyContent="center"
-          paddingHorizontal="s"
-          opacity={disabled ? 0.5 : 1}>
-          {/* Track container */}
-          <View style={styles.trackContainer}>
-            {/* Background track */}
-            <View
-              style={[
-                styles.track,
-                {
-                  backgroundColor: theme.colors.secondaryBackground,
-                  height: trackHeight,
-                  borderRadius: trackHeight / 2,
-                },
-              ]}
-            />
+      <TVFocusGuideView trapFocusLeft trapFocusRight>
+        <Pressable
+          ref={pressableRef}
+          disabled={disabled}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          hasTVPreferredFocus={hasTVPreferredFocus}
+          style={styles.pressable}>
+          <Box
+            height={theme.sizes.inputHeight}
+            justifyContent="center"
+            paddingHorizontal="s"
+            opacity={disabled ? 0.5 : 1}>
+            {/* Track container */}
+            <View style={styles.trackContainer}>
+              {/* Background track */}
+              <View
+                style={[
+                  styles.track,
+                  {
+                    backgroundColor: theme.colors.secondaryBackground,
+                    height: trackHeight,
+                    borderRadius: trackHeight / 2,
+                  },
+                ]}
+              />
 
-            {/* Progress track */}
-            <View
-              style={[
-                styles.progressTrack,
-                {
-                  backgroundColor: trackColor,
-                  width: `${progress}%`,
-                  height: trackHeight,
-                  borderRadius: trackHeight / 2,
-                },
-              ]}
-            />
+              {/* Progress track */}
+              <View
+                style={[
+                  styles.progressTrack,
+                  {
+                    backgroundColor: trackColor,
+                    width: `${progress}%`,
+                    height: trackHeight,
+                    borderRadius: trackHeight / 2,
+                  },
+                ]}
+              />
 
-            {/* Thumb */}
-            <View
-              style={[
-                styles.thumb,
-                {
-                  left: `${progress}%`,
-                  width: effectiveThumbSize,
-                  height: effectiveThumbSize,
-                  borderRadius: effectiveThumbSize / 2,
-                  backgroundColor: trackColor,
-                  marginLeft: -effectiveThumbSize / 2,
-                  marginTop: -effectiveThumbSize / 2 + trackHeight / 2,
-                },
-              ]}
-            />
-          </View>
-        </Box>
-      </Pressable>
+              {/* Thumb */}
+              {isFocused && (
+                <View
+                  style={[
+                    styles.thumb,
+                    {
+                      left: `${progress}%`,
+                      width: effectiveThumbSize,
+                      height: effectiveThumbSize,
+                      borderRadius: effectiveThumbSize / 2,
+                      backgroundColor: trackColor,
+                      marginLeft: -effectiveThumbSize / 2,
+                      marginTop: -effectiveThumbSize / 2 + trackHeight / 2,
+                    },
+                  ]}
+                />
+              )}
+            </View>
+          </Box>
+        </Pressable>
+      </TVFocusGuideView>
     );
   }
 );

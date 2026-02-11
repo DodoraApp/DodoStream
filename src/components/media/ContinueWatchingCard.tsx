@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/basic/ProgressBar';
 import { getImageSource } from '@/utils/image';
 import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel, formatEpisodeCardTitle } from '@/utils/format';
+import { Pressable } from 'react-native';
 
 interface ContinueWatchingCardProps {
   /** The continue watching entry to display */
@@ -45,66 +46,66 @@ export const ContinueWatchingCard = memo(
     const finalImageSource = getImageSource(video?.thumbnail ?? imageUrl, NO_POSTER_LANDSCAPE);
 
     return (
-      <Focusable
-        onPress={onPress}
-        onLongPress={onLongPress}
-        onFocus={() => onFocused?.()}
-        hasTVPreferredFocus={hasTVPreferredFocus}
-        withOutline
-        testID={testID}>
-        {({ focusStyle }) => (
-          <Box width={theme.cardSizes.continueWatching.width} gap="s">
+      <Box width={theme.cardSizes.continueWatching.width} gap="s">
+        <Focusable
+          onPress={onPress}
+          onLongPress={onLongPress}
+          onFocus={() => onFocused?.()}
+          hasTVPreferredFocus={hasTVPreferredFocus}
+          variant="outline"
+          focusedStyle={{ borderRadius: theme.borderRadii.l }}
+          testID={testID}>
+          <Box
+            height={theme.cardSizes.continueWatching.height}
+            width={theme.cardSizes.continueWatching.width}
+            borderRadius="l"
+            overflow="hidden"
+            backgroundColor="cardBackground"
+            position="relative">
+            <Image
+              source={finalImageSource}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              recyclingKey={key}
+            />
+
             <Box
-              height={theme.cardSizes.continueWatching.height}
-              width={theme.cardSizes.continueWatching.width}
-              borderRadius="l"
-              overflow="hidden"
-              backgroundColor="cardBackground"
-              position="relative"
-              style={focusStyle}>
-              <Image
-                source={finalImageSource}
-                style={{ width: '100%', height: '100%' }}
-                contentFit="cover"
-                recyclingKey={key}
-              />
-
-              <Box
-                position="absolute"
-                top={theme.spacing.s}
-                right={theme.spacing.s}
-                flexDirection="row"
-                gap="s">
-                {isUpNext && <Badge label="UP NEXT" variant="tertiary" />}
-                {episodeLabel && <Badge label={episodeLabel} />}
-              </Box>
-
-              {!isUpNext && clampedProgress > 0 && clampedProgress < 1 ? (
-                <Box position="absolute" left={0} right={0} bottom={0}>
-                  <ProgressBar
-                    testID="continue-watching-progress"
-                    progress={clampedProgress}
-                    height={theme.sizes.progressBarHeight}
-                  />
-                </Box>
-              ) : null}
+              position="absolute"
+              top={theme.spacing.s}
+              right={theme.spacing.s}
+              flexDirection="row"
+              gap="s">
+              {isUpNext && <Badge label="UP NEXT" variant="tertiary" />}
+              {episodeLabel && <Badge label={episodeLabel} />}
             </Box>
 
-            {!hideText && (
-              <Box gap="xs">
-                <Text variant="cardTitle" numberOfLines={1}>
-                  {title}
-                </Text>
-                {subtitle ? (
-                  <Text variant="caption" numberOfLines={1} color="textSecondary">
-                    {subtitle}
-                  </Text>
-                ) : null}
+            {!isUpNext && clampedProgress > 0 && clampedProgress < 1 ? (
+              <Box position="absolute" left={0} right={0} bottom={0}>
+                <ProgressBar
+                  testID="continue-watching-progress"
+                  progress={clampedProgress}
+                  height={theme.sizes.progressBarHeight}
+                />
               </Box>
-            )}
+            ) : null}
           </Box>
+        </Focusable>
+
+        {!hideText && (
+          <Pressable onPress={onPress} onLongPress={onLongPress} focusable={false}>
+            <Box gap="xs">
+              <Text variant="cardTitle" numberOfLines={1}>
+                {title}
+              </Text>
+              {subtitle ? (
+                <Text variant="caption" numberOfLines={1} color="textSecondary">
+                  {subtitle}
+                </Text>
+              ) : null}
+            </Box>
+          </Pressable>
         )}
-      </Focusable>
+      </Box>
     );
   }
 );

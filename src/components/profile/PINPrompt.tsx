@@ -1,10 +1,8 @@
 import { FC } from 'react';
-import { TouchableOpacity, TextInput } from 'react-native';
-import { Box, Text, Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 import { Button } from '@/components/basic/Button';
 import { Modal } from '@/components/basic/Modal';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@shopify/restyle';
+import { Input } from '@/components/basic/Input';
 
 interface PINPromptProps {
   visible: boolean;
@@ -23,27 +21,9 @@ export const PINPrompt: FC<PINPromptProps> = ({
   onSubmit,
   onCancel,
 }) => {
-  const theme = useTheme<Theme>();
-
   return (
-    <Modal visible={visible} onClose={onCancel}>
-      <Box
-        width={400}
-        maxWidth="90%"
-        backgroundColor="cardBackground"
-        borderRadius="l"
-        padding="l"
-        gap="l">
-        {/* Header */}
-        <Box flexDirection="row" justifyContent="space-between" alignItems="center">
-          <Text variant="subheader" color="mainForeground">
-            Enter PIN
-          </Text>
-          <TouchableOpacity onPress={onCancel}>
-            <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-        </Box>
-
+    <Modal visible={visible} onClose={onCancel} label="Enter PIN" icon="lock-closed">
+      <Box gap="l" paddingHorizontal="s">
         {/* Title */}
         {title ? (
           <Text variant="body" color="textSecondary" textAlign="center">
@@ -52,27 +32,16 @@ export const PINPrompt: FC<PINPromptProps> = ({
         ) : null}
 
         {/* PIN Input */}
-        <TextInput
+        <Input
           value={value}
           onChangeText={onChangeText}
           placeholder="Enter PIN"
-          placeholderTextColor={theme.colors.textPlaceholder}
           secureTextEntry
           keyboardType="numeric"
-          maxLength={6}
+          maxLength={8}
           autoFocus
           onSubmitEditing={onSubmit}
-          style={{
-            backgroundColor: theme.colors.inputBackground,
-            color: theme.colors.textPrimary,
-            padding: 16,
-            borderRadius: 12,
-            fontSize: 18,
-            borderWidth: 1,
-            borderColor: theme.colors.cardBorder,
-            textAlign: 'center',
-            letterSpacing: 8,
-          }}
+          icon="keypad"
         />
 
         {/* Buttons */}

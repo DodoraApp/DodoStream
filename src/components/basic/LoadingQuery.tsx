@@ -40,7 +40,7 @@ export function LoadingQuery<T>({
         <Text variant="body" color="danger" textAlign="center">
           {errorMessage || error?.message || 'An error occurred'}
         </Text>
-        {onRetry && <Button title="Retry" onPress={onRetry} variant="secondary" />}
+        {onRetry && <Button onPress={onRetry} variant="secondary" />}
       </Box>
     );
   }

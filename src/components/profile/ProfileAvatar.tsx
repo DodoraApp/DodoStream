@@ -1,8 +1,7 @@
 import { FC } from 'react';
-import { Box , Theme } from '@/theme/theme';
+import { Box, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
-
 
 interface ProfileAvatarProps {
   icon: string;
@@ -10,22 +9,16 @@ interface ProfileAvatarProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-const sizeMap = {
-  small: 40,
-  medium: 80,
-  large: 120,
-};
-
-const iconSizeMap = {
-  small: 24,
-  medium: 48,
-  large: 72,
-};
+const getIconSize = (theme: Theme) => ({
+  small: theme.sizes.iconMedium,
+  medium: theme.sizes.iconXLarge,
+  large: theme.sizes.iconXXLarge,
+});
 
 export const ProfileAvatar: FC<ProfileAvatarProps> = ({ icon, color, size = 'medium' }) => {
   const theme = useTheme<Theme>();
-  const containerSize = sizeMap[size];
-  const iconSize = iconSizeMap[size];
+  const iconSize = getIconSize(theme)[size];
+  const containerSize = iconSize * 2;
 
   return (
     <Box

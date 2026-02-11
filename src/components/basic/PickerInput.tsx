@@ -13,7 +13,6 @@ interface PickerInputProps<T extends string | number = string | number> extends 
   selectedLabel: string;
 }
 
-// TODO use everywhere
 export function PickerInput<T extends string | number = string | number>({
   selectedLabel,
   ...modalProps
@@ -25,9 +24,9 @@ export function PickerInput<T extends string | number = string | number>({
     <>
       <Focusable
         onPress={() => setShowModal(true)}
-        focusStyle={{
+        variant="outline"
+        focusedStyle={{
           outlineWidth: theme.focus.borderWidthSmall,
-          outlineColor: theme.colors.primaryBackground,
           borderRadius: theme.borderRadii.m,
         }}>
         <Box
@@ -39,7 +38,11 @@ export function PickerInput<T extends string | number = string | number>({
           alignItems="center"
           gap="s">
           <Text variant="body">{selectedLabel}</Text>
-          <Ionicons name="chevron-down" size={20} color={theme.colors.mainForeground} />
+          <Ionicons
+            name="chevron-down"
+            size={theme.sizes.iconSmall}
+            color={theme.colors.mainForeground}
+          />
         </Box>
       </Focusable>
       <PickerModal visible={showModal} onClose={() => setShowModal(false)} {...modalProps} />
