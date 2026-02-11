@@ -56,7 +56,7 @@ export const UISettingsContent: FC = memo(() => {
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
         <SettingsCard title="Appearance">
           <Text variant="caption" color="textSecondary">
-            Customize the app's look and feel.
+            Customize the app&apos;s look and feel.
           </Text>
 
           <SettingsRow label="Theme">

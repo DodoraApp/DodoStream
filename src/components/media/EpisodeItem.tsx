@@ -12,7 +12,6 @@ import { ProgressBar } from '@/components/basic/ProgressBar';
 import { Focusable } from '@/components/basic/Focusable';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
-import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 export interface EpisodeItemProps {
   video: MetaVideo;
@@ -76,7 +75,11 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
               right={0}
               borderBottomLeftRadius="m"
               backgroundColor="primaryBackground">
-              <Ionicons name="checkmark-circle" size={theme.sizes.iconSmall} color={theme.colors.primaryForeground} />
+              <Ionicons
+                name="checkmark-circle"
+                size={theme.sizes.iconSmall}
+                color={theme.colors.primaryForeground}
+              />
             </Box>
           )}
 

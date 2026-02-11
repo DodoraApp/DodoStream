@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { NativeSyntheticEvent, TextLayoutEventData, ViewStyle } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
-import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
+import { getFocusableForegroundColor } from '@/utils/focus-colors';
 
 type TextVariant = Exclude<keyof Theme['textVariants'], 'defaults'>;
 

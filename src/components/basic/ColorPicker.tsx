@@ -2,7 +2,6 @@ import React, { FC, memo, useCallback, useState } from 'react';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
-import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 import { useTheme } from '@shopify/restyle';
 
 /** Default color palette for general use */

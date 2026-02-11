@@ -1,6 +1,6 @@
 import React from 'react';
 import { act } from '@testing-library/react-native';
-import { renderWithProviders } from '@/utils/test-utils';
+import { renderWithProviders, createTestQueryClient } from '@/utils/test-utils';
 
 import * as mockReact from 'react';
 import { View as mockView } from 'react-native';
@@ -143,7 +143,6 @@ describe('VideoPlayerSession', () => {
       ...overrides,
     };
 
-    const { createTestQueryClient } = require('@/utils/test-utils');
     return {
       ...renderWithProviders(<VideoPlayerSession {...props} />, {
         queryClient: createTestQueryClient(),
@@ -259,7 +258,6 @@ describe('VideoPlayerSession', () => {
     // Arrange
     mockUpNextResolved = { videoId: 'v2', episodeLabel: 'S1E2' };
 
-    const { createTestQueryClient } = require('@/utils/test-utils');
     renderWithProviders(
       <VideoPlayerSession
         source="s"

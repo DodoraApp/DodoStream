@@ -1,16 +1,9 @@
 import { Container } from '@/components/basic/Container';
-import {
-  HWEvent,
-  NativeModules,
-  Platform,
-  TVFocusGuideView,
-  useTVEventHandler,
-  View,
-} from 'react-native';
+import { Platform, TVFocusGuideView } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
-import { useMemo, useCallback, memo, useRef } from 'react';
+import { useMemo, useCallback, memo } from 'react';
 import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
 import { MetaPreview } from '@/types/stremio';
 import { FlashList } from '@shopify/flash-list';

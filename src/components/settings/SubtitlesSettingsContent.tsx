@@ -1,11 +1,9 @@
-import { FC, memo, useCallback, useMemo, useState } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { FC, memo, useCallback, useMemo } from 'react';
+import { ScrollView } from 'react-native';
+import { Box } from '@/theme/theme';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
-import { PickerModal, PickerItem } from '@/components/basic/PickerModal';
+import { PickerItem } from '@/components/basic/PickerModal';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { DEFAULT_SUBTITLE_STYLE, SUBTITLE_STYLE_PRESETS } from '@/constants/subtitles';
@@ -17,8 +15,6 @@ import {
 import { PickerInput } from '@/components/basic/PickerInput';
 
 export const SubtitlesSettingsContent: FC = memo(() => {
-  const theme = useTheme<Theme>();
-  const [showPresetPicker, setShowPresetPicker] = useState(false);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
   const { subtitleStyle, setSubtitleStyleForProfile } = useProfileSettingsStore((state) => ({

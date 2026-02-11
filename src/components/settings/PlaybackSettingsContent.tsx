@@ -4,7 +4,6 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { PickerModal } from '@/components/basic/PickerModal';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';

@@ -1,10 +1,9 @@
 import { useTheme } from '@shopify/restyle';
 import { Theme, Box, Text } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView } from 'react-native';
 import { Focusable } from '@/components/basic/Focusable';
-import { useCallback, useState } from 'react';
-import { PickerItem, PickerModal, PickerModalProps } from '@/components/basic/PickerModal';
+import { useState } from 'react';
+import { PickerModal, PickerModalProps } from '@/components/basic/PickerModal';
 
 interface PickerInputProps<T extends string | number = string | number> extends Omit<
   PickerModalProps<T>,

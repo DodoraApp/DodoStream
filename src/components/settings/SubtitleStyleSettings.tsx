@@ -1,11 +1,10 @@
-import React, { FC, memo, useCallback, useMemo, useState } from 'react';
-import { Platform, TouchableOpacity, useWindowDimensions } from 'react-native';
+import React, { FC, memo, useCallback, useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import { Ionicons } from '@expo/vector-icons';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { ColorPicker } from '@/components/basic/ColorPicker';
 import { SliderInput } from '@/components/basic/SliderInput';
-import { PickerModal, PickerItem } from '@/components/basic/PickerModal';
+import { PickerItem } from '@/components/basic/PickerModal';
 import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import {
@@ -182,8 +181,6 @@ export const SubtitleStylePreview: FC = memo(() => {
 SubtitleStylePreview.displayName = 'SubtitleStylePreview';
 
 export const SubtitleStyleControls: FC = memo(() => {
-  const theme = useTheme<Theme>();
-  const [showFontPicker, setShowFontPicker] = useState(false);
   const { subtitleStyle, updateStyle } = useActiveProfileSubtitleStyle();
 
   const fontFamilyItems: PickerItem<SubtitleFontFamily>[] = useMemo(

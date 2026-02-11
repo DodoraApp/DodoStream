@@ -20,9 +20,6 @@ interface HomeScrollProviderProps {
   children: ReactNode;
 }
 
-// Debounce delay for scroll operations to prevent jitter during fast navigation
-const SCROLL_DEBOUNCE_MS = 100;
-
 /**
  * Provider for home screen scroll functionality.
  * Enables child components to scroll the home FlashList.

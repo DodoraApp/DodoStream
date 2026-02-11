@@ -3,9 +3,6 @@ import { Platform } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
 import { Theme, Box, Text } from '@/theme/theme';
-import { Focusable } from '@/components/basic/Focusable';
-import { Ionicons } from '@expo/vector-icons';
-import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 import { Button } from '@/components/basic/Button';
 
 interface SliderInputProps {
@@ -113,7 +110,6 @@ export const SliderInput: FC<SliderInputProps> = memo(
               step={step}
               value={value}
               onValueChange={handleSliderChange}
-              
               minimumTrackTintColor={
                 isSliderFocused
                   ? theme.colors.focusBackgroundPrimary

@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback } from 'react';
+import { FC, ReactNode } from 'react';
 import { Box } from '@/theme/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { TVSidebar } from './TVSidebar';

@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { useRecyclingState } from '@shopify/flash-list';
-import Animated from 'react-native-reanimated';
 import { Theme } from '@/theme/theme';
 
 export interface FocusableProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -206,7 +205,7 @@ export const Focusable: FC<FocusableProps> = ({
       innerRef.current = node;
       // FIXME not working
       // if (viewRef) {
-        // viewRef.current = node;
+      // viewRef.current = node;
       // }
     },
     [onRef]

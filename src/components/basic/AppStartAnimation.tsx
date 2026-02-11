@@ -1,4 +1,4 @@
-import { FC, useRef } from 'react';
+import { FC } from 'react';
 import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
 import { Box, Text, Theme } from '@/theme/theme';

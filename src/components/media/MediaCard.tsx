@@ -1,4 +1,4 @@
-import { memo, type ReactNode } from 'react';
+import { memo } from 'react';
 import { Box, Text } from '@/theme/theme';
 import { MetaPreview } from '@/types/stremio';
 import { Image } from 'expo-image';
@@ -10,7 +10,7 @@ import { ProgressBar } from '@/components/basic/ProgressBar';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import { Focusable } from '@/components/basic/Focusable';
 import { getImageSource } from '@/utils/image';
-import { findNodeHandle, Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 
 interface MediaCardProps {
   media: MetaPreview;
