@@ -216,7 +216,8 @@ export const SyncSettingsContent: FC = memo(() => {
           </SettingsCard>
         )}
 
-        {/* Server Configuration */}
+        {/* Server Configuration — hidden once connected */}
+        {(!isEnabled || isPendingApproval) && (
         <SettingsCard title="Sync Server">
           <Text variant="caption" color="textSecondary">
             Connect to a self-hosted DodoStream sync server to keep your addons, watch history,
@@ -294,6 +295,7 @@ export const SyncSettingsContent: FC = memo(() => {
             </Box>
           )}
         </SettingsCard>
+        )}
 
         {/* What Syncs */}
         <SettingsCard title="What Gets Synced">

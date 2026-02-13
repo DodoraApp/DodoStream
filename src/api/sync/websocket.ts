@@ -18,8 +18,8 @@ export interface SyncWebSocketCallbacks {
     onSyncOperation: (operation: SyncOperation) => void;
     /** Called when a full snapshot is received (initial sync or resync) */
     onSnapshot: (snapshot: SyncSnapshot) => void;
-    /** Called on authentication error */
-    onAuthError: (message: string) => void;
+    /** Called on authentication error — should attempt re-registration and return fresh credentials, or null to give up */
+    onAuthError: (message: string) => Promise<{ token: string; deviceId: string } | null>;
 }
 
 /**
@@ -39,6 +39,7 @@ export class SyncWebSocketManager {
     private pingTimer: ReturnType<typeof setInterval> | null = null;
     private pongTimer: ReturnType<typeof setTimeout> | null = null;
     private pendingQueue: SyncOperation[] = [];
+    private isReRegistering = false;
     private intentionalClose = false;
 
     constructor(
@@ -184,11 +185,10 @@ export class SyncWebSocketManager {
 
             case 'auth_error':
                 debug('authError', { message: msg.message });
-                this.callbacks.onAuthError(msg.message);
                 this.setState('error');
-                // Don't reconnect on auth errors — requires user action
-                this.intentionalClose = true;
-                this.ws?.close();
+                // Instead of permanently giving up, attempt re-registration.
+                // This handles server restarts that invalidate tokens.
+                this.handleAuthError(msg.message);
                 break;
 
             case 'sync_operation':
@@ -213,6 +213,46 @@ export class SyncWebSocketManager {
 
             default:
                 debug('unknownMessage', { type: (msg as { type: string }).type });
+        }
+    }
+
+    /**
+     * Handles auth errors by attempting re-registration.
+     * If the callback returns new credentials, reconnects with them.
+     * Otherwise, closes permanently (user must reconnect manually).
+     */
+    private async handleAuthError(message: string): Promise<void> {
+        if (this.isReRegistering) return;
+        this.isReRegistering = true;
+
+        // Close the current connection without triggering auto-reconnect
+        this.intentionalClose = true;
+        this.ws?.close();
+
+        try {
+            debug('reRegistering');
+            const result = await this.callbacks.onAuthError(message);
+
+            if (result) {
+                // Got fresh credentials — reconnect
+                debug('reRegisterSuccess', { deviceId: result.deviceId });
+                this.token = result.token;
+                this.deviceId = result.deviceId;
+                this.intentionalClose = false;
+                this.isReRegistering = false;
+                this.reconnectDelay = INITIAL_RECONNECT_DELAY_MS;
+                this.connect();
+            } else {
+                // Callback says give up
+                debug('reRegisterGaveUp');
+                this.isReRegistering = false;
+            }
+        } catch (error) {
+            debug('reRegisterFailed', { error });
+            // Re-registration failed — schedule another attempt via normal reconnect
+            this.intentionalClose = false;
+            this.isReRegistering = false;
+            this.scheduleReconnect();
         }
     }
 

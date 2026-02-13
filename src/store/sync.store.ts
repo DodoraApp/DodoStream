@@ -691,8 +691,44 @@ async function connectApprovedDevice(
                 applyingRemote = false;
             }
         },
-        onAuthError: (message) => {
-            set({ error: message, isEnabled: false, token: null });
+        onAuthError: async (message) => {
+            debug('wsAuthError', { message });
+            // Attempt re-registration to get a fresh token
+            // (handles server restarts that invalidate all tokens)
+            const { serverUrl, deviceId } = get();
+            if (!serverUrl) {
+                set({ error: message, isEnabled: false, token: null });
+                return null;
+            }
+
+            try {
+                const auth = await registerDevice(
+                    serverUrl,
+                    getDeviceName(),
+                    getPlatform(),
+                    undefined, // no password needed for re-registration
+                    deviceId,
+                );
+
+                if (auth.status === 'approved') {
+                    set({
+                        token: auth.token,
+                        deviceId: auth.deviceId || deviceId,
+                        isEnabled: true,
+                        error: null,
+                        deviceStatus: 'approved',
+                    });
+                    return { token: auth.token, deviceId: auth.deviceId || deviceId };
+                }
+
+                // Device not approved after re-registration — give up
+                set({ error: `Re-registration failed: ${auth.status}`, isEnabled: false, token: null });
+                return null;
+            } catch (error) {
+                debug('wsAuthErrorReRegisterFailed', { error });
+                // Let the WS manager schedule a reconnect attempt
+                throw error;
+            }
         },
     });
 
