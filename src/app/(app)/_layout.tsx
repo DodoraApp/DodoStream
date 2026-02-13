@@ -14,10 +14,8 @@ import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
 export default function AppLayout() {
   const router = useRouter();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
-  const hasProfiles = useProfileStore((state) => state.hasProfiles);
+  const profilesExist = useProfileStore((state) => Object.keys(state.profiles).length > 0);
   const releaseCheckOnStartup = useAppSettingsStore((state) => state.releaseCheckOnStartup);
-
-  const profilesExist = hasProfiles();
 
   const handleProfileSelect = useCallback(() => {
     router.replace('/');

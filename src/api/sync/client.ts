@@ -100,21 +100,26 @@ export async function getSyncServerInfo(baseUrl: string): Promise<SyncServerInfo
  * Registers / authenticates a device with the sync server.
  * Returns a token for subsequent API calls and WebSocket auth.
  *
+ * If an existing `deviceId` is provided, the server will reuse it
+ * (refreshing the token) instead of creating a brand-new device.
+ *
  * @param baseUrl - Sync server base URL (e.g. http://192.168.1.50:8080)
  * @param deviceName - Human-readable name for this device
  * @param platform - Platform identifier (e.g. 'android', 'android-tv', 'ios', 'web')
  * @param serverPassword - Optional server password if the server requires one
+ * @param existingDeviceId - Optional device ID from a previous registration
  */
 export async function registerDevice(
     baseUrl: string,
     deviceName: string,
     platform: string,
     serverPassword?: string,
+    existingDeviceId?: string,
 ): Promise<SyncAuthResponse> {
-    debug('registerDevice', { baseUrl, deviceName, platform });
+    debug('registerDevice', { baseUrl, deviceName, platform, existingDeviceId });
     return syncRequest<SyncAuthResponse>(baseUrl, '/api/auth/register', {
         method: 'POST',
-        body: { deviceName, platform, password: serverPassword },
+        body: { deviceName, platform, password: serverPassword, deviceId: existingDeviceId },
     });
 }
 

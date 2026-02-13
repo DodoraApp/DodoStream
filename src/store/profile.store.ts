@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
 import { createDebugLogger } from '@/utils/debug';
+import { pushSyncOperation } from '@/api/sync/bridge';
 import { useMyListStore } from '@/store/my-list.store';
 import { usePlaybackStore } from '@/store/playback.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
@@ -30,7 +31,7 @@ interface ProfileState {
 
     // Actions
     createProfile: (name: string, options?: ProfileOptions) => string;
-    deleteProfile: (id: string) => void;
+    deleteProfile: (id: string, options?: { force?: boolean }) => void;
     switchProfile: (id: string, pin?: string) => boolean;
     updateProfile: (id: string, updates: Partial<Profile>) => void;
     getActiveProfile: () => Profile | undefined;
@@ -85,14 +86,25 @@ export const useProfileStore = create<ProfileState>()(
                     },
                 }));
 
+                pushSyncOperation({
+                    collection: 'profiles',
+                    action: 'create',
+                    payload: {
+                        id,
+                        name: newProfile.name,
+                        avatarIcon: newProfile.avatarIcon,
+                        avatarColor: newProfile.avatarColor,
+                    },
+                });
+
                 return id;
             },
 
-            deleteProfile: (id: string) => {
+            deleteProfile: (id: string, options?: { force?: boolean }) => {
                 const { profiles, activeProfileId } = get();
 
-                // Prevent deleting if it's the only profile
-                if (Object.keys(profiles).length === 1) {
+                // Prevent deleting if it's the only profile (unless forced by remote sync)
+                if (!options?.force && Object.keys(profiles).length === 1) {
                     debug('cannotDeleteLastProfile', { id, profilesCount: Object.keys(profiles).length });
                     return;
                 }
@@ -108,6 +120,12 @@ export const useProfileStore = create<ProfileState>()(
                 set((state) => {
                     const { [id]: removed, ...rest } = state.profiles;
                     return { profiles: rest };
+                });
+
+                pushSyncOperation({
+                    collection: 'profiles',
+                    action: 'remove',
+                    payload: { id },
                 });
 
                 // Clean up profile data from AsyncStorage
@@ -170,6 +188,17 @@ export const useProfileStore = create<ProfileState>()(
                         },
                     },
                 }));
+
+                pushSyncOperation({
+                    collection: 'profiles',
+                    action: 'update',
+                    payload: {
+                        id,
+                        name: updates.name,
+                        avatarIcon: updates.avatarIcon,
+                        avatarColor: updates.avatarColor,
+                    },
+                });
             },
 
             getActiveProfile: () => {

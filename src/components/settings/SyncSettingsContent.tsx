@@ -104,26 +104,33 @@ export const SyncSettingsContent: FC = memo(() => {
     setIsConnecting(true);
     setServerUrl(urlInput.trim());
 
-    try {
-      await connectToServer(password || undefined);
+    await connectToServer(password || undefined);
+
+    // Read the latest store state *after* connect finishes to check the result.
+    const { isEnabled, error, deviceStatus } = useSyncStore.getState();
+
+    if (isEnabled && !error) {
+      const message = deviceStatus === 'pending'
+        ? 'Device registered — waiting for admin approval'
+        : 'Sync is now active across your devices';
       showToast({
-        title: 'Connected',
-        message: 'Sync is now active across your devices',
+        title: deviceStatus === 'pending' ? 'Registered' : 'Connected',
+        message,
         preset: 'success',
         duration: TOAST_DURATION_MEDIUM,
       });
-    } catch {
+    } else {
       showToast({
         title: 'Connection failed',
-        message: storeError ?? 'Could not connect',
+        message: error ?? 'Could not connect to sync server',
         preset: 'error',
         duration: TOAST_DURATION_MEDIUM,
       });
-    } finally {
-      setIsConnecting(false);
-      setPassword('');
     }
-  }, [urlInput, password, setServerUrl, connectToServer, storeError]);
+
+    setIsConnecting(false);
+    setPassword('');
+  }, [urlInput, password, setServerUrl, connectToServer]);
 
   const handleDisconnect = useCallback(() => {
     disconnectFromServer();

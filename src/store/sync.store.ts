@@ -8,6 +8,7 @@ import {
     registerDevice,
     fetchSnapshot,
     pushOperation as pushOperationRest,
+    pushOperationBatch,
     checkDeviceStatus,
     SyncApiError,
 } from '@/api/sync/client';
@@ -20,6 +21,7 @@ import { useAddonStore } from '@/store/addon.store';
 import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { useMyListStore } from '@/store/my-list.store';
 import { useContinueWatchingStore } from '@/store/continue-watching.store';
+import { useProfileStore } from '@/store/profile.store';
 import { registerSyncPushHandler } from '@/api/sync/bridge';
 
 const debug = createDebugLogger('SyncStore');
@@ -52,6 +54,8 @@ interface SyncState {
     lastSyncAt: number | null;
     /** The device's approval status on the server */
     deviceStatus: 'pending' | 'approved' | 'rejected' | null;
+    /** Operations queued while disconnected, flushed on reconnect */
+    pendingOperations: SyncOperation[];
 
     // Runtime state (not persisted)
     connectionState: SyncConnectionState;
@@ -78,6 +82,7 @@ interface SyncState {
     /**
      * Called by other stores after a mutation to broadcast the change.
      * If WebSocket is connected it pushes via WS; otherwise queues or falls back to REST.
+     * If offline, operations are persisted and flushed on reconnect.
      */
     pushOperation: (operation: Omit<SyncOperation, 'timestamp' | 'deviceId'>) => void;
 }
@@ -228,11 +233,46 @@ function applyRemoteOperation(operation: SyncOperation): void {
             break;
         }
 
-        case 'profiles':
-            // Profile sync is intentionally lightweight — just addons + watch data for now.
-            // Full profile sync can be expanded later.
-            debug('profileSyncSkipped', { action: operation.action });
+        case 'profiles': {
+            const store = useProfileStore.getState();
+            switch (operation.action) {
+                case 'create': {
+                    const { id, name, avatarIcon, avatarColor } = operation.payload;
+                    if (!store.profiles[id]) {
+                        // Directly set the profile with the server-provided ID
+                        useProfileStore.setState((state) => ({
+                            profiles: {
+                                ...state.profiles,
+                                [id]: {
+                                    id,
+                                    name,
+                                    avatarIcon,
+                                    avatarColor,
+                                    createdAt: Date.now(),
+                                    lastUsedAt: Date.now(),
+                                },
+                            },
+                        }));
+                    }
+                    break;
+                }
+                case 'update': {
+                    const { id, ...updates } = operation.payload;
+                    if (store.profiles[id]) {
+                        store.updateProfile(id, updates);
+                    }
+                    break;
+                }
+                case 'remove': {
+                    const { id } = operation.payload;
+                    if (store.profiles[id]) {
+                        store.deleteProfile(id, { force: true });
+                    }
+                    break;
+                }
+            }
             break;
+        }
 
         default:
             debug('unknownCollection', { collection: (operation as SyncOperation).collection });
@@ -241,33 +281,98 @@ function applyRemoteOperation(operation: SyncOperation): void {
 
 /**
  * Applies a full snapshot to all local stores.
- * This replaces local data with server data for each collection.
+ *
+ * Two-way reconciliation:
+ *   1. Add / update items present on the server but missing locally.
+ *   2. **Remove** local items that the server no longer has (e.g. deleted
+ *      on another device while this device was offline).
  */
 function applySnapshot(snapshot: SyncSnapshot): void {
     debug('applySnapshot', { timestamp: snapshot.timestamp });
 
-    // Addons: replace entire addon map
+    const serverAddonIds = new Set(snapshot.addons.map((a) => a.id));
+    const serverProfileIds = new Set(snapshot.profiles.map((p) => p.id));
+
+    // ── Addons ──────────────────────────────────────────────────────────
+
     const addonStore = useAddonStore.getState();
-    addonStore.clearAllAddons();
+
+    // Add / update addons from server
     for (const addon of snapshot.addons) {
-        addonStore.addAddon(addon.id, addon.manifestUrl, addon.manifest);
+        if (!addonStore.hasAddon(addon.id)) {
+            addonStore.addAddon(addon.id, addon.manifestUrl, addon.manifest);
+            // Apply synced toggle settings (addAddon defaults all to true)
+            const current = useAddonStore.getState().addons[addon.id];
+            if (current) {
+                if (current.useCatalogsOnHome !== (addon.useCatalogsOnHome ?? true)) {
+                    addonStore.toggleUseCatalogsOnHome(addon.id);
+                }
+                if (current.useCatalogsInSearch !== (addon.useCatalogsInSearch ?? true)) {
+                    addonStore.toggleUseCatalogsInSearch(addon.id);
+                }
+                if (current.useForSubtitles !== (addon.useForSubtitles ?? true)) {
+                    addonStore.toggleUseForSubtitles(addon.id);
+                }
+            }
+        } else {
+            addonStore.updateAddon(addon.id, addon.manifest);
+        }
     }
 
-    // Watch history: apply all items per profile
+    // Remove local addons absent from server
+    for (const localId of Object.keys(useAddonStore.getState().addons)) {
+        if (!serverAddonIds.has(localId)) {
+            debug('snapshotRemoveAddon', { id: localId });
+            addonStore.removeAddon(localId);
+        }
+    }
+
+    // ── Watch history ───────────────────────────────────────────────────
+
     const watchStore = useWatchHistoryStore.getState();
     const currentWatchProfile = watchStore.activeProfileId;
+
+    // Build a set of server watch-history keys per profile for diffing
+    const serverWatchKeys: Record<string, Set<string>> = {};
     for (const [profileId, items] of Object.entries(snapshot.watchHistory)) {
+        serverWatchKeys[profileId] = new Set(items.map((i) => `${i.id}:${i.videoId ?? '_'}`));
         watchStore.setActiveProfileId(profileId);
         for (const item of items) {
             watchStore.upsertItem(item);
         }
     }
+
+    // Remove local watch-history items absent from server
+    for (const [profileId, metaMap] of Object.entries(watchStore.byProfile)) {
+        const serverKeys = serverWatchKeys[profileId];
+        watchStore.setActiveProfileId(profileId);
+        if (!serverKeys) {
+            // Server has no history for this profile — remove all
+            for (const metaId of Object.keys(metaMap)) {
+                watchStore.removeMeta(metaId);
+            }
+        } else {
+            for (const [metaId, videoMap] of Object.entries(metaMap)) {
+                for (const item of Object.values(videoMap)) {
+                    const key = `${item.id}:${item.videoId ?? '_'}`;
+                    if (!serverKeys.has(key)) {
+                        watchStore.remove(item.id, item.videoId);
+                    }
+                }
+            }
+        }
+    }
     watchStore.setActiveProfileId(currentWatchProfile);
 
-    // My list: apply all items per profile
+    // ── My list ─────────────────────────────────────────────────────────
+
     const myListStore = useMyListStore.getState();
     const currentMyListProfile = myListStore.activeProfileId;
+
+    // Build server keys per profile
+    const serverMyListKeys: Record<string, Set<string>> = {};
     for (const [profileId, items] of Object.entries(snapshot.myList)) {
+        serverMyListKeys[profileId] = new Set(items.map((i) => i.id));
         myListStore.setActiveProfileId(profileId);
         for (const item of items) {
             if (!myListStore.isInMyList(item.id, item.type)) {
@@ -275,18 +380,80 @@ function applySnapshot(snapshot: SyncSnapshot): void {
             }
         }
     }
+
+    // Remove local my-list items absent from server
+    for (const [profileId, itemMap] of Object.entries(myListStore.byProfile)) {
+        const serverKeys = serverMyListKeys[profileId];
+        myListStore.setActiveProfileId(profileId);
+        for (const item of Object.values(itemMap)) {
+            if (!serverKeys || !serverKeys.has(item.id)) {
+                myListStore.removeFromMyList(item.id, item.type);
+            }
+        }
+    }
     myListStore.setActiveProfileId(currentMyListProfile);
 
-    // Continue watching hidden
+    // ── Continue watching hidden ────────────────────────────────────────
+
     const cwStore = useContinueWatchingStore.getState();
     const currentCwProfile = cwStore.activeProfileId;
+
     for (const [profileId, hidden] of Object.entries(snapshot.continueWatchingHidden)) {
         cwStore.setActiveProfileId(profileId);
         for (const metaId of Object.keys(hidden)) {
             cwStore.setHidden(metaId, true);
         }
     }
+
+    // Remove local hidden entries absent from server
+    for (const [profileId, profileState] of Object.entries(cwStore.byProfile)) {
+        const serverHidden = snapshot.continueWatchingHidden[profileId] ?? {};
+        cwStore.setActiveProfileId(profileId);
+        for (const metaId of Object.keys(profileState.hidden ?? {})) {
+            if (!serverHidden[metaId]) {
+                cwStore.setHidden(metaId, false);
+            }
+        }
+    }
     cwStore.setActiveProfileId(currentCwProfile);
+
+    // ── Profiles ────────────────────────────────────────────────────────
+
+    const profileStore = useProfileStore.getState();
+
+    // Add / update profiles from server
+    for (const syncProfile of snapshot.profiles) {
+        if (!profileStore.profiles[syncProfile.id]) {
+            useProfileStore.setState((state) => ({
+                profiles: {
+                    ...state.profiles,
+                    [syncProfile.id]: {
+                        id: syncProfile.id,
+                        name: syncProfile.name,
+                        avatarIcon: syncProfile.avatarIcon,
+                        avatarColor: syncProfile.avatarColor,
+                        createdAt: Date.now(),
+                        lastUsedAt: Date.now(),
+                    },
+                },
+            }));
+        } else {
+            profileStore.updateProfile(syncProfile.id, {
+                name: syncProfile.name,
+                avatarIcon: syncProfile.avatarIcon,
+                avatarColor: syncProfile.avatarColor,
+            });
+        }
+    }
+
+    // Remove local profiles absent from server
+    const localProfileIds = Object.keys(useProfileStore.getState().profiles);
+    for (const localId of localProfileIds) {
+        if (!serverProfileIds.has(localId)) {
+            debug('snapshotRemoveProfile', { id: localId });
+            useProfileStore.getState().deleteProfile(localId, { force: true });
+        }
+    }
 
     useSyncStore.setState({ lastSyncAt: snapshot.timestamp });
 }
@@ -305,6 +472,156 @@ export function isApplyingRemote(): boolean {
 }
 
 /**
+ * Captures all local state and returns the snapshot of data we have.
+ * Must be called BEFORE applySnapshot to avoid losing local-only data.
+ */
+function captureLocalState() {
+    return {
+        addons: { ...useAddonStore.getState().addons },
+        profiles: { ...useProfileStore.getState().profiles },
+        watchHistory: { ...useWatchHistoryStore.getState().byProfile },
+        myList: { ...useMyListStore.getState().byProfile },
+        continueWatchingHidden: { ...useContinueWatchingStore.getState().byProfile },
+    };
+}
+
+/**
+ * Pushes all local data that the server doesn't have yet.
+ * Called after applying the server snapshot so we can diff.
+ */
+async function pushLocalState(
+    serverUrl: string,
+    token: string,
+    deviceId: string,
+    serverSnapshot: SyncSnapshot | null,
+    localState: ReturnType<typeof captureLocalState>,
+): Promise<void> {
+    const operations: SyncOperation[] = [];
+    const now = Date.now();
+    const serverAddonIds = new Set(serverSnapshot?.addons.map((a) => a.id) ?? []);
+    const serverProfileIds = new Set(serverSnapshot?.profiles.map((p) => p.id) ?? []);
+
+    // Push local profiles
+    for (const profile of Object.values(localState.profiles)) {
+        if (!serverProfileIds.has(profile.id)) {
+            operations.push({
+                collection: 'profiles',
+                action: 'create',
+                payload: {
+                    id: profile.id,
+                    name: profile.name,
+                    avatarIcon: profile.avatarIcon,
+                    avatarColor: profile.avatarColor,
+                },
+                timestamp: now,
+                deviceId,
+            });
+        }
+    }
+
+    // Push local addons
+    for (const addon of Object.values(localState.addons)) {
+        if (!serverAddonIds.has(addon.id)) {
+            operations.push({
+                collection: 'addons',
+                action: 'add',
+                payload: {
+                    id: addon.id,
+                    manifestUrl: addon.manifestUrl,
+                    manifest: addon.manifest,
+                    installedAt: addon.installedAt,
+                    useCatalogsOnHome: addon.useCatalogsOnHome,
+                    useCatalogsInSearch: addon.useCatalogsInSearch,
+                    useForSubtitles: addon.useForSubtitles,
+                },
+                timestamp: now,
+                deviceId,
+            });
+        }
+    }
+
+    // Push local watch history
+    const serverWatchProfiles = new Set(Object.keys(serverSnapshot?.watchHistory ?? {}));
+    for (const [profileId, metaMap] of Object.entries(localState.watchHistory)) {
+        const serverItems = serverSnapshot?.watchHistory[profileId] ?? [];
+        const serverItemKeys = new Set(serverItems.map((i) => `${i.id}:${i.videoId ?? '_'}`));
+        for (const [, videoMap] of Object.entries(metaMap)) {
+            for (const item of Object.values(videoMap)) {
+                const key = `${item.id}:${item.videoId ?? '_'}`;
+                if (!serverWatchProfiles.has(profileId) || !serverItemKeys.has(key)) {
+                    operations.push({
+                        collection: 'watch_history',
+                        action: 'upsert',
+                        payload: {
+                            profileId,
+                            id: item.id,
+                            type: item.type,
+                            videoId: item.videoId,
+                            progressSeconds: item.progressSeconds,
+                            durationSeconds: item.durationSeconds,
+                            lastStreamTargetType: item.lastStreamTargetType,
+                            lastStreamTargetValue: item.lastStreamTargetValue,
+                            lastWatchedAt: item.lastWatchedAt,
+                        },
+                        timestamp: now,
+                        deviceId,
+                    });
+                }
+            }
+        }
+    }
+
+    // Push local my list items
+    for (const [profileId, itemMap] of Object.entries(localState.myList)) {
+        const serverItems = serverSnapshot?.myList[profileId] ?? [];
+        const serverItemIds = new Set(serverItems.map((i) => i.id));
+        for (const item of Object.values(itemMap)) {
+            if (!serverItemIds.has(item.id)) {
+                operations.push({
+                    collection: 'my_list',
+                    action: 'add',
+                    payload: {
+                        profileId,
+                        id: item.id,
+                        type: item.type,
+                        addedAt: item.addedAt,
+                    },
+                    timestamp: now,
+                    deviceId,
+                });
+            }
+        }
+    }
+
+    // Push local continue watching hidden entries
+    for (const [profileId, profileState] of Object.entries(localState.continueWatchingHidden)) {
+        const serverHidden = serverSnapshot?.continueWatchingHidden[profileId] ?? {};
+        for (const metaId of Object.keys(profileState.hidden ?? {})) {
+            if (!serverHidden[metaId]) {
+                operations.push({
+                    collection: 'continue_watching',
+                    action: 'set_hidden',
+                    payload: { profileId, metaId, hidden: true },
+                    timestamp: now,
+                    deviceId,
+                });
+            }
+        }
+    }
+
+    if (operations.length > 0) {
+        debug('pushLocalState', { count: operations.length });
+        try {
+            await pushOperationBatch(serverUrl, token, operations);
+        } catch (error) {
+            debug('pushLocalStateFailed', { error });
+        }
+    } else {
+        debug('pushLocalState', { count: 0, message: 'nothing to push' });
+    }
+}
+
+/**
  * Helper to connect an already-approved device — fetches snapshot and starts WS.
  * Shared between `connect()` (when auto-approved) and `pollForApproval()` (after admin approves).
  */
@@ -315,18 +632,38 @@ async function connectApprovedDevice(
     const { serverUrl, token, deviceId } = get();
     if (!serverUrl || !token) return;
 
+    // Capture local state BEFORE applying snapshot so we don't lose local-only data
+    const localState = captureLocalState();
+
     // Fetch initial snapshot via REST
+    let serverSnapshot: SyncSnapshot | null = null;
     try {
-        const snapshot = await fetchSnapshot(serverUrl, token);
+        serverSnapshot = await fetchSnapshot(serverUrl, token);
         applyingRemote = true;
         try {
-            applySnapshot(snapshot);
+            applySnapshot(serverSnapshot);
         } finally {
             applyingRemote = false;
         }
     } catch (snapshotError) {
         debug('snapshotFetchFailed', { error: snapshotError });
         // Non-fatal: we can still connect via WS and receive incremental updates
+    }
+
+    // Push all local data that the server doesn't have yet
+    await pushLocalState(serverUrl, token, deviceId, serverSnapshot, localState);
+
+    // Flush any operations that were queued while offline
+    const { pendingOperations } = useSyncStore.getState();
+    if (pendingOperations.length > 0) {
+        debug('flushPendingOperations', { count: pendingOperations.length });
+        try {
+            await pushOperationBatch(serverUrl, token, pendingOperations);
+            useSyncStore.setState({ pendingOperations: [] });
+        } catch (error) {
+            debug('flushPendingOperationsFailed', { error });
+            // Keep them in the queue for next reconnect
+        }
     }
 
     // Start WebSocket connection
@@ -372,6 +709,7 @@ export const useSyncStore = create<SyncState>()(
             isEnabled: false,
             lastSyncAt: null,
             deviceStatus: null,
+            pendingOperations: [],
 
             // Runtime
             connectionState: 'disconnected',
@@ -406,12 +744,15 @@ export const useSyncStore = create<SyncState>()(
                 set({ error: null, connectionState: 'connecting' });
 
                 try {
-                    // Register device and get token
+                    // Register device and get token.
+                    // Pass the existing deviceId so the server can reuse it
+                    // instead of creating a brand-new device entry.
                     const auth = await registerDevice(
                         serverUrl,
                         getDeviceName(),
                         getPlatform(),
                         serverPassword,
+                        deviceId,
                     );
 
                     set({
@@ -519,6 +860,7 @@ export const useSyncStore = create<SyncState>()(
                     error: null,
                     deviceStatus: null,
                     isPollingApproval: false,
+                    pendingOperations: [],
                 });
             },
 
@@ -527,13 +869,22 @@ export const useSyncStore = create<SyncState>()(
                 if (applyingRemote) return;
 
                 const { isEnabled, deviceId, serverUrl, token } = get();
-                if (!isEnabled || !token) return;
 
                 const operation = {
                     ...partialOp,
                     timestamp: Date.now(),
                     deviceId,
                 } as SyncOperation;
+
+                // If not connected, queue the operation for later
+                if (!isEnabled || !token) {
+                    // Only queue if sync was configured (serverUrl exists)
+                    if (serverUrl) {
+                        debug('pushOperation:queued', { collection: operation.collection, action: operation.action });
+                        set({ pendingOperations: [...get().pendingOperations, operation] });
+                    }
+                    return;
+                }
 
                 debug('pushOperation', { collection: operation.collection, action: operation.action });
 
@@ -561,6 +912,7 @@ export const useSyncStore = create<SyncState>()(
                 isEnabled: state.isEnabled,
                 lastSyncAt: state.lastSyncAt,
                 deviceStatus: state.deviceStatus,
+                pendingOperations: state.pendingOperations,
             }),
         },
     ),
@@ -578,10 +930,20 @@ registerSyncPushHandler(
  * Call this from the app layout / root component.
  */
 export function initializeSyncOnStartup(): void {
-    const { isEnabled, serverUrl, token, deviceId, deviceStatus } = useSyncStore.getState();
-    if (!isEnabled || !serverUrl || !token) return;
+    const { isEnabled, serverUrl, token, deviceStatus, pendingOperations } = useSyncStore.getState();
 
-    debug('initializeSyncOnStartup', { deviceStatus });
+    // Nothing to do if no server was ever configured
+    if (!serverUrl) return;
+
+    debug('initializeSyncOnStartup', { deviceStatus, isEnabled, hasToken: !!token, pendingOps: pendingOperations.length });
+
+    // If connection was lost (e.g. auth error after server restart wiped
+    // isEnabled/token), re-register the device automatically.
+    if (!isEnabled || !token) {
+        debug('initializeSyncOnStartup', { reason: 'reconnecting after disconnect' });
+        void useSyncStore.getState().connect();
+        return;
+    }
 
     // If device is still pending, resume polling
     if (deviceStatus === 'pending') {
@@ -598,30 +960,10 @@ export function initializeSyncOnStartup(): void {
         return;
     }
 
-    wsManager = new SyncWebSocketManager(serverUrl, token, deviceId, {
-        onStateChange: (state) => {
-            useSyncStore.setState({ connectionState: state });
-        },
-        onSyncOperation: (operation) => {
-            applyingRemote = true;
-            try {
-                applyRemoteOperation(operation);
-            } finally {
-                applyingRemote = false;
-            }
-        },
-        onSnapshot: (snapshot) => {
-            applyingRemote = true;
-            try {
-                applySnapshot(snapshot);
-            } finally {
-                applyingRemote = false;
-            }
-        },
-        onAuthError: (message) => {
-            useSyncStore.setState({ error: message, isEnabled: false, token: null });
-        },
-    });
-
-    wsManager.connect();
+    // Use the same full sync path as initial connection:
+    // REST snapshot fetch → bidirectional merge → WebSocket for live updates
+    void connectApprovedDevice(
+        () => useSyncStore.getState(),
+        (partial) => useSyncStore.setState(partial),
+    );
 }

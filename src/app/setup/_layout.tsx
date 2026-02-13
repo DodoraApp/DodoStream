@@ -16,6 +16,7 @@ export default function SetupLayout() {
         },
       }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="sync" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="addons" />
       <Stack.Screen name="home" />

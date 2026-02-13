@@ -99,7 +99,7 @@ export type ContinueWatchingSyncOperation =
 export type ProfileSyncOperation =
     | { collection: 'profiles'; action: 'create'; payload: { id: string; name: string; avatarIcon?: string; avatarColor?: string }; timestamp: number; deviceId: string }
     | { collection: 'profiles'; action: 'update'; payload: { id: string; name?: string; avatarIcon?: string; avatarColor?: string }; timestamp: number; deviceId: string }
-    | { collection: 'profiles'; action: 'delete'; payload: { id: string }; timestamp: number; deviceId: string };
+    | { collection: 'profiles'; action: 'remove'; payload: { id: string }; timestamp: number; deviceId: string };
 
 // ── Server Responses ────────────────────────────────────────────────────────
 

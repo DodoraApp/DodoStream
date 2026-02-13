@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 
-export type SetupWizardStep = 'welcome' | 'profile' | 'addons' | 'home' | 'playback' | 'complete';
+export type SetupWizardStep = 'welcome' | 'sync' | 'profile' | 'addons' | 'home' | 'playback' | 'complete';
 
 export const WIZARD_STEPS: SetupWizardStep[] = [
     'welcome',
+    'sync',
     'profile',
     'addons',
     'home',
