@@ -1,13 +1,9 @@
 import { memo, useCallback } from 'react';
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
 import { ContinueWatchingItemSkeleton } from '@/components/media/ContinueWatchingItemSkeleton';
-import { useMeta } from '@/api/stremio';
-import {
-  useContinueWatchingForMeta,
-  type ContinueWatchingEntry,
-} from '@/hooks/useContinueWatching';
+import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { useLastStreamTarget } from '@/hooks/useWatchHistoryDb';
 
 interface ContinueWatchingItemProps {
   /** Basic entry from useContinueWatching (without resolved meta) */
@@ -19,45 +15,38 @@ interface ContinueWatchingItemProps {
 
 /**
  * Wrapper component for home screen continue watching items.
- * Fetches meta data and resolves the full entry before rendering the card.
+ * All display data (metaName, imageUrl, video) is pre-resolved in useContinueWatching
+ * from the SQLite cache — no network fetch needed here.
  */
 export const ContinueWatchingItem = memo(
   ({ entry, hasTVPreferredFocus = false, onFocused, onLongPress }: ContinueWatchingItemProps) => {
     const { pushToStreams } = useMediaNavigation();
-    const getLastStreamTarget = useWatchHistoryStore((state) => state.getLastStreamTarget);
-
-    // Fetch meta data for this entry
-    const { data: meta, isLoading } = useMeta(entry.type, entry.metaId, true);
-
-    // Get the fully resolved entry with up-next logic
-    const resolvedEntry = useContinueWatchingForMeta(entry.metaId, meta);
+    const { data: lastStreamTarget } = useLastStreamTarget(
+      entry.metaId,
+      entry.videoId ?? entry.metaId
+    );
 
     const handlePress = useCallback(() => {
-      if (!resolvedEntry) return;
-
-      const streamId = resolvedEntry.videoId ?? resolvedEntry.metaId;
-      const lastStreamTarget = getLastStreamTarget(resolvedEntry.metaId, streamId);
-
-      // Only autoplay when we have a previously selected stream
+      const streamId = entry.videoId ?? entry.metaId;
       pushToStreams(
-        { metaId: resolvedEntry.metaId, videoId: streamId, type: resolvedEntry.type },
+        { metaId: entry.metaId, videoId: streamId, type: entry.type },
         lastStreamTarget ? { autoPlay: '1' } : undefined
       );
-    }, [resolvedEntry, getLastStreamTarget, pushToStreams]);
+    }, [lastStreamTarget, pushToStreams, entry]);
 
     const handleLongPress = useCallback(() => {
-      if (!resolvedEntry) return;
-      onLongPress?.(resolvedEntry);
-    }, [onLongPress, resolvedEntry]);
+      onLongPress?.(entry);
+    }, [onLongPress, entry]);
 
-    // Show skeleton while loading
-    if (isLoading || !resolvedEntry) {
+    // Show skeleton if we don't have enough data to render the card yet
+    // (e.g. on first launch before meta_cache is populated)
+    if (!entry.metaName && !entry.imageUrl) {
       return <ContinueWatchingItemSkeleton />;
     }
 
     return (
       <ContinueWatchingCard
-        entry={resolvedEntry}
+        entry={entry}
         onPress={handlePress}
         onLongPress={onLongPress ? handleLongPress : undefined}
         onFocused={onFocused}

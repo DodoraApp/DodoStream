@@ -55,13 +55,13 @@ export const CatalogSectionHeader = memo(
         <Focusable
           onFocus={onFocused}
           onPress={isNavigable ? handlePress : undefined}
-          variant="none"
+          variant="background"
           style={{
             marginHorizontal: theme.spacing.m,
             paddingHorizontal: theme.spacing.m,
           }}>
           {({ isFocused }) => (
-            <MotiView animate={{ scale: isFocused ? theme.focus.scaleSmall : 1 }}>
+            <MotiView animate={{ scale: isFocused ? 2 - theme.focus.scaleSmall : 1 }}>
               <Box
                 flexDirection="row"
                 justifyContent="space-between"

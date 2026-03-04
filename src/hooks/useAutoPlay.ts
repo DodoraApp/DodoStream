@@ -3,12 +3,12 @@ import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { Stream as StreamType, ContentType } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { useMediaNavigation, type StreamTarget } from '@/hooks/useMediaNavigation';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 import { useStreams } from '@/api/stremio';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { parseBooleanParam } from '@/utils/params';
+import { getLastStreamTarget } from '@/db';
 
 const isStreamAvailable = (stream: StreamType) =>
   Boolean(stream.url || stream.externalUrl || stream.ytId);
@@ -51,10 +51,25 @@ export const useAutoPlay = ({
 
   const autoPlayAttemptRef = useRef(0);
   const didAutoNavigateRef = useRef(false);
+  const [lastStreamTarget, setLastStreamTarget] = useState<StreamTarget | undefined>();
 
-  const lastStreamTarget = useWatchHistoryStore((state) =>
-    state.getLastStreamTarget(metaId, videoId)
-  );
+  useEffect(() => {
+    let isCancelled = false;
+    const profileId = useProfileSettingsStore.getState().activeProfileId;
+    if (!profileId) {
+      setLastStreamTarget(undefined);
+      return;
+    }
+
+    void (async () => {
+      const target = await getLastStreamTarget(profileId, metaId, videoId);
+      if (!isCancelled) setLastStreamTarget(target);
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [metaId, videoId]);
   const { data: streams, isLoading } = useStreams(type, metaId, videoId, effectiveAutoPlay);
 
   const { openStreamTarget, openStreamFromStream } = useMediaNavigation();
@@ -124,7 +139,22 @@ export const useAutoPlay = ({
     };
 
     tryNextStream();
-  }, [effectiveAutoPlay, streams, metaId, videoId, type, bingeGroup, lastStreamTarget, openStreamFromStream, openStreamTarget, playerTitle, debug, isLoading, backgroundImage, logoImage]);
+  }, [
+    effectiveAutoPlay,
+    streams,
+    metaId,
+    videoId,
+    type,
+    bingeGroup,
+    lastStreamTarget,
+    openStreamFromStream,
+    openStreamTarget,
+    playerTitle,
+    debug,
+    isLoading,
+    backgroundImage,
+    logoImage,
+  ]);
 
   return {
     effectiveAutoPlay,

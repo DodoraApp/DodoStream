@@ -5,8 +5,13 @@ import { ProgressButton } from '@/components/basic/ProgressButton';
 import { MyListHeaderButton } from '@/components/media/MyListHeaderButton';
 import type { ContentType, MetaDetail } from '@/types/stremio';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
-import { useMyListStore } from '@/store/my-list.store';
+import {
+  useWatchHistoryActions,
+  useWatchHistoryItem,
+  useWatchProgress,
+  useWatchState,
+} from '@/hooks/useWatchHistoryDb';
+import { useIsInMyList, useMyListActions } from '@/hooks/useMyListDb';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
@@ -30,22 +35,22 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const isMultiVideo = (videos?.length ?? 0) > 1;
   const videoId = videos?.[0]?.id ?? metaId;
 
-  const continueWatching = useContinueWatchingForMeta(metaId, media);
+  const { entry: continueWatching } = useContinueWatchingForMeta(metaId, media);
 
-  const watchState = useWatchHistoryStore((state) => state.getWatchState(metaId, videoId));
-  const progressRatio = useWatchHistoryStore((state) => state.getProgressRatio(metaId, videoId));
-  const latestItemForMeta = useWatchHistoryStore((state) => state.getLatestItemForMeta(metaId));
-  const updateProgress = useWatchHistoryStore((state) => state.updateProgress);
-  const historyItem = useWatchHistoryStore((state) => state.getItem(metaId, videoId));
+  const watchState = useWatchState(metaId, videoId);
+  const progressRatio = useWatchProgress(metaId, videoId);
+  const { data: historyItem } = useWatchHistoryItem(metaId, videoId);
+  const { upsert } = useWatchHistoryActions();
 
   // My List state
-  const isInMyList = useMyListStore((state) => state.isInMyList(metaId, type));
-  const toggleMyList = useMyListStore((state) => state.toggleMyList);
+  const isInMyList = useIsInMyList(metaId, type);
+  const { toggleMyList } = useMyListActions();
 
   const handleToggleMyList = useCallback(() => {
     const nowInList = toggleMyList({
       id: metaId,
       type,
+      currentlyInList: isInMyList,
     });
     showToast({
       title: nowInList ? 'Added to My List' : 'Removed from My List',
@@ -53,7 +58,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
       preset: 'success',
       duration: TOAST_DURATION_SHORT,
     });
-  }, [metaId, type, toggleMyList, media.name]);
+  }, [isInMyList, media.name, metaId, toggleMyList, type]);
 
   // Handlers for single-video content
   const handlePlay = useCallback(() => {
@@ -66,28 +71,27 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
       metaId,
       videoId,
       durationSeconds: historyItem?.durationSeconds,
-      updateProgress,
+      updateProgress: (id, selectedVideoId, progressSeconds, durationSeconds) => {
+        upsert({
+          metaId: id,
+          videoId: selectedVideoId,
+          type,
+          progressSeconds,
+          durationSeconds,
+        });
+      },
     });
     debug('navigateSingle', { metaId, videoId, type, mode: 'start-over' });
     pushToStreams({ metaId, videoId, type });
-  }, [debug, historyItem, metaId, pushToStreams, videoId, type, updateProgress]);
+  }, [debug, historyItem?.durationSeconds, metaId, pushToStreams, type, upsert, videoId]);
 
   // Handler for multi-video content
   const handleContinue = useCallback(() => {
-    const targetVideoId =
-      continueWatching?.videoId ?? latestItemForMeta?.videoId ?? videos?.[0]?.id;
+    const targetVideoId = continueWatching?.videoId ?? videos?.[0]?.id;
     if (!targetVideoId) return;
     debug('navigateContinue', { metaId, type, videoId: targetVideoId });
     pushToStreams({ metaId, videoId: targetVideoId, type });
-  }, [
-    continueWatching?.videoId,
-    debug,
-    latestItemForMeta?.videoId,
-    metaId,
-    pushToStreams,
-    type,
-    videos,
-  ]);
+  }, [continueWatching?.videoId, debug, metaId, pushToStreams, type, videos]);
 
   // Multi-video button labels and state
   const multiVideoIsInProgress =
@@ -111,7 +115,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
 
   // Render buttons based on content type and watch state
   if (isMultiVideo) {
-    const hasWatchedBefore = !!latestItemForMeta;
+    const hasWatchedBefore = !!continueWatching;
 
     return (
       <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>

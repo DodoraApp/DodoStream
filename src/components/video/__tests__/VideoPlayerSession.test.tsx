@@ -42,21 +42,28 @@ jest.mock('@/store/profile-settings.store', () => ({
 }));
 
 const mockUpsertItem = jest.fn();
-const mockSetLastStreamTarget = jest.fn();
-const watchHistoryState: any = {
-  byProfile: {
-    p1: {},
+const mockSetLastStreamTarget = jest.fn().mockResolvedValue(undefined);
+let mockResumeHistoryItem: any;
+
+jest.mock('@/hooks/useWatchHistoryDb', () => ({
+  useWatchHistoryActions: () => ({
+    upsert: mockUpsertItem,
+    removeMeta: jest.fn(),
+  }),
+  useWatchHistoryItem: () => ({
+    data: mockResumeHistoryItem,
+  }),
+  watchHistoryKeys: {
+    all: ['watch-history-db'],
+    item: (...args: any[]) => ['watch-history-db', 'item', ...args],
+    streamTarget: (...args: any[]) => ['watch-history-db', 'stream-target', ...args],
+    continueWatching: (...args: any[]) => ['watch-history-db', 'continue-watching', ...args],
+    metaSummaries: (...args: any[]) => ['watch-history-db', 'meta-summaries', ...args],
   },
-};
+}));
 
-const useWatchHistoryStoreMock: any = (selector: any) => selector(watchHistoryState);
-useWatchHistoryStoreMock.getState = () => ({
-  upsertItem: mockUpsertItem,
-  setLastStreamTarget: mockSetLastStreamTarget,
-});
-
-jest.mock('@/store/watch-history.store', () => ({
-  useWatchHistoryStore: useWatchHistoryStoreMock,
+jest.mock('@/db', () => ({
+  setLastStreamTarget: (...args: any[]) => mockSetLastStreamTarget(...args),
 }));
 
 let mockLastExoProps: any;
@@ -111,10 +118,10 @@ describe('VideoPlayerSession', () => {
     mockUpNextResolved = undefined;
     mockSeekTo.mockReset();
     mockUpsertItem.mockReset();
-    mockSetLastStreamTarget.mockReset();
+    mockSetLastStreamTarget.mockReset().mockResolvedValue(undefined);
+    mockResumeHistoryItem = undefined;
     mockShowToast.mockReset();
     mockReplaceToStreams.mockReset();
-    watchHistoryState.byProfile.p1 = {};
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
   });
 
@@ -168,16 +175,12 @@ describe('VideoPlayerSession', () => {
 
   it('applies resume progress on load and seeks to resume time', () => {
     // Arrange
-    watchHistoryState.byProfile.p1 = {
-      m1: {
-        _: {
-          id: 'm1',
-          type: 'movie',
-          progressSeconds: 30,
-          durationSeconds: 100,
-          lastWatchedAt: 1,
-        },
-      },
+    mockResumeHistoryItem = {
+      id: 'm1',
+      type: 'movie',
+      progressSeconds: 30,
+      durationSeconds: 100,
+      lastWatchedAt: 1,
     };
 
     renderSession({
@@ -198,7 +201,7 @@ describe('VideoPlayerSession', () => {
     // Assert
     expect(mockSeekTo).toHaveBeenCalledWith(30, 100);
     expect(mockUpsertItem).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'm1', progressSeconds: 30, durationSeconds: 100 })
+      expect.objectContaining({ metaId: 'm1', progressSeconds: 30, durationSeconds: 100 })
     );
   });
 
@@ -223,9 +226,15 @@ describe('VideoPlayerSession', () => {
 
     // Assert
     expect(mockSetLastStreamTarget).toHaveBeenCalledTimes(1);
-    expect(mockSetLastStreamTarget).toHaveBeenCalledWith('m1', undefined, 'movie', {
-      type: 'url',
-      value: 'https://example.com/stream.m3u8',
+    expect(mockSetLastStreamTarget).toHaveBeenCalledWith({
+      profileId: 'p1',
+      metaId: 'm1',
+      videoId: undefined,
+      type: 'movie',
+      target: {
+        type: 'url',
+        value: 'https://example.com/stream.m3u8',
+      },
     });
   });
 

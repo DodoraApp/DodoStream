@@ -3,6 +3,7 @@ import { Slot, type ErrorBoundaryProps } from 'expo-router';
 import { ThemeProvider, useTheme } from '@shopify/restyle';
 import { defaultTheme, Box, Text, type Theme } from '@/theme/theme';
 import { AppThemeProvider } from '@/theme/ThemeContext';
+import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import {
   useFonts,
   Outfit_400Regular,
@@ -28,6 +29,7 @@ import { ToastContainer } from '@/components/basic/Toast';
 import * as Sentry from '@sentry/react-native';
 import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
 import { createDebugLogger } from '@/utils/debug';
+import { sqliteDb, initializeDatabase, runSqliteDataMigration } from '@/db';
 
 const debug = createDebugLogger('layout');
 if (isSentryEnabled) {
@@ -86,6 +88,7 @@ function Layout() {
   const isProfilesInitialized = useProfileStore((state) => state.isInitialized);
   const isUIInitialized = useUIStore((state) => state.isInitialized);
   const storesInitialized = isAddonsInitialized && isProfilesInitialized && isUIInitialized;
+  useDrizzleStudio(sqliteDb);
 
   useEffect(() => {
     if (!fontsLoaded) return;
@@ -96,6 +99,8 @@ function Layout() {
 
     const init = async () => {
       try {
+        await initializeDatabase();
+        await runSqliteDataMigration();
         await initializeUIStore();
         await initializeProfiles();
         await initializeAddons();

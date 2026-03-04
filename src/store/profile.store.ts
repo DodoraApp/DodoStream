@@ -3,12 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
 import { createDebugLogger } from '@/utils/debug';
-import { useMyListStore } from '@/store/my-list.store';
 import { usePlaybackStore } from '@/store/playback.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
-import { useContinueWatchingStore } from '@/store/continue-watching.store';
 import { useHomeStore } from '@/store/home.store';
+import { removeProfileMyList, removeProfileWatchHistory } from '@/db';
 
 export interface Profile extends ProfileOptions {
     id: string;
@@ -129,6 +127,9 @@ export const useProfileStore = create<ProfileState>()(
                 AsyncStorage.removeItem(`profile-${id}-home`).catch((error) => {
                     debug('removeProfileStorageFailed', { id, key: `profile-${id}-home`, error });
                 });
+
+                void removeProfileWatchHistory(id);
+                void removeProfileMyList(id);
             },
 
             switchProfile: (id: string, pin?: string) => {
@@ -212,11 +213,8 @@ export const useProfileStore = create<ProfileState>()(
 
 // Sync active profile into dependent stores (one-way).
 const syncActiveProfileId = (profileId?: string) => {
-    useMyListStore.getState().setActiveProfileId(profileId);
     usePlaybackStore.getState().setActiveProfileId(profileId);
     useProfileSettingsStore.getState().setActiveProfileId(profileId);
-    useWatchHistoryStore.getState().setActiveProfileId(profileId);
-    useContinueWatchingStore.getState().setActiveProfileId(profileId);
     useHomeStore.getState().setActiveProfileId(profileId);
 };
 

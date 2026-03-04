@@ -1,24 +1,32 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useQueryClient } from '@tanstack/react-query';
 import type { PickerItem } from '@/components/basic/PickerModal';
-import { useContinueWatchingStore } from '@/store/continue-watching.store';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import type { ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import type { ContinueWatchingAction } from '@/types/continue-watching';
 import { resetProgressToStart } from '@/utils/playback';
+import { useProfileStore } from '@/store/profile.store';
+import {
+  dismissFromContinueWatching,
+  getWatchHistoryItem,
+  removeWatchHistoryMeta,
+  upsertWatchProgress,
+} from '@/db';
+import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 
 export const useContinueWatchingActions = () => {
   const { navigateToDetails, pushToStreams } = useMediaNavigation();
-
-  const setHidden = useContinueWatchingStore((state) => state.setHidden);
-  const updateProgress = useWatchHistoryStore((state) => state.updateProgress);
-  const getItem = useWatchHistoryStore((state) => state.getItem);
-  const removeMeta = useWatchHistoryStore((state) => state.removeMeta);
+  const profileId = useProfileStore((state) => state.activeProfileId);
+  const queryClient = useQueryClient();
 
   const [isVisible, setIsVisible] = useState(false);
   const [activeEntry, setActiveEntry] = useState<ContinueWatchingEntry | null>(null);
+
+  const invalidateWatchHistory = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all });
+  }, [queryClient]);
 
   const openActions = useCallback((entry: ContinueWatchingEntry) => {
     if (!Platform.isTV) {
@@ -69,7 +77,10 @@ export const useContinueWatchingActions = () => {
       const entry = activeEntry;
       if (!entry) return;
 
-      const videoId = entry.videoId ?? entry.metaId;
+      // For navigation: streams screen needs a videoId (falls back to metaId for movies)
+      const navVideoId = entry.videoId ?? entry.metaId;
+      // For DB lookups: movies are stored with videoId=null, so use entry.videoId as-is
+      const dbVideoId = entry.videoId;
 
       switch (action) {
         case 'details':
@@ -77,28 +88,56 @@ export const useContinueWatchingActions = () => {
           return;
         case 'play':
         case 'resume':
-          pushToStreams({ metaId: entry.metaId, videoId, type: entry.type });
+          pushToStreams({ metaId: entry.metaId, videoId: navVideoId, type: entry.type });
           return;
         case 'play-from-start': {
-          const historyItem = getItem(entry.metaId, videoId);
-          resetProgressToStart({
-            metaId: entry.metaId,
-            videoId,
-            durationSeconds: historyItem?.durationSeconds,
-            updateProgress,
-          });
-          pushToStreams({ metaId: entry.metaId, videoId, type: entry.type });
+          if (profileId) {
+            void (async () => {
+              const historyItem = await getWatchHistoryItem(profileId, entry.metaId, dbVideoId);
+              resetProgressToStart({
+                metaId: entry.metaId,
+                videoId: dbVideoId,
+                durationSeconds: historyItem?.durationSeconds,
+                updateProgress: (metaKey, selectedVideoId, progressSeconds, durationSeconds) => {
+                  void (async () => {
+                    await upsertWatchProgress({
+                      profileId,
+                      metaId: metaKey,
+                      videoId: selectedVideoId,
+                      type: entry.type,
+                      progressSeconds,
+                      durationSeconds,
+                    });
+                    await invalidateWatchHistory();
+                  })();
+                },
+              });
+              pushToStreams({ metaId: entry.metaId, videoId: navVideoId, type: entry.type });
+            })();
+          } else {
+            pushToStreams({ metaId: entry.metaId, videoId: navVideoId, type: entry.type });
+          }
           return;
         }
         case 'hide':
-          setHidden(entry.metaId, true);
+          if (profileId) {
+            void (async () => {
+              await dismissFromContinueWatching(profileId, entry.metaId);
+              await invalidateWatchHistory();
+            })();
+          }
           return;
         case 'remove-from-history':
-          removeMeta(entry.metaId);
+          if (profileId) {
+            void (async () => {
+              await removeWatchHistoryMeta(profileId, entry.metaId);
+              await invalidateWatchHistory();
+            })();
+          }
           return;
       }
     },
-    [activeEntry, getItem, navigateToDetails, pushToStreams, removeMeta, setHidden, updateProgress]
+    [activeEntry, invalidateWatchHistory, navigateToDetails, profileId, pushToStreams]
   );
 
   const label = activeEntry?.metaName ?? 'Continue Watching';

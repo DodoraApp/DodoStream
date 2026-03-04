@@ -11,6 +11,7 @@ import { HorizontalSpacer } from '@/components/basic/Spacer';
 import { useContinueWatching, ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
+import { ContinueWatchingListSkeleton } from '@/components/media/ContinueWatchingListSkeleton';
 import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
 import { CatalogSection } from '@/components/media/CatalogSection';
 import { PickerModal } from '@/components/basic/PickerModal';
@@ -18,6 +19,7 @@ import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
 import { HeroSection } from '@/components/media/HeroSection';
 import { useHomeStore } from '@/store/home.store';
 import { TV_DRAW_DISTANCE, MOBILE_DRAW_DISTANCE } from '@/constants/ui';
+
 import type { Href } from 'expo-router';
 
 // ============================================================================
@@ -81,6 +83,8 @@ const HomeContent = () => {
   const hasAddons = useAddonStore((state) => state.hasAddons());
   const heroEnabled = useHomeStore((state) => state.getActiveSettings().heroEnabled);
   const continueWatching = useContinueWatching();
+  const continueWatchingData = continueWatching.data;
+  const continueWatchingLoading = continueWatching.isLoading;
   const continueWatchingActions = useContinueWatchingActions();
   const { scrollToSection, flashListRef } = useHomeScroll();
 
@@ -119,8 +123,8 @@ const HomeContent = () => {
 
     const continueWatchingSections: HomeListItem[] = [];
 
-    // Continue watching section
-    if (continueWatching.length > 0) {
+    // Continue watching section: show when loading or when there is data
+    if (continueWatchingLoading || continueWatchingData.length > 0) {
       const sectionKey = 'continue-watching';
       continueWatchingSections.push({
         kind: 'section-header',
@@ -135,7 +139,7 @@ const HomeContent = () => {
     }
 
     return [...continueWatchingSections, ...addonSections];
-  }, [addons, continueWatching.length]);
+  }, [addons, continueWatchingData.length, continueWatchingLoading]);
 
   const keyExtractor = useCallback((item: HomeListItem, index: number): string => {
     return `${item.kind}-${item.sectionKey}-${index}`;
@@ -174,7 +178,8 @@ const HomeContent = () => {
         case 'continue-watching-row':
           return (
             <ContinueWatchingSectionRow
-              continueWatching={continueWatching}
+              continueWatching={continueWatchingData}
+              isLoading={continueWatchingLoading}
               sectionKey={item.sectionKey}
               onSectionFocused={() => handleSectionFocused(index)}
               onLongPressEntry={(entry) => continueWatchingActions.openActions(entry)}
@@ -197,7 +202,13 @@ const HomeContent = () => {
           return null;
       }
     },
-    [continueWatching, continueWatchingActions, handleMediaPress, handleSectionFocused]
+    [
+      continueWatchingData,
+      continueWatchingLoading,
+      continueWatchingActions,
+      handleMediaPress,
+      handleSectionFocused,
+    ]
   );
 
   return (
@@ -250,6 +261,7 @@ const HomeContent = () => {
 interface ContinueWatchingSectionRowProps {
   sectionKey: string;
   continueWatching: ContinueWatchingEntry[];
+  isLoading: boolean;
   onSectionFocused: (sectionKey: string) => void;
   onLongPressEntry: (entry: ContinueWatchingEntry) => void;
   hasTVPreferredFocus?: boolean;
@@ -259,6 +271,7 @@ const ContinueWatchingSectionRow = memo(
   ({
     sectionKey,
     continueWatching,
+    isLoading,
     onSectionFocused,
     onLongPressEntry,
     hasTVPreferredFocus = false,
@@ -269,6 +282,10 @@ const ContinueWatchingSectionRow = memo(
     const handleItemFocused = useCallback(() => {
       onSectionFocused(sectionKey);
     }, [onSectionFocused, sectionKey]);
+
+    if (isLoading) {
+      return <ContinueWatchingListSkeleton />;
+    }
 
     return (
       <TVFocusGuideView autoFocus trapFocusRight>

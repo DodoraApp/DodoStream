@@ -48,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 }
             ],
             'expo-router',
+            'expo-sqlite',
             'expo-localization',
             [
                 'expo-font',

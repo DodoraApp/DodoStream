@@ -65,6 +65,12 @@ export const Button = forwardRef(
         : variant === 'secondary'
           ? 'secondaryForeground'
           : 'tertiaryForeground';
+    const borderColor =
+      variant === 'primary'
+        ? 'secondaryForeground'
+        : variant === 'secondary'
+          ? 'tertiaryForeground'
+          : 'secondaryForeground';
     return (
       <Focusable
         viewRef={ref as any}
@@ -72,6 +78,7 @@ export const Button = forwardRef(
         variant="outline"
         focusedStyle={{
           borderRadius: theme.borderRadii.full,
+          outlineColor: theme.colors[borderColor as keyof Theme['colors']],
         }}
         {...rest}>
         <ButtonContainer variant={variant} flexDirection="row" gap="s" borderRadius="full">

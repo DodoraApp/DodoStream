@@ -25,7 +25,7 @@ interface GroupedEpisodes {
 export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePress }) => {
   const { isPlatformTV } = useResponsiveLayout();
   const isHorizontal = isPlatformTV;
-  const continueWatching = useContinueWatchingForMeta(metaId, { videos });
+  const { entry: continueWatching } = useContinueWatchingForMeta(metaId, { videos });
 
   // Group episodes by season
   const groupedEpisodes = useMemo(() => {

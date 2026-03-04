@@ -7,13 +7,13 @@ import { FlashList } from '@shopify/flash-list';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useMyListStore, type MyListItem } from '@/store/my-list.store';
-import { useWatchHistoryStore, type WatchedMetaSummary } from '@/store/watch-history.store';
+import type { ContentType } from '@/types/stremio';
+import { useMyList } from '@/hooks/useMyListDb';
+import { useWatchedMetaSummaries } from '@/hooks/useWatchHistoryDb';
+import type { DbMyListItem, DbWatchedMetaSummary } from '@/db';
 import { MediaCard } from '@/components/media/MediaCard';
 import { HistoryCard } from '@/components/media/HistoryCard';
-import type { MetaPreview } from '@/types/stremio';
-import { useMeta } from '@/api/stremio';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { calculateMediaGridColumns } from '@/utils/layout';
 import { TV_DRAW_DISTANCE, MOBILE_DRAW_DISTANCE } from '@/constants/ui';
@@ -34,31 +34,21 @@ const LIBRARY_TABS = [
 // ============================================================================
 
 interface MyListEntryCardProps {
-  entry: MyListItem;
-  onPress: (media: MetaPreview) => void;
+  entry: DbMyListItem;
+  onPress: (id: string, type: ContentType) => void;
   hasTVPreferredFocus?: boolean;
 }
 
 const MyListEntryCard = memo(
   ({ entry, onPress, hasTVPreferredFocus = false }: MyListEntryCardProps) => {
     const theme = useTheme<Theme>();
-    const { data: meta, isLoading } = useMeta(entry.type, entry.id);
 
-    if (isLoading) {
-      return (
-        <Box
-          width={theme.cardSizes.media.width}
-          height={theme.cardSizes.media.height}
-          justifyContent="center"
-          alignItems="center"
-          backgroundColor="cardBackground"
-          borderRadius="l">
-          <LoadingIndicator type="simple" size="small" />
-        </Box>
-      );
-    }
+    const handlePress = useCallback(() => {
+      onPress(entry.id, entry.type);
+    }, [onPress, entry.id, entry.type]);
 
-    if (!meta) {
+    // Show placeholder if meta_cache hasn't been populated yet (first launch)
+    if (!entry.metaName && !entry.imageUrl) {
       return (
         <Box
           width={theme.cardSizes.media.width}
@@ -77,13 +67,13 @@ const MyListEntryCard = memo(
     return (
       <MediaCard
         media={{
-          id: meta.id,
-          type: meta.type ?? entry.type,
-          name: meta.name,
-          poster: meta.poster,
-          background: meta.background,
+          id: entry.id,
+          type: entry.type,
+          name: entry.metaName ?? '',
+          poster: entry.imageUrl,
+          background: entry.imageUrl,
         }}
-        onPress={onPress}
+        onPress={handlePress}
         hasTVPreferredFocus={hasTVPreferredFocus}
       />
     );
@@ -103,17 +93,17 @@ interface MyListTabProps {
 const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
-  const data = useMyListStore((state) => state.getActiveList());
+  const { data = [] } = useMyList();
 
   const handlePress = useCallback(
-    (media: MetaPreview) => {
-      navigateToDetails(media.id, media.type);
+    (id: string, type: ContentType) => {
+      navigateToDetails(id, type);
     },
     [navigateToDetails]
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: MyListItem; index: number }) => (
+    ({ item, index }: { item: DbMyListItem; index: number }) => (
       <Box flex={1} alignItems="center" paddingBottom="m">
         <MyListEntryCard
           entry={item}
@@ -125,7 +115,7 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
     [handlePress]
   );
 
-  const keyExtractor = useCallback((item: MyListItem) => `${item.type}:${item.id}`, []);
+  const keyExtractor = useCallback((item: DbMyListItem) => `${item.type}:${item.id}`, []);
 
   if (data.length === 0) {
     return (
@@ -166,17 +156,17 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   const { navigateToDetails } = useMediaNavigation();
 
   // Only load history data when this component is mounted (lazy loading)
-  const data = useWatchHistoryStore((state) => state.getAllWatchedMetas());
+  const { data = [], isLoading } = useWatchedMetaSummaries();
 
   const handlePress = useCallback(
-    (metaId: string, type: string) => {
-      navigateToDetails(metaId, type as 'movie' | 'series');
+    (metaId: string, type: ContentType) => {
+      navigateToDetails(metaId, type);
     },
     [navigateToDetails]
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: WatchedMetaSummary; index: number }) => (
+    ({ item, index }: { item: DbWatchedMetaSummary; index: number }) => (
       <Box flex={1} alignItems="center" paddingBottom="m">
         <HistoryCard
           entry={item}
@@ -188,7 +178,19 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
     [handlePress]
   );
 
-  const keyExtractor = useCallback((item: WatchedMetaSummary) => item.id, []);
+  const keyExtractor = useCallback((item: DbWatchedMetaSummary) => item.id, []);
+
+  if (isLoading) {
+    return (
+      <CardListSkeleton
+        horizontal={false}
+        count={numColumns * 3}
+        cardWidth={theme.cardSizes.media.width}
+        cardHeight={theme.cardSizes.media.height}
+        withLabel
+      />
+    );
+  }
 
   if (data.length === 0) {
     return (
