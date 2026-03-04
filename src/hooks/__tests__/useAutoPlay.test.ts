@@ -4,14 +4,18 @@ import * as toastStore from '@/store/toast.store';
 import * as streamsApi from '@/api/stremio';
 import * as mediaNav from '@/hooks/useMediaNavigation';
 import * as profileStore from '@/store/profile-settings.store';
-import * as watchHistoryStore from '@/store/watch-history.store';
+import * as db from '@/db';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 
 jest.mock('@/store/toast.store', () => ({ showToast: jest.fn() }));
 jest.mock('@/api/stremio');
-jest.mock('@/hooks/useMediaNavigation');
+jest.mock('@/hooks/useMediaNavigation', () => ({
+  useMediaNavigation: jest.fn(),
+}));
 jest.mock('@/store/profile-settings.store');
-jest.mock('@/store/watch-history.store');
+jest.mock('@/db', () => ({
+  getLastStreamTarget: jest.fn(),
+}));
 jest.mock('@/utils/debug', () => ({
   __esModule: true,
   useDebugLogger: () => jest.fn(),
@@ -29,6 +33,7 @@ describe('useAutoPlay', () => {
   let mockStreams: any[];
   let openStreamFromStream: jest.Mock;
   let openStreamTarget: jest.Mock;
+  let profileSettingsState: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,6 +42,18 @@ describe('useAutoPlay', () => {
       { url: 'http://example.com/1', name: 'Stream1' },
       { url: 'http://example.com/2', name: 'Stream2' },
     ];
+
+    profileSettingsState = {
+      activeProfileId: 'profile1',
+      byProfile: {
+        profile1: { autoPlayFirstStream: false },
+      },
+    };
+
+    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockImplementation((selector) =>
+      selector(profileSettingsState)
+    );
+    (profileStore.useProfileSettingsStore as any).getState = () => profileSettingsState;
 
     (streamsApi.useStreams as jest.Mock).mockReturnValue({
       data: mockStreams,
@@ -51,22 +68,11 @@ describe('useAutoPlay', () => {
       openStreamTarget,
     });
 
-    // Watch history mock
-    (watchHistoryStore.useWatchHistoryStore as unknown as jest.Mock).mockImplementation(
-      (selector) =>
-        selector({
-          getLastStreamTarget: jest.fn().mockReturnValue(null),
-        })
-    );
+    (db.getLastStreamTarget as jest.Mock).mockResolvedValue(undefined);
   });
 
   it('auto plays when autoPlay param is passed', async () => {
-    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockReturnValue({
-      activeProfileId: 'profile1',
-      byProfile: {
-        profile1: { autoPlayFirstStream: false },
-      },
-    });
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = false;
 
     renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1' }));
 
@@ -76,12 +82,7 @@ describe('useAutoPlay', () => {
   });
 
   it('auto plays when the setting is on and the param is not passed', async () => {
-    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockImplementation((selector) =>
-      selector({
-        activeProfileId: 'profile1',
-        byProfile: { profile1: { autoPlayFirstStream: true } },
-      })
-    );
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
 
     renderHook(() => useAutoPlay(defaultProps));
 
@@ -91,12 +92,7 @@ describe('useAutoPlay', () => {
   });
 
   it('does not auto play if the param is not passed and the setting is off', async () => {
-    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockReturnValue({
-      activeProfileId: 'profile1',
-      byProfile: {
-        profile1: { autoPlayFirstStream: false },
-      },
-    });
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = false;
 
     renderHook(() => useAutoPlay(defaultProps));
 
@@ -104,12 +100,7 @@ describe('useAutoPlay', () => {
   });
 
   it('fails after max auto play attempts and triggers showToast', async () => {
-    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockImplementation((selector) =>
-      selector({
-        activeProfileId: 'profile1',
-        byProfile: { profile1: { autoPlayFirstStream: true } },
-      })
-    );
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
 
     // Streams: all invalid
     const invalidStreams = Array(MAX_AUTO_PLAY_ATTEMPTS).fill({});
@@ -131,20 +122,23 @@ describe('useAutoPlay', () => {
   });
 
   it('auto plays last stream target if it exists', async () => {
-    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockImplementation((selector) =>
-      selector({
-        activeProfileId: 'profile1',
-        byProfile: { profile1: { autoPlayFirstStream: true } },
-      })
-    );
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
 
     const lastTarget = { type: 'url', url: 'http://laststream.com' };
-    (watchHistoryStore.useWatchHistoryStore as unknown as jest.Mock).mockImplementation(
-      (selector) =>
-        selector({
-          getLastStreamTarget: jest.fn().mockReturnValue(lastTarget),
-        })
-    );
+    (db.getLastStreamTarget as jest.Mock).mockResolvedValue({
+      type: 'url',
+      value: lastTarget.url,
+    });
+
+    (streamsApi.useStreams as jest.Mock)
+      .mockImplementationOnce(() => ({
+        data: [],
+        isLoading: true,
+      }))
+      .mockImplementation(() => ({
+        data: mockStreams,
+        isLoading: false,
+      }));
 
     // Streams: playable, but should not be used
     (streamsApi.useStreams as jest.Mock).mockReturnValue({
@@ -154,14 +148,16 @@ describe('useAutoPlay', () => {
 
     renderHook(() => useAutoPlay(defaultProps));
 
-    expect(openStreamTarget).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metaId: defaultProps.metaId,
-        videoId: defaultProps.videoId,
-        target: lastTarget,
-        fromAutoPlay: true,
-      })
-    );
+    await waitFor(() => {
+      expect(openStreamTarget).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metaId: defaultProps.metaId,
+          videoId: defaultProps.videoId,
+          target: { type: 'url', value: lastTarget.url },
+          fromAutoPlay: true,
+        })
+      );
+    });
 
     // Ensure openStreamFromStream is NOT called
     expect(openStreamFromStream).not.toHaveBeenCalled();

@@ -2,20 +2,21 @@ import { useCallback, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { PickerItem } from '@/components/basic/PickerModal';
-import { useContinueWatchingStore } from '@/store/continue-watching.store';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import type { ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import type { ContinueWatchingAction } from '@/types/continue-watching';
 import { resetProgressToStart } from '@/utils/playback';
+import { useProfileStore } from '@/store/profile.store';
+import {
+  dismissFromContinueWatching,
+  getWatchHistoryItem,
+  removeWatchHistoryMeta,
+  upsertWatchProgress,
+} from '@/db';
 
 export const useContinueWatchingActions = () => {
   const { navigateToDetails, pushToStreams } = useMediaNavigation();
-
-  const setHidden = useContinueWatchingStore((state) => state.setHidden);
-  const updateProgress = useWatchHistoryStore((state) => state.updateProgress);
-  const getItem = useWatchHistoryStore((state) => state.getItem);
-  const removeMeta = useWatchHistoryStore((state) => state.removeMeta);
+  const profileId = useProfileStore((state) => state.activeProfileId);
 
   const [isVisible, setIsVisible] = useState(false);
   const [activeEntry, setActiveEntry] = useState<ContinueWatchingEntry | null>(null);
@@ -80,25 +81,42 @@ export const useContinueWatchingActions = () => {
           pushToStreams({ metaId: entry.metaId, videoId, type: entry.type });
           return;
         case 'play-from-start': {
-          const historyItem = getItem(entry.metaId, videoId);
-          resetProgressToStart({
-            metaId: entry.metaId,
-            videoId,
-            durationSeconds: historyItem?.durationSeconds,
-            updateProgress,
-          });
+          if (profileId) {
+            void (async () => {
+              const historyItem = await getWatchHistoryItem(profileId, entry.metaId, videoId);
+              resetProgressToStart({
+                metaId: entry.metaId,
+                videoId,
+                durationSeconds: historyItem?.durationSeconds,
+                updateProgress: (metaKey, selectedVideoId, progressSeconds, durationSeconds) => {
+                  void upsertWatchProgress({
+                    profileId,
+                    metaId: metaKey,
+                    videoId: selectedVideoId,
+                    type: entry.type,
+                    progressSeconds,
+                    durationSeconds,
+                  });
+                },
+              });
+            })();
+          }
           pushToStreams({ metaId: entry.metaId, videoId, type: entry.type });
           return;
         }
         case 'hide':
-          setHidden(entry.metaId, true);
+          if (profileId) {
+            void dismissFromContinueWatching(profileId, entry.metaId);
+          }
           return;
         case 'remove-from-history':
-          removeMeta(entry.metaId);
+          if (profileId) {
+            void removeWatchHistoryMeta(profileId, entry.metaId);
+          }
           return;
       }
     },
-    [activeEntry, getItem, navigateToDetails, pushToStreams, removeMeta, setHidden, updateProgress]
+    [activeEntry, navigateToDetails, profileId, pushToStreams]
   );
 
   const label = activeEntry?.metaName ?? 'Continue Watching';

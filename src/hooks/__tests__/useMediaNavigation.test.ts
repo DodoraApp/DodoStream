@@ -1,7 +1,7 @@
-import { renderHook } from '@testing-library/react-native';
+import { renderHook, waitFor } from '@testing-library/react-native';
 import { useMediaNavigation } from '../useMediaNavigation';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { Linking } from 'react-native';
+import * as db from '@/db';
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
@@ -13,26 +13,29 @@ jest.mock('expo-router', () => ({
     }),
 }));
 
+jest.mock('@/store/profile.store', () => ({
+    useProfileStore: jest.fn((selector: any) => selector({ activeProfileId: 'p1' })),
+}));
+
+jest.mock('@/db', () => ({
+    getLastStreamTarget: jest.fn(),
+    setLastStreamTarget: jest.fn(),
+}));
+
 const mockShowToast = jest.fn();
 jest.mock('@/store/toast.store', () => ({
     showToast: (...args: any[]) => mockShowToast(...args),
 }));
 
 describe('useMediaNavigation', () => {
-    const mockSetLastStreamTarget = jest.fn();
-    const mockGetLastStreamTarget = jest.fn();
     let openUrlSpy: jest.SpyInstance;
 
     beforeEach(() => {
         jest.clearAllMocks();
 
         openUrlSpy = jest.spyOn(Linking, 'openURL');
-
-        // Ensure store selector returns our mock.
-        useWatchHistoryStore.setState({
-            setLastStreamTarget: mockSetLastStreamTarget,
-            getLastStreamTarget: mockGetLastStreamTarget,
-        } as any);
+        (db.getLastStreamTarget as jest.Mock).mockResolvedValue(undefined);
+        (db.setLastStreamTarget as jest.Mock).mockResolvedValue(undefined);
     });
 
     it('openStreamTarget navigates to /play for url targets', async () => {
@@ -63,7 +66,7 @@ describe('useMediaNavigation', () => {
             },
         });
         expect(openUrlSpy).not.toHaveBeenCalled();
-        expect(mockSetLastStreamTarget).not.toHaveBeenCalled();
+        expect(db.setLastStreamTarget).not.toHaveBeenCalled();
     });
 
     it('openStreamTarget opens and persists external targets', async () => {
@@ -81,9 +84,15 @@ describe('useMediaNavigation', () => {
 
         expect(ok).toBe(true);
         expect(openUrlSpy).toHaveBeenCalledWith('https://example.com');
-        expect(mockSetLastStreamTarget).toHaveBeenCalledWith('m1', 'v1', 'movie', {
-            type: 'external',
-            value: 'https://example.com',
+        expect(db.setLastStreamTarget).toHaveBeenCalledWith({
+            profileId: 'p1',
+            metaId: 'm1',
+            videoId: 'v1',
+            type: 'movie',
+            target: {
+                type: 'external',
+                value: 'https://example.com',
+            },
         });
         expect(mockShowToast).not.toHaveBeenCalled();
     });
@@ -103,9 +112,15 @@ describe('useMediaNavigation', () => {
 
         expect(ok).toBe(true);
         expect(openUrlSpy).toHaveBeenCalledWith('https://www.youtube.com/watch?v=abc123');
-        expect(mockSetLastStreamTarget).toHaveBeenCalledWith('m1', 'v1', 'movie', {
-            type: 'yt',
-            value: 'abc123',
+        expect(db.setLastStreamTarget).toHaveBeenCalledWith({
+            profileId: 'p1',
+            metaId: 'm1',
+            videoId: 'v1',
+            type: 'movie',
+            target: {
+                type: 'yt',
+                value: 'abc123',
+            },
         });
     });
 
@@ -126,7 +141,7 @@ describe('useMediaNavigation', () => {
 
         expect(ok).toBe(false);
         expect(mockShowToast).toHaveBeenCalled();
-        expect(mockSetLastStreamTarget).not.toHaveBeenCalled();
+        expect(db.setLastStreamTarget).not.toHaveBeenCalled();
         expect(onExternalOpenFailed).toHaveBeenCalled();
     });
 
@@ -162,24 +177,32 @@ describe('useMediaNavigation', () => {
     });
 
     it('pushToStreams defaults to autoPlay=1 when a last stream target exists', () => {
-        mockGetLastStreamTarget.mockReturnValueOnce({ type: 'url', value: 'https://example.com' });
+        (db.getLastStreamTarget as jest.Mock).mockResolvedValueOnce({
+            type: 'url',
+            value: 'https://example.com',
+        });
 
         const { result } = renderHook(() => useMediaNavigation());
         result.current.pushToStreams({ metaId: 'm1', videoId: 'v1', type: 'movie' as any });
 
-        expect(mockPush).toHaveBeenCalledWith({
-            pathname: '/streams',
-            params: {
-                metaId: 'm1',
-                videoId: 'v1',
-                type: 'movie',
-                autoPlay: '1',
-            },
+        return waitFor(() => {
+            expect(mockPush).toHaveBeenCalledWith({
+                pathname: '/streams',
+                params: {
+                    metaId: 'm1',
+                    videoId: 'v1',
+                    type: 'movie',
+                    autoPlay: '1',
+                },
+            });
         });
     });
 
     it('pushToStreams does not force autoPlay when explicitly provided', () => {
-        mockGetLastStreamTarget.mockReturnValueOnce({ type: 'url', value: 'https://example.com' });
+        (db.getLastStreamTarget as jest.Mock).mockResolvedValueOnce({
+            type: 'url',
+            value: 'https://example.com',
+        });
 
         const { result } = renderHook(() => useMediaNavigation());
         result.current.pushToStreams(
@@ -199,19 +222,24 @@ describe('useMediaNavigation', () => {
     });
 
     it('replaceToStreams defaults to autoPlay=1 when a last stream target exists', () => {
-        mockGetLastStreamTarget.mockReturnValueOnce({ type: 'url', value: 'https://example.com' });
+        (db.getLastStreamTarget as jest.Mock).mockResolvedValueOnce({
+            type: 'url',
+            value: 'https://example.com',
+        });
 
         const { result } = renderHook(() => useMediaNavigation());
         result.current.replaceToStreams({ metaId: 'm1', videoId: 'v1', type: 'movie' as any });
 
-        expect(mockReplace).toHaveBeenCalledWith({
-            pathname: '/streams',
-            params: {
-                metaId: 'm1',
-                videoId: 'v1',
-                type: 'movie',
-                autoPlay: '1',
-            },
+        return waitFor(() => {
+            expect(mockReplace).toHaveBeenCalledWith({
+                pathname: '/streams',
+                params: {
+                    metaId: 'm1',
+                    videoId: 'v1',
+                    type: 'movie',
+                    autoPlay: '1',
+                },
+            });
         });
     });
 });

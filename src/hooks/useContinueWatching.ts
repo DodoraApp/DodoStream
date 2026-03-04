@@ -1,14 +1,8 @@
-import { useMemo } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useEffect, useMemo, useState } from 'react';
 import type { ContentType, MetaDetail, MetaVideo } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
-import { useContinueWatchingStore } from '@/store/continue-watching.store';
-import {
-    useWatchHistoryStore,
-    isContinueWatching,
-    type WatchHistoryItem,
-} from '@/store/watch-history.store';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
+import { getContinueWatchingWithUpNext, listWatchHistoryForProfile, type DbWatchHistoryItem } from '@/db';
 
 // ============================================================================
 // Types
@@ -78,27 +72,6 @@ const findNextUnwatchedVideo = (
  * Select the latest continue watching item per meta.
  * Returns one item per metaId, sorted by lastWatchedAt descending.
  */
-const selectLatestItemPerMeta = (
-    profileData: Record<string, Record<string, WatchHistoryItem>>
-): WatchHistoryItem[] => {
-    const latestByMetaId = new Map<string, WatchHistoryItem>();
-
-    for (const metaItems of Object.values(profileData)) {
-        for (const item of Object.values(metaItems)) {
-            if (!isContinueWatching(item.progressSeconds, item.durationSeconds, item.videoId)) {
-                continue;
-            }
-
-            const existing = latestByMetaId.get(item.id);
-            if (!existing || item.lastWatchedAt > existing.lastWatchedAt) {
-                latestByMetaId.set(item.id, item);
-            }
-        }
-    }
-
-    return Array.from(latestByMetaId.values()).sort((a, b) => b.lastWatchedAt - a.lastWatchedAt);
-};
-
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -111,41 +84,44 @@ const selectLatestItemPerMeta = (
 export function useContinueWatching(): ContinueWatchingEntry[] {
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-    const hiddenMetaIds = useContinueWatchingStore(
-        useShallow((state) => {
-            if (!activeProfileId) return {} as Record<string, true>;
-            return state.byProfile[activeProfileId]?.hidden ?? {};
-        })
-    );
+    const [entries, setEntries] = useState<ContinueWatchingEntry[]>([]);
 
-    const profileData = useWatchHistoryStore(
-        useShallow((state) => {
-            if (!activeProfileId) return {};
-            return state.byProfile[activeProfileId] ?? {};
-        })
-    );
+    useEffect(() => {
+        if (!activeProfileId) {
+            setEntries([]);
+            return;
+        }
 
-    return useMemo(() => {
-        return selectLatestItemPerMeta(profileData)
-            .filter((item) => !hiddenMetaIds[item.id])
-            .map((item): ContinueWatchingEntry => {
-                const progressRatio = getProgressRatio(item.progressSeconds, item.durationSeconds);
-                const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
+        let isCancelled = false;
 
-                return {
-                    key: getEntryKey(item.id, item.videoId),
-                    metaId: item.id,
+        void (async () => {
+            const items = await getContinueWatchingWithUpNext(activeProfileId, 50);
+            if (isCancelled) return;
+
+            const next = items
+                .map((item): ContinueWatchingEntry => ({
+                    key: getEntryKey(item.metaId, item.videoId),
+                    metaId: item.metaId,
                     type: item.type,
                     videoId: item.videoId,
                     progressSeconds: item.progressSeconds,
                     durationSeconds: item.durationSeconds,
-                    progressRatio,
+                    progressRatio: item.progressRatio,
                     lastWatchedAt: item.lastWatchedAt,
-                    // Preliminary isUpNext flag - will be refined when meta is fetched
-                    isUpNext: isFinished && !!item.videoId,
-                };
-            });
-    }, [hiddenMetaIds, profileData]);
+                    isUpNext: item.isUpNext,
+                    metaName: item.metaName,
+                    imageUrl: item.imageUrl,
+                }));
+
+            setEntries(next);
+        })();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [activeProfileId]);
+
+    return entries;
 }
 
 /**
@@ -157,21 +133,32 @@ export function useContinueWatchingForMeta(
     meta: MetaDetail | { videos?: MetaVideo[] } | undefined
 ): ContinueWatchingEntry | undefined {
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
+    const [itemsForMeta, setItemsForMeta] = useState<DbWatchHistoryItem[]>([]);
 
-    const itemsForMeta = useWatchHistoryStore(
-        useShallow((state) => {
-            if (!activeProfileId) return [];
-            const metaItems = state.byProfile[activeProfileId]?.[metaId];
-            return metaItems ? Object.values(metaItems) : [];
-        })
-    );
+    useEffect(() => {
+        if (!activeProfileId) {
+            setItemsForMeta([]);
+            return;
+        }
+
+        let isCancelled = false;
+        void (async () => {
+            const all = await listWatchHistoryForProfile(activeProfileId);
+            if (isCancelled) return;
+            setItemsForMeta(all.filter((item) => item.id === metaId));
+        })();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [activeProfileId, metaId]);
 
     return useMemo(() => {
         const videos = meta?.videos ?? [];
         if (itemsForMeta.length === 0) return undefined;
 
         // Find the most recently watched item for this meta
-        const latestItem = itemsForMeta.reduce<WatchHistoryItem | undefined>(
+        const latestItem = itemsForMeta.reduce<DbWatchHistoryItem | undefined>(
             (best, item) => (!best || item.lastWatchedAt > best.lastWatchedAt ? item : best),
             undefined
         );

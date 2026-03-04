@@ -10,7 +10,7 @@ import type { MetaVideo } from '@/types/stremio';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { Focusable } from '@/components/basic/Focusable';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { useWatchProgress } from '@/hooks/useWatchHistoryDb';
 import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
 
 export interface EpisodeItemProps {
@@ -23,7 +23,7 @@ export interface EpisodeItemProps {
 export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: EpisodeItemProps) => {
   const theme = useTheme<Theme>();
 
-  const progressRatio = useWatchHistoryStore((state) => state.getProgressRatio(metaId, video.id));
+  const progressRatio = useWatchProgress(metaId, video.id);
 
   const clampedProgressRatio = Math.min(1, Math.max(0, progressRatio));
   const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;

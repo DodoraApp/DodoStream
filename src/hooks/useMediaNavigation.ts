@@ -3,8 +3,9 @@ import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { getLastStreamTarget, setLastStreamTarget } from '@/db';
 import type { ContentType, Stream } from '@/types/stremio';
+import { useProfileStore } from '@/store/profile.store';
 
 type StreamsBaseParams = {
     metaId: string;
@@ -47,7 +48,7 @@ type OpenStreamFromStreamArgs = {
 
 export const useMediaNavigation = () => {
     const router = useRouter();
-    const setLastStreamTarget = useWatchHistoryStore((state) => state.setLastStreamTarget);
+    const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
     const navigateToDetails = useCallback(
         (id: string, type: ContentType) => {
@@ -60,34 +61,36 @@ export const useMediaNavigation = () => {
         (base: StreamsBaseParams, extras?: StreamsExtraParams) => {
             const params: Record<string, string | undefined> = { ...base, ...(extras ?? {}) };
 
-            // Default to autoplay when we have a previously successful last stream target.
-            // This makes resume work from any navigation entry point (e.g., Details' Continue Watching).
-            if (typeof params.autoPlay === 'undefined') {
-                const lastTarget = useWatchHistoryStore
-                    .getState()
-                    .getLastStreamTarget?.(base.metaId, base.videoId);
-                if (lastTarget) params.autoPlay = '1';
+            if (typeof params.autoPlay !== 'undefined' || !activeProfileId) {
+                router.push({ pathname: '/streams', params });
+                return;
             }
 
-            router.push({ pathname: '/streams', params });
+            void (async () => {
+                const lastTarget = await getLastStreamTarget(activeProfileId, base.metaId, base.videoId);
+                if (lastTarget) params.autoPlay = '1';
+                router.push({ pathname: '/streams', params });
+            })();
         },
-        [router]
+        [activeProfileId, router]
     );
 
     const replaceToStreams = useCallback(
         (base: StreamsBaseParams, extras?: StreamsExtraParams) => {
             const params: Record<string, string | undefined> = { ...base, ...(extras ?? {}) };
 
-            if (typeof params.autoPlay === 'undefined') {
-                const lastTarget = useWatchHistoryStore
-                    .getState()
-                    .getLastStreamTarget?.(base.metaId, base.videoId);
-                if (lastTarget) params.autoPlay = '1';
+            if (typeof params.autoPlay !== 'undefined' || !activeProfileId) {
+                router.replace({ pathname: '/streams', params });
+                return;
             }
 
-            router.replace({ pathname: '/streams', params });
+            void (async () => {
+                const lastTarget = await getLastStreamTarget(activeProfileId, base.metaId, base.videoId);
+                if (lastTarget) params.autoPlay = '1';
+                router.replace({ pathname: '/streams', params });
+            })();
         },
-        [router]
+        [activeProfileId, router]
     );
 
     const openStreamTarget = useCallback(
@@ -131,7 +134,15 @@ export const useMediaNavigation = () => {
 
             try {
                 await Linking.openURL(url);
-                setLastStreamTarget(metaId, videoId, type, target);
+                if (activeProfileId) {
+                    await setLastStreamTarget({
+                        profileId: activeProfileId,
+                        metaId,
+                        videoId,
+                        type,
+                        target,
+                    });
+                }
                 onExternalOpened?.();
                 return true;
             } catch {
@@ -145,7 +156,7 @@ export const useMediaNavigation = () => {
                 return false;
             }
         },
-        [router, setLastStreamTarget]
+        [activeProfileId, router]
     );
 
     const openStreamFromStream = useCallback(
