@@ -15,7 +15,7 @@ import { useProfileStore } from '@/store/profile.store';
 import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
 import { getPreferredLanguageCodes, getLanguageDisplayName } from '@/utils/languages';
-import { formatPlaybackTime } from '@/utils/format';
+import { formatPlaybackTime, formatWallClock } from '@/utils/format';
 import { sortAudioTracksByPreference, getTrackBadge } from '@/utils/tracks';
 import { ControlButton } from '@/components/video/controls/ControlButton';
 import { TVSeekBar } from '@/components/video/TVSeekBar';
@@ -97,25 +97,72 @@ interface TopBarProps {
   title?: string;
   onBack: () => void;
   onOpenSettings: () => void;
+  currentTime: number;
+  duration: number;
 }
 
-const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings }) => (
-  <Box flexDirection="row" alignItems="center" paddingHorizontal="l" paddingVertical="m" gap="m">
-    <ControlButton onPress={onBack} icon="arrow-back" iconComponent={Ionicons} />
-    <Box flex={1}>
-      <Text variant="cardTitle" color="mainForeground" numberOfLines={1}>
-        {title || 'Play'}
+interface ClockDisplayProps {
+  /** Remaining seconds rounded to the nearest minute — changes at most once/min */
+  remainingMinutes: number;
+}
+
+/**
+ * Isolated clock component that owns its own 1s interval.
+ * Accepts only a minute-precision remaining value so it is immune to the
+ * high-frequency currentTime/duration prop churn from the player engine.
+ */
+const ClockDisplay = memo<ClockDisplayProps>(({ remainingMinutes }) => {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const endsAtStr = useMemo(() => {
+    if (remainingMinutes <= 0) return null;
+    return formatWallClock(new Date(Date.now() + remainingMinutes * 60 * 1000));
+  }, [remainingMinutes]);
+
+  return (
+    <Box alignItems="flex-end" justifyContent="center">
+      <Text variant="body" color="mainForeground">
+        {formatWallClock(now)}
       </Text>
+      {endsAtStr !== null && (
+        <Text variant="bodySmall" color="mainForeground">
+          Ends at {endsAtStr}
+        </Text>
+      )}
     </Box>
-    <ControlButton
-      onPress={onOpenSettings}
-      icon="settings"
-      iconComponent={Ionicons}
-      label="Settings"
-      labelPosition="bottom"
-    />
-  </Box>
-));
+  );
+});
+ClockDisplay.displayName = 'ClockDisplay';
+
+const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings, currentTime, duration }) => {
+  // Round to the nearest minute so ClockDisplay only re-renders ~once/min,
+  // not on every player progress tick (~4 Hz).
+  const remainingMinutes = Math.round(Math.max(0, duration - currentTime) / 60);
+
+  return (
+    <Box flexDirection="row" alignItems="center" paddingHorizontal="l" paddingVertical="m" gap="m">
+      <ControlButton onPress={onBack} icon="arrow-back" iconComponent={Ionicons} />
+      <Box flex={1}>
+        <Text variant="cardTitle" color="mainForeground" numberOfLines={1}>
+          {title || 'Play'}
+        </Text>
+      </Box>
+      <ClockDisplay remainingMinutes={remainingMinutes} />
+      <ControlButton
+        onPress={onOpenSettings}
+        icon="settings"
+        iconComponent={Ionicons}
+        label="Settings"
+        labelPosition="bottom"
+      />
+    </Box>
+  );
+});
 TopBar.displayName = 'TopBar';
 
 interface TimeDisplayProps {
@@ -651,7 +698,13 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
       style={StyleSheet.absoluteFill}
       onPress={toggleControls}>
       <Box flex={1} justifyContent="space-between">
-        <TopBar title={title} onBack={handleBack} onOpenSettings={handleOpenSettings} />
+        <TopBar
+          title={title}
+          onBack={handleBack}
+          onOpenSettings={handleOpenSettings}
+          currentTime={currentTime}
+          duration={duration}
+        />
 
         {showLoadingIndicator && (
           <Box width="100%" alignItems="center" justifyContent="center">
