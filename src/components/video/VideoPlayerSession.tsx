@@ -18,7 +18,6 @@ import {
   DEFAULT_PROFILE_PLAYBACK_SETTINGS,
   useProfileSettingsStore,
 } from '@/store/profile-settings.store';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
 import { usePlaybackStore } from '@/store/playback.store';
 import {
   findBestTrackByLanguage,
@@ -41,6 +40,8 @@ import { useSubtitles } from '@/api/stremio';
 import { useIntro } from '@/api/introdb';
 import { useNativeSubtitleStyle } from '@/hooks/useSubtitleStyle';
 import { classifyPlayerError } from '@/utils/player-errors';
+import { useWatchHistoryActions, useWatchHistoryItem } from '@/hooks/useWatchHistoryDb';
+import { setLastStreamTarget } from '@/db';
 
 export interface VideoPlayerProps {
   source: string;
@@ -166,11 +167,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   // Local subtitle delay state (not persisted)
   const [subtitleDelay, setSubtitleDelay] = useState(0);
 
-  const resumeHistoryItem = useWatchHistoryStore((state) => {
-    if (!activeProfileId) return undefined;
-    const videoKey = videoId ?? '_';
-    return state.byProfile[activeProfileId]?.[metaId]?.[videoKey];
-  });
+  const { data: resumeHistoryItem } = useWatchHistoryItem(metaId, videoId);
+  const { upsert } = useWatchHistoryActions();
 
   const [paused, setPaused] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -337,15 +335,15 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       if (!force && now - lastPersistAtRef.current < PLAYBACK_RATIO_PERSIST_INTERVAL) return;
 
       lastPersistAtRef.current = now;
-      useWatchHistoryStore.getState().upsertItem({
-        id: metaId,
-        type: mediaType,
+      upsert({
+        metaId,
         videoId,
         progressSeconds,
         durationSeconds,
+        type: mediaType,
       });
     },
-    [activeProfileId, mediaType, metaId, videoId]
+    [activeProfileId, mediaType, metaId, upsert, videoId]
   );
 
   const startNextEpisode = useCallback(() => {
@@ -431,9 +429,15 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       // This prevents a broken stream URL from being remembered and re-tried forever.
       if (!didPersistLastTargetRef.current && data.duration > 0) {
         didPersistLastTargetRef.current = true;
-        useWatchHistoryStore
-          .getState()
-          .setLastStreamTarget(metaId, videoId, mediaType, { type: 'url', value: source });
+        if (activeProfileId) {
+          void setLastStreamTarget({
+            profileId: activeProfileId,
+            metaId,
+            videoId,
+            type: mediaType,
+            target: { type: 'url', value: source },
+          });
+        }
       }
 
       const resumeKey = getVideoSessionId(source, metaId, videoId, usedPlayerType);
@@ -466,6 +470,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     },
     [
       automaticFallback,
+      activeProfileId,
       debug,
       metaId,
       mediaType,

@@ -7,12 +7,12 @@ import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { MediaCard } from '@/components/media/MediaCard';
 import { useMeta } from '@/api/stremio';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
-import type { WatchedMetaSummary } from '@/store/watch-history.store';
 import type { MetaPreview } from '@/types/stremio';
+import type { DbWatchedMetaSummary } from '@/db';
 
 interface HistoryCardProps {
   /** The watch history summary for this meta */
-  entry: WatchedMetaSummary;
+  entry: DbWatchedMetaSummary;
   /** Callback when the card is pressed */
   onPress: (metaId: string, type: string) => void;
   /** Whether this card should receive TV focus by default */

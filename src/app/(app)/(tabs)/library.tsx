@@ -7,8 +7,9 @@ import { FlashList } from '@shopify/flash-list';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useMyListStore, type MyListItem } from '@/store/my-list.store';
-import { useWatchHistoryStore, type WatchedMetaSummary } from '@/store/watch-history.store';
+import { useMyList } from '@/hooks/useMyListDb';
+import { useWatchedMetaSummaries } from '@/hooks/useWatchHistoryDb';
+import type { DbMyListItem, DbWatchedMetaSummary } from '@/db';
 import { MediaCard } from '@/components/media/MediaCard';
 import { HistoryCard } from '@/components/media/HistoryCard';
 import type { MetaPreview } from '@/types/stremio';
@@ -34,7 +35,7 @@ const LIBRARY_TABS = [
 // ============================================================================
 
 interface MyListEntryCardProps {
-  entry: MyListItem;
+  entry: DbMyListItem;
   onPress: (media: MetaPreview) => void;
   hasTVPreferredFocus?: boolean;
 }
@@ -103,7 +104,7 @@ interface MyListTabProps {
 const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
-  const data = useMyListStore((state) => state.getActiveList());
+  const { data = [] } = useMyList();
 
   const handlePress = useCallback(
     (media: MetaPreview) => {
@@ -113,7 +114,7 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: MyListItem; index: number }) => (
+    ({ item, index }: { item: DbMyListItem; index: number }) => (
       <Box flex={1} alignItems="center" paddingBottom="m">
         <MyListEntryCard
           entry={item}
@@ -125,7 +126,7 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
     [handlePress]
   );
 
-  const keyExtractor = useCallback((item: MyListItem) => `${item.type}:${item.id}`, []);
+  const keyExtractor = useCallback((item: DbMyListItem) => `${item.type}:${item.id}`, []);
 
   if (data.length === 0) {
     return (
@@ -166,7 +167,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   const { navigateToDetails } = useMediaNavigation();
 
   // Only load history data when this component is mounted (lazy loading)
-  const data = useWatchHistoryStore((state) => state.getAllWatchedMetas());
+  const { data = [] } = useWatchedMetaSummaries();
 
   const handlePress = useCallback(
     (metaId: string, type: string) => {
@@ -176,7 +177,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: WatchedMetaSummary; index: number }) => (
+    ({ item, index }: { item: DbWatchedMetaSummary; index: number }) => (
       <Box flex={1} alignItems="center" paddingBottom="m">
         <HistoryCard
           entry={item}
@@ -188,7 +189,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
     [handlePress]
   );
 
-  const keyExtractor = useCallback((item: WatchedMetaSummary) => item.id, []);
+  const keyExtractor = useCallback((item: DbWatchedMetaSummary) => item.id, []);
 
   if (data.length === 0) {
     return (

@@ -1,13 +1,10 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
 import { ContinueWatchingItemSkeleton } from '@/components/media/ContinueWatchingItemSkeleton';
 import { useMeta } from '@/api/stremio';
-import {
-  useContinueWatchingForMeta,
-  type ContinueWatchingEntry,
-} from '@/hooks/useContinueWatching';
+import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useWatchHistoryStore } from '@/store/watch-history.store';
+import { useLastStreamTarget } from '@/hooks/useWatchHistoryDb';
 
 interface ContinueWatchingItemProps {
   /** Basic entry from useContinueWatching (without resolved meta) */
@@ -24,26 +21,41 @@ interface ContinueWatchingItemProps {
 export const ContinueWatchingItem = memo(
   ({ entry, hasTVPreferredFocus = false, onFocused, onLongPress }: ContinueWatchingItemProps) => {
     const { pushToStreams } = useMediaNavigation();
-    const getLastStreamTarget = useWatchHistoryStore((state) => state.getLastStreamTarget);
+    const { data: lastStreamTarget } = useLastStreamTarget(
+      entry.metaId,
+      entry.videoId ?? entry.metaId
+    );
 
     // Fetch meta data for this entry
     const { data: meta, isLoading } = useMeta(entry.type, entry.metaId, true);
 
-    // Get the fully resolved entry with up-next logic
-    const resolvedEntry = useContinueWatchingForMeta(entry.metaId, meta);
+    const resolvedEntry = useMemo<ContinueWatchingEntry | undefined>(() => {
+      if (!entry) return undefined;
+      if (!meta) return entry;
+
+      const resolvedVideo = entry.videoId
+        ? meta.videos?.find((video) => video.id === entry.videoId)
+        : undefined;
+
+      return {
+        ...entry,
+        video: resolvedVideo,
+        metaName: meta.name,
+        imageUrl: meta.background ?? meta.poster,
+      };
+    }, [entry, meta]);
 
     const handlePress = useCallback(() => {
       if (!resolvedEntry) return;
 
       const streamId = resolvedEntry.videoId ?? resolvedEntry.metaId;
-      const lastStreamTarget = getLastStreamTarget(resolvedEntry.metaId, streamId);
 
       // Only autoplay when we have a previously selected stream
       pushToStreams(
         { metaId: resolvedEntry.metaId, videoId: streamId, type: resolvedEntry.type },
         lastStreamTarget ? { autoPlay: '1' } : undefined
       );
-    }, [resolvedEntry, getLastStreamTarget, pushToStreams]);
+    }, [lastStreamTarget, pushToStreams, resolvedEntry]);
 
     const handleLongPress = useCallback(() => {
       if (!resolvedEntry) return;

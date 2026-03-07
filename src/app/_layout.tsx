@@ -28,6 +28,7 @@ import { ToastContainer } from '@/components/basic/Toast';
 import * as Sentry from '@sentry/react-native';
 import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
 import { createDebugLogger } from '@/utils/debug';
+import { initializeDatabase, runSqliteDataMigration } from '@/db';
 
 const debug = createDebugLogger('layout');
 if (isSentryEnabled) {
@@ -96,6 +97,8 @@ function Layout() {
 
     const init = async () => {
       try {
+        await initializeDatabase();
+        await runSqliteDataMigration();
         await initializeUIStore();
         await initializeProfiles();
         await initializeAddons();
