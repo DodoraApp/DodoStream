@@ -13,7 +13,7 @@ interface MediaDetailsTabsProps {
 }
 
 export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePress }) => {
-  const hasSeasonsTab = media.videos?.length ?? 0 > 1;
+  const hasSeasonsTab = (media.videos?.length ?? 0) > 1;
   const hasTrailersTab = (media.trailerStreams?.length ?? 0) > 0;
 
   const tabs = useMemo<DetailsTab[]>(() => {
