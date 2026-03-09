@@ -5,8 +5,10 @@ import type { Theme } from '@/theme/theme';
 
 import { MediaCard } from '@/components/media/MediaCard';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
+import { useMeta } from '@/api/stremio/hooks';
 import type { ContentType, MetaPreview } from '@/types/stremio';
 import type { DbWatchedMetaSummary } from '@/db';
+import { NO_POSTER_PORTRAIT } from '@/constants/images';
 
 interface HistoryCardProps {
   /** The watch history summary for this meta */
@@ -21,6 +23,11 @@ interface HistoryCardProps {
 export const HistoryCard = memo(
   ({ entry, onPress, hasTVPreferredFocus = false, testID }: HistoryCardProps) => {
     const theme = useTheme<Theme>();
+    const isMissingMeta = !entry.metaName;
+    const { data: resolvedMeta } = useMeta(entry.type, entry.id, isMissingMeta);
+
+    const displayName = entry.metaName ?? resolvedMeta?.name;
+    const displayImage = entry.imageUrl ?? resolvedMeta?.poster;
 
     const handlePress = useCallback(
       (media: MetaPreview) => {
@@ -30,7 +37,7 @@ export const HistoryCard = memo(
     );
 
     // Show placeholder if meta_cache hasn't been populated yet (first launch)
-    if (!entry.metaName && !entry.imageUrl) {
+    if (!displayName) {
       return (
         <Box
           width={theme.cardSizes.media.width}
@@ -59,9 +66,9 @@ export const HistoryCard = memo(
         media={{
           id: entry.id,
           type: entry.type,
-          name: entry.metaName ?? '',
-          poster: entry.imageUrl,
-          background: entry.imageUrl,
+          name: displayName ?? '',
+          poster: displayImage ?? NO_POSTER_PORTRAIT,
+          background: displayImage,
         }}
         onPress={handlePress}
         badgeLabel={episodeLabel}

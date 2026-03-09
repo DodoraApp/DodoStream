@@ -5,6 +5,7 @@ import { Box, Text } from '@/theme/theme';
 import type { Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
+import type { FocusColorScheme } from '@/utils/focus-colors';
 
 type TagVariant = 'default' | 'glass';
 type TagSize = 'default' | 'large';
@@ -15,6 +16,8 @@ interface TagProps {
   variant?: TagVariant;
   /** Size variant: 'default' or 'large' for bigger padding and text */
   size?: TagSize;
+  /** Color scheme for active/selected state */
+  colorScheme?: FocusColorScheme;
   selected?: boolean;
   isFocused?: boolean;
   disabled?: boolean;
@@ -32,6 +35,7 @@ export const Tag = memo(
     label,
     variant = 'default',
     size = 'default',
+    colorScheme = 'primary',
     selected = false,
     focusable = false,
     disabled = false,
@@ -53,7 +57,7 @@ export const Tag = memo(
             ? isFocused
               ? 'focusBackground'
               : 'semiTransparentBackground'
-            : getFocusableBackgroundColor({ isActive: selected, isFocused })
+            : getFocusableBackgroundColor({ isActive: selected, isFocused, colorScheme })
         }
         paddingHorizontal={isGlass ? 's' : isLarge ? 'l' : 'm'}
         paddingVertical={isLarge ? 's' : 'xs'}
@@ -69,7 +73,9 @@ export const Tag = memo(
         <Text
           variant={isLarge ? 'body' : 'caption'}
           color={
-            isGlass ? 'textPrimary' : getFocusableForegroundColor({ isActive: selected, isFocused })
+            isGlass
+              ? 'textPrimary'
+              : getFocusableForegroundColor({ isActive: selected, isFocused, colorScheme })
           }
           style={{ includeFontPadding: false }}>
           {label}

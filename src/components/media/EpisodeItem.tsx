@@ -35,7 +35,6 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
   return (
     <Focusable
       onPress={onPress}
-      hasTVPreferredFocus={false}
       recyclingKey={video.id}
       variant="background"
       style={{ backgroundColor: theme.colors.cardBackground }}>

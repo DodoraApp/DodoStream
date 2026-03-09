@@ -4,13 +4,13 @@ import type { Theme } from '@/theme/theme';
 import { useMeta } from '@/api/stremio';
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
-import { EpisodeList } from '@/components/media/EpisodeList';
 import { ContentType, MetaVideo } from '@/types/stremio';
 import { Container } from '@/components/basic/Container';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { DetailsShell } from '@/components/media/DetailsShell';
 import FadeIn from '@/components/basic/FadeIn';
 import { MediaButtons } from '@/components/media/MediaButtons';
+import { MediaDetailsTabs } from '@/components/media/MediaDetailsTabs';
 
 export default function MediaDetails() {
   const theme = useTheme<Theme>();
@@ -53,13 +53,7 @@ export default function MediaDetails() {
                 <MediaButtons metaId={id} type={type} media={mediaData} />
               </FadeIn>
             }>
-            {mediaData.videos && mediaData.videos.length > 1 && (
-              <EpisodeList
-                metaId={id}
-                videos={mediaData.videos}
-                onEpisodePress={handleEpisodePress}
-              />
-            )}
+            <MediaDetailsTabs media={mediaData} onEpisodePress={handleEpisodePress} />
           </DetailsShell>
         )}
       </LoadingQuery>

@@ -50,11 +50,20 @@ const extractGenres = (media: MetaDetail) => {
   return uniqStrings(fromLinks);
 };
 
-const extractPeople = (media: MetaDetail, role: 'director' | 'writer' | 'actor') => {
-  const fromLinks = getLinksByCategory(media.links, role).map((l) => l.name);
-
-  return uniqStrings(fromLinks);
-};
+const CertificationBadge = ({ certification }: { certification: string }) => (
+  <Box
+    backgroundColor="cardBackground"
+    borderRadius="s"
+    borderWidth={1}
+    borderColor="cardBorder"
+    paddingHorizontal="s"
+    paddingVertical="xs"
+    justifyContent="center">
+    <Text variant="bodySmall" fontWeight="700" color="textSecondary">
+      {certification}
+    </Text>
+  </Box>
+);
 
 const DotSeparator = () => (
   <Box width={4} height={4} borderRadius="full" backgroundColor="textSecondary" />
@@ -104,26 +113,6 @@ const DotSeparatedInfoRow = ({ items }: { items: { key: string; node: ReactNode 
   );
 };
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => {
-  return (
-    <Box gap="xs">
-      <Text variant="cardTitle">{title}</Text>
-      {children}
-    </Box>
-  );
-};
-
-const PeopleLine = ({ title, names }: { title: string; names: string[] }) => {
-  if (!names.length) return null;
-  return (
-    <Section title={title}>
-      <Text variant="body" color="textSecondary">
-        {names.join(', ')}
-      </Text>
-    </Section>
-  );
-};
-
 export const MediaInfo = ({
   media,
   video,
@@ -135,18 +124,8 @@ export const MediaInfo = ({
   const runtime = formatRuntime(media, video);
   const genres = extractGenres(media);
   const description = formatDescription(media, video);
-  const directors = extractPeople(media, 'director');
-  const writers = extractPeople(media, 'writer');
-  const cast = extractPeople(media, 'actor');
-
-  const peopleBlock =
-    directors.length || writers.length || cast.length ? (
-      <Box gap="m" paddingTop="m">
-        <PeopleLine title="Director(s)" names={directors} />
-        <PeopleLine title="Writers" names={writers} />
-        <PeopleLine title="Cast" names={cast} />
-      </Box>
-    ) : null;
+  const certification = media.app_extras?.certification;
+  const status = !video && media.status ? media.status : undefined;
 
   const descriptionBlock = description ? (
     <Text variant="body" color="textSecondary">
@@ -154,7 +133,7 @@ export const MediaInfo = ({
     </Text>
   ) : null;
 
-  const hasExpandableContent = Boolean(descriptionBlock || peopleBlock);
+  const hasExpandableContent = Boolean(descriptionBlock);
 
   const quickInfoItems = [
     {
@@ -162,10 +141,22 @@ export const MediaInfo = ({
       node: imdbRating !== undefined ? <ImdbTag rating={imdbRating} /> : null,
     },
     {
+      key: 'cert',
+      node: certification ? <CertificationBadge certification={certification} /> : null,
+    },
+    {
       key: 'release',
       node: releaseInfo ? (
         <Text variant="body" color="textSecondary">
           {releaseInfo}
+        </Text>
+      ) : null,
+    },
+    {
+      key: 'status',
+      node: status ? (
+        <Text variant="body" color="textSecondary">
+          {status}
         </Text>
       ) : null,
     },
@@ -184,15 +175,14 @@ export const MediaInfo = ({
       <FadeIn>
         <Box gap="m">
           {hasExpandableContent && (
-            <ExpandableSection collapsedLines={3} hasExtraContent={Boolean(peopleBlock)}>
-              {({ mode, isExpanded, textProps }) => (
+            <ExpandableSection collapsedLines={3}>
+              {({ textProps }) => (
                 <Box>
                   {description ? (
                     <Text variant="body" color="textSecondary" {...textProps}>
                       {description}
                     </Text>
                   ) : null}
-                  {mode === 'display' && isExpanded ? peopleBlock : null}
                 </Box>
               )}
             </ExpandableSection>
@@ -222,16 +212,15 @@ export const MediaInfo = ({
             )}
           </Box>
 
-          {(!!description || peopleBlock) && (
-            <ExpandableSection collapsedLines={3} hasExtraContent={Boolean(peopleBlock)}>
-              {({ mode, isExpanded, textProps }) => (
+          {!!description && (
+            <ExpandableSection collapsedLines={3}>
+              {({ textProps }) => (
                 <Box>
                   {description ? (
                     <Text variant="body" color="textSecondary" {...textProps}>
                       {description}
                     </Text>
                   ) : null}
-                  {mode === 'display' && isExpanded ? peopleBlock : null}
                 </Box>
               )}
             </ExpandableSection>
@@ -256,16 +245,15 @@ export const MediaInfo = ({
           </ScrollView>
         )}
 
-        {(!!description || peopleBlock) && (
-          <ExpandableSection collapsedLines={3} hasExtraContent={Boolean(peopleBlock)}>
-            {({ mode, isExpanded, textProps }) => (
+        {!!description && (
+          <ExpandableSection collapsedLines={3}>
+            {({ textProps }) => (
               <Box>
                 {description ? (
                   <Text variant="body" color="textSecondary" {...textProps}>
                     {description}
                   </Text>
                 ) : null}
-                {mode === 'display' && isExpanded ? peopleBlock : null}
               </Box>
             )}
           </ExpandableSection>

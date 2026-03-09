@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Container } from '@/components/basic/Container';
 import { TextInput } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
@@ -13,6 +13,7 @@ import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
 import { StaticCatalogSection } from '@/components/media/CatalogSection';
 import { Ionicons } from '@expo/vector-icons';
 import { Focusable } from '@/components/basic/Focusable';
+import { useLocalSearchParams } from 'expo-router';
 
 /** Item types for the flattened search results list */
 type SearchListItem =
@@ -22,8 +23,17 @@ type SearchListItem =
 export default function SearchTab() {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
+  const { query: initialQuery } = useLocalSearchParams<{ query?: string }>();
+  const [searchQuery, setSearchQuery] = useState(initialQuery ?? '');
+  const [submittedQuery, setSubmittedQuery] = useState(initialQuery ?? '');
+
+  // Re-apply when navigated to with a new query param (e.g. from cast card)
+  useEffect(() => {
+    if (initialQuery) {
+      setSearchQuery(initialQuery);
+      setSubmittedQuery(initialQuery);
+    }
+  }, [initialQuery]);
 
   const {
     data: searchResults,
@@ -81,7 +91,7 @@ export default function SearchTab() {
               placeholder="Search movies, shows..."
               returnKeyType="search"
               onSubmitEditing={handleSearch}
-              autoFocus
+              autoFocus={!initialQuery}
             />
             {searchQuery.length > 0 && (
               <Box gap="s" flexDirection="row" alignItems="center">

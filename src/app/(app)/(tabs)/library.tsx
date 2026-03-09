@@ -15,8 +15,10 @@ import { MediaCard } from '@/components/media/MediaCard';
 import { HistoryCard } from '@/components/media/HistoryCard';
 import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { useMeta } from '@/api/stremio/hooks';
 import { calculateMediaGridColumns } from '@/utils/layout';
 import { TV_DRAW_DISTANCE, MOBILE_DRAW_DISTANCE } from '@/constants/ui';
+import { NO_POSTER_PORTRAIT } from '@/constants/images';
 
 // ============================================================================
 // Types
@@ -42,13 +44,18 @@ interface MyListEntryCardProps {
 const MyListEntryCard = memo(
   ({ entry, onPress, hasTVPreferredFocus = false }: MyListEntryCardProps) => {
     const theme = useTheme<Theme>();
+    const isMissingMeta = !entry.metaName;
+    const { data: resolvedMeta } = useMeta(entry.type, entry.id, isMissingMeta);
+
+    const displayName = entry.metaName ?? resolvedMeta?.name;
+    const displayImage = entry.imageUrl ?? resolvedMeta?.poster;
 
     const handlePress = useCallback(() => {
       onPress(entry.id, entry.type);
     }, [onPress, entry.id, entry.type]);
 
     // Show placeholder if meta_cache hasn't been populated yet (first launch)
-    if (!entry.metaName && !entry.imageUrl) {
+    if (!displayName) {
       return (
         <Box
           width={theme.cardSizes.media.width}
@@ -69,9 +76,9 @@ const MyListEntryCard = memo(
         media={{
           id: entry.id,
           type: entry.type,
-          name: entry.metaName ?? '',
-          poster: entry.imageUrl,
-          background: entry.imageUrl,
+          name: displayName ?? '',
+          poster: displayImage ?? NO_POSTER_PORTRAIT,
+          background: displayImage,
         }}
         onPress={handlePress}
         hasTVPreferredFocus={hasTVPreferredFocus}
