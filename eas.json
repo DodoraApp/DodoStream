@@ -37,7 +37,8 @@
       "environment": "production",
       "channel": "production",
       "env": {
-        "APP_VARIANT": "prod"
+        "APP_VARIANT": "prod",
+        "STRIP_DEBUG_LOGS": "true"
       },
       "autoIncrement": true
     },
