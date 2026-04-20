@@ -54,8 +54,8 @@ export const SUBTITLE_POSITION_STEP = 1;
 /**
  * Subtitle sync/delay constants
  */
-export const SUBTITLE_DELAY_MIN = -10; // seconds
-export const SUBTITLE_DELAY_MAX = 10; // seconds
+export const SUBTITLE_DELAY_MIN = -120; // seconds
+export const SUBTITLE_DELAY_MAX = 120; // seconds
 export const SUBTITLE_DELAY_STEP = 0.1; // 100ms increments
 
 /**
