@@ -10,8 +10,8 @@ import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { LanguagePreferenceModal } from '@/components/settings/LanguagePreferenceModal';
 import {
   DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-  useProfileSettingsStore,
-} from '@/store/profile-settings.store';
+  usePlaybackStore,
+} from '@/store/playback.store';
 import type { PlayerType } from '@/types/player';
 import { useProfileStore } from '@/store/profile.store';
 import { PLAYER_PICKER_ITEMS } from '@/constants/playback';
@@ -65,7 +65,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       setMatchFrameRateForProfile,
       setEnableVideoSoftwareDecodingForProfile,
       setSkipIntroEnabledForProfile,
-    } = useProfileSettingsStore((state) => ({
+    } = usePlaybackStore((state) => ({
       player:
         (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
         DEFAULT_PROFILE_PLAYBACK_SETTINGS.player,

@@ -9,6 +9,7 @@ import { Input } from '@/components/basic/Input';
 import { Button } from '@/components/basic/Button';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useAddonStore } from '@/store/addon.store';
+import { useProfileStore } from '@/store/profile.store';
 import { useInstallAddon } from '@/api/stremio';
 import { InstalledAddon } from '@/types/stremio';
 import { showToast } from '@/store/toast.store';
@@ -34,12 +35,18 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
     const [manifestUrl, setManifestUrl] = useState('');
     // Use proper selectors to subscribe to store changes
     const addons = useAddonStore((state) => Object.values(state.addons));
+    const configsByProfile = useAddonStore((state) => state.configsByProfile);
     const removeAddon = useAddonStore((state) => state.removeAddon);
-    const toggleUseCatalogsOnHome = useAddonStore((state) => state.toggleUseCatalogsOnHome);
-    const toggleUseCatalogsInSearch = useAddonStore((state) => state.toggleUseCatalogsInSearch);
-    const toggleUseForSubtitles = useAddonStore((state) => state.toggleUseForSubtitles);
     const storeError = useAddonStore((state) => state.error);
     const installAddon = useInstallAddon();
+    const activeProfileId = useProfileStore((state) => state.activeProfileId);
+
+    const activeAddons = addons.filter(
+      (addon) => configsByProfile[activeProfileId ?? '']?.[addon.id]?.isActive === true
+    );
+    const inactiveAddons = addons.filter(
+      (addon) => configsByProfile[activeProfileId ?? '']?.[addon.id]?.isActive !== true
+    );
 
     const handleInstall = useCallback(async () => {
       if (!manifestUrl.trim()) {
@@ -90,23 +97,10 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
     }, []);
 
     const renderAddonItem = useCallback(
-      ({ item }: { item: InstalledAddon }) => (
-        <AddonCard
-          addon={item}
-          onRemove={handleRemove}
-          onConfigure={handleConfigure}
-          onToggleHome={toggleUseCatalogsOnHome}
-          onToggleSearch={toggleUseCatalogsInSearch}
-          onToggleSubtitles={toggleUseForSubtitles}
-        />
-      ),
-      [
-        handleRemove,
-        handleConfigure,
-        toggleUseCatalogsOnHome,
-        toggleUseCatalogsInSearch,
-        toggleUseForSubtitles,
-      ]
+      ({ item }: { item: InstalledAddon }) => {
+        return <AddonCard addon={item} onRemove={handleRemove} onConfigure={handleConfigure} />;
+      },
+      [handleRemove, handleConfigure]
     );
 
     const keyExtractor = useCallback((item: InstalledAddon) => item.id, []);
@@ -137,25 +131,50 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
           </SettingsCard>
         )}
 
-        {/* Installed Addons Section */}
-        {showInstalled && (
+        {/* Setup Info */}
+        <SettingsCard>
+          <Text variant="body" color="textSecondary">
+            Addons are installed globally across the app. You can activate or deactivate them
+            specifically for this profile.
+          </Text>
+        </SettingsCard>
+
+        {/* Profile Addons Section */}
+        {showInstalled && activeAddons.length > 0 && (
           <Box gap="m" flex={1}>
-            <Text variant="subheader">Installed Addons ({addons.length})</Text>
-            {addons.length === 0 ? (
-              <SettingsCard>
-                <Text variant="body" color="textSecondary">
-                  No addons installed
-                </Text>
-              </SettingsCard>
-            ) : (
-              <LegendList
-                data={addons}
-                keyExtractor={keyExtractor}
-                renderItem={renderAddonItem}
-                ItemSeparatorComponent={VerticalSpacer}
-                showsVerticalScrollIndicator={false}
-              />
-            )}
+            <Text variant="subheader">Active on this Profile ({activeAddons.length})</Text>
+            <LegendList
+              data={activeAddons}
+              keyExtractor={keyExtractor}
+              renderItem={renderAddonItem}
+              ItemSeparatorComponent={VerticalSpacer}
+              showsVerticalScrollIndicator={false}
+            />
+          </Box>
+        )}
+
+        {/* Installed But Inactive Addons Section */}
+        {showInstalled && inactiveAddons.length > 0 && (
+          <Box gap="m" flex={1}>
+            <Text variant="subheader">Installed ({inactiveAddons.length})</Text>
+            <LegendList
+              data={inactiveAddons}
+              keyExtractor={keyExtractor}
+              renderItem={renderAddonItem}
+              ItemSeparatorComponent={VerticalSpacer}
+              showsVerticalScrollIndicator={false}
+            />
+          </Box>
+        )}
+
+        {/* No Addons Message */}
+        {showInstalled && addons.length === 0 && (
+          <Box gap="m">
+            <SettingsCard>
+              <Text variant="body" color="textSecondary">
+                No addons installed
+              </Text>
+            </SettingsCard>
           </Box>
         )}
       </Box>
@@ -172,9 +191,6 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
 interface AddonCardProps {
   addon: InstalledAddon;
   onRemove: (id: string, name: string) => void;
-  onToggleHome: (id: string) => void;
-  onToggleSearch: (id: string) => void;
-  onToggleSubtitles: (id: string) => void;
   onConfigure: (url: string) => void;
 }
 
@@ -182,88 +198,111 @@ interface AddonCardProps {
  * Individual addon card with action buttons and toggles.
  * Uses Focusable for all interactive elements to support TV navigation.
  */
-const AddonCard: FC<AddonCardProps> = memo(
-  ({ addon, onRemove, onToggleHome, onToggleSearch, onToggleSubtitles, onConfigure }) => {
-    const theme = useTheme<Theme>();
+const AddonCard: FC<AddonCardProps> = memo(({ addon, onRemove, onConfigure }) => {
+  const theme = useTheme<Theme>();
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const config = useAddonStore(
+    (state) => state.configsByProfile[activeProfileId ?? '']?.[addon.id]
+  );
+  const activateAddon = useAddonStore((state) => state.activateAddon);
+  const deactivateAddon = useAddonStore((state) => state.deactivateAddon);
+  const toggleUseCatalogsOnHome = useAddonStore((state) => state.toggleUseCatalogsOnHome);
+  const toggleUseCatalogsInSearch = useAddonStore((state) => state.toggleUseCatalogsInSearch);
+  const toggleUseForSubtitles = useAddonStore((state) => state.toggleUseForSubtitles);
+  const isActive = config?.isActive === true;
 
-    const handleRemove = useCallback(() => {
-      onRemove(addon.id, addon.manifest.name);
-    }, [addon.id, addon.manifest.name, onRemove]);
+  const handleRemove = useCallback(() => {
+    onRemove(addon.id, addon.manifest.name);
+  }, [addon.id, addon.manifest.name, onRemove]);
 
-    const handleConfigure = useCallback(() => {
-      onConfigure(addon.manifestUrl);
-    }, [addon.manifestUrl, onConfigure]);
+  const handleConfigure = useCallback(() => {
+    onConfigure(addon.manifestUrl);
+  }, [addon.manifestUrl, onConfigure]);
 
-    const handleToggleHome = useCallback(() => {
-      onToggleHome(addon.id);
-    }, [addon.id, onToggleHome]);
+  const handleToggleActive = useCallback(() => {
+    if (isActive) {
+      deactivateAddon(addon.id);
+    } else {
+      activateAddon(addon.id);
+    }
+  }, [isActive, addon.id, activateAddon, deactivateAddon]);
 
-    const handleToggleSearch = useCallback(() => {
-      onToggleSearch(addon.id);
-    }, [addon.id, onToggleSearch]);
+  const handleToggleHome = useCallback(() => {
+    toggleUseCatalogsOnHome(addon.id);
+  }, [addon.id, toggleUseCatalogsOnHome]);
 
-    const handleToggleSubtitles = useCallback(() => {
-      onToggleSubtitles(addon.id);
-    }, [addon.id, onToggleSubtitles]);
+  const handleToggleSearch = useCallback(() => {
+    toggleUseCatalogsInSearch(addon.id);
+  }, [addon.id, toggleUseCatalogsInSearch]);
 
-    return (
-      <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
-        {/* Header with title and action buttons */}
-        <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
-          <Box flex={1} gap="xs">
-            <Text variant="cardTitle">{addon.manifest.name}</Text>
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
-              {addon.manifestUrl}
+  const handleToggleSubtitles = useCallback(() => {
+    toggleUseForSubtitles(addon.id);
+  }, [addon.id, toggleUseForSubtitles]);
+
+  return (
+    <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
+      {/* Header with title and action buttons */}
+      <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
+        <Box flex={1} gap="xs">
+          <Text variant="cardTitle">{addon.manifest.name}</Text>
+          <Text variant="caption" color="textSecondary" numberOfLines={1}>
+            {addon.manifestUrl}
+          </Text>
+          {addon.manifest.catalogs && (
+            <Text variant="caption" color="textSecondary">
+              {addon.manifest.catalogs.length} catalog(s)
             </Text>
-            {addon.manifest.catalogs && (
-              <Text variant="caption" color="textSecondary">
-                {addon.manifest.catalogs.length} catalog(s)
-              </Text>
-            )}
-          </Box>
-
-          {/* Action buttons */}
-          <Box flexDirection="row" gap="s">
-            <AddonActionButton
-              iconName="trash-outline"
-              iconColor={theme.colors.danger}
-              onPress={handleRemove}
-            />
-            {addon.manifest.behaviorHints?.configurable && (
-              <AddonActionButton
-                iconName="settings-outline"
-                iconColor={theme.colors.mainForeground}
-                onPress={handleConfigure}
-              />
-            )}
-          </Box>
+          )}
         </Box>
 
-        {/* Settings toggles */}
+        {/* Action buttons */}
+        <Box flexDirection="row" gap="s">
+          <AddonActionButton
+            iconName={isActive ? 'checkmark-circle-outline' : 'add-circle-outline'}
+            iconColor={isActive ? theme.colors.primaryBackground : theme.colors.textSecondary}
+            onPress={handleToggleActive}
+          />
+          <AddonActionButton
+            iconName="trash-outline"
+            iconColor={theme.colors.danger}
+            onPress={handleRemove}
+          />
+          {addon.manifest.behaviorHints?.configurable && (
+            <AddonActionButton
+              iconName="settings-outline"
+              iconColor={theme.colors.mainForeground}
+              onPress={handleConfigure}
+            />
+          )}
+        </Box>
+      </Box>
+
+      {/* Settings toggles — only shown when active for this profile */}
+      {isActive && config && (
         <Box gap="s">
           <SettingsSwitch
             label="Visible on Home"
-            value={addon.useCatalogsOnHome}
+            value={config.useCatalogsOnHome}
             onValueChange={handleToggleHome}
             description="Catalogs are visible on the Home screen"
           />
           <SettingsSwitch
             label="Use in Search"
-            value={addon.useCatalogsInSearch}
+            value={config.useCatalogsInSearch}
             onValueChange={handleToggleSearch}
             description="Catalogs are used for searching"
           />
           <SettingsSwitch
             label="Use for Subtitles"
-            value={addon.useForSubtitles}
+            value={config.useForSubtitles}
             onValueChange={handleToggleSubtitles}
             description="Subtitles are fetched from this addon if available"
           />
         </Box>
-      </Box>
-    );
-  }
-);
+      )}
+    </Box>
+  );
+});
 
 interface AddonActionButtonProps {
   iconName: keyof typeof Ionicons.glyphMap;

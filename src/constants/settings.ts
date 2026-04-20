@@ -29,6 +29,13 @@ export const SETTINGS_PROFILE_MENU_ITEMS: SettingsMenuItem[] = [
     icon: 'text-outline',
     href: '/settings/subtitles',
   },
+  {
+    id: 'addons',
+    title: 'Addons',
+    description: 'Install and manage addons',
+    icon: 'extension-puzzle-outline',
+    href: '/settings/addons',
+  },
 ];
 
 export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
@@ -38,13 +45,6 @@ export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
     description: 'Theme and scaling preferences',
     icon: 'color-palette-outline',
     href: '/settings/ui',
-  },
-  {
-    id: 'addons',
-    title: 'Addons',
-    description: 'Install and manage addons',
-    icon: 'extension-puzzle-outline',
-    href: '/settings/addons',
   },
   {
     id: 'about',

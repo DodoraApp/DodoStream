@@ -15,6 +15,7 @@ import {
   fetchSubtitles,
 } from './client';
 import { useAddonStore } from '@/store/addon.store';
+import { useProfileStore } from '@/store/profile.store';
 import { AddonSubtitle, ContentType, InstalledAddon, MetaPreview, Stream } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
 import { sortVideosBySeason } from '@/utils/video';
@@ -232,12 +233,16 @@ function getSearchableCatalogs(addon: InstalledAddon) {
  * @param enabled - Whether to run the query
  */
 export function useSearchCatalogs(query: string, enabled: boolean = true) {
-  const getAddonsList = useAddonStore((state) => state.getAddonsList);
-  const addons = getAddonsList();
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const configsByProfile = useAddonStore((state) => state.configsByProfile);
+  const addons = useAddonStore((state) => state.getAddonsList());
 
-  // Get all searchable catalogs from addons with useCatalogsInSearch enabled
+  // Get all searchable catalogs from activated addons with useCatalogsInSearch enabled
   const searchableCatalogs = addons
-    .filter((addon) => addon.useCatalogsInSearch)
+    .filter((addon) => {
+      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+      return config?.isActive && config?.useCatalogsInSearch;
+    })
     .flatMap(getSearchableCatalogs);
 
   // Use useQueries to search all catalogs in parallel
@@ -318,11 +323,15 @@ function addonSupportsContent(addon: InstalledAddon, type: ContentType, id: stri
  * Returns the first successful response
  */
 export function useMeta(type: ContentType, id: string, enabled: boolean = true) {
-  const getAddonsList = useAddonStore((state) => state.getAddonsList);
-  const addons = getAddonsList();
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const configsByProfile = useAddonStore((state) => state.configsByProfile);
+  const addons = useAddonStore((state) => state.getAddonsList());
 
-  // Find all addons that support this content
-  const compatibleAddons = addons.filter((addon) => addonSupportsContent(addon, type, id));
+  // Find all activated addons that support this content
+  const compatibleAddons = addons.filter((addon) => {
+    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+    return config?.isActive && addonSupportsContent(addon, type, id);
+  });
 
   // Use useQueries to fetch from all compatible addons in parallel
   const results = useQueries({
@@ -373,11 +382,15 @@ export function useStreams(
   enabled: boolean = true
 ) {
   const id = videoId ?? metaId;
-  const getAddonsList = useAddonStore((state) => state.getAddonsList);
-  const addons = getAddonsList();
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const configsByProfile = useAddonStore((state) => state.configsByProfile);
+  const addons = useAddonStore((state) => state.getAddonsList());
 
-  // Find all addons that support this content and have stream resource
+  // Find all activated addons that support this content and have stream resource
   const compatibleAddons = addons.filter((addon) => {
+    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+    if (!config?.isActive) return false;
+
     const { manifest } = addon;
 
     // Check if addon supports this type
@@ -471,15 +484,18 @@ export function useSubtitles(
   enabled: boolean = true
 ) {
   const id = videoId ?? metaId;
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const configsByProfile = useAddonStore((state) => state.configsByProfile);
   // Select the addons object directly for stable reference (zustand returns same object if unchanged)
   const addons = useAddonStore((state) => state.addons);
 
   // Memoize compatible addons to prevent recalculation on every render
   const compatibleAddons = useMemo(() => {
     return Object.values(addons).filter((addon) => {
+      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
       const { manifest } = addon;
 
-      if (!addon.useForSubtitles) {
+      if (!config?.isActive || !config?.useForSubtitles) {
         return false;
       }
 
@@ -504,7 +520,7 @@ export function useSubtitles(
 
       return true;
     });
-  }, [addons, type, id]);
+  }, [addons, type, id, configsByProfile, activeProfileId]);
 
   const {
     data: allSubtitles,

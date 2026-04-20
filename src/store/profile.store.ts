@@ -4,7 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
 import { createDebugLogger } from '@/utils/debug';
 import { usePlaybackStore } from '@/store/playback.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
 import { useHomeStore } from '@/store/home.store';
 import { removeProfileMyList, removeProfileWatchHistory } from '@/db';
 
@@ -218,7 +217,6 @@ export const useProfileStore = create<ProfileState>()(
 // Sync active profile into dependent stores (one-way).
 const syncActiveProfileId = (profileId?: string) => {
   usePlaybackStore.getState().setActiveProfileId(profileId);
-  useProfileSettingsStore.getState().setActiveProfileId(profileId);
   useHomeStore.getState().setActiveProfileId(profileId);
 };
 

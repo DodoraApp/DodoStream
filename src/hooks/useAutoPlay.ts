@@ -6,7 +6,7 @@ import { useDebugLogger } from '@/utils/debug';
 import { useMediaNavigation, type StreamTarget } from '@/hooks/useMediaNavigation';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 import { useStreams } from '@/api/stremio';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import { parseBooleanParam } from '@/utils/params';
 import { getLastStreamTarget } from '@/db';
 
@@ -38,7 +38,7 @@ export const useAutoPlay = ({
 }: UseAutoPlayParams) => {
   const debug = useDebugLogger('useAutoPlay');
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
-  const { autoPlayFirstStream } = useProfileSettingsStore((state) => ({
+  const { autoPlayFirstStream } = usePlaybackStore((state) => ({
     autoPlayFirstStream: state.activeProfileId
       ? state.byProfile[state.activeProfileId]?.autoPlayFirstStream
       : false,
@@ -55,7 +55,7 @@ export const useAutoPlay = ({
 
   useEffect(() => {
     let isCancelled = false;
-    const profileId = useProfileSettingsStore.getState().activeProfileId;
+    const profileId = usePlaybackStore.getState().activeProfileId;
     if (!profileId) {
       setLastStreamTarget(undefined);
       return;

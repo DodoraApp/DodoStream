@@ -13,7 +13,7 @@ import { PickerModal } from '@/components/basic/PickerModal';
 import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { useProfileStore } from '@/store/profile.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
 import { getPreferredLanguageCodes, getLanguageDisplayName } from '@/utils/languages';
 import { formatPlaybackTime, formatWallClock } from '@/utils/format';
@@ -446,7 +446,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     const theme = useTheme<Theme>();
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-    const { preferredAudioLanguages, preferredSubtitleLanguages } = useProfileSettingsStore(
+    const { preferredAudioLanguages, preferredSubtitleLanguages } = usePlaybackStore(
       useShallow((state) => ({
         preferredAudioLanguages: activeProfileId
           ? state.byProfile[activeProfileId]?.preferredAudioLanguages

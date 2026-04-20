@@ -6,7 +6,7 @@ import { ColorPicker } from '@/components/basic/ColorPicker';
 import { SliderInput } from '@/components/basic/SliderInput';
 import { PickerItem } from '@/components/basic/PickerModal';
 import { useProfileStore } from '@/store/profile.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import {
   DEFAULT_SUBTITLE_STYLE,
   SUBTITLE_COMMON_COLORS,
@@ -136,7 +136,7 @@ SettingRow.displayName = 'SettingRow';
 
 const useActiveProfileSubtitleStyle = () => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
-  const { subtitleStyle, setSubtitleStyleForProfile } = useProfileSettingsStore((state) => ({
+  const { subtitleStyle, setSubtitleStyleForProfile } = usePlaybackStore((state) => ({
     subtitleStyle:
       (activeProfileId ? state.byProfile[activeProfileId]?.subtitleStyle : undefined) ??
       DEFAULT_SUBTITLE_STYLE,

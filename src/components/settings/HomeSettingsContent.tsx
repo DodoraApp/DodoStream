@@ -6,6 +6,7 @@ import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { OrderableListSection, OrderableItem } from '@/components/settings/OrderableListSection';
 import { HeroCatalogSource, useHomeStore } from '@/store/home.store';
 import { useAddonStore } from '@/store/addon.store';
+import { useProfileStore } from '@/store/profile.store';
 import { SliderInput } from '@/components/basic/SliderInput';
 import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 
@@ -43,6 +44,8 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
   }));
 
   const addons = useAddonStore((state) => state.addons);
+  const configsByProfile = useAddonStore((state) => state.configsByProfile);
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
   // Build a lookup for addon names
   const addonNameMap = useMemo(() => {
@@ -89,7 +92,11 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
 
     const available: CatalogOrderableItem[] = [];
     Object.values(addons)
-      .filter((addon) => addon.useCatalogsOnHome)
+      .filter(
+        (addon) =>
+          configsByProfile[activeProfileId ?? '']?.[addon.id]?.isActive &&
+          configsByProfile[activeProfileId ?? '']?.[addon.id]?.useCatalogsOnHome
+      )
       .forEach((addon) => {
         const catalogs = addon.manifest.catalogs ?? [];
         catalogs.forEach((catalog) => {
@@ -107,7 +114,7 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
         });
       });
     return available;
-  }, [addons, heroCatalogSources]);
+  }, [addons, configsByProfile, activeProfileId, heroCatalogSources]);
 
   const handleCatalogChange = useCallback(
     (next: CatalogOrderableItem[]) => {
