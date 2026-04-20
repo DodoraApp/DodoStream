@@ -15,9 +15,9 @@ import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import { useDebugLogger } from '@/utils/debug';
 import { useProfileStore } from '@/store/profile.store';
 import {
-  useProfileSettingsStore,
+  usePlaybackStore,
   DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-} from '@/store/profile-settings.store';
+} from '@/store/playback.store';
 import { useShallow } from 'zustand/react/shallow';
 
 const composeErrorString = (error: OnVideoErrorData['error']): string => {
@@ -59,7 +59,7 @@ export const RNVideoPlayer = memo(
       showVideoStatistics,
       matchFrameRate,
       enableVideoSoftwareDecoding,
-    } = useProfileSettingsStore(
+    } = usePlaybackStore(
       useShallow((state) => {
         const settings = activeProfileId
           ? state.byProfile[activeProfileId]

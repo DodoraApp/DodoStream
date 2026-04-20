@@ -79,9 +79,6 @@ export interface InstalledAddon {
   manifestUrl: string;
   manifest: Manifest;
   installedAt: number;
-  useCatalogsOnHome: boolean;
-  useCatalogsInSearch: boolean;
-  useForSubtitles: boolean;
 }
 
 export { MetaLink, Manifest, ManifestCatalog, Subtitle, ContentType };

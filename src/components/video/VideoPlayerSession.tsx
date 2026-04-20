@@ -15,11 +15,7 @@ import { PlayerLoadingScreen } from './PlayerLoadingScreen';
 import { AudioTrack, PlayerRef, PlayerType, TextTrack, VideoFitMode } from '@/types/player';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
-import {
-  DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-  useProfileSettingsStore,
-} from '@/store/profile-settings.store';
-import { usePlaybackStore } from '@/store/playback.store';
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import {
   findBestTrackByLanguage,
   getPreferredLanguageCodes,
@@ -84,7 +80,7 @@ const useSubtitleCombiner = (mediaType: ContentType, metaId: string, videoId?: s
   );
 
   const activeProfileId = useProfileStore((s) => s.activeProfileId);
-  const preferredSubtitleLanguages = useProfileSettingsStore((state) =>
+  const preferredSubtitleLanguages = usePlaybackStore((state) =>
     activeProfileId ? state.byProfile[activeProfileId]?.preferredSubtitleLanguages : undefined
   );
 
@@ -154,22 +150,21 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const isFirstLoadRef = useRef(true);
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
-  const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } =
-    useProfileSettingsStore(
-      useShallow((state) => ({
-        preferredAudioLanguages: activeProfileId
-          ? state.byProfile[activeProfileId]?.preferredAudioLanguages
-          : undefined,
-        showVideoStatistics: activeProfileId
-          ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
-            DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
-          : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
-        skipIntroEnabled: activeProfileId
-          ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
-            DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
-          : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
-      }))
-    );
+  const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } = usePlaybackStore(
+    useShallow((state) => ({
+      preferredAudioLanguages: activeProfileId
+        ? state.byProfile[activeProfileId]?.preferredAudioLanguages
+        : undefined,
+      showVideoStatistics: activeProfileId
+        ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+      skipIntroEnabled: activeProfileId
+        ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
+    }))
+  );
 
   const nativeSubtitleStyle = useNativeSubtitleStyle();
 

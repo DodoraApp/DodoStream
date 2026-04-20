@@ -13,7 +13,7 @@ import { StyleSheet, useWindowDimensions } from 'react-native';
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import type { SubtitleStyle } from '@/types/subtitles';
 import { useProfileStore } from '@/store/profile.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import { DEFAULT_SUBTITLE_STYLE } from '@/constants/subtitles';
 import { useDebugLogger } from '@/utils/debug';
 import { useFocusEffect } from 'expo-router';
@@ -129,7 +129,7 @@ export const VLCPlayer = memo(
 
       // Get subtitle style from profile settings for VLC freetype options
       const activeProfileId = useProfileStore((state) => state.activeProfileId);
-      const subtitleStyleFromStore = useProfileSettingsStore((state) =>
+      const subtitleStyleFromStore = usePlaybackStore((state) =>
         activeProfileId
           ? (state.byProfile[activeProfileId]?.subtitleStyle ?? DEFAULT_SUBTITLE_STYLE)
           : DEFAULT_SUBTITLE_STYLE

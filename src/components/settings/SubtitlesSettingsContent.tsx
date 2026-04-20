@@ -5,7 +5,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { PickerItem } from '@/components/basic/PickerModal';
 import { useProfileStore } from '@/store/profile.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import { DEFAULT_SUBTITLE_STYLE, SUBTITLE_STYLE_PRESETS } from '@/constants/subtitles';
 import type { SubtitleStylePreset } from '@/types/subtitles';
 import {
@@ -17,7 +17,7 @@ import { PickerInput } from '@/components/basic/PickerInput';
 export const SubtitlesSettingsContent: FC = memo(() => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-  const { subtitleStyle, setSubtitleStyleForProfile } = useProfileSettingsStore((state) => ({
+  const { subtitleStyle, setSubtitleStyleForProfile } = usePlaybackStore((state) => ({
     subtitleStyle:
       (activeProfileId ? state.byProfile[activeProfileId]?.subtitleStyle : undefined) ??
       DEFAULT_SUBTITLE_STYLE,

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Dimensions } from 'react-native';
 import { useProfileStore } from '@/store/profile.store';
-import { useProfileSettingsStore } from '@/store/profile-settings.store';
+import { usePlaybackStore } from '@/store/playback.store';
 import {
   DEFAULT_SUBTITLE_STYLE,
   SUBTITLE_PADDING_RATIO,
@@ -20,7 +20,7 @@ import { computeSubtitleStyle, type ComputedSubtitleStyle } from '@/utils/subtit
  */
 export const useSubtitleStyle = (): SubtitleStyle => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
-  const subtitleStyle = useProfileSettingsStore((state) =>
+  const subtitleStyle = usePlaybackStore((state) =>
     activeProfileId
       ? (state.byProfile[activeProfileId]?.subtitleStyle ?? DEFAULT_SUBTITLE_STYLE)
       : DEFAULT_SUBTITLE_STYLE

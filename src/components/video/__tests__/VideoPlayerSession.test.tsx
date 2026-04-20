@@ -19,7 +19,7 @@ jest.mock('@/store/profile.store', () => ({
   useProfileStore: jest.fn((selector: any) => selector({ activeProfileId: 'p1' })),
 }));
 
-jest.mock('@/store/profile-settings.store', () => ({
+jest.mock('@/store/playback.store', () => ({
   DEFAULT_PROFILE_PLAYBACK_SETTINGS: {
     player: 'exoplayer',
     automaticFallback: true,
@@ -29,7 +29,7 @@ jest.mock('@/store/profile-settings.store', () => ({
     audioPassthrough: false,
     enableWorkarounds: true,
   },
-  useProfileSettingsStore: jest.fn((selector: any) =>
+  usePlaybackStore: jest.fn((selector: any) =>
     selector({
       byProfile: {
         p1: {

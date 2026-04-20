@@ -2,8 +2,8 @@ import { FC, useEffect, useState } from 'react';
 import { useProfileStore } from '@/store/profile.store';
 import {
   DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-  useProfileSettingsStore,
-} from '@/store/profile-settings.store';
+  usePlaybackStore,
+} from '@/store/playback.store';
 import { useShallow } from 'zustand/react/shallow';
 import { VideoPlayerSession, type VideoPlayerProps } from './VideoPlayerSession';
 import { getVideoSessionId } from '@/utils/stream';
@@ -14,7 +14,7 @@ import { Platform, StatusBar } from 'react-native';
 export const VideoPlayer: FC<VideoPlayerProps> = (props) => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-  const { player: playerType, automaticFallback } = useProfileSettingsStore(
+  const { player: playerType, automaticFallback } = usePlaybackStore(
     useShallow((state) => ({
       player:
         (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??

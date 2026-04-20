@@ -3,7 +3,7 @@ import { useAutoPlay } from '../useAutoPlay';
 import * as toastStore from '@/store/toast.store';
 import * as streamsApi from '@/api/stremio';
 import * as mediaNav from '@/hooks/useMediaNavigation';
-import * as profileStore from '@/store/profile-settings.store';
+import * as profileStore from '@/store/playback.store';
 import * as db from '@/db';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 
@@ -12,7 +12,12 @@ jest.mock('@/api/stremio');
 jest.mock('@/hooks/useMediaNavigation', () => ({
   useMediaNavigation: jest.fn(),
 }));
-jest.mock('@/store/profile-settings.store');
+jest.mock('@/store/playback.store', () => {
+  const mockStore = jest.fn();
+  mockStore.getState = jest.fn(() => ({ setActiveProfileId: jest.fn() }));
+  mockStore.subscribe = jest.fn(() => jest.fn());
+  return { usePlaybackStore: mockStore };
+});
 jest.mock('@/db', () => ({
   getLastStreamTarget: jest.fn(),
 }));
@@ -50,10 +55,10 @@ describe('useAutoPlay', () => {
       },
     };
 
-    (profileStore.useProfileSettingsStore as unknown as jest.Mock).mockImplementation((selector) =>
+    (profileStore.usePlaybackStore as unknown as jest.Mock).mockImplementation((selector) =>
       selector(profileSettingsState)
     );
-    (profileStore.useProfileSettingsStore as any).getState = () => profileSettingsState;
+    (profileStore.usePlaybackStore as any).getState = () => profileSettingsState;
 
     (streamsApi.useStreams as jest.Mock).mockReturnValue({
       data: mockStreams,

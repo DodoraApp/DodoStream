@@ -3,6 +3,7 @@ import { Platform, TVFocusGuideView, useWindowDimensions } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
+import { useProfileStore } from '@/store/profile.store';
 import { useMemo, useCallback, memo } from 'react';
 import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
 import { MetaPreview } from '@/types/stremio';
@@ -100,7 +101,9 @@ export default function Home() {
 const HomeContent = () => {
   const { navigateToDetails } = useMediaNavigation();
   const addons = useAddonStore((state) => state.addons);
+  const configsByProfile = useAddonStore((state) => state.configsByProfile);
   const hasAddons = useAddonStore((state) => state.hasAddons());
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const { heroEnabled, heroCatalogSources } = useHomeStore((state) => ({
     heroEnabled: state.getActiveSettings().heroEnabled,
     heroCatalogSources: state.getActiveSettings().heroCatalogSources,
@@ -152,7 +155,11 @@ const HomeContent = () => {
     // Catalog sections from addons — track position so renderItem knows priority order
     let catalogIndex = 0;
     const addonSections: HomeListItem[] = Object.values(addons)
-      .filter((addon) => addon.useCatalogsOnHome)
+      .filter(
+        (addon) =>
+          configsByProfile[activeProfileId ?? '']?.[addon.id]?.isActive &&
+          configsByProfile[activeProfileId ?? '']?.[addon.id]?.useCatalogsOnHome
+      )
       .flatMap((addon) =>
         (addon.manifest.catalogs || []).flatMap((catalog) => {
           const sectionKey = `${addon.manifestUrl}-${catalog.type}-${catalog.id}`;
@@ -204,7 +211,7 @@ const HomeContent = () => {
     }
 
     return [...continueWatchingSections, ...addonSections];
-  }, [addons, continueWatchingData, continueWatchingLoading]);
+  }, [addons, configsByProfile, activeProfileId, continueWatchingData, continueWatchingLoading]);
 
   // Priority catalogs are the first N catalog rows visible on screen
   const priorityCatalogs = useMemo<PriorityCatalogEntry[]>(
@@ -344,10 +351,7 @@ const HomeContent = () => {
                   margin="m"
                   borderWidth={1}
                   borderColor="cardBorder">
-                  <Text variant="subheader" marginBottom="s">
-                    Add sources to build your home feed
-                  </Text>
-                  <Text variant="bodySmall" color="textSecondary">
+                  <Text variant="subheader">
                     No addons installed. Go to Settings to install addons.
                   </Text>
                 </Box>
@@ -359,12 +363,7 @@ const HomeContent = () => {
                   margin="m"
                   borderWidth={1}
                   borderColor="cardBorder">
-                  <Text variant="subheader" marginBottom="s">
-                    Your feed is ready for more content
-                  </Text>
-                  <Text variant="bodySmall" color="textSecondary">
-                    No catalogs available.
-                  </Text>
+                  <Text variant="subheader">No catalogs available.</Text>
                 </Box>
               )
             }

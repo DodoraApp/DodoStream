@@ -19,8 +19,8 @@ jest.mock('@/store/profile.store', () => ({
   useProfileStore: jest.fn((selector: any) => selector({ activeProfileId: 'p1' })),
 }));
 
-jest.mock('@/store/profile-settings.store', () => ({
-  useProfileSettingsStore: jest.fn((selector: any) =>
+jest.mock('@/store/playback.store', () => ({
+  usePlaybackStore: jest.fn((selector: any) =>
     selector({
       byProfile: {
         p1: {
