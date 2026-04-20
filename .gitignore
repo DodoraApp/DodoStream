@@ -23,4 +23,4 @@ expo-env.d.ts
 .metro-health-check*
 
 .env.*
-!.env.example
+!.env.examplepackage-lock.json
