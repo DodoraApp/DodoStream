@@ -71,6 +71,7 @@ export const Button = forwardRef(
         : variant === 'secondary'
           ? 'tertiaryForeground'
           : 'secondaryForeground';
+
     return (
       <Focusable
         viewRef={ref as any}

@@ -5,7 +5,6 @@ import { useTheme } from '@shopify/restyle';
 import { TVFocusGuideView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
-import { MotiView } from 'moti';
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   movie: 'film-outline',
@@ -16,6 +15,8 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 export interface CatalogSectionHeaderProps {
   title: string;
   type?: string;
+  /** Explicit icon to display - takes priority over type-derived icon */
+  icon?: keyof typeof Ionicons.glyphMap;
   onFocused?: () => void;
   /** Generic link destination - takes priority over catalogData */
   linkTo?: Href;
@@ -28,7 +29,7 @@ export interface CatalogSectionHeaderProps {
 }
 
 export const CatalogSectionHeader = memo(
-  ({ title, type, onFocused, linkTo, catalogData }: CatalogSectionHeaderProps) => {
+  ({ title, type, icon, onFocused, linkTo, catalogData }: CatalogSectionHeaderProps) => {
     const theme = useTheme<Theme>();
     const router = useRouter();
 
@@ -55,37 +56,39 @@ export const CatalogSectionHeader = memo(
         <Focusable
           onFocus={onFocused}
           onPress={isNavigable ? handlePress : undefined}
-          variant="background"
+          variant="none"
           style={{
-            marginHorizontal: theme.spacing.m,
             paddingHorizontal: theme.spacing.m,
           }}>
-          {({ isFocused }) => (
-            <MotiView animate={{ scale: isFocused ? 2 - theme.focus.scaleSmall : 1 }}>
+          {({ isFocused }) => {
+            return (
               <Box
                 flexDirection="row"
                 justifyContent="space-between"
                 alignItems="center"
                 marginTop="m"
-                marginBottom={type ? 's' : 'm'}>
-                <Box flexDirection="row" alignItems="center" gap="m">
-                  {type && TYPE_ICONS[type] && (
+                marginBottom="m">
+                <Box
+                  flexDirection="row"
+                  alignItems="center"
+                  gap="l"
+                  paddingLeft="m"
+                  style={{
+                    borderLeftWidth: theme.focus.borderWidthSmall,
+                    borderLeftColor: isFocused
+                      ? theme.colors.primaryBackground
+                      : theme.colors.transparent,
+                  }}>
+                  {(icon || (type && TYPE_ICONS[type])) && (
                     <Ionicons
-                      name={TYPE_ICONS[type]}
+                      name={icon ?? TYPE_ICONS[type!]}
                       size={theme.sizes.iconLarge}
                       color={
                         isFocused ? theme.colors.primaryBackground : theme.colors.textSecondary
                       }
                     />
                   )}
-                  <Box>
-                    <Text variant="subheader">{title}</Text>
-                    {type && (
-                      <Text variant="caption" color="textSecondary" textTransform="capitalize">
-                        {type}
-                      </Text>
-                    )}
-                  </Box>
+                  <Text variant="subheader">{title}</Text>
                 </Box>
                 {isNavigable && (
                   <Ionicons
@@ -95,8 +98,8 @@ export const CatalogSectionHeader = memo(
                   />
                 )}
               </Box>
-            </MotiView>
-          )}
+            );
+          }}
         </Focusable>
       </TVFocusGuideView>
     );

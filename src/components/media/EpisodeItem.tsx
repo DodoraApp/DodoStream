@@ -37,7 +37,7 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
       onPress={onPress}
       recyclingKey={video.id}
       variant="background"
-      style={{ backgroundColor: theme.colors.cardBackground }}>
+      style={{ backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadii.m }}>
       <Box
         borderRadius="m"
         overflow="hidden"
@@ -62,7 +62,7 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
               left: 0,
               right: 0,
               bottom: 0,
-              height: 56,
+              height: theme.sizes.episodeThumbnailGradientHeight,
             }}
           />
 

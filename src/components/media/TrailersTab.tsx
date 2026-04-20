@@ -6,6 +6,7 @@ import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 
 import { TrailerCard } from '@/components/media/TrailerCard';
+import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
 import { HorizontalSpacer } from '@/components/basic/Spacer';
 import FadeIn from '@/components/basic/FadeIn';
 
@@ -54,7 +55,7 @@ export const TrailersTab: FC<TrailersTabProps> = ({ trailers, isActive }) => {
   return (
     <FadeIn>
       <Box gap="m">
-        <Text variant="subheader">Trailers</Text>
+        <MediaSectionHeader title="Trailers" />
         <LegendList<TrailerStream>
           data={trailers}
           horizontal

@@ -1,8 +1,9 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import { LegendList } from '@legendapp/list/react-native';
-import { Box, Text } from '@/theme/theme';
+import { Box } from '@/theme/theme';
 import { MetaVideo } from '@/types/stremio';
 import { PickerInput } from '@/components/basic/PickerInput';
+import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
 import { PickerItem } from '@/components/basic/PickerModal';
 import { EpisodeItem } from '@/components/media/EpisodeItem';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
@@ -127,7 +128,7 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
           gap="m"
           justifyContent={isHorizontal ? undefined : 'space-between'}
           alignItems="center">
-          <Text variant="subheader">Episodes</Text>
+          <MediaSectionHeader title="Episodes" />
           {seasons.length > 1 && (
             <PickerInput
               label="Select Season"

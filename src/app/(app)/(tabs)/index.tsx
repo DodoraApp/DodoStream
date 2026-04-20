@@ -53,6 +53,8 @@ interface SectionHeaderItem {
   sectionKey: string;
   title: string;
   type?: string;
+  /** Explicit icon name - takes priority over type-derived icon */
+  icon?: string;
   /** Generic link destination */
   linkTo?: Href;
   /** Catalog data for navigation - only present for addon catalog headers */
@@ -190,6 +192,7 @@ const HomeContent = () => {
         kind: 'section-header',
         sectionKey,
         title: 'Continue Watching',
+        icon: 'time-outline',
         linkTo: { pathname: '/library', params: { tab: 'history' } },
       });
       continueWatchingSections.push({
@@ -263,6 +266,7 @@ const HomeContent = () => {
             <CatalogSectionHeader
               title={item.title}
               type={item.type}
+              icon={item.icon as any}
               linkTo={item.linkTo}
               catalogData={item.catalogData}
               onFocused={() => handleSectionFocused(index + 1)}
@@ -333,14 +337,32 @@ const HomeContent = () => {
             drawDistance={Platform.isTV ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
             ListEmptyComponent={
               !hasAddons ? (
-                <Box backgroundColor="cardBackground" padding="m" borderRadius="m" margin="m">
-                  <Text variant="body" color="textSecondary">
+                <Box
+                  backgroundColor="cardBackground"
+                  padding="l"
+                  borderRadius="xl"
+                  margin="m"
+                  borderWidth={1}
+                  borderColor="cardBorder">
+                  <Text variant="subheader" marginBottom="s">
+                    Add sources to build your home feed
+                  </Text>
+                  <Text variant="bodySmall" color="textSecondary">
                     No addons installed. Go to Settings to install addons.
                   </Text>
                 </Box>
               ) : (
-                <Box backgroundColor="cardBackground" padding="m" borderRadius="m" margin="m">
-                  <Text variant="body" color="textSecondary">
+                <Box
+                  backgroundColor="cardBackground"
+                  padding="l"
+                  borderRadius="xl"
+                  margin="m"
+                  borderWidth={1}
+                  borderColor="cardBorder">
+                  <Text variant="subheader" marginBottom="s">
+                    Your feed is ready for more content
+                  </Text>
+                  <Text variant="bodySmall" color="textSecondary">
                     No catalogs available.
                   </Text>
                 </Box>

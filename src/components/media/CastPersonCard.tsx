@@ -50,7 +50,7 @@ export const CastPersonCard = memo(({ person, onPress, recyclingKey }: CastPerso
         </Text>
 
         {person.character ? (
-          <Text variant="caption" color="textSecondary" textAlign="center" numberOfLines={1}>
+          <Text variant="caption" color="textLink" textAlign="center" numberOfLines={1}>
             {person.character}
           </Text>
         ) : null}
