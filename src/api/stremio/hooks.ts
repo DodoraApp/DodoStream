@@ -333,7 +333,7 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
         // Populate the SQLite meta cache so getStaleMetaIds() works correctly
         // and doesn't trigger spurious re-fetches from useContinueWatching.
         if (result?.meta) {
-          void upsertMetaCache(result.meta);
+          upsertMetaCache(result.meta).catch(() => { });
         }
         return result;
       },

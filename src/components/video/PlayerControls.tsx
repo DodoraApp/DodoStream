@@ -60,6 +60,8 @@ interface PlayerControlsProps {
   introSkipped?: boolean;
   /** Called when skip intro button is pressed */
   onSkipIntro?: () => void;
+  /** When true, the invisible overlay Pressable will not claim TV preferred focus */
+  suppressPreferredFocus?: boolean;
 }
 
 // ============================================================================
@@ -439,6 +441,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     introData,
     introSkipped,
     onSkipIntro,
+    suppressPreferredFocus = false,
   }) => {
     const theme = useTheme<Theme>();
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -696,7 +699,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
             testID="player-controls-invisible-area"
             style={StyleSheet.absoluteFill}
             onPress={showControls}
-            hasTVPreferredFocus={!isSkipIntroVisible}
+            hasTVPreferredFocus={!isSkipIntroVisible && !suppressPreferredFocus}
           />
           {/* Skip Intro button shown even when controls are hidden */}
           {showSkipIntroButton && (

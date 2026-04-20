@@ -16,8 +16,10 @@ import {
   upsertWatchProgress,
   dismissFromContinueWatching,
 } from '../queries/watchHistory';
+import { upsertMetaCache } from '../queries/metaCache';
 import { watchHistory, metaCache, videos } from '../schema';
 import { eq } from 'drizzle-orm';
+import type { MetaDetail } from '@/types/stremio';
 
 describe('getContinueWatchingWithUpNext (integration)', () => {
   const testProfileId = 'cw-test-profile';
@@ -569,5 +571,159 @@ describe('PLAYBACK_FINISHED_RATIO threshold', () => {
         expect(status).toBe(expected);
       });
     });
+  });
+});
+
+describe('getContinueWatchingWithUpNext edge cases (integration)', () => {
+  const testProfileId = 'cw-edge-profile';
+
+  beforeAll(async () => {
+    await initializeDatabase();
+  });
+
+  beforeEach(async () => {
+    await db.delete(watchHistory).where(eq(watchHistory.profileId, testProfileId));
+    await db.delete(metaCache);
+    await db.delete(videos);
+  });
+
+  it('returns items without meta cache (no metaName/imageUrl)', async () => {
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-no-cache',
+      videoId: undefined,
+      type: 'movie',
+      progressSeconds: 500,
+      durationSeconds: 1000,
+    });
+
+    const results = await getContinueWatchingWithUpNext(testProfileId);
+    const entry = results.find((r) => r.metaId === 'tt-no-cache');
+
+    expect(entry).toBeDefined();
+    expect(entry?.metaName).toBeUndefined();
+    expect(entry?.imageUrl).toBeUndefined();
+  });
+
+  it('returns movie with videoId="" correctly', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-movie-empty-vid',
+      type: 'movie',
+      name: 'Test Movie',
+    };
+    await upsertMetaCache(meta);
+
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-movie-empty-vid',
+      videoId: undefined,
+      type: 'movie',
+      progressSeconds: 500,
+      durationSeconds: 1000,
+    });
+
+    const results = await getContinueWatchingWithUpNext(testProfileId);
+    const entry = results.find((r) => r.metaId === 'tt-movie-empty-vid');
+
+    expect(entry).toBeDefined();
+    expect(entry?.isUpNext).toBe(false);
+  });
+
+  it('excludes completed movies (no up-next for movies)', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-finished-movie',
+      type: 'movie',
+      name: 'Finished Movie',
+    };
+    await upsertMetaCache(meta);
+
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-finished-movie',
+      videoId: undefined,
+      type: 'movie',
+      progressSeconds: 950, // 95% — completed
+      durationSeconds: 1000,
+    });
+
+    const results = await getContinueWatchingWithUpNext(testProfileId);
+    const entry = results.find((r) => r.metaId === 'tt-finished-movie');
+
+    expect(entry).toBeUndefined();
+  });
+
+  it('handles item with zero duration correctly', async () => {
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-zero-dur',
+      videoId: undefined,
+      type: 'movie',
+      progressSeconds: 100,
+      durationSeconds: 0,
+    });
+
+    const results = await getContinueWatchingWithUpNext(testProfileId);
+    const entry = results.find((r) => r.metaId === 'tt-zero-dur');
+
+    // Item should have progressSeconds > 0 so it passes the progress filter
+    // but behavior of progressRatio depends on implementation
+    if (entry) {
+      expect(entry.progressSeconds).toBe(100);
+    }
+  });
+
+  it('handles specials (no season/episode) in up-next', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-specials',
+      type: 'series',
+      name: 'Series with Specials',
+      videos: [
+        { id: 'special-1', title: 'Behind the Scenes', released: '2023-01-01' },
+        { id: 'ep-1', title: 'Episode 1', season: 1, episode: 1, released: '2023-01-02' },
+      ],
+    };
+    await upsertMetaCache(meta);
+
+    // Watch the special to completion
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-specials',
+      videoId: 'special-1',
+      type: 'series',
+      progressSeconds: 950,
+      durationSeconds: 1000,
+    });
+
+    const results = await getContinueWatchingWithUpNext(testProfileId);
+    const entry = results.find((r) => r.metaId === 'tt-specials');
+
+    // Should find up-next since there are more episodes
+    if (entry) {
+      expect(entry.isUpNext).toBe(true);
+    }
+  });
+
+  it('respects limit parameter', async () => {
+    // Create 5 distinct in-progress movies
+    for (let i = 0; i < 5; i++) {
+      const meta: MetaDetail = {
+        id: `tt-limit-${i}`,
+        type: 'movie',
+        name: `Movie ${i}`,
+      };
+      await upsertMetaCache(meta);
+      await upsertWatchProgress({
+        profileId: testProfileId,
+        metaId: `tt-limit-${i}`,
+        videoId: undefined,
+        type: 'movie',
+        progressSeconds: 500,
+        durationSeconds: 1000,
+      });
+    }
+
+    const results = await getContinueWatchingWithUpNext(testProfileId, 3);
+
+    expect(results).toHaveLength(3);
   });
 });

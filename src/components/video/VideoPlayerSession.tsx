@@ -315,6 +315,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [autoplayCancelled, setAutoplayCancelled] = useState(false);
   const [upNextDismissed, setUpNextDismissed] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [upNextVisible, setUpNextVisible] = useState(false);
   const [introSkipped, setIntroSkipped] = useState(false);
 
   const upNextVideoIdRef = useRef<string | undefined>(undefined);
@@ -440,17 +441,19 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       if (!didPersistLastTargetRef.current && data.duration > 0) {
         didPersistLastTargetRef.current = true;
         if (activeProfileId) {
-          void setLastStreamTarget({
+          setLastStreamTarget({
             profileId: activeProfileId,
             metaId,
             videoId,
             type: mediaType,
             target: { type: 'url', value: source },
-          }).then(() =>
-            queryClient.invalidateQueries({
-              queryKey: watchHistoryKeys.streamTarget(activeProfileId, metaId, videoId),
-            })
-          );
+          })
+            .then(() =>
+              queryClient.invalidateQueries({
+                queryKey: watchHistoryKeys.streamTarget(activeProfileId, metaId, videoId),
+              })
+            )
+            .catch(() => {});
         }
       }
 
@@ -798,6 +801,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         introData={skipIntroEnabled && introData ? introData : undefined}
         introSkipped={introSkipped}
         onSkipIntro={handleSkipIntro}
+        suppressPreferredFocus={upNextVisible}
       />
 
       <UpNextPopup
@@ -813,6 +817,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onDismiss={() => setUpNextDismissed(true)}
         onPlayNext={startNextEpisode}
         onUpNextResolved={handleUpNextResolved}
+        onVisibilityChange={setUpNextVisible}
       />
     </Box>
   );

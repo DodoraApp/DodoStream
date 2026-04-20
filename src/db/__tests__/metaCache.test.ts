@@ -9,7 +9,7 @@
  */
 
 import { initializeDatabase, db } from '../client';
-import { upsertMetaCache, isMetaCacheStale, getStaleMetaIds } from '../queries/metaCache';
+import { upsertMetaCache, isMetaCacheStale, getStaleMetaIds, getVideoForEntry } from '../queries/metaCache';
 import { metaCache, videos } from '../schema';
 import { eq } from 'drizzle-orm';
 import type { MetaDetail } from '@/types/stremio';
@@ -370,5 +370,287 @@ describe('Cache TTL', () => {
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
     expect(CACHE_TTL_MS).toBe(sevenDaysMs);
     expect(CACHE_TTL_MS).toBe(604800000);
+  });
+});
+
+describe('getVideoForEntry (integration)', () => {
+  beforeAll(async () => {
+    await initializeDatabase();
+  });
+
+  beforeEach(async () => {
+    await db.delete(metaCache);
+    await db.delete(videos);
+  });
+
+  it('returns a video with all fields', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-video-entry',
+      type: 'series',
+      name: 'Test Series',
+      videos: [
+        {
+          id: 'ep-1',
+          title: 'Pilot Episode',
+          season: 1,
+          episode: 1,
+          thumbnail: 'https://example.com/thumb.jpg',
+          overview: 'The very first episode',
+          released: '2023-01-01',
+        },
+      ],
+    };
+    await upsertMetaCache(meta);
+
+    const result = await getVideoForEntry('tt-video-entry', 'ep-1');
+
+    expect(result).toBeDefined();
+    expect(result?.id).toBe('ep-1');
+    expect(result?.title).toBe('Pilot Episode');
+    expect(result?.season).toBe(1);
+    expect(result?.episode).toBe(1);
+    expect(result?.thumbnail).toBe('https://example.com/thumb.jpg');
+    expect(result?.overview).toBe('The very first episode');
+    expect(result?.released).toBe('2023-01-01');
+  });
+
+  it('returns null for missing video', async () => {
+    const result = await getVideoForEntry('nonexistent-meta', 'nonexistent-video');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null for existing meta but wrong videoId', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-video-wrong',
+      type: 'series',
+      name: 'Test Series',
+      videos: [{ id: 'ep-1', title: 'Ep 1', season: 1, episode: 1, released: '2023-01-01' }],
+    };
+    await upsertMetaCache(meta);
+
+    const result = await getVideoForEntry('tt-video-wrong', 'ep-999');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns video with undefined season/episode for specials', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-video-special',
+      type: 'series',
+      name: 'Test Series',
+      videos: [{ id: 'special-1', title: 'Behind the Scenes', released: '2023-06-01' }],
+    };
+    await upsertMetaCache(meta);
+
+    const result = await getVideoForEntry('tt-video-special', 'special-1');
+
+    expect(result).toBeDefined();
+    expect(result?.season).toBeUndefined();
+    expect(result?.episode).toBeUndefined();
+    expect(result?.title).toBe('Behind the Scenes');
+  });
+});
+
+describe('upsertMetaCache edge cases (integration)', () => {
+  beforeAll(async () => {
+    await initializeDatabase();
+  });
+
+  beforeEach(async () => {
+    await db.delete(metaCache);
+    await db.delete(videos);
+  });
+
+  it('handles >50 videos (batch boundary)', async () => {
+    const videoList = Array.from({ length: 60 }, (_, i) => ({
+      id: `ep-${i + 1}`,
+      title: `Episode ${i + 1}`,
+      season: Math.floor(i / 10) + 1,
+      episode: (i % 10) + 1,
+      released: '2023-01-01',
+    }));
+
+    const meta: MetaDetail = {
+      id: 'tt-many-videos',
+      type: 'series',
+      name: 'Long Series',
+      videos: videoList,
+    };
+
+    await upsertMetaCache(meta);
+
+    const allVideos = await db.select().from(videos).where(eq(videos.metaId, 'tt-many-videos'));
+
+    expect(allVideos).toHaveLength(60);
+  });
+
+  it('handles exactly 50 videos (single batch)', async () => {
+    const videoList = Array.from({ length: 50 }, (_, i) => ({
+      id: `ep-${i + 1}`,
+      title: `Episode ${i + 1}`,
+      season: 1,
+      episode: i + 1,
+      released: '2023-01-01',
+    }));
+
+    const meta: MetaDetail = {
+      id: 'tt-fifty-videos',
+      type: 'series',
+      name: 'Fifty Ep Series',
+      videos: videoList,
+    };
+
+    await upsertMetaCache(meta);
+
+    const allVideos = await db.select().from(videos).where(eq(videos.metaId, 'tt-fifty-videos'));
+
+    expect(allVideos).toHaveLength(50);
+  });
+
+  it('upserts existing videos on re-cache', async () => {
+    const meta1: MetaDetail = {
+      id: 'tt-video-upsert',
+      type: 'series',
+      name: 'Test',
+      videos: [{ id: 'ep-1', title: 'Original Title', season: 1, episode: 1, released: '2023-01-01' }],
+    };
+    await upsertMetaCache(meta1);
+
+    const meta2: MetaDetail = {
+      id: 'tt-video-upsert',
+      type: 'series',
+      name: 'Test',
+      videos: [{ id: 'ep-1', title: 'Updated Title', season: 1, episode: 1, released: '2023-01-01' }],
+    };
+    await upsertMetaCache(meta2);
+
+    const allVideos = await db.select().from(videos).where(eq(videos.metaId, 'tt-video-upsert'));
+
+    expect(allVideos).toHaveLength(1);
+    expect(allVideos[0].title).toBe('Updated Title');
+  });
+
+  it('prunes stale videos that are no longer in the source', async () => {
+    const meta1: MetaDetail = {
+      id: 'tt-prune-test',
+      type: 'series',
+      name: 'Test',
+      videos: [
+        { id: 'ep-1', title: 'Episode 1', season: 1, episode: 1, released: '2023-01-01' },
+        { id: 'ep-2', title: 'Episode 2', season: 1, episode: 2, released: '2023-01-02' },
+        { id: 'ep-3', title: 'Episode 3', season: 1, episode: 3, released: '2023-01-03' },
+      ],
+    };
+    await upsertMetaCache(meta1);
+
+    let allVideos = await db.select().from(videos).where(eq(videos.metaId, 'tt-prune-test'));
+    expect(allVideos).toHaveLength(3);
+
+    // Re-cache with ep-2 removed
+    await new Promise((r) => setTimeout(r, 10));
+    const meta2: MetaDetail = {
+      id: 'tt-prune-test',
+      type: 'series',
+      name: 'Test',
+      videos: [
+        { id: 'ep-1', title: 'Episode 1', season: 1, episode: 1, released: '2023-01-01' },
+        { id: 'ep-3', title: 'Episode 3', season: 1, episode: 3, released: '2023-01-03' },
+      ],
+    };
+    await upsertMetaCache(meta2);
+
+    allVideos = await db.select().from(videos).where(eq(videos.metaId, 'tt-prune-test'));
+    expect(allVideos).toHaveLength(2);
+    expect(allVideos.map((v) => v.videoId).sort()).toEqual(['ep-1', 'ep-3']);
+  });
+
+  it('handles undefined releaseInfo', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-no-release',
+      type: 'movie',
+      name: 'No Release Info',
+    };
+    await upsertMetaCache(meta);
+
+    const [cached] = await db.select().from(metaCache).where(eq(metaCache.metaId, 'tt-no-release'));
+
+    expect(cached.releaseYear).toBeNull();
+  });
+
+  it('handles null optional fields gracefully', async () => {
+    const meta: MetaDetail = {
+      id: 'tt-null-fields',
+      type: 'movie',
+      name: 'Minimal Movie',
+    };
+    await upsertMetaCache(meta);
+
+    const [cached] = await db
+      .select()
+      .from(metaCache)
+      .where(eq(metaCache.metaId, 'tt-null-fields'));
+
+    expect(cached.description).toBeNull();
+    expect(cached.poster).toBeNull();
+    expect(cached.background).toBeNull();
+    expect(cached.logo).toBeNull();
+    expect(cached.imdbRating).toBeNull();
+  });
+});
+
+describe('getStaleMetaIds edge cases (integration)', () => {
+  beforeAll(async () => {
+    await initializeDatabase();
+  });
+
+  beforeEach(async () => {
+    await db.delete(metaCache);
+  });
+
+  it('handles >900 IDs (chunking boundary)', async () => {
+    // Insert 5 valid entries
+    const validIds = Array.from({ length: 5 }, (_, i) => `valid-${i}`);
+    for (const id of validIds) {
+      await db.insert(metaCache).values({
+        metaId: id,
+        type: 'movie',
+        name: `Movie ${id}`,
+        fetchedAt: Date.now(),
+        expiresAt: Date.now() + CACHE_TTL_MS,
+      });
+    }
+
+    // Create a list of 950 IDs (5 valid + 945 missing)
+    const allIds = [
+      ...validIds,
+      ...Array.from({ length: 945 }, (_, i) => `missing-${i}`),
+    ];
+
+    const result = await getStaleMetaIds(allIds);
+
+    // All valid ones should NOT be in the result
+    for (const id of validIds) {
+      expect(result).not.toContain(id);
+    }
+    // All missing ones should be in the result
+    expect(result).toHaveLength(945);
+  });
+
+  it('handles duplicate IDs in input', async () => {
+    await db.insert(metaCache).values({
+      metaId: 'dup-valid',
+      type: 'movie',
+      name: 'Valid',
+      fetchedAt: Date.now(),
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    });
+
+    const result = await getStaleMetaIds(['missing-dup', 'missing-dup', 'dup-valid', 'dup-valid']);
+
+    // missing-dup appears twice in input — both should be stale
+    expect(result.filter((id) => id === 'missing-dup')).toHaveLength(2);
+    // dup-valid should not appear
+    expect(result.filter((id) => id === 'dup-valid')).toHaveLength(0);
   });
 });

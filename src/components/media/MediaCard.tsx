@@ -60,7 +60,7 @@ export const MediaCard = memo(
             backgroundColor="cardBackground"
             position="relative">
             <FastImage
-              source={{ uri: posterUri || '' }}
+              source={posterUri ? { uri: posterUri } : NO_POSTER_PORTRAIT}
               defaultSource={NO_POSTER_PORTRAIT}
               style={{ width: '100%', height: '100%' }}
               resizeMode={FastImage.resizeMode.cover}

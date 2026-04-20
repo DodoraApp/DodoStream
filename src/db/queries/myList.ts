@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, myList } from '@/db/schema';
