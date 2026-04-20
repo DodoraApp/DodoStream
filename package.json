@@ -46,6 +46,7 @@
     "expo-dev-client": "~6.0.13",
     "expo-device": "~8.0.9",
     "expo-drizzle-studio-plugin": "^0.2.1",
+    "expo-file-system": "~19.0.21",
     "expo-font": "^14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '@/store/toast.store';
 import * as Linking from 'expo-linking';
@@ -6,17 +7,33 @@ import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
+import { useAndroidApkInstall, pickApkAsset } from '@/hooks/useAndroidApkInstall';
+import type { ApkInstallStatus } from '@/hooks/useAndroidApkInstall';
 
 const STORAGE_KEY_LAST_DISMISSED_TAG = 'githubRelease:lastDismissedTag';
 
 export interface GithubReleaseNotification {
     isVisible: boolean;
+    /** Android only: whether the APK install progress modal should be shown */
+    isInstallModalVisible: boolean;
     heading: string;
     subheading: string;
     body: string;
     onDismiss: () => void;
     onRemindLater: () => void;
     onDownloadRelease: () => void;
+    /** Android only: download + install the APK directly */
+    onInstallAndroid: (() => void) | null;
+    /** Android only: whether an APK asset is available for in-app install */
+    hasAndroidApk: boolean;
+    /** Android only: current install status */
+    androidInstallStatus: ApkInstallStatus;
+    /** Android only: download progress 0–1 */
+    androidInstallProgress: number;
+    /** Android only: APK asset file name */
+    androidApkName: string;
+    onCancelAndroidInstall: () => void;
+    onTriggerAndroidInstall: () => void;
 }
 
 export function useGithubReleaseNotification(params: { enabled: boolean }) {
@@ -32,6 +49,9 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     const [isStorageLoaded, setIsStorageLoaded] = useState(false);
     const [lastDismissedTag, setLastDismissedTag] = useState<string | null>(null);
     const [isVisible, setIsVisible] = useState(false);
+    const [isInstallModalVisible, setIsInstallModalVisible] = useState(false);
+
+    const apkInstall = useAndroidApkInstall();
 
     useEffect(() => {
         if (!enabled) return;
@@ -135,6 +155,27 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         }
     }, [latestRelease, debug]);
 
+    const apkAsset = useMemo(() => {
+        if (!latestRelease) return null;
+        return pickApkAsset(latestRelease.assets);
+    }, [latestRelease]);
+
+    const installAndroid = useCallback(() => {
+        if (!apkAsset) return;
+        setIsVisible(false);
+        setIsInstallModalVisible(true);
+        void apkInstall.startDownload(apkAsset);
+    }, [apkAsset, apkInstall]);
+
+    const cancelAndroidInstall = useCallback(() => {
+        apkInstall.cancel();
+        setIsInstallModalVisible(false);
+    }, [apkInstall]);
+
+    const triggerAndroidInstall = useCallback(async () => {
+        await apkInstall.triggerInstall();
+    }, [apkInstall]);
+
     const body = useMemo(() => {
         if (!latestRelease) return '';
         const header = `Installed: ${releaseStatus.installedVersion}\nLatest: ${releaseStatus.latestVersion}`;
@@ -145,10 +186,11 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
 
     const releaseNotification: GithubReleaseNotification | null = useMemo(() => {
         if (!latestRelease) return null;
-        if (!shouldNotify) return null;
+        if (!shouldNotify && !isInstallModalVisible) return null;
 
         return {
             isVisible,
+            isInstallModalVisible,
             heading: 'Update available',
             subheading: `New GitHub release ${latestRelease.tagName}`,
             body,
@@ -159,8 +201,32 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
             onDownloadRelease: () => {
                 void downloadRelease();
             },
+            hasAndroidApk: Platform.OS === 'android' && !!apkAsset,
+            onInstallAndroid: Platform.OS === 'android' && apkAsset ? installAndroid : null,
+            androidInstallStatus: apkInstall.status,
+            androidInstallProgress: apkInstall.progress,
+            androidApkName: apkAsset?.name ?? '',
+            onCancelAndroidInstall: cancelAndroidInstall,
+            onTriggerAndroidInstall: () => {
+                void triggerAndroidInstall();
+            },
         };
-    }, [latestRelease, shouldNotify, isVisible, body, dismiss, downloadRelease, remindLater]);
+    }, [
+        latestRelease,
+        shouldNotify,
+        isInstallModalVisible,
+        isVisible,
+        body,
+        dismiss,
+        downloadRelease,
+        apkAsset,
+        installAndroid,
+        apkInstall.status,
+        apkInstall.progress,
+        cancelAndroidInstall,
+        triggerAndroidInstall,
+        remindLater,
+    ]);
 
     return releaseNotification;
 }
