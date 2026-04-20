@@ -1,4 +1,5 @@
-import { FC, memo, useCallback, useMemo, useRef } from 'react';
+import { FC, memo, useCallback, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
@@ -17,6 +18,8 @@ import { useDebugLogger } from '@/utils/debug';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 import { useAppSettingsStore } from '@/store/app-settings.store';
+import { useAndroidApkInstall, pickApkAsset } from '@/hooks/useAndroidApkInstall';
+import { ApkInstallModal } from '@/components/layout/ApkInstallModal';
 
 interface AboutLinkItem {
   id: string;
@@ -135,6 +138,16 @@ export const AboutSettingsContent: FC = memo(() => {
     enabled: true,
   });
 
+  const apkInstall = useAndroidApkInstall();
+  const [isApkModalVisible, setIsApkModalVisible] = useState(false);
+
+  const apkAsset = useMemo(
+    () => (releaseStatus.latestRelease ? pickApkAsset(releaseStatus.latestRelease.assets) : null),
+    [releaseStatus.latestRelease]
+  );
+
+  const showAndroidInstall = Platform.OS === 'android' && !!apkAsset;
+
   const logoSize = useMemo(() => theme.spacing.xxl * 3, [theme.spacing.xxl]);
 
   const commitShort = useMemo(() => {
@@ -224,84 +237,123 @@ export const AboutSettingsContent: FC = memo(() => {
     });
   }, [info.appVersion, releaseStatus]);
 
+  const handleDownloadAndInstall = useCallback(() => {
+    if (!apkAsset) return;
+    apkInstall.reset();
+    setIsApkModalVisible(true);
+    void apkInstall.startDownload(apkAsset);
+  }, [apkAsset, apkInstall]);
+
+  const handleCancelApkInstall = useCallback(() => {
+    apkInstall.cancel();
+    setIsApkModalVisible(false);
+  }, [apkInstall]);
+
+  const handleTriggerApkInstall = useCallback(() => {
+    void apkInstall.triggerInstall();
+  }, [apkInstall]);
+
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-        <Box alignItems="center" gap="m" paddingTop="m">
-          <AppLogo size={logoSize} />
-          <Text variant="header">DodoStream</Text>
-        </Box>
-
-        <SettingsCard title="App">
-          <Focusable onPress={handleVersionTap} variant="background">
-            <SettingsRow label="Version">
-              <Text variant="body">{info.appVersion}</Text>
-            </SettingsRow>
-          </Focusable>
-
-          <SettingsRow label="Commit">
-            <Text variant="body" color="textSecondary" numberOfLines={1}>
-              {commitShort || '—'}
-            </Text>
-          </SettingsRow>
-
-          <SettingsRow label="Runtime">
-            <Text variant="body" color="textSecondary" numberOfLines={1}>
-              {info.runtimeVersion || '—'}
-            </Text>
-          </SettingsRow>
-        </SettingsCard>
-
-        <SettingsCard title="Releases">
-          <SettingsRow label="Current">
-            <Text variant="body" color="textSecondary">
-              {info.appVersion}
-            </Text>
-          </SettingsRow>
-
-          <SettingsRow label="Latest">
-            <Text variant="body" color="textSecondary" numberOfLines={1}>
-              {releaseStatus.latestVersion || '—'}
-            </Text>
-          </SettingsRow>
-
-          <SettingsRow label="Status">
-            <Text variant="body" color="textSecondary" numberOfLines={1}>
-              {releaseStatus.isUpdateAvailable === null
-                ? 'Unknown'
-                : releaseStatus.isUpdateAvailable
-                  ? 'Update available'
-                  : 'Up to date'}
-            </Text>
-          </SettingsRow>
-
-          <Focusable onPress={handleCheckForUpdates} variant="background">
-            <SettingsRow label="Check for updates">
-              <Ionicons
-                name={releaseStatus.isFetching ? 'hourglass-outline' : 'refresh'}
-                size={theme.sizes.iconSmall}
-                color={theme.colors.textSecondary}
-              />
-            </SettingsRow>
-          </Focusable>
-
-          <SettingsSwitch
-            label="Check on startup"
-            description="Show an update prompt when a new release is available"
-            value={releaseCheckOnStartup}
-            onValueChange={setReleaseCheckOnStartup}
-          />
-        </SettingsCard>
-
-        <SettingsCard title="Links">
-          <Box gap="s">
-            {links.map((item) => (
-              <AboutLinkRow key={item.id} item={item} onPress={handleOpenLink} />
-            ))}
+    <>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Box paddingVertical="m" paddingHorizontal="m" gap="l">
+          <Box alignItems="center" gap="m" paddingTop="m">
+            <AppLogo size={logoSize} />
+            <Text variant="header">DodoStream</Text>
           </Box>
-        </SettingsCard>
-      </Box>
-    </ScrollView>
+
+          <SettingsCard title="App">
+            <Focusable onPress={handleVersionTap} variant="background">
+              <SettingsRow label="Version">
+                <Text variant="body">{info.appVersion}</Text>
+              </SettingsRow>
+            </Focusable>
+
+            <SettingsRow label="Commit">
+              <Text variant="body" color="textSecondary" numberOfLines={1}>
+                {commitShort || '—'}
+              </Text>
+            </SettingsRow>
+
+            <SettingsRow label="Runtime">
+              <Text variant="body" color="textSecondary" numberOfLines={1}>
+                {info.runtimeVersion || '—'}
+              </Text>
+            </SettingsRow>
+          </SettingsCard>
+
+          <SettingsCard title="Releases">
+            <SettingsRow label="Current">
+              <Text variant="body" color="textSecondary">
+                {info.appVersion}
+              </Text>
+            </SettingsRow>
+
+            <SettingsRow label="Latest">
+              <Text variant="body" color="textSecondary" numberOfLines={1}>
+                {releaseStatus.latestVersion || '—'}
+              </Text>
+            </SettingsRow>
+
+            <SettingsRow label="Status">
+              <Text variant="body" color="textSecondary" numberOfLines={1}>
+                {releaseStatus.isUpdateAvailable === null
+                  ? 'Unknown'
+                  : releaseStatus.isUpdateAvailable
+                    ? 'Update available'
+                    : 'Up to date'}
+              </Text>
+            </SettingsRow>
+
+            <Focusable onPress={handleCheckForUpdates} variant="background">
+              <SettingsRow label="Check for updates">
+                <Ionicons
+                  name={releaseStatus.isFetching ? 'hourglass-outline' : 'refresh'}
+                  size={theme.sizes.iconSmall}
+                  color={theme.colors.textSecondary}
+                />
+              </SettingsRow>
+            </Focusable>
+
+            {showAndroidInstall && releaseStatus.isUpdateAvailable ? (
+              <Focusable onPress={handleDownloadAndInstall} variant="background">
+                <SettingsRow label="Download & Install">
+                  <Ionicons
+                    name="download-outline"
+                    size={theme.sizes.iconSmall}
+                    color={theme.colors.textSecondary}
+                  />
+                </SettingsRow>
+              </Focusable>
+            ) : null}
+
+            <SettingsSwitch
+              label="Check on startup"
+              description="Show an update prompt when a new release is available"
+              value={releaseCheckOnStartup}
+              onValueChange={setReleaseCheckOnStartup}
+            />
+          </SettingsCard>
+
+          <SettingsCard title="Links">
+            <Box gap="s">
+              {links.map((item) => (
+                <AboutLinkRow key={item.id} item={item} onPress={handleOpenLink} />
+              ))}
+            </Box>
+          </SettingsCard>
+        </Box>
+      </ScrollView>
+
+      <ApkInstallModal
+        visible={isApkModalVisible}
+        status={apkInstall.status}
+        progress={apkInstall.progress}
+        assetName={apkAsset?.name}
+        onCancel={handleCancelApkInstall}
+        onInstall={handleTriggerApkInstall}
+      />
+    </>
   );
 });
 

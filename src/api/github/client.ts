@@ -53,11 +53,19 @@ export async function fetchLatestGithubRelease(releasesApiUrl: string): Promise<
         throw new GithubApiError('Invalid GitHub release payload', undefined, releasesApiUrl, json);
     }
 
+    const assets = (json.assets ?? []).map((asset) => ({
+        name: asset.name ?? '',
+        browserDownloadUrl: asset.browser_download_url ?? '',
+        size: asset.size ?? 0,
+        contentType: asset.content_type ?? '',
+    }));
+
     return {
         tagName: json.tag_name,
         name: json.name,
         body: json.body,
         htmlUrl: json.html_url,
         publishedAt: json.published_at,
+        assets,
     };
 }

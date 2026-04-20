@@ -118,6 +118,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             permissions: [
                 'android.permission.FOREGROUND_SERVICE',
                 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+                'android.permission.REQUEST_INSTALL_PACKAGES',
             ],
         },
         extra: {
