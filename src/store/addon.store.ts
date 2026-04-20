@@ -276,7 +276,7 @@ export const useAddonStore = create<AddonState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ addons: state.addons, configsByProfile: state.configsByProfile }),
       version: 2,
-      migrate: (persistedState: any, version) => {
+      migrate: async (persistedState: any, version) => {
         let state = persistedState as AddonState;
 
         // Apply migrations sequentially from stored version to current
@@ -286,9 +286,20 @@ export const useAddonStore = create<AddonState>()(
           const migratedAddons: Record<string, InstalledAddon> = {};
           const newConfigs: Record<string, Record<string, AddonProfileConfig>> = {};
 
-          if (!useProfileStore) return Object.assign(state, { addons: {}, configsByProfile: {} });
-          const profilesState = useProfileStore.getState();
-          const profileIds = Object.keys(profilesState.profiles || {});
+          // Read profiles directly from AsyncStorage to avoid a race condition:
+          // useProfileStore.getState() may return empty initial state if the profile
+          // store has not yet finished its own async hydration when this migration runs.
+          let profileIds: string[] = [];
+          try {
+            const raw = await AsyncStorage.getItem('profiles-registry');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              profileIds = Object.keys(parsed?.state?.profiles || {});
+            }
+          } catch {
+            // If we cannot read profiles, fall back to an empty list — configs will
+            // be created on first use via the normal per-profile config path.
+          }
 
           for (const [id, addon] of Object.entries(state.addons) as [string, any][]) {
             migratedAddons[id] = {
