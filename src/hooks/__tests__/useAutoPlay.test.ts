@@ -13,9 +13,10 @@ jest.mock('@/hooks/useMediaNavigation', () => ({
   useMediaNavigation: jest.fn(),
 }));
 jest.mock('@/store/playback.store', () => {
-  const mockStore = jest.fn();
-  mockStore.getState = jest.fn(() => ({ setActiveProfileId: jest.fn() }));
-  mockStore.subscribe = jest.fn(() => jest.fn());
+  const mockStore = Object.assign(jest.fn(), {
+    getState: jest.fn(() => ({ setActiveProfileId: jest.fn() })),
+    subscribe: jest.fn(() => jest.fn()),
+  });
   return { usePlaybackStore: mockStore };
 });
 jest.mock('@/db', () => ({

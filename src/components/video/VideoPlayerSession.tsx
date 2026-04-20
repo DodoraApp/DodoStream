@@ -253,7 +253,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     if (areSubtitlesLoading || combinedSubtitles.length === 0) return;
     if (selectedTextTrack) return; // Don't override if already selected
 
-    const savedPreference = usePlaybackStore.getState().getActivePlaybackState().subtitlePreference;
+    const savedPreference = usePlaybackStore.getState().getActiveSettings().subtitlePreference;
     if (!savedPreference) return;
 
     debug('autoApplySubtitlePreference', {
