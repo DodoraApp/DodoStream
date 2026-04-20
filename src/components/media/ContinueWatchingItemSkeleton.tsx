@@ -3,6 +3,7 @@ import { Skeleton } from '@/components/basic/Skeleton';
 import { Box } from '@/theme/theme';
 import type { Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
+import { getTextLineHeight } from '@/utils/layout';
 
 /**
  * Skeleton for a single continue watching card.
@@ -19,10 +20,13 @@ export const ContinueWatchingItemSkeleton = memo(() => {
         height={theme.cardSizes.continueWatching.height}
         borderRadius="l"
       />
-      {/* Title skeleton */}
-      <Skeleton width="75%" height={18} borderRadius="s" />
-      {/* Subtitle skeleton */}
-      <Skeleton width="50%" height={14} borderRadius="s" />
+      {/* Text area: mirrors the Pressable > Box gap="xs" in ContinueWatchingCard */}
+      <Box gap="xs">
+        {/* Title skeleton */}
+        <Skeleton width="75%" height={getTextLineHeight(theme, 'cardTitle')} borderRadius="s" />
+        {/* Subtitle skeleton */}
+        <Skeleton width="50%" height={getTextLineHeight(theme, 'caption')} borderRadius="s" />
+      </Box>
     </Box>
   );
 });

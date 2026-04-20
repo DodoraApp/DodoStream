@@ -42,10 +42,11 @@ export interface CatalogSectionProps {
   manifestUrl: string;
   catalogType: string;
   catalogId: string;
-  catalogName?: string;
   onMediaPress: (media: MetaPreview) => void;
   hasTVPreferredFocus?: boolean;
   onSectionFocused?: () => void;
+  /** Whether this section's query is allowed to fire. Defaults to true. */
+  enabled?: boolean;
 }
 
 export const CatalogSection = memo(
@@ -56,13 +57,14 @@ export const CatalogSection = memo(
     onMediaPress,
     hasTVPreferredFocus = false,
     onSectionFocused,
+    enabled = true,
   }: CatalogSectionProps) => {
     const { data, isLoading, isError, refetch } = useCatalog(
       manifestUrl,
       catalogType,
       catalogId,
       0,
-      true
+      enabled
     );
 
     const handleRetry = useCallback(() => {
@@ -70,7 +72,13 @@ export const CatalogSection = memo(
     }, [refetch]);
 
     if (isLoading) {
-      return <SectionLoadingPlaceholder sectionType="media" />;
+      return (
+        <SectionLoadingPlaceholder
+          sectionType="media"
+          onFocused={onSectionFocused}
+          hasTVPreferredFocus={hasTVPreferredFocus}
+        />
+      );
     }
 
     if (isError) {

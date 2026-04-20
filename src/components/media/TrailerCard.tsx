@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
-import { Image } from 'expo-image';
+import FastImage from '@d11/react-native-fast-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Focusable } from '@/components/basic/Focusable';
 
@@ -31,11 +31,10 @@ export const TrailerCard = memo(({ trailer, onPress, recyclingKey }: TrailerCard
           overflow="hidden"
           backgroundColor="cardBackground"
           position="relative">
-          <Image
+          <FastImage
             source={{ uri: thumbnailUrl }}
             style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-            recyclingKey={recyclingKey ?? trailer.ytId}
+            resizeMode={FastImage.resizeMode.cover}
           />
 
           {/* Play icon overlay */}

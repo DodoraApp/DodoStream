@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
-import { Image } from 'expo-image';
+import FastImage from '@d11/react-native-fast-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -49,10 +49,10 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
           backgroundColor="cardBorder"
           position="relative">
           {imageSource ? (
-            <Image
+            <FastImage
               source={imageSource}
               style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
+              resizeMode={FastImage.resizeMode.cover}
             />
           ) : null}
           <LinearGradient

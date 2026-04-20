@@ -1,13 +1,13 @@
 export interface ResetProgressToStartParams {
-    metaId: string;
-    videoId: string | undefined;
-    durationSeconds: number | undefined;
-    updateProgress: (
-        metaId: string,
-        videoId: string | undefined,
-        progressSeconds: number,
-        durationSeconds: number
-    ) => void;
+  metaId: string;
+  videoId: string | undefined;
+  durationSeconds: number | undefined;
+  updateProgress: (
+    metaId: string,
+    videoId: string | undefined,
+    progressSeconds: number,
+    durationSeconds: number
+  ) => void;
 }
 
 /**
@@ -15,11 +15,11 @@ export interface ResetProgressToStartParams {
  * Does nothing if duration is unknown.
  */
 export const resetProgressToStart = ({
-    metaId,
-    videoId,
-    durationSeconds,
-    updateProgress,
+  metaId,
+  videoId,
+  durationSeconds,
+  updateProgress,
 }: ResetProgressToStartParams) => {
-    if (!durationSeconds || durationSeconds <= 0) return;
-    updateProgress(metaId, videoId, 0, durationSeconds);
+  if (!durationSeconds || durationSeconds <= 0) return;
+  updateProgress(metaId, videoId, 0, durationSeconds);
 };

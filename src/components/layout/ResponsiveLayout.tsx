@@ -2,7 +2,7 @@ import { FC, ReactNode } from 'react';
 import { Box } from '@/theme/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { TVSidebar } from './TVSidebar';
-import { TVFocusGuideView, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 
 interface ResponsiveLayoutProps {
   children: ReactNode;
@@ -26,9 +26,6 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
         ? width * 0.5
         : undefined;
 
-  // Get the active sidebar item's node handle for focus navigation
-  // FIXME const activeSidebarNodeHandle = useSidebarFocusStore((state) => state.activeSidebarNodeHandle);
-
   if (!showSidebar) {
     // Mobile layout: just render children
     return (
@@ -39,10 +36,13 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
   }
 
   // Tablet/TV layout: sidebar + content
+  // NOTE: Content area intentionally uses a plain View instead of TVFocusGuideView.
+  // Using TVFocusGuideView with autoFocus here prevents LEFT navigation to the sidebar
+  // because the guide redirects focus back into the content area.
   return (
     <Box flex={1} flexDirection="row" backgroundColor="mainBackground">
       <TVSidebar />
-      <TVFocusGuideView autoFocus style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         <Box flex={1} alignItems="center" backgroundColor="mainBackground">
           <Box
             flex={1}
@@ -51,7 +51,7 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
             {children}
           </Box>
         </Box>
-      </TVFocusGuideView>
+      </View>
     </Box>
   );
 };

@@ -10,62 +10,62 @@ export type Breakpoint = 'mobile' | 'tablet' | 'tv';
  * @returns Current breakpoint: 'mobile' | 'tablet' | 'tv'
  */
 export function useBreakpoint(): Breakpoint {
-    const { width } = useWindowDimensions();
-    const theme = useTheme<Theme>()
+  const { width } = useWindowDimensions();
+  const theme = useTheme<Theme>();
 
-    if (width >= theme.breakpoints.tv) {
-        return 'tv';
-    }
-    if (width >= theme.breakpoints.tablet) {
-        return 'tablet';
-    }
-    return 'mobile';
+  if (width >= theme.breakpoints.tv) {
+    return 'tv';
+  }
+  if (width >= theme.breakpoints.tablet) {
+    return 'tablet';
+  }
+  return 'mobile';
 }
 
 /**
  * Hook to check if current breakpoint is at least the specified size
  */
 export function useBreakpointValue<T>(values: { mobile: T; tablet?: T; tv?: T }): T {
-    const breakpoint = useBreakpoint();
+  const breakpoint = useBreakpoint();
 
-    if (breakpoint === 'tv' && values.tv !== undefined) {
-        return values.tv;
-    }
-    if (breakpoint === 'tablet' && values.tablet !== undefined) {
-        return values.tablet;
-    }
-    return values.mobile;
+  if (breakpoint === 'tv' && values.tv !== undefined) {
+    return values.tv;
+  }
+  if (breakpoint === 'tablet' && values.tablet !== undefined) {
+    return values.tablet;
+  }
+  return values.mobile;
 }
 
 /** Split layout configuration for settings-style pages */
 export interface SplitLayoutConfig {
-    /** Whether split layout is enabled (true on tablet/TV) */
-    enabled: boolean;
-    /** Width of the left menu panel */
-    menuWidth: number;
-    /** Flex value for content area */
-    contentFlex: number;
+  /** Whether split layout is enabled (true on tablet/TV) */
+  enabled: boolean;
+  /** Width of the left menu panel */
+  menuWidth: number;
+  /** Flex value for content area */
+  contentFlex: number;
 }
 
 /** Responsive layout return type */
 export interface ResponsiveLayoutResult {
-    /** Current breakpoint */
-    breakpoint: Breakpoint;
+  /** Current breakpoint */
+  breakpoint: Breakpoint;
 
-    /** True for TV breakpoint */
-    isTV: boolean;
+  /** True for TV breakpoint */
+  isTV: boolean;
 
-    /** True for tablet or TV (wide layouts that can show split views) */
-    isWide: boolean;
+  /** True for tablet or TV (wide layouts that can show split views) */
+  isWide: boolean;
 
-    /** Current window width */
-    width: number;
+  /** Current window width */
+  width: number;
 
-    /** Whether device is a TV platform */
-    isPlatformTV: boolean;
+  /** Whether device is a TV platform */
+  isPlatformTV: boolean;
 
-    /** Split layout configuration for settings-style pages */
-    splitLayout: SplitLayoutConfig;
+  /** Split layout configuration for settings-style pages */
+  splitLayout: SplitLayoutConfig;
 }
 
 /**
@@ -88,30 +88,30 @@ export interface ResponsiveLayoutResult {
  * }
  */
 export function useResponsiveLayout(): ResponsiveLayoutResult {
-    const { width } = useWindowDimensions();
-    const breakpoint = useBreakpoint();
+  const { width } = useWindowDimensions();
+  const breakpoint = useBreakpoint();
 
-    const isTablet = breakpoint === 'tablet';
-    const isTV = breakpoint === 'tv';
-    const isWide = isTablet || isTV;
-    const isPlatformTV = Platform.isTV;
+  const isTablet = breakpoint === 'tablet';
+  const isTV = breakpoint === 'tv';
+  const isWide = isTablet || isTV;
+  const isPlatformTV = Platform.isTV;
 
-    // Split layout config
-    const splitLayout = useMemo<SplitLayoutConfig>(
-        () => ({
-            enabled: isWide,
-            menuWidth: isTV ? 320 : 280,
-            contentFlex: 1,
-        }),
-        [isWide, isTV]
-    );
+  // Split layout config
+  const splitLayout = useMemo<SplitLayoutConfig>(
+    () => ({
+      enabled: isWide,
+      menuWidth: isTV ? 320 : 280,
+      contentFlex: 1,
+    }),
+    [isWide, isTV]
+  );
 
-    return {
-        breakpoint,
-        isTV,
-        isWide,
-        width,
-        isPlatformTV,
-        splitLayout,
-    };
+  return {
+    breakpoint,
+    isTV,
+    isWide,
+    width,
+    isPlatformTV,
+    splitLayout,
+  };
 }

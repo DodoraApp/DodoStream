@@ -3,6 +3,7 @@ import { StyleSheet, Pressable, Platform, useTVEventHandler, HWEvent } from 'rea
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
@@ -409,92 +410,112 @@ RightControls.displayName = 'RightControls';
 // Main Component
 // ============================================================================
 
-export const PlayerControls: FC<PlayerControlsProps> = ({
-  paused,
-  currentTime,
-  duration,
-  showLoadingIndicator,
-  title,
-  audioTracks,
-  textTracks,
-  selectedAudioTrack,
-  selectedTextTrack,
-  subtitleDelay,
-  onSubtitleDelayChange,
-  onPlayPause,
-  onSeek,
-  onSkipBackward,
-  onSkipForward,
-  showSkipEpisode = false,
-  skipEpisodeLabel,
-  onSkipEpisode,
-  onBack,
-  onSelectAudioTrack,
-  onSelectTextTrack,
-  fitMode,
-  onToggleFitMode,
-  onVisibilityChange,
-  introData,
-  introSkipped,
-  onSkipIntro,
-}) => {
-  const theme = useTheme<Theme>();
-  const activeProfileId = useProfileStore((state) => state.activeProfileId);
-
-  const { preferredAudioLanguages, preferredSubtitleLanguages } = useProfileSettingsStore(
-    (state) => ({
-      preferredAudioLanguages: activeProfileId
-        ? state.byProfile[activeProfileId]?.preferredAudioLanguages
-        : undefined,
-      preferredSubtitleLanguages: activeProfileId
-        ? state.byProfile[activeProfileId]?.preferredSubtitleLanguages
-        : undefined,
-    })
-  );
-
-  // Modal state
-  const [showAudioTracks, setShowAudioTracks] = useState(false);
-  const [showTextTracks, setShowTextTracks] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const isModalOpen = showAudioTracks || showTextTracks || showSettingsModal;
-
-  // Track which element should receive focus when controls become visible
-  const [focusTarget, setFocusTarget] = useState<'play-pause' | 'seek' | null>(null);
-
-  const {
-    isSeeking,
-    seekTime,
-    isSeekFocused,
-    setIsSeekFocused,
-    handleSeekStart,
-    handleSeekChange,
-    handleSeekEnd,
-    setSeekTimeForDisplay,
-    resetSeekingState,
-    effectiveDuration,
-    sliderValue,
-    sliderMaximumValue,
-  } = usePlayerSeek({
+export const PlayerControls: FC<PlayerControlsProps> = memo(
+  ({
+    paused,
     currentTime,
     duration,
-    paused,
+    showLoadingIndicator,
+    title,
+    audioTracks,
+    textTracks,
+    selectedAudioTrack,
+    selectedTextTrack,
+    subtitleDelay,
+    onSubtitleDelayChange,
     onPlayPause,
     onSeek,
-  });
-
-  const { visible, registerInteraction, showControls, toggleControls } = useControlsVisibility({
-    paused,
-    isSeeking,
-    isModalOpen,
+    onSkipBackward,
+    onSkipForward,
+    showSkipEpisode = false,
+    skipEpisodeLabel,
+    onSkipEpisode,
+    onBack,
+    onSelectAudioTrack,
+    onSelectTextTrack,
+    fitMode,
+    onToggleFitMode,
     onVisibilityChange,
-  });
+    introData,
+    introSkipped,
+    onSkipIntro,
+  }) => {
+    const theme = useTheme<Theme>();
+    const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-  const showSkipIntroButton = introData && !introSkipped;
+    const { preferredAudioLanguages, preferredSubtitleLanguages } = useProfileSettingsStore(
+      useShallow((state) => ({
+        preferredAudioLanguages: activeProfileId
+          ? state.byProfile[activeProfileId]?.preferredAudioLanguages
+          : undefined,
+        preferredSubtitleLanguages: activeProfileId
+          ? state.byProfile[activeProfileId]?.preferredSubtitleLanguages
+          : undefined,
+      }))
+    );
 
-  // Listen for TV D-pad events when controls are hidden to determine focus target
-  const handleTVEvent = useCallback(
-    (event: HWEvent) => {
-      if (!visible) {
+    // Modal state
+    const [showAudioTracks, setShowAudioTracks] = useState(false);
+    const [showTextTracks, setShowTextTracks] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const isModalOpen = showAudioTracks || showTextTracks || showSettingsModal;
+
+    // Track which element should receive focus when controls become visible
+    const [focusTarget, setFocusTarget] = useState<'play-pause' | 'seek' | null>(null);
+
+    const {
+      isSeeking,
+      seekTime,
+      isSeekFocused,
+      setIsSeekFocused,
+      handleSeekStart,
+      handleSeekChange,
+      handleSeekEnd,
+      setSeekTimeForDisplay,
+      resetSeekingState,
+      effectiveDuration,
+      sliderValue,
+      sliderMaximumValue,
+    } = usePlayerSeek({
+      currentTime,
+      duration,
+      paused,
+      onPlayPause,
+      onSeek,
+    });
+
+    const { visible, registerInteraction, showControls, toggleControls } = useControlsVisibility({
+      paused,
+      isSeeking,
+      isModalOpen,
+      onVisibilityChange,
+    });
+
+    const showSkipIntroButton = introData && !introSkipped;
+
+    // Whether the Skip Intro button is actually rendered and visible right now.
+    // introData exists and current time is within the intro range.
+    // This is distinct from showSkipIntroButton, which is true whenever intro data is loaded
+    // (even when the current time is outside the intro range and SkipIntroButton returns null).
+    const isSkipIntroVisible = !!(
+      showSkipIntroButton &&
+      introData &&
+      currentTime >= introData.start_ms / 1000 &&
+      currentTime < introData.end_ms / 1000
+    );
+
+    // Refs so the TV event handler always reads fresh values without stale closures.
+    // This avoids the window between setVisible(false) (auto-hide timer) and the re-render
+    // where the old callback still captures visible=true and ignores the select press.
+    const visibleRef = useRef(visible);
+    visibleRef.current = visible;
+    const isSkipIntroVisibleRef = useRef(isSkipIntroVisible);
+    isSkipIntroVisibleRef.current = isSkipIntroVisible;
+
+    // Listen for TV D-pad events when controls are hidden to determine focus target
+    const handleTVEvent = useCallback(
+      (event: HWEvent) => {
+        if (visibleRef.current) return;
         if (event.eventType === 'up' || event.eventType === 'down') {
           setFocusTarget('play-pause');
           showControls();
@@ -502,218 +523,182 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
           setFocusTarget('seek');
           showControls();
         } else if (event.eventType === 'select') {
-          // Don't intercept select if Skip Intro button is showing - let it handle the press
-          if (!showSkipIntroButton) {
+          // Don't intercept select if Skip Intro button is actually visible - let it handle the press
+          if (!isSkipIntroVisibleRef.current) {
             setFocusTarget('play-pause');
             showControls();
           }
         }
+      },
+      [showControls]
+    );
+
+    // Enable TV event handler
+    useTVEventHandler(handleTVEvent);
+
+    // Clear focus target after controls become visible
+    useEffect(() => {
+      if (visible && focusTarget) {
+        const timer = setTimeout(() => setFocusTarget(null), 100);
+        return () => clearTimeout(timer);
       }
-    },
-    [visible, showControls, showSkipIntroButton]
-  );
+    }, [visible, focusTarget]);
 
-  // Enable TV event handler
-  useTVEventHandler(handleTVEvent);
+    // Memoized sorted audio tracks
+    const audioTrackItems = useMemo(
+      () => sortAudioTracksByPreference(audioTracks, preferredAudioLanguages),
+      [audioTracks, preferredAudioLanguages]
+    );
 
-  // Clear focus target after controls become visible
-  useEffect(() => {
-    if (visible && focusTarget) {
-      const timer = setTimeout(() => setFocusTarget(null), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [visible, focusTarget]);
-
-  // Memoized sorted audio tracks
-  const audioTrackItems = useMemo(
-    () => sortAudioTracksByPreference(audioTracks, preferredAudioLanguages),
-    [audioTracks, preferredAudioLanguages]
-  );
-
-  // Memoized seek handlers with interaction registration
-  const handleSeekStartWithInteraction = useCallback(() => {
-    registerInteraction();
-    handleSeekStart();
-  }, [registerInteraction, handleSeekStart]);
-
-  const handleSeekChangeWithInteraction = useCallback(
-    (value: number) => {
+    // Memoized seek handlers with interaction registration
+    const handleSeekStartWithInteraction = useCallback(() => {
       registerInteraction();
-      handleSeekChange(value);
-    },
-    [registerInteraction, handleSeekChange]
-  );
+      handleSeekStart();
+    }, [registerInteraction, handleSeekStart]);
 
-  const handleSeekEndWithInteraction = useCallback(
-    (value: number) => {
+    const handleSeekChangeWithInteraction = useCallback(
+      (value: number) => {
+        registerInteraction();
+        handleSeekChange(value);
+      },
+      [registerInteraction, handleSeekChange]
+    );
+
+    const handleSeekEndWithInteraction = useCallback(
+      (value: number) => {
+        registerInteraction();
+        handleSeekEnd(value);
+      },
+      [registerInteraction, handleSeekEnd]
+    );
+
+    const handleSeekFocus = useCallback(() => setIsSeekFocused(true), [setIsSeekFocused]);
+    const handleSeekBlur = useCallback(() => setIsSeekFocused(false), [setIsSeekFocused]);
+
+    // TV-specific seek handlers (for custom TVSeekBar)
+    // Track if video was playing before TV seek started
+    const wasPlayingBeforeTVSeekRef = useRef(false);
+
+    const handleTVSeekStart = useCallback(() => {
       registerInteraction();
-      handleSeekEnd(value);
-    },
-    [registerInteraction, handleSeekEnd]
-  );
-
-  const handleSeekFocus = useCallback(() => setIsSeekFocused(true), [setIsSeekFocused]);
-  const handleSeekBlur = useCallback(() => setIsSeekFocused(false), [setIsSeekFocused]);
-
-  // TV-specific seek handlers (for custom TVSeekBar)
-  // Track if video was playing before TV seek started
-  const wasPlayingBeforeTVSeekRef = useRef(false);
-
-  const handleTVSeekStart = useCallback(() => {
-    registerInteraction();
-    // Remember if we need to resume after seeking
-    wasPlayingBeforeTVSeekRef.current = !paused;
-    // Pause video during seeking if playing
-    if (!paused) {
-      onPlayPause();
-    }
-  }, [registerInteraction, paused, onPlayPause]);
-
-  const handleTVSeekComplete = useCallback(
-    (value: number) => {
-      registerInteraction();
-      onSeek(value);
-      // Reset seeking state in usePlayerSeek (so time display switches back to currentTime)
-      resetSeekingState();
-      // Resume video if it was playing before seeking
-      if (wasPlayingBeforeTVSeekRef.current) {
-        wasPlayingBeforeTVSeekRef.current = false;
+      // Remember if we need to resume after seeking
+      wasPlayingBeforeTVSeekRef.current = !paused;
+      // Pause video during seeking if playing
+      if (!paused) {
         onPlayPause();
       }
-    },
-    [registerInteraction, onSeek, resetSeekingState, onPlayPause]
-  );
+    }, [registerInteraction, paused, onPlayPause]);
 
-  // TV-specific value change handler (updates seek time for display without triggering debounce)
-  const handleTVValueChange = useCallback(
-    (value: number) => {
-      registerInteraction();
-      setSeekTimeForDisplay(value);
-    },
-    [registerInteraction, setSeekTimeForDisplay]
-  );
-
-  // Memoized button handlers
-  const handleButtonFocusChange = useCallback(() => registerInteraction(), [registerInteraction]);
-
-  const handleBack = useCallback(() => {
-    registerInteraction();
-    onBack?.();
-  }, [onBack, registerInteraction]);
-
-  const handlePlayPause = useCallback(() => {
-    registerInteraction();
-    onPlayPause();
-  }, [onPlayPause, registerInteraction]);
-
-  const handleSkipBackward = useCallback(() => {
-    registerInteraction();
-    onSkipBackward();
-  }, [onSkipBackward, registerInteraction]);
-
-  const handleSkipForward = useCallback(() => {
-    registerInteraction();
-    onSkipForward();
-  }, [onSkipForward, registerInteraction]);
-
-  const handleSkipEpisode = useCallback(() => {
-    if (!onSkipEpisode) return;
-    registerInteraction();
-    onSkipEpisode();
-  }, [onSkipEpisode, registerInteraction]);
-
-  const handleSkipIntro = useCallback(() => {
-    if (!onSkipIntro) return;
-    onSkipIntro();
-  }, [onSkipIntro]);
-
-  const handleToggleAudioTracks = useCallback(() => {
-    registerInteraction();
-    setShowAudioTracks((prev) => !prev);
-  }, [registerInteraction]);
-
-  const handleToggleTextTracks = useCallback(() => {
-    registerInteraction();
-    setShowTextTracks((prev) => !prev);
-  }, [registerInteraction]);
-
-  const handleToggleFitMode = useCallback(() => {
-    registerInteraction();
-    onToggleFitMode();
-  }, [onToggleFitMode, registerInteraction]);
-
-  const handleOpenSettings = useCallback(() => {
-    registerInteraction();
-    setShowSettingsModal(true);
-  }, [registerInteraction]);
-
-  const handleCloseSettings = useCallback(() => {
-    registerInteraction();
-    setShowSettingsModal(false);
-  }, [registerInteraction]);
-
-  const handleSelectAudioTrack = useCallback(
-    (value: string | number) => {
-      registerInteraction();
-      onSelectAudioTrack(Number(value));
-    },
-    [onSelectAudioTrack, registerInteraction]
-  );
-
-  const handleSelectTextTrack = useCallback(
-    (index?: number) => {
-      registerInteraction();
-      onSelectTextTrack(index);
-    },
-    [onSelectTextTrack, registerInteraction]
-  );
-
-  // When hidden, render minimal touchable area + skip intro button
-  if (!visible) {
-    return (
-      <>
-        <Pressable
-          testID="player-controls-invisible-area"
-          style={StyleSheet.absoluteFill}
-          onPress={showControls}
-          hasTVPreferredFocus={!showSkipIntroButton}
-        />
-        {/* Skip Intro button shown even when controls are hidden */}
-        {showSkipIntroButton && (
-          <SkipIntroButton
-            introData={introData}
-            currentTime={currentTime}
-            onSkipIntro={handleSkipIntro}
-          />
-        )}
-      </>
+    const handleTVSeekComplete = useCallback(
+      (value: number) => {
+        registerInteraction();
+        onSeek(value);
+        // Reset seeking state in usePlayerSeek (so time display switches back to currentTime)
+        resetSeekingState();
+        // Resume video if it was playing before seeking
+        if (wasPlayingBeforeTVSeekRef.current) {
+          wasPlayingBeforeTVSeekRef.current = false;
+          onPlayPause();
+        }
+      },
+      [registerInteraction, onSeek, resetSeekingState, onPlayPause]
     );
-  }
 
-  const displayedTime = isSeeking ? seekTime : currentTime;
+    // TV-specific value change handler (updates seek time for display without triggering debounce)
+    const handleTVValueChange = useCallback(
+      (value: number) => {
+        registerInteraction();
+        setSeekTimeForDisplay(value);
+      },
+      [registerInteraction, setSeekTimeForDisplay]
+    );
 
-  return (
-    <Pressable
-      testID="player-controls-overlay"
-      style={StyleSheet.absoluteFill}
-      onPress={toggleControls}>
-      <Box flex={1} justifyContent="space-between">
-        <TopBar
-          title={title}
-          onBack={handleBack}
-          onOpenSettings={handleOpenSettings}
-          currentTime={currentTime}
-          duration={duration}
-        />
+    // Memoized button handlers
+    const handleButtonFocusChange = useCallback(() => registerInteraction(), [registerInteraction]);
 
-        {showLoadingIndicator && (
-          <Box width="100%" alignItems="center" justifyContent="center">
-            <LoadingIndicator />
-          </Box>
-        )}
+    const handleBack = useCallback(() => {
+      registerInteraction();
+      onBack?.();
+    }, [onBack, registerInteraction]);
 
-        {/* Center area - contains Skip Intro button */}
-        <Box flex={1}>
+    const handlePlayPause = useCallback(() => {
+      registerInteraction();
+      onPlayPause();
+    }, [onPlayPause, registerInteraction]);
+
+    const handleSkipBackward = useCallback(() => {
+      registerInteraction();
+      onSkipBackward();
+    }, [onSkipBackward, registerInteraction]);
+
+    const handleSkipForward = useCallback(() => {
+      registerInteraction();
+      onSkipForward();
+    }, [onSkipForward, registerInteraction]);
+
+    const handleSkipEpisode = useCallback(() => {
+      if (!onSkipEpisode) return;
+      registerInteraction();
+      onSkipEpisode();
+    }, [onSkipEpisode, registerInteraction]);
+
+    const handleSkipIntro = useCallback(() => {
+      if (!onSkipIntro) return;
+      onSkipIntro();
+    }, [onSkipIntro]);
+
+    const handleToggleAudioTracks = useCallback(() => {
+      registerInteraction();
+      setShowAudioTracks((prev) => !prev);
+    }, [registerInteraction]);
+
+    const handleToggleTextTracks = useCallback(() => {
+      registerInteraction();
+      setShowTextTracks((prev) => !prev);
+    }, [registerInteraction]);
+
+    const handleToggleFitMode = useCallback(() => {
+      registerInteraction();
+      onToggleFitMode();
+    }, [onToggleFitMode, registerInteraction]);
+
+    const handleOpenSettings = useCallback(() => {
+      registerInteraction();
+      setShowSettingsModal(true);
+    }, [registerInteraction]);
+
+    const handleCloseSettings = useCallback(() => {
+      registerInteraction();
+      setShowSettingsModal(false);
+    }, [registerInteraction]);
+
+    const handleSelectAudioTrack = useCallback(
+      (value: string | number) => {
+        registerInteraction();
+        onSelectAudioTrack(Number(value));
+      },
+      [onSelectAudioTrack, registerInteraction]
+    );
+
+    const handleSelectTextTrack = useCallback(
+      (index?: number) => {
+        registerInteraction();
+        onSelectTextTrack(index);
+      },
+      [onSelectTextTrack, registerInteraction]
+    );
+
+    // When hidden, render minimal touchable area + skip intro button
+    if (!visible) {
+      return (
+        <>
+          <Pressable
+            testID="player-controls-invisible-area"
+            style={StyleSheet.absoluteFill}
+            onPress={showControls}
+            hasTVPreferredFocus={!isSkipIntroVisible}
+          />
+          {/* Skip Intro button shown even when controls are hidden */}
           {showSkipIntroButton && (
             <SkipIntroButton
               introData={introData}
@@ -721,98 +706,136 @@ export const PlayerControls: FC<PlayerControlsProps> = ({
               onSkipIntro={handleSkipIntro}
             />
           )}
-        </Box>
+        </>
+      );
+    }
 
-        {/* Bottom Controls */}
-        <Box
-          paddingHorizontal="m"
-          paddingVertical="m"
-          gap="s"
-          style={{ backgroundColor: theme.colors.semiTransparentBackground }}>
-          {/* Time Display + Seek Bar */}
-          <Box>
-            <TimeDisplay displayedTime={displayedTime} duration={duration} />
-            <SeekBar
-              sliderValue={sliderValue}
-              sliderMaximumValue={sliderMaximumValue}
-              effectiveDuration={effectiveDuration}
-              isSeekFocused={isSeekFocused}
-              onSlidingStart={handleSeekStartWithInteraction}
-              onValueChange={handleSeekChangeWithInteraction}
-              onSlidingComplete={Platform.isTV ? undefined : handleSeekEndWithInteraction}
-              onFocus={handleSeekFocus}
-              onBlur={handleSeekBlur}
-              onTVSeekStart={handleTVSeekStart}
-              onTVSeekComplete={handleTVSeekComplete}
-              onTVValueChange={handleTVValueChange}
-              hasTVPreferredFocus={focusTarget === 'seek'}
-            />
+    const displayedTime = isSeeking ? seekTime : currentTime;
+
+    return (
+      <Pressable
+        testID="player-controls-overlay"
+        style={StyleSheet.absoluteFill}
+        onPress={toggleControls}>
+        <Box flex={1} justifyContent="space-between">
+          <TopBar
+            title={title}
+            onBack={handleBack}
+            onOpenSettings={handleOpenSettings}
+            currentTime={currentTime}
+            duration={duration}
+          />
+
+          {showLoadingIndicator && (
+            <Box width="100%" alignItems="center" justifyContent="center">
+              <LoadingIndicator />
+            </Box>
+          )}
+
+          {/* Center area - contains Skip Intro button */}
+          <Box flex={1}>
+            {showSkipIntroButton && (
+              <SkipIntroButton
+                introData={introData}
+                currentTime={currentTime}
+                onSkipIntro={handleSkipIntro}
+              />
+            )}
           </Box>
 
-          {/* Control Buttons */}
-          <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-            <LeftControls
-              showSkipEpisode={showSkipEpisode}
-              skipEpisodeLabel={skipEpisodeLabel}
-              showLoadingIndicator={showLoadingIndicator}
-              onSkipEpisode={handleSkipEpisode}
-              fitMode={fitMode}
-              onToggleFitMode={handleToggleFitMode}
-              onFocusChange={handleButtonFocusChange}
-            />
+          {/* Bottom Controls */}
+          <Box
+            paddingHorizontal="m"
+            paddingVertical="m"
+            gap="s"
+            style={{ backgroundColor: theme.colors.semiTransparentBackground }}>
+            {/* Time Display + Seek Bar */}
+            <Box>
+              <TimeDisplay displayedTime={displayedTime} duration={duration} />
+              <SeekBar
+                sliderValue={sliderValue}
+                sliderMaximumValue={sliderMaximumValue}
+                effectiveDuration={effectiveDuration}
+                isSeekFocused={isSeekFocused}
+                onSlidingStart={handleSeekStartWithInteraction}
+                onValueChange={handleSeekChangeWithInteraction}
+                onSlidingComplete={Platform.isTV ? undefined : handleSeekEndWithInteraction}
+                onFocus={handleSeekFocus}
+                onBlur={handleSeekBlur}
+                onTVSeekStart={handleTVSeekStart}
+                onTVSeekComplete={handleTVSeekComplete}
+                onTVValueChange={handleTVValueChange}
+                hasTVPreferredFocus={focusTarget === 'seek'}
+              />
+            </Box>
 
-            <PlaybackControls
-              paused={paused}
-              showLoadingIndicator={showLoadingIndicator}
-              onPlayPause={handlePlayPause}
-              onSkipBackward={handleSkipBackward}
-              onSkipForward={handleSkipForward}
-              onFocusChange={handleButtonFocusChange}
-              hasTVPreferredFocus={focusTarget === 'play-pause'}
-            />
+            {/* Control Buttons */}
+            <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+              <LeftControls
+                showSkipEpisode={showSkipEpisode}
+                skipEpisodeLabel={skipEpisodeLabel}
+                showLoadingIndicator={showLoadingIndicator}
+                onSkipEpisode={handleSkipEpisode}
+                fitMode={fitMode}
+                onToggleFitMode={handleToggleFitMode}
+                onFocusChange={handleButtonFocusChange}
+              />
 
-            <RightControls
-              showLoadingIndicator={showLoadingIndicator}
-              hasTextTracks={textTracks.length > 0}
-              selectedAudioLanguage={selectedAudioTrack?.language}
-              selectedTextLanguage={selectedTextTrack?.language}
-              onToggleAudioTracks={handleToggleAudioTracks}
-              onToggleTextTracks={handleToggleTextTracks}
-              onFocusChange={handleButtonFocusChange}
-            />
+              <PlaybackControls
+                paused={paused}
+                showLoadingIndicator={showLoadingIndicator}
+                onPlayPause={handlePlayPause}
+                onSkipBackward={handleSkipBackward}
+                onSkipForward={handleSkipForward}
+                onFocusChange={handleButtonFocusChange}
+                hasTVPreferredFocus={focusTarget === 'play-pause'}
+              />
+
+              <RightControls
+                showLoadingIndicator={showLoadingIndicator}
+                hasTextTracks={textTracks.length > 0}
+                selectedAudioLanguage={selectedAudioTrack?.language}
+                selectedTextLanguage={selectedTextTrack?.language}
+                onToggleAudioTracks={handleToggleAudioTracks}
+                onToggleTextTracks={handleToggleTextTracks}
+                onFocusChange={handleButtonFocusChange}
+              />
+            </Box>
           </Box>
+
+          {/* Modals */}
+          <PickerModal
+            visible={showAudioTracks}
+            onClose={() => setShowAudioTracks(false)}
+            label="Select Audio Track"
+            icon="language"
+            items={audioTrackItems}
+            selectedValue={selectedAudioTrack?.index}
+            onValueChange={handleSelectAudioTrack}
+            getItemGroupId={(item) => item.groupId ?? null}
+            getGroupLabel={(id) => getLanguageDisplayName(id)}
+            preferredGroupIds={getPreferredLanguageCodes(preferredAudioLanguages)}
+          />
+
+          <SubtitlePickerModal
+            visible={showTextTracks}
+            onClose={() => setShowTextTracks(false)}
+            tracks={textTracks}
+            selectedTrack={selectedTextTrack}
+            onSelectTrack={handleSelectTextTrack}
+            preferredLanguages={preferredSubtitleLanguages}
+            currentTime={currentTime}
+            delay={subtitleDelay}
+            onDelayChange={onSubtitleDelayChange}
+          />
+
+          <Modal visible={showSettingsModal} onClose={handleCloseSettings} disablePadding>
+            <PlaybackSettingsContent />
+          </Modal>
         </Box>
+      </Pressable>
+    );
+  }
+);
 
-        {/* Modals */}
-        <PickerModal
-          visible={showAudioTracks}
-          onClose={() => setShowAudioTracks(false)}
-          label="Select Audio Track"
-          icon="language"
-          items={audioTrackItems}
-          selectedValue={selectedAudioTrack?.index}
-          onValueChange={handleSelectAudioTrack}
-          getItemGroupId={(item) => item.groupId ?? null}
-          getGroupLabel={(id) => getLanguageDisplayName(id)}
-          preferredGroupIds={getPreferredLanguageCodes(preferredAudioLanguages)}
-        />
-
-        <SubtitlePickerModal
-          visible={showTextTracks}
-          onClose={() => setShowTextTracks(false)}
-          tracks={textTracks}
-          selectedTrack={selectedTextTrack}
-          onSelectTrack={handleSelectTextTrack}
-          preferredLanguages={preferredSubtitleLanguages}
-          currentTime={currentTime}
-          delay={subtitleDelay}
-          onDelayChange={onSubtitleDelayChange}
-        />
-
-        <Modal visible={showSettingsModal} onClose={handleCloseSettings} disablePadding>
-          <PlaybackSettingsContent />
-        </Modal>
-      </Box>
-    </Pressable>
-  );
-};
+PlayerControls.displayName = 'PlayerControls';

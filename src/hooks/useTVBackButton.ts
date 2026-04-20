@@ -6,20 +6,20 @@ import { Platform, BackHandler } from 'react-native';
  * Calls the provided callback when back button is pressed on TV
  */
 export function useTVBackButton(onBackPress?: () => boolean | null | undefined) {
-    const onBackPressRef = useRef(onBackPress);
-    onBackPressRef.current = onBackPress;
+  const onBackPressRef = useRef(onBackPress);
+  onBackPressRef.current = onBackPress;
 
-    useEffect(() => {
-        if (!Platform.isTV) return;
+  useEffect(() => {
+    if (!Platform.isTV) return;
 
-        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-            const handled = onBackPressRef.current?.();
-            // Return true if handled, false to let default behavior occur
-            return handled ?? false;
-        });
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      const handled = onBackPressRef.current?.();
+      // Return true if handled, false to let default behavior occur
+      return handled ?? false;
+    });
 
-        return () => {
-            backHandler.remove();
-        };
-    }, []);
+    return () => {
+      backHandler.remove();
+    };
+  }, []);
 }

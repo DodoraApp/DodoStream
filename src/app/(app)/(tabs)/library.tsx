@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/basic/PageHeader';
 import { TagFilters } from '@/components/basic/TagFilters';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -100,7 +100,7 @@ interface MyListTabProps {
 const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
-  const { data = [] } = useMyList();
+  const { data = [], isLoading } = useMyList();
 
   const handlePress = useCallback(
     (id: string, type: ContentType) => {
@@ -124,6 +124,19 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
 
   const keyExtractor = useCallback((item: DbMyListItem) => `${item.type}:${item.id}`, []);
 
+  if (isLoading) {
+    return (
+      <CardListSkeleton
+        horizontal={false}
+        count={numColumns * 3}
+        cardWidth={theme.cardSizes.media.width}
+        cardHeight={theme.cardSizes.media.height}
+        numColumns={numColumns}
+        withLabel
+      />
+    );
+  }
+
   if (data.length === 0) {
     return (
       <Text variant="body" color="textSecondary">
@@ -133,7 +146,7 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   }
 
   return (
-    <FlashList
+    <LegendList
       data={data}
       numColumns={numColumns}
       keyExtractor={keyExtractor}
@@ -194,6 +207,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
         count={numColumns * 3}
         cardWidth={theme.cardSizes.media.width}
         cardHeight={theme.cardSizes.media.height}
+        numColumns={numColumns}
         withLabel
       />
     );
@@ -208,7 +222,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   }
 
   return (
-    <FlashList
+    <LegendList
       data={data}
       numColumns={numColumns}
       keyExtractor={keyExtractor}

@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -118,6 +118,45 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
   );
 });
 
+interface StreamListInnerProps {
+  streamList: Stream[];
+  isHorizontal: boolean;
+  handleSelectStream: (stream: Stream) => void;
+}
+
+const StreamListInner = memo(
+  ({ streamList, isHorizontal, handleSelectStream }: StreamListInnerProps) => {
+    const renderItem = useCallback(
+      ({ item }: { item: Stream }) => (
+        <StreamListItem stream={item} onSelect={handleSelectStream} horizontal={isHorizontal} />
+      ),
+      [handleSelectStream, isHorizontal]
+    );
+
+    const keyExtractor = useCallback(
+      (item: Stream, index: number) => `${item.addonId}-${item.infoHash}-${item.ytId}-${index}`,
+      []
+    );
+
+    return (
+      <Box gap="s">
+        <Text variant="bodySmall" color="textSecondary">
+          {streamList.length} stream(s) available
+        </Text>
+
+        <LegendList
+          data={streamList}
+          horizontal={isHorizontal}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={keyExtractor}
+          ItemSeparatorComponent={isHorizontal ? HorizontalSpacer : VerticalSpacer}
+          renderItem={renderItem}
+        />
+      </Box>
+    );
+  }
+);
+
 export const StreamList = memo(
   ({ type, id, videoId, title, backgroundImage, logoImage }: StreamListProps) => {
     const { data: streams, isLoading, isError, allResults, addons } = useStreams(type, id, videoId);
@@ -206,30 +245,11 @@ export const StreamList = memo(
           emptyMessage="No streams available for this content"
           isEmpty={(data) => haveAllAddonsFinishedLoading && data.length === 0}>
           {(streamList) => (
-            <Box gap="s">
-              <Text variant="bodySmall" color="textSecondary">
-                {streamList.length} stream(s) available
-              </Text>
-
-              <FlashList
-                data={streamList}
-                horizontal={isHorizontal}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item, index) =>
-                  `${item.addonId}-${item.infoHash}-${item.ytId}-${index}`
-                }
-                ItemSeparatorComponent={() =>
-                  isHorizontal ? <HorizontalSpacer /> : <VerticalSpacer />
-                }
-                renderItem={({ item }) => (
-                  <StreamListItem
-                    stream={item}
-                    onSelect={handleSelectStream}
-                    horizontal={isHorizontal}
-                  />
-                )}
-              />
-            </Box>
+            <StreamListInner
+              streamList={streamList}
+              isHorizontal={isHorizontal}
+              handleSelectStream={handleSelectStream}
+            />
           )}
         </LoadingQuery>
       </Box>

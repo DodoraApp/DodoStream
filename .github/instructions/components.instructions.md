@@ -28,22 +28,25 @@ Before creating a new component, check if one exists in:
 
 ---
 
-## FlashList
+## LegendList
 
-Use `@shopify/flash-list` for all scrollable lists:
+Use `@legendapp/list` (LegendList) for all scrollable lists:
 
 ```tsx
-<FlashList
+import { LegendList } from '@legendapp/list/react-native';
+
+<LegendList
   data={items}
   renderItem={({ item }) => <ItemComponent item={item} />}
   keyExtractor={(item) => item.id}
   horizontal
-/>
+/>;
 ```
 
 ### Key Points
 
-- Use `keyExtractor` for proper recycling
-- Use `useRecyclingState` for local state in list items (e.g., focus state)
-- Avoid explicit `key` props on rendered items
+- Use `keyExtractor` for proper recycling and layout caching
+- Use `getFixedItemSize` when item sizes are known (skips measuring)
+- Use `recycleItems` for lists where items have no local state
+- Wrap `renderItem` in `useCallback` with correct deps
 - For non-scrollable lists, use regular mapping instead

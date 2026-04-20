@@ -31,11 +31,7 @@ export const watchHistory = sqliteTable(
   },
   (table) => [
     unique().on(table.profileId, table.metaId, table.videoId),
-    index('profile_status_last_watched_idx').on(
-      table.profileId,
-      table.status,
-      table.lastWatchedAt
-    ),
+    index('profile_status_last_watched_idx').on(table.profileId, table.status, table.lastWatchedAt),
     index('profile_meta_idx').on(table.profileId, table.metaId),
   ]
 );
@@ -71,10 +67,7 @@ export const metaCache = sqliteTable(
     fetchedAt: integer('fetched_at').notNull(),
     expiresAt: integer('expires_at').notNull(),
   },
-  (table) => [
-    index('meta_id_idx').on(table.metaId),
-    index('expires_at_idx').on(table.expiresAt),
-  ]
+  (table) => [index('meta_id_idx').on(table.metaId), index('expires_at_idx').on(table.expiresAt)]
 );
 
 export const videos = sqliteTable(
@@ -94,11 +87,7 @@ export const videos = sqliteTable(
   (table) => [
     unique().on(table.metaId, table.videoId),
     index('video_meta_id_idx').on(table.metaId),
-    index('meta_season_episode_idx').on(
-      table.metaId,
-      table.season,
-      table.episode
-    ),
+    index('meta_season_episode_idx').on(table.metaId, table.season, table.episode),
   ]
 );
 

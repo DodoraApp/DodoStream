@@ -12,10 +12,10 @@ export const db = drizzle(sqliteDb);
 let initializationPromise: Promise<void> | null = null;
 
 export function initializeDatabase(): Promise<void> {
-    if (!initializationPromise) {
-        initializationPromise = migrate(db, migrations).then(() => {
-            debug('initialized');
-        });
-    }
-    return initializationPromise;
+  if (!initializationPromise) {
+    initializationPromise = migrate(db, migrations).then(() => {
+      debug('initialized');
+    });
+  }
+  return initializationPromise;
 }

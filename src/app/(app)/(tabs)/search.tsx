@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Container } from '@/components/basic/Container';
 import { TextInput } from 'react-native';
-import { FlashList, ListRenderItem } from '@shopify/flash-list';
+import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -175,8 +175,8 @@ function SearchResultsList({ searchResults, onMediaPress }: SearchResultsListPro
     return items;
   }, [searchResults]);
 
-  const renderItem: ListRenderItem<SearchListItem> = useCallback(
-    ({ item }) => {
+  const renderItem = useCallback(
+    ({ item }: LegendListRenderItemProps<SearchListItem>) => {
       if (item.type === 'header') {
         return <CatalogSectionHeader title={item.title} type={item.catalogType} />;
       }
@@ -187,14 +187,11 @@ function SearchResultsList({ searchResults, onMediaPress }: SearchResultsListPro
 
   const keyExtractor = useCallback((item: SearchListItem) => item.id, []);
 
-  const getItemType = useCallback((item: SearchListItem) => item.type, []);
-
   return (
-    <FlashList
+    <LegendList
       data={flattenedData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      getItemType={getItemType}
       showsVerticalScrollIndicator={false}
     />
   );

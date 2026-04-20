@@ -45,8 +45,22 @@ export const WIZARD_CONTENT_FADE_MS = 250;
 // TV Focus animation timing
 export const TV_FOCUS_ANIMATION_MS = 150;
 
-// TV FlashList configuration for smoother scrolling
+// TV LegendList configuration for smoother scrolling
 // drawDistance: Pre-render content ahead for smoother scrolling (pixels)
 // TV needs larger values because D-pad navigation can be faster than touch scrolling
-export const TV_DRAW_DISTANCE = 1500;
+export const TV_DRAW_DISTANCE = 800;
 export const MOBILE_DRAW_DISTANCE = 250;
+
+// Horizontal list draw distance — controls how many off-screen items are pre-rendered
+// in each horizontal catalog row. Lower values = fewer simultaneous images.
+export const TV_HORIZONTAL_DRAW_DISTANCE = 400;
+export const MOBILE_HORIZONTAL_DRAW_DISTANCE = 200;
+
+// Number of extra catalog rows to include in the priority batch beyond what fits on screen.
+// This ensures the row just below the fold is also pre-loaded for smooth initial scrolling.
+export const HOME_PRIORITY_BUFFER_ROWS = 1;
+
+// Debounce delay for TV home screen scroll-to-section (milliseconds).
+// Prevents rapid D-pad presses from firing multiple instant scrollToIndex calls,
+// which can move the focused item off-screen and cause focus jumps.
+export const TV_SCROLL_DEBOUNCE_MS = 150;

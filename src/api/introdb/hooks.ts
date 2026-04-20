@@ -9,15 +9,15 @@ import { useDebugLogger } from '@/utils/debug';
  * Query keys for IntroDB data
  */
 export const introDbKeys = {
-    all: ['introdb'] as const,
-    intros: () => [...introDbKeys.all, 'intros'] as const,
-    intro: (imdbId: string, season: number, episode: number) =>
-        [...introDbKeys.intros(), { imdbId, season, episode }] as const,
+  all: ['introdb'] as const,
+  intros: () => [...introDbKeys.all, 'intros'] as const,
+  intro: (imdbId: string, season: number, episode: number) =>
+    [...introDbKeys.intros(), { imdbId, season, episode }] as const,
 };
 
 interface UseIntroOptions {
-    /** Whether the query should run (default: true) */
-    enabled?: boolean;
+  /** Whether the query should run (default: true) */
+  enabled?: boolean;
 }
 
 /**
@@ -33,48 +33,48 @@ interface UseIntroOptions {
  * @returns Query result with intro data
  */
 export function useIntro(
-    metaId: string,
-    videoId: string | undefined,
-    mediaType: ContentType,
-    options: UseIntroOptions = {}
+  metaId: string,
+  videoId: string | undefined,
+  mediaType: ContentType,
+  options: UseIntroOptions = {}
 ) {
-    const debug = useDebugLogger('useIntro');
-    const { enabled = true } = options;
+  const debug = useDebugLogger('useIntro');
+  const { enabled = true } = options;
 
-    // Only fetch for series with valid IMDb IDs and parsed video IDs
-    const isSeries = mediaType === 'series';
-    const hasValidImdbId = isImdbId(metaId);
-    const parsedVideo = videoId ? parseVideoId(videoId) : undefined;
-    const canFetch = isSeries && hasValidImdbId && !!parsedVideo;
+  // Only fetch for series with valid IMDb IDs and parsed video IDs
+  const isSeries = mediaType === 'series';
+  const hasValidImdbId = isImdbId(metaId);
+  const parsedVideo = videoId ? parseVideoId(videoId) : undefined;
+  const canFetch = isSeries && hasValidImdbId && !!parsedVideo;
 
-    return useQuery<IntroData | null>({
-        queryKey: introDbKeys.intro(metaId, parsedVideo?.season ?? 0, parsedVideo?.episode ?? 0),
-        queryFn: async () => {
-            if (!parsedVideo) return null;
+  return useQuery<IntroData | null>({
+    queryKey: introDbKeys.intro(metaId, parsedVideo?.season ?? 0, parsedVideo?.episode ?? 0),
+    queryFn: async () => {
+      if (!parsedVideo) return null;
 
-            debug('fetchingIntro', {
-                metaId,
-                season: parsedVideo.season,
-                episode: parsedVideo.episode,
-            });
+      debug('fetchingIntro', {
+        metaId,
+        season: parsedVideo.season,
+        episode: parsedVideo.episode,
+      });
 
-            const result = await fetchIntro(metaId, parsedVideo.season, parsedVideo.episode);
+      const result = await fetchIntro(metaId, parsedVideo.season, parsedVideo.episode);
 
-            debug('introResult', {
-                found: !!result,
-                startMs: result?.start_ms,
-                endMs: result?.end_ms,
-                confidence: result?.confidence,
-            });
+      debug('introResult', {
+        found: !!result,
+        startMs: result?.start_ms,
+        endMs: result?.end_ms,
+        confidence: result?.confidence,
+      });
 
-            return result;
-        },
-        enabled: enabled && canFetch,
-        // Intro data is stable - cache for a long time
-        staleTime: 1000 * 60 * 60 * 24, // 24 hours
-        gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-        retry: 1,
-    });
+      return result;
+    },
+    enabled: enabled && canFetch,
+    // Intro data is stable - cache for a long time
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
 }

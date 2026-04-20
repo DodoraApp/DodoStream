@@ -1,7 +1,7 @@
 import { FC, memo, useState, useCallback } from 'react';
 import { Alert, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,6 +89,28 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
       });
     }, []);
 
+    const renderAddonItem = useCallback(
+      ({ item }: { item: InstalledAddon }) => (
+        <AddonCard
+          addon={item}
+          onRemove={handleRemove}
+          onConfigure={handleConfigure}
+          onToggleHome={toggleUseCatalogsOnHome}
+          onToggleSearch={toggleUseCatalogsInSearch}
+          onToggleSubtitles={toggleUseForSubtitles}
+        />
+      ),
+      [
+        handleRemove,
+        handleConfigure,
+        toggleUseCatalogsOnHome,
+        toggleUseCatalogsInSearch,
+        toggleUseForSubtitles,
+      ]
+    );
+
+    const keyExtractor = useCallback((item: InstalledAddon) => item.id, []);
+
     const content = (
       <Box padding="m" gap="l" flex={1}>
         {/* Install Addon Section */}
@@ -126,19 +148,10 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
                 </Text>
               </SettingsCard>
             ) : (
-              <FlashList
+              <LegendList
                 data={addons}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <AddonCard
-                    addon={item}
-                    onRemove={handleRemove}
-                    onConfigure={handleConfigure}
-                    onToggleHome={toggleUseCatalogsOnHome}
-                    onToggleSearch={toggleUseCatalogsInSearch}
-                    onToggleSubtitles={toggleUseForSubtitles}
-                  />
-                )}
+                keyExtractor={keyExtractor}
+                renderItem={renderAddonItem}
                 ItemSeparatorComponent={VerticalSpacer}
                 showsVerticalScrollIndicator={false}
               />

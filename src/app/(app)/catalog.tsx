@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from 'react';
 import { ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
 import { Container } from '@/components/basic/Container';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -184,7 +184,7 @@ export default function CatalogPage() {
     <Container disablePadding safeAreaEdges={['left', 'right', 'top']}>
       <Stack.Screen options={{ title: displayTitle }} />
       <Box flex={1} paddingHorizontal="m">
-        <FlashList
+        <LegendList
           data={allMetas}
           numColumns={numColumns}
           keyExtractor={keyExtractor}

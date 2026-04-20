@@ -1,15 +1,15 @@
 const journal = {
-	version: '7',
-	dialect: 'sqlite',
-	entries: [
-		{
-			idx: 0,
-			version: '6',
-			when: 1771357438859,
-			tag: '0000_curious_lockheed',
-			breakpoints: true,
-		},
-	],
+  version: '7',
+  dialect: 'sqlite',
+  entries: [
+    {
+      idx: 0,
+      version: '6',
+      when: 1771357438859,
+      tag: '0000_curious_lockheed',
+      breakpoints: true,
+    },
+  ],
 };
 
 const m0000 = `CREATE TABLE \`meta_cache\` (
@@ -79,8 +79,8 @@ CREATE INDEX \`profile_meta_idx\` ON \`watch_history\` (\`profile_id\`,\`meta_id
 CREATE UNIQUE INDEX \`watch_history_profile_id_meta_id_video_id_unique\` ON \`watch_history\` (\`profile_id\`,\`meta_id\`,\`video_id\`);`;
 
 export default {
-	journal,
-	migrations: {
-		m0000,
-	},
+  journal,
+  migrations: {
+    m0000,
+  },
 };

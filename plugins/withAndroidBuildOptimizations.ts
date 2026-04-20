@@ -4,88 +4,94 @@ import path from 'path';
 
 /**
  * Expo config plugin to enable Android build optimizations
- * 
+ *
  * This plugin:
  * 1. Enables separate builds per CPU architecture (reduces APK size)
  * 2. Enables ProGuard in release builds (code optimization and obfuscation)
  */
 const withAndroidBuildOptimizations: ConfigPlugin = (config) => {
-    return withDangerousMod(config, [
-        'android',
-        async (config) => {
-            const androidRoot = config.modRequest.platformProjectRoot;
-            const buildGradlePath = path.join(androidRoot, 'app', 'build.gradle');
+  return withDangerousMod(config, [
+    'android',
+    async (config) => {
+      const androidRoot = config.modRequest.platformProjectRoot;
+      const buildGradlePath = path.join(androidRoot, 'app', 'build.gradle');
 
-            if (!fs.existsSync(buildGradlePath)) {
-                console.warn('⚠️  build.gradle not found at:', buildGradlePath);
-                return config;
-            }
+      if (!fs.existsSync(buildGradlePath)) {
+        console.warn('⚠️  build.gradle not found at:', buildGradlePath);
+        return config;
+      }
 
-            let buildGradleContent = fs.readFileSync(buildGradlePath, 'utf8');
-            let modified = false;
+      let buildGradleContent = fs.readFileSync(buildGradlePath, 'utf8');
+      let modified = false;
 
-            // Step 1: Add enableSeparateBuildPerCPUArchitecture definition
-            const separateBuildDef = 'def enableSeparateBuildPerCPUArchitecture = true';
+      // Step 1: Add enableSeparateBuildPerCPUArchitecture definition
+      const separateBuildDef = 'def enableSeparateBuildPerCPUArchitecture = true';
 
-            if (!buildGradleContent.includes('enableSeparateBuildPerCPUArchitecture')) {
-                // Find the position after enableMinifyInReleaseBuilds definition
-                const minifyDefRegex = /def enableMinifyInReleaseBuilds = .*\n/;
-                const match = buildGradleContent.match(minifyDefRegex);
+      if (!buildGradleContent.includes('enableSeparateBuildPerCPUArchitecture')) {
+        // Find the position after enableMinifyInReleaseBuilds definition
+        const minifyDefRegex = /def enableMinifyInReleaseBuilds = .*\n/;
+        const match = buildGradleContent.match(minifyDefRegex);
 
-                if (match && match.index !== undefined) {
-                    const insertPosition = match.index + match[0].length;
-                    buildGradleContent =
-                        buildGradleContent.slice(0, insertPosition) +
-                        `${separateBuildDef}\n` +
-                        buildGradleContent.slice(insertPosition);
+        if (match && match.index !== undefined) {
+          const insertPosition = match.index + match[0].length;
+          buildGradleContent =
+            buildGradleContent.slice(0, insertPosition) +
+            `${separateBuildDef}\n` +
+            buildGradleContent.slice(insertPosition);
 
-                    console.log('✅ Added enableSeparateBuildPerCPUArchitecture = true');
-                    modified = true;
-                } else {
-                    console.warn('⚠️  Could not find enableMinifyInReleaseBuilds definition');
-                }
-            } else {
-                console.log('ℹ️  enableSeparateBuildPerCPUArchitecture already defined');
-            }
+          console.log('✅ Added enableSeparateBuildPerCPUArchitecture = true');
+          modified = true;
+        } else {
+          console.warn('⚠️  Could not find enableMinifyInReleaseBuilds definition');
+        }
+      } else {
+        console.log('ℹ️  enableSeparateBuildPerCPUArchitecture already defined');
+      }
 
-            // Step 2: Add enableProguardInReleaseBuilds definition
-            const proguardDef = 'def enableProguardInReleaseBuilds = true';
+      // Step 2: Add enableProguardInReleaseBuilds definition
+      const proguardDef = 'def enableProguardInReleaseBuilds = true';
 
-            if (!buildGradleContent.includes('enableProguardInReleaseBuilds')) {
-                // Find the position after enableSeparateBuildPerCPUArchitecture or enableMinifyInReleaseBuilds
-                const targetRegex = /def enable(SeparateBuildPerCPUArchitecture|MinifyInReleaseBuilds) = .*\n/g;
-                let lastMatch;
-                let match;
+      if (!buildGradleContent.includes('enableProguardInReleaseBuilds')) {
+        // Find the position after enableSeparateBuildPerCPUArchitecture or enableMinifyInReleaseBuilds
+        const targetRegex =
+          /def enable(SeparateBuildPerCPUArchitecture|MinifyInReleaseBuilds) = .*\n/g;
+        let lastMatch;
+        let match;
 
-                while ((match = targetRegex.exec(buildGradleContent)) !== null) {
-                    lastMatch = match;
-                }
+        while ((match = targetRegex.exec(buildGradleContent)) !== null) {
+          lastMatch = match;
+        }
 
-                if (lastMatch && lastMatch.index !== undefined) {
-                    const insertPosition = lastMatch.index + lastMatch[0].length;
-                    buildGradleContent =
-                        buildGradleContent.slice(0, insertPosition) +
-                        `${proguardDef}\n` +
-                        buildGradleContent.slice(insertPosition);
+        if (lastMatch && lastMatch.index !== undefined) {
+          const insertPosition = lastMatch.index + lastMatch[0].length;
+          buildGradleContent =
+            buildGradleContent.slice(0, insertPosition) +
+            `${proguardDef}\n` +
+            buildGradleContent.slice(insertPosition);
 
-                    console.log('✅ Added enableProguardInReleaseBuilds = true');
-                    modified = true;
-                } else {
-                    console.warn('⚠️  Could not find suitable insertion point for enableProguardInReleaseBuilds');
-                }
-            } else {
-                console.log('ℹ️  enableProguardInReleaseBuilds already defined');
-            }
+          console.log('✅ Added enableProguardInReleaseBuilds = true');
+          modified = true;
+        } else {
+          console.warn(
+            '⚠️  Could not find suitable insertion point for enableProguardInReleaseBuilds'
+          );
+        }
+      } else {
+        console.log('ℹ️  enableProguardInReleaseBuilds already defined');
+      }
 
-            // Step 3: Add splits block in android.buildTypes.release if enableSeparateBuildPerCPUArchitecture is enabled
-            if (!buildGradleContent.includes('splits {') && buildGradleContent.includes('enableSeparateBuildPerCPUArchitecture')) {
-                // Find the android block and add splits configuration
-                const androidBlockRegex = /android\s*\{/;
-                const androidMatch = buildGradleContent.match(androidBlockRegex);
+      // Step 3: Add splits block in android.buildTypes.release if enableSeparateBuildPerCPUArchitecture is enabled
+      if (
+        !buildGradleContent.includes('splits {') &&
+        buildGradleContent.includes('enableSeparateBuildPerCPUArchitecture')
+      ) {
+        // Find the android block and add splits configuration
+        const androidBlockRegex = /android\s*\{/;
+        const androidMatch = buildGradleContent.match(androidBlockRegex);
 
-                if (androidMatch && androidMatch.index !== undefined) {
-                    const insertPosition = androidMatch.index + androidMatch[0].length;
-                    const splitsBlock = `
+        if (androidMatch && androidMatch.index !== undefined) {
+          const insertPosition = androidMatch.index + androidMatch[0].length;
+          const splitsBlock = `
     splits {
         abi {
             reset()
@@ -96,23 +102,50 @@ const withAndroidBuildOptimizations: ConfigPlugin = (config) => {
     }
 `;
 
-                    buildGradleContent =
-                        buildGradleContent.slice(0, insertPosition) +
-                        splitsBlock +
-                        buildGradleContent.slice(insertPosition);
+          buildGradleContent =
+            buildGradleContent.slice(0, insertPosition) +
+            splitsBlock +
+            buildGradleContent.slice(insertPosition);
 
-                    console.log('✅ Added splits configuration for CPU architectures');
-                    modified = true;
-                }
-            }
+          console.log('✅ Added splits configuration for CPU architectures');
+          modified = true;
+        }
+      }
 
-            if (modified) {
-                fs.writeFileSync(buildGradlePath, buildGradleContent, 'utf8');
-            }
+      if (modified) {
+        fs.writeFileSync(buildGradlePath, buildGradleContent, 'utf8');
+      }
 
-            return config;
-        },
-    ]);
+      // Fix duplicate androidsvg classes: substitute the JAR with the AAR variant globally.
+      // com.caverock:androidsvg (JAR) and com.caverock:androidsvg-aar (AAR) contain identical
+      // classes. A simple exclude breaks fast-image's compilation, so we substitute instead so
+      // every dependency that asks for the JAR transparently receives the AAR.
+      const rootBuildGradlePath = path.join(androidRoot, 'build.gradle');
+      if (fs.existsSync(rootBuildGradlePath)) {
+        let rootBuildGradle = fs.readFileSync(rootBuildGradlePath, 'utf8');
+        const substituteSnippet =
+          `  configurations.all {\n` +
+          `    resolutionStrategy.dependencySubstitution {\n` +
+          `      substitute module('com.caverock:androidsvg') using module('com.caverock:androidsvg-aar:1.4')\n` +
+          `    }\n` +
+          `  }`;
+
+        if (!rootBuildGradle.includes('com.caverock:androidsvg-aar')) {
+          // Insert inside allprojects block
+          rootBuildGradle = rootBuildGradle.replace(
+            /allprojects\s*\{/,
+            `allprojects {\n${substituteSnippet}`
+          );
+          fs.writeFileSync(rootBuildGradlePath, rootBuildGradle, 'utf8');
+          console.log('✅ Added androidsvg JAR → AAR substitution to root build.gradle');
+        } else {
+          console.log('ℹ️  androidsvg substitution already present in root build.gradle');
+        }
+      }
+
+      return config;
+    },
+  ]);
 };
 
 export default withAndroidBuildOptimizations;
