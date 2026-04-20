@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useState, useRef, RefObject, useMemo } from 'react';
+import { FC, ReactNode, useCallback, useState, useRef, RefObject, useMemo, useEffect } from 'react';
 import {
   Pressable,
   PressableProps,
@@ -9,8 +9,16 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTheme } from '@shopify/restyle';
-import { useRecyclingState } from '@shopify/flash-list';
 import { Theme } from '@/theme/theme';
+
+/**
+ * react-native-tvos extends PressableStateCallbackType with `focused`,
+ * but the upstream @types/react-native doesn't include it.
+ */
+interface TVPressableState {
+  pressed: boolean;
+  focused: boolean;
+}
 
 export interface FocusableProps extends Omit<PressableProps, 'children' | 'style'> {
   children: ReactNode | ((params: { isFocused: boolean }) => ReactNode);
@@ -36,9 +44,9 @@ export interface FocusableProps extends Omit<PressableProps, 'children' | 'style
   onFocusChange?: (isFocused: boolean) => void;
   onRef?: (ref: View | null) => void;
 
-  // === FLASHLIST SUPPORT ===
+  // === LIST RECYCLING SUPPORT ===
   /**
-   * When used inside a FlashList item, provide a stable key to avoid focus-state
+   * When used inside a recycled list item, provide a stable key to avoid focus-state
    * leaking due to cell recycling.
    */
   recyclingKey?: string | number;
@@ -110,12 +118,14 @@ function computeFocusStyle(
 }
 
 /**
- * A wrapper component for TV focus handling with smooth Reanimated animations.
+ * A wrapper component for TV focus handling.
  * Provides consistent focus styling across the app using Pressable.
  *
  * PERFORMANCE OPTIMIZATION:
- * - When children is NOT a function: no re-renders on focus change (focus styling handled via animated styles)
+ * - When children is NOT a function: zero re-renders on focus change.
+ *   Focus styling is handled via Pressable's native style function ({focused}) => style.
  * - When children IS a function: re-renders only when isFocused changes
+ *   (uses useState to provide isFocused to the render function).
  *
  * FOCUS STYLING GUIDELINES:
  * - variant="outline": Adds outline border when focused (for MediaCard, ContinueWatchingCard)
@@ -123,18 +133,10 @@ function computeFocusStyle(
  * - variant="none": No automatic focus styling (use render function for custom handling)
  *
  * @example
- * // Simple usage - no re-renders, focus handled automatically
+ * // Simple usage - no re-renders, focus handled natively by Pressable
  * <Focusable variant="background" onPress={handlePress}>
  *   <Box padding="m">
  *     <Text>Card Content</Text>
- *   </Box>
- * </Focusable>
- *
- * @example
- * // Outline focus for MediaCard (no re-renders)
- * <Focusable variant="outline" withScale onPress={handlePress}>
- *   <Box borderRadius="l" overflow="hidden">
- *     <Image source={posterSource} />
  *   </Box>
  * </Focusable>
  *
@@ -171,19 +173,22 @@ export const Focusable: FC<FocusableProps> = ({
 }) => {
   const theme = useTheme<Theme>();
   const isTV = Platform.isTV;
-  // const debug = useDebugLogger('Focusable');
 
   // Internal ref for the pressable element
   const innerRef = useRef<View>(null);
 
-  // Determine if we need to trigger re-renders on focus change
-  // Only re-render if children is a function (needs isFocused for rendering)
+  // Only use React state when children is a render function that needs isFocused
   const isRenderFunction = typeof children === 'function';
 
+  // State is only used for render-function children path
   const [standardIsFocused, setStandardIsFocused] = useState(false);
-  const [recyclingIsFocused, setRecyclingIsFocused] = useRecyclingState(false, [recyclingKey]);
+  const [recyclingIsFocused, setRecyclingIsFocused] = useState(false);
 
-  // Read the correct state based on recyclingKey
+  // Reset focus state when recyclingKey changes (item recycled in list)
+  useEffect(() => {
+    setRecyclingIsFocused(false);
+  }, [recyclingKey]);
+
   const isFocused = recyclingKey !== undefined ? recyclingIsFocused : standardIsFocused;
 
   // Memoize TV props to avoid recalculation on every render
@@ -192,37 +197,43 @@ export const Focusable: FC<FocusableProps> = ({
     [isTV, nextFocusUpId, nextFocusDownId, nextFocusLeftId, nextFocusRightId]
   );
 
-  // Memoize focus style calculation
-  const currentFocusStyle = useMemo(
-    () => computeFocusStyle(isFocused, variant, theme, focusedStyle),
-    [isFocused, variant, theme, focusedStyle]
-  );
-
   // Ref callback to capture node handle and forward ref
   const refCallback = useCallback(
     (node: View | null) => {
       onRef?.(node);
       innerRef.current = node;
-      // FIXME not working
-      // if (viewRef) {
-      // viewRef.current = node;
-      // }
     },
     [onRef]
   );
 
+  // Pre-compute the focus style for the variant (stable between renders)
+  const focusStyle = useMemo(
+    () => computeFocusStyle(true, variant, theme, focusedStyle),
+    [variant, theme, focusedStyle]
+  );
+
+  // Flatten the style prop to a static ViewStyle
+  const flatStyle = useMemo(() => {
+    if (!style) return undefined;
+    return StyleSheet.flatten(style as ViewStyle);
+  }, [style]);
+
+  // For non-render-function children: use Pressable's native style function.
+  // This avoids React state updates and re-renders on focus/blur entirely.
+  const nativeStyleFn = useMemo(() => {
+    if (isRenderFunction) return undefined;
+    return (state: TVPressableState) => {
+      const styles: ViewStyle[] = [];
+      if (flatStyle) styles.push(flatStyle);
+      if (state.focused && focusStyle) styles.push(focusStyle);
+      return styles;
+    };
+  }, [isRenderFunction, flatStyle, focusStyle]);
+
   const handleFocus = useCallback(
     (e: Parameters<NonNullable<PressableProps['onFocus']>>[0]) => {
-      // debug('onFocus', {
-      //   recyclingKey,
-      //   withScale,
-      //   variant,
-      //   isRenderFunction,
-      // });
-
-      // Only trigger state update if children is a render function OR we need focus styling
-      // For non-function children with variant styling, we still need state to apply focus styles
-      if (isRenderFunction || variant !== 'none') {
+      // Only trigger React state update for render-function children
+      if (isRenderFunction) {
         setStandardIsFocused(true);
         setRecyclingIsFocused(true);
       }
@@ -230,20 +241,13 @@ export const Focusable: FC<FocusableProps> = ({
       onFocusChange?.(true);
       onFocus?.(e);
     },
-    [isRenderFunction, variant, setStandardIsFocused, setRecyclingIsFocused, onFocusChange, onFocus]
+    [isRenderFunction, onFocusChange, onFocus]
   );
 
   const handleBlur = useCallback(
     (e: Parameters<NonNullable<PressableProps['onBlur']>>[0]) => {
-      // debug('onBlur', {
-      //   recyclingKey,
-      //   withScale,
-      //   variant,
-      //   isRenderFunction,
-      // });
-
-      // Only trigger state update if children is a render function OR we need focus styling
-      if (isRenderFunction || variant !== 'none') {
+      // Only trigger React state update for render-function children
+      if (isRenderFunction) {
         setStandardIsFocused(false);
         setRecyclingIsFocused(false);
       }
@@ -251,21 +255,20 @@ export const Focusable: FC<FocusableProps> = ({
       onFocusChange?.(false);
       onBlur?.(e);
     },
-    [isRenderFunction, variant, setStandardIsFocused, setRecyclingIsFocused, onFocusChange, onBlur]
+    [isRenderFunction, onFocusChange, onBlur]
   );
 
-  // Flatten the style prop to a static ViewStyle (Pressable's style can be a function but we use focusedStyle for focus-based styling)
-  const flatStyle = useMemo(() => {
-    if (!style) return undefined;
-    return StyleSheet.flatten(style as ViewStyle);
-  }, [style]);
+  // For render-function children: compute style with current isFocused state
+  const renderFnStyle = isRenderFunction
+    ? [flatStyle, isFocused ? focusStyle : undefined]
+    : undefined;
 
   return (
     <Pressable
       ref={refCallback}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      style={[flatStyle, currentFocusStyle]}
+      style={(nativeStyleFn ?? renderFnStyle) as PressableProps['style']}
       {...tvProps}
       {...props}>
       {isRenderFunction ? children({ isFocused }) : children}

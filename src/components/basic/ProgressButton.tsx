@@ -76,7 +76,13 @@ export const ProgressButton = ({
           </View>
 
           {/* Content layer */}
-          {icon && <Ionicons name={icon} size={theme.sizes.iconMedium} color={theme.colors.primaryForeground} />}
+          {icon && (
+            <Ionicons
+              name={icon}
+              size={theme.sizes.iconMedium}
+              color={theme.colors.primaryForeground}
+            />
+          )}
           <Text variant="button" color="primaryForeground">
             {title}
           </Text>

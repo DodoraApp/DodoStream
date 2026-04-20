@@ -1,5 +1,5 @@
 import { FC, useCallback, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { Box, Text } from '@/theme/theme';
 import { MetaVideo } from '@/types/stremio';
 import { PickerInput } from '@/components/basic/PickerInput';
@@ -92,6 +92,29 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
     setUserSelectedSeason(value);
   }, []);
 
+  const handleEpisodePress = useCallback(
+    (video: MetaVideo) => {
+      onEpisodePress(video);
+    },
+    [onEpisodePress]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: MetaVideo }) => (
+      <EpisodeItem
+        metaId={metaId}
+        video={item}
+        onPress={() => handleEpisodePress(item)}
+        horizontal={isHorizontal}
+      />
+    ),
+    [metaId, handleEpisodePress, isHorizontal]
+  );
+
+  const keyExtractor = useCallback((item: MetaVideo) => item.id, []);
+
+  const Separator = isHorizontal ? HorizontalSpacer : VerticalSpacer;
+
   if (seasons.length === 0) {
     return null;
   }
@@ -118,21 +141,14 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
       </FadeIn>
 
       <FadeIn>
-        <FlashList<MetaVideo>
+        <LegendList<MetaVideo>
           data={selectedSeasonEpisodes}
           horizontal={isHorizontal}
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={initialScrollIndex}
-          renderItem={({ item }) => (
-            <EpisodeItem
-              metaId={metaId}
-              video={item}
-              onPress={() => onEpisodePress(item)}
-              horizontal={isHorizontal}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => (isHorizontal ? <HorizontalSpacer /> : <VerticalSpacer />)}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          ItemSeparatorComponent={Separator}
         />
       </FadeIn>
     </Box>

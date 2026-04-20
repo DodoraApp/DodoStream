@@ -1,0 +1,240 @@
+diff --git a/react-native.js b/react-native.js
+index 7441a76b34c875d4fe64eef73c82f296b51cdd93..0a08d49b77a9bd9d5d39e1e0db55eac71e2c00e4 100644
+--- a/react-native.js
++++ b/react-native.js
+@@ -250,6 +250,7 @@ var ENABLE_DEBUG_VIEW = IS_DEV && false;
+ // src/constants-platform.native.ts
+ var f = global.nativeFabricUIManager;
+ var IsNewArchitecture = f !== void 0 && f != null;
++var IsAndroidTV = ReactNative.Platform.OS === "android" && ReactNative.Platform.isTV;
+ var useAnimatedValue = (initialValue) => {
+   const [animAnimatedValue] = React2.useState(() => new ReactNative.Animated.Value(initialValue));
+   return animAnimatedValue;
+@@ -354,6 +355,16 @@ var getComponent = (Component) => {
+ };
+ 
+ // src/components/PositionView.native.tsx
++var useLayoutPosition = IsAndroidTV || (ReactNative.Platform.OS !== "ios" && ReactNative.Platform.OS !== "android");
++function getPositionStyle(value, horizontal) {
++  if (useLayoutPosition) {
++    if (value <= POSITION_OUT_OF_VIEW) {
++      return horizontal ? { transform: [{ translateX: value }] } : { transform: [{ translateY: value }] };
++    }
++    return horizontal ? { left: value } : { top: value };
++  }
++  return horizontal ? { transform: [{ translateX: value }] } : { transform: [{ translateY: value }] };
++}
+ var PositionViewState = typedMemo(function PositionViewState2({
+   id,
+   horizontal,
+@@ -368,7 +379,7 @@ var PositionViewState = typedMemo(function PositionViewState2({
+       ref: refView,
+       style: [
+         style,
+-        horizontal ? { transform: [{ translateX: position }] } : { transform: [{ translateY: position }] }
++        getPositionStyle(position, horizontal)
+       ],
+       ...rest
+     }
+@@ -384,13 +395,7 @@ var PositionViewAnimated = typedMemo(function PositionViewAnimated2({
+   const position$ = useValue$(`containerPosition${id}`, {
+     getValue: (v) => v != null ? v : POSITION_OUT_OF_VIEW
+   });
+-  let position;
+-  if (ReactNative.Platform.OS === "ios" || ReactNative.Platform.OS === "android") {
+-    position = horizontal ? { transform: [{ translateX: position$ }] } : { transform: [{ translateY: position$ }] };
+-  } else {
+-    position = horizontal ? { left: position$ } : { top: position$ };
+-  }
+-  return /* @__PURE__ */ React2__namespace.createElement(ReactNative.Animated.View, { ref: refView, style: [style, position], ...rest });
++  return /* @__PURE__ */ React2__namespace.createElement(ReactNative.Animated.View, { ref: refView, style: [style, getPositionStyle(position$, horizontal)], ...rest });
+ });
+ var PositionViewSticky = typedMemo(function PositionViewSticky2({
+   id,
+@@ -408,21 +413,21 @@ var PositionViewSticky = typedMemo(function PositionViewSticky2({
+     "headerSize",
+     "stylePaddingTop"
+   ]);
+-  const transform = React2__namespace.useMemo(() => {
++  const stickyPosition = React2__namespace.useMemo(() => {
+     var _a3;
+     if (animatedScrollY) {
+       const stickyConfigOffset = (_a3 = stickyHeaderConfig == null ? void 0 : stickyHeaderConfig.offset) != null ? _a3 : 0;
+       const stickyStart = position + headerSize + stylePaddingTop - stickyConfigOffset;
+-      const stickyPosition = animatedScrollY.interpolate({
++      return animatedScrollY.interpolate({
+         extrapolateLeft: "clamp",
+         extrapolateRight: "extend",
+         inputRange: [stickyStart, stickyStart + 5e3],
+         outputRange: [position, position + 5e3]
+       });
+-      return horizontal ? [{ translateX: stickyPosition }] : [{ translateY: stickyPosition }];
+     }
+   }, [animatedScrollY, headerSize, horizontal, position, stylePaddingTop, stickyHeaderConfig == null ? void 0 : stickyHeaderConfig.offset]);
+-  const viewStyle = React2__namespace.useMemo(() => [style, { zIndex: index + 1e3 }, { transform }], [style, transform]);
++  const positionStyle = React2__namespace.useMemo(() => stickyPosition ? getPositionStyle(stickyPosition, horizontal) : undefined, [stickyPosition, horizontal]);
++  const viewStyle = React2__namespace.useMemo(() => [style, { zIndex: index + 1e3 }, positionStyle], [style, positionStyle]);
+   const renderStickyHeaderBackdrop = React2__namespace.useMemo(() => {
+     if (!(stickyHeaderConfig == null ? void 0 : stickyHeaderConfig.backdropComponent)) {
+       return null;
+@@ -782,7 +787,8 @@ var Container = typedMemo2(function Container2({
+   const { onLayout } = useOnLayoutSync(
+     {
+       onLayoutChange,
+-      ref},
++      ref
++    },
+     [itemKey, layoutRenderCount]
+   );
+   if (!IsNewArchitecture) {
+@@ -852,18 +858,18 @@ var Containers = typedMemo(function Containers2({
+   for (let i = 0; i < numContainers; i++) {
+     containers.push(
+       /* @__PURE__ */ React2__namespace.createElement(
+-        Container,
+-        {
+-          getRenderedItem: getRenderedItem2,
+-          horizontal,
+-          ItemSeparatorComponent,
+-          id: i,
+-          key: i,
+-          recycleItems,
+-          stickyHeaderConfig,
+-          updateItemSize: updateItemSize2
+-        }
+-      )
++      Container,
++      {
++        getRenderedItem: getRenderedItem2,
++        horizontal,
++        ItemSeparatorComponent,
++        id: i,
++        key: i,
++        recycleItems,
++        stickyHeaderConfig,
++        updateItemSize: updateItemSize2
++      }
++    )
+     );
+   }
+   const style = horizontal ? { minHeight: otherAxisSize, opacity: animOpacity, width: animSize } : { height: animSize, minWidth: otherAxisSize, opacity: animOpacity };
+diff --git a/react-native.mjs b/react-native.mjs
+index e35a084eea213e14b9181f2fa8c842a719f2fb4d..f99187fd2d368756adb67388a7455f6450e5da60 100644
+--- a/react-native.mjs
++++ b/react-native.mjs
+@@ -229,6 +229,7 @@ var ENABLE_DEBUG_VIEW = IS_DEV && false;
+ // src/constants-platform.native.ts
+ var f = global.nativeFabricUIManager;
+ var IsNewArchitecture = f !== void 0 && f != null;
++var IsAndroidTV = Platform.OS === "android" && Platform.isTV;
+ var useAnimatedValue = (initialValue) => {
+   const [animAnimatedValue] = useState(() => new Animated.Value(initialValue));
+   return animAnimatedValue;
+@@ -333,6 +334,16 @@ var getComponent = (Component) => {
+ };
+ 
+ // src/components/PositionView.native.tsx
++var useLayoutPosition = IsAndroidTV || (Platform.OS !== "ios" && Platform.OS !== "android");
++function getPositionStyle(value, horizontal) {
++  if (useLayoutPosition) {
++    if (value <= POSITION_OUT_OF_VIEW) {
++      return horizontal ? { transform: [{ translateX: value }] } : { transform: [{ translateY: value }] };
++    }
++    return horizontal ? { left: value } : { top: value };
++  }
++  return horizontal ? { transform: [{ translateX: value }] } : { transform: [{ translateY: value }] };
++}
+ var PositionViewState = typedMemo(function PositionViewState2({
+   id,
+   horizontal,
+@@ -347,7 +358,7 @@ var PositionViewState = typedMemo(function PositionViewState2({
+       ref: refView,
+       style: [
+         style,
+-        horizontal ? { transform: [{ translateX: position }] } : { transform: [{ translateY: position }] }
++        getPositionStyle(position, horizontal)
+       ],
+       ...rest
+     }
+@@ -363,13 +374,7 @@ var PositionViewAnimated = typedMemo(function PositionViewAnimated2({
+   const position$ = useValue$(`containerPosition${id}`, {
+     getValue: (v) => v != null ? v : POSITION_OUT_OF_VIEW
+   });
+-  let position;
+-  if (Platform.OS === "ios" || Platform.OS === "android") {
+-    position = horizontal ? { transform: [{ translateX: position$ }] } : { transform: [{ translateY: position$ }] };
+-  } else {
+-    position = horizontal ? { left: position$ } : { top: position$ };
+-  }
+-  return /* @__PURE__ */ React2.createElement(Animated.View, { ref: refView, style: [style, position], ...rest });
++  return /* @__PURE__ */ React2.createElement(Animated.View, { ref: refView, style: [style, getPositionStyle(position$, horizontal)], ...rest });
+ });
+ var PositionViewSticky = typedMemo(function PositionViewSticky2({
+   id,
+@@ -387,21 +392,21 @@ var PositionViewSticky = typedMemo(function PositionViewSticky2({
+     "headerSize",
+     "stylePaddingTop"
+   ]);
+-  const transform = React2.useMemo(() => {
++  const stickyPosition = React2.useMemo(() => {
+     var _a3;
+     if (animatedScrollY) {
+       const stickyConfigOffset = (_a3 = stickyHeaderConfig == null ? void 0 : stickyHeaderConfig.offset) != null ? _a3 : 0;
+       const stickyStart = position + headerSize + stylePaddingTop - stickyConfigOffset;
+-      const stickyPosition = animatedScrollY.interpolate({
++      return animatedScrollY.interpolate({
+         extrapolateLeft: "clamp",
+         extrapolateRight: "extend",
+         inputRange: [stickyStart, stickyStart + 5e3],
+         outputRange: [position, position + 5e3]
+       });
+-      return horizontal ? [{ translateX: stickyPosition }] : [{ translateY: stickyPosition }];
+     }
+   }, [animatedScrollY, headerSize, horizontal, position, stylePaddingTop, stickyHeaderConfig == null ? void 0 : stickyHeaderConfig.offset]);
+-  const viewStyle = React2.useMemo(() => [style, { zIndex: index + 1e3 }, { transform }], [style, transform]);
++  const positionStyle = React2.useMemo(() => stickyPosition ? getPositionStyle(stickyPosition, horizontal) : undefined, [stickyPosition, horizontal]);
++  const viewStyle = React2.useMemo(() => [style, { zIndex: index + 1e3 }, positionStyle], [style, positionStyle]);
+   const renderStickyHeaderBackdrop = React2.useMemo(() => {
+     if (!(stickyHeaderConfig == null ? void 0 : stickyHeaderConfig.backdropComponent)) {
+       return null;
+@@ -761,7 +766,8 @@ var Container = typedMemo2(function Container2({
+   const { onLayout } = useOnLayoutSync(
+     {
+       onLayoutChange,
+-      ref},
++      ref
++    },
+     [itemKey, layoutRenderCount]
+   );
+   if (!IsNewArchitecture) {
+@@ -831,18 +837,18 @@ var Containers = typedMemo(function Containers2({
+   for (let i = 0; i < numContainers; i++) {
+     containers.push(
+       /* @__PURE__ */ React2.createElement(
+-        Container,
+-        {
+-          getRenderedItem: getRenderedItem2,
+-          horizontal,
+-          ItemSeparatorComponent,
+-          id: i,
+-          key: i,
+-          recycleItems,
+-          stickyHeaderConfig,
+-          updateItemSize: updateItemSize2
+-        }
+-      )
++      Container,
++      {
++        getRenderedItem: getRenderedItem2,
++        horizontal,
++        ItemSeparatorComponent,
++        id: i,
++        key: i,
++        recycleItems,
++        stickyHeaderConfig,
++        updateItemSize: updateItemSize2
++      }
++    )
+     );
+   }
+   const style = horizontal ? { minHeight: otherAxisSize, opacity: animOpacity, width: animSize } : { height: animSize, minWidth: otherAxisSize, opacity: animOpacity };

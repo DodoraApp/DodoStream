@@ -13,7 +13,10 @@ interface SectionPlaceholderBaseProps {
   sectionType?: SectionType;
 }
 
-type SectionLoadingPlaceholderProps = SectionPlaceholderBaseProps;
+interface SectionLoadingPlaceholderProps extends SectionPlaceholderBaseProps {
+  onFocused?: () => void;
+  hasTVPreferredFocus?: boolean;
+}
 
 const SectionPlaceholder = memo(
   ({ sectionType = 'media', children }: PropsWithChildren<SectionPlaceholderBaseProps>) => {
@@ -34,18 +37,26 @@ const SectionPlaceholder = memo(
 
 /**
  * A focusable loading placeholder for catalog sections.
- * Uses a single animated view instead of multiple skeleton cards for better performance.
- * Maintains focus during loading to prevent focus from escaping to sidebar.
+ * Focusable so TV focus can land here instead of escaping to the sidebar.
  */
-export const SectionLoadingPlaceholder = memo((props: SectionLoadingPlaceholderProps) => {
-  return (
-    <SectionPlaceholder {...props}>
-      <Box height={40}>
-        <LoadingIndicator />
-      </Box>
-    </SectionPlaceholder>
-  );
-});
+export const SectionLoadingPlaceholder = memo(
+  ({ onFocused, hasTVPreferredFocus, ...props }: SectionLoadingPlaceholderProps) => {
+    const theme = useTheme<Theme>();
+
+    return (
+      <SectionPlaceholder {...props}>
+        <Focusable
+          variant="background"
+          onFocus={onFocused}
+          hasTVPreferredFocus={hasTVPreferredFocus}>
+          <Box height={theme.sizes.loadingIndicatorSizeSmall}>
+            <LoadingIndicator />
+          </Box>
+        </Focusable>
+      </SectionPlaceholder>
+    );
+  }
+);
 
 SectionLoadingPlaceholder.displayName = 'SectionLoadingPlaceholder';
 

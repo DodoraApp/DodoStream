@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, memo } from 'react';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
@@ -186,8 +186,8 @@ export function PickerModal<T extends string | number = string | number>({
     return idx >= 0 ? idx : undefined;
   }, [filteredItems, selectedValue]);
 
-  const renderItem: ListRenderItem<PickerItem<T>> = useCallback(
-    ({ item }) => (
+  const renderItem = useCallback(
+    ({ item }: LegendListRenderItemProps<PickerItem<T>>) => (
       <PickerListItem
         item={item}
         isSelected={item.value === selectedValue}
@@ -210,10 +210,11 @@ export function PickerModal<T extends string | number = string | number>({
           allLabel="All"
         />
       )}
-      <FlashList
+      <LegendList
         data={filteredItems}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        extraData={selectedValue}
         initialScrollIndex={initialScrollIndex}
         showsVerticalScrollIndicator={false}
       />

@@ -535,7 +535,7 @@ describe('getContinueWatchingWithUpNext (integration)', () => {
 
   async function seedSeriesMeta(
     metaId: string,
-    episodeList: Array<{ videoId: string; season: number; episode: number }>
+    episodeList: { videoId: string; season: number; episode: number }[]
   ) {
     const meta: MetaDetail = {
       id: metaId,

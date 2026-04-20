@@ -4,6 +4,10 @@ module.exports = function (api) {
 
   plugins.push('react-native-worklets/plugin');
 
+  if (process.env.NODE_ENV === 'production') {
+    plugins.push('transform-remove-console');
+  }
+
   return {
     presets: ['babel-preset-expo'],
     plugins,

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Image } from 'expo-image';
+import FastImage from '@d11/react-native-fast-image';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -8,7 +8,6 @@ import { Badge } from '@/components/basic/Badge';
 import { NO_POSTER_LANDSCAPE } from '@/constants/images';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
-import { getImageSource } from '@/utils/image';
 import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel, formatEpisodeCardTitle } from '@/utils/format';
 import { Pressable } from 'react-native';
@@ -36,14 +35,14 @@ export const ContinueWatchingCard = memo(
   }: ContinueWatchingCardProps) => {
     const theme = useTheme<Theme>();
 
-    const { isUpNext, progressRatio, video, metaName, imageUrl, key } = entry;
+    const { isUpNext, progressRatio, video, metaName, imageUrl } = entry;
 
     // Derive display values
     const clampedProgress = isUpNext ? 0 : Math.min(1, Math.max(0, progressRatio));
     const episodeLabel = formatSeasonEpisodeLabel(video);
     const title = metaName ?? '';
     const subtitle = formatEpisodeCardTitle(video);
-    const finalImageSource = getImageSource(video?.thumbnail ?? imageUrl, NO_POSTER_LANDSCAPE);
+    const finalImageUri = video?.thumbnail ?? imageUrl;
 
     return (
       <Box width={theme.cardSizes.continueWatching.width} gap="s">
@@ -62,11 +61,11 @@ export const ContinueWatchingCard = memo(
             overflow="hidden"
             backgroundColor="cardBackground"
             position="relative">
-            <Image
-              source={finalImageSource}
+            <FastImage
+              source={{ uri: finalImageUri || '' }}
+              defaultSource={NO_POSTER_LANDSCAPE}
               style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-              recyclingKey={key}
+              resizeMode={FastImage.resizeMode.cover}
             />
 
             <Box

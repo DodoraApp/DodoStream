@@ -1,6 +1,6 @@
 import { FC, useCallback } from 'react';
 import { Linking } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -27,6 +27,19 @@ export const TrailersTab: FC<TrailersTabProps> = ({ trailers, isActive }) => {
     Linking.openURL(`https://www.youtube.com/watch?v=${ytId}`);
   }, []);
 
+  const renderItem = useCallback(
+    ({ item }: { item: TrailerStream }) => (
+      <TrailerCard
+        trailer={item}
+        onPress={() => handleTrailerPress(item.ytId)}
+        recyclingKey={item.ytId}
+      />
+    ),
+    [handleTrailerPress]
+  );
+
+  const keyExtractor = useCallback((item: TrailerStream) => item.ytId, []);
+
   if (!isActive) return null;
 
   if (trailers.length === 0) {
@@ -38,23 +51,16 @@ export const TrailersTab: FC<TrailersTabProps> = ({ trailers, isActive }) => {
       </Box>
     );
   }
-
   return (
     <FadeIn>
       <Box gap="m">
         <Text variant="subheader">Trailers</Text>
-        <FlashList<TrailerStream>
+        <LegendList<TrailerStream>
           data={trailers}
           horizontal
           showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TrailerCard
-              trailer={item}
-              onPress={() => handleTrailerPress(item.ytId)}
-              recyclingKey={item.ytId}
-            />
-          )}
-          keyExtractor={(item) => item.ytId}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
           contentContainerStyle={{
             paddingVertical: theme.spacing.s,
             paddingHorizontal: theme.spacing.s,

@@ -8,13 +8,13 @@ interface SpacerProps {
   size?: keyof Theme['spacing'];
 }
 
-export const HorizontalSpacer = memo(({ size }: SpacerProps) => {
+export const HorizontalSpacer = memo(({ size, ..._ }: SpacerProps & Record<string, unknown>) => {
   const theme = useTheme<Theme>();
   const width = size ? theme.spacing[size] : theme.spacing.s + theme.spacing.xs;
   return <Box width={width} />;
 });
 
-export const VerticalSpacer = memo(({ size }: SpacerProps) => {
+export const VerticalSpacer = memo(({ size, ..._ }: SpacerProps & Record<string, unknown>) => {
   const theme = useTheme<Theme>();
   const height = size ? theme.spacing[size] : theme.spacing.s + theme.spacing.xs;
   return <Box height={height} />;

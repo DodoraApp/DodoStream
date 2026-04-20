@@ -2,6 +2,7 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
+import { useShallow } from 'zustand/react/shallow';
 import { showToast } from '@/store/toast.store';
 
 import { RNVideoPlayer } from './RNVideoPlayer';
@@ -154,19 +155,21 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
   const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } =
-    useProfileSettingsStore((state) => ({
-      preferredAudioLanguages: activeProfileId
-        ? state.byProfile[activeProfileId]?.preferredAudioLanguages
-        : undefined,
-      showVideoStatistics: activeProfileId
-        ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
-          DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
-        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
-      skipIntroEnabled: activeProfileId
-        ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
-          DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
-        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
-    }));
+    useProfileSettingsStore(
+      useShallow((state) => ({
+        preferredAudioLanguages: activeProfileId
+          ? state.byProfile[activeProfileId]?.preferredAudioLanguages
+          : undefined,
+        showVideoStatistics: activeProfileId
+          ? (state.byProfile[activeProfileId]?.showVideoStatistics ??
+            DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics)
+          : DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+        skipIntroEnabled: activeProfileId
+          ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
+            DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
+          : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
+      }))
+    );
 
   const nativeSubtitleStyle = useNativeSubtitleStyle();
 
@@ -379,7 +382,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     (data: { currentTime: number; duration?: number }) => {
       setCurrentTime(data.currentTime);
       lastKnownTimeRef.current = data.currentTime;
-      if (data.duration) {
+      // Only update duration state when it actually changes to avoid unnecessary re-renders
+      if (data.duration && data.duration !== lastKnownDurationRef.current) {
         setDuration(data.duration);
         lastKnownDurationRef.current = data.duration;
       }
@@ -573,34 +577,38 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
   const handleSeek = useCallback(
     (time: number) => {
-      debug('seek', { time, duration });
-      playerRef.current?.seekTo(time, duration);
+      const dur = lastKnownDurationRef.current;
+      debug('seek', { time, duration: dur });
+      playerRef.current?.seekTo(time, dur);
       setCurrentTime(time);
-      persistProgress(time, duration, true);
+      persistProgress(time, dur, true);
       lastKnownTimeRef.current = time;
     },
-    [debug, duration, persistProgress]
+    [debug, persistProgress]
   );
 
   const handleSkipBackward = useCallback(() => {
     debug('skipBackward');
-    const newTime = Math.max(0, currentTime - SKIP_BACKWARD_SECONDS);
+    const newTime = Math.max(0, lastKnownTimeRef.current - SKIP_BACKWARD_SECONDS);
     handleSeek(newTime);
-  }, [currentTime, debug, handleSeek]);
+  }, [debug, handleSeek]);
 
   const handleSkipForward = useCallback(() => {
     debug('skipForward');
-    const newTime = Math.min(duration, currentTime + SKIP_FORWARD_SECONDS);
+    const newTime = Math.min(
+      lastKnownDurationRef.current,
+      lastKnownTimeRef.current + SKIP_FORWARD_SECONDS
+    );
     handleSeek(newTime);
-  }, [currentTime, debug, duration, handleSeek]);
+  }, [debug, handleSeek]);
 
   const handleSkipIntro = useCallback(() => {
     if (!introData) return;
     const introEndSec = introData.end_ms / 1000;
-    debug('skipIntro', { from: currentTime, to: introEndSec });
+    debug('skipIntro', { from: lastKnownTimeRef.current, to: introEndSec });
     setIntroSkipped(true);
     handleSeek(introEndSec);
-  }, [currentTime, debug, handleSeek, introData]);
+  }, [debug, handleSeek, introData]);
 
   const handleAudioTracksLoaded = useCallback(
     (tracks: AudioTrack[]) => {

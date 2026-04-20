@@ -1,5 +1,5 @@
 import { FC, useCallback, useMemo } from 'react';
-import { FlashList } from '@shopify/flash-list';
+import { LegendList } from '@legendapp/list/react-native';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -58,7 +58,7 @@ const CastSection: FC<CastSectionProps> = ({ title, members, onPersonPress }) =>
   return (
     <Box gap="m">
       <Text variant="subheader">{title}</Text>
-      <FlashList<CastMember>
+      <LegendList<CastMember>
         data={members}
         horizontal
         showsHorizontalScrollIndicator={false}

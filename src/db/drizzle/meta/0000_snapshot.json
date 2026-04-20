@@ -95,23 +95,17 @@
       "indexes": {
         "meta_cache_meta_id_unique": {
           "name": "meta_cache_meta_id_unique",
-          "columns": [
-            "meta_id"
-          ],
+          "columns": ["meta_id"],
           "isUnique": true
         },
         "meta_id_idx": {
           "name": "meta_id_idx",
-          "columns": [
-            "meta_id"
-          ],
+          "columns": ["meta_id"],
           "isUnique": false
         },
         "expires_at_idx": {
           "name": "expires_at_idx",
-          "columns": [
-            "expires_at"
-          ],
+          "columns": ["expires_at"],
           "isUnique": false
         }
       },
@@ -169,19 +163,12 @@
       "indexes": {
         "profile_added_idx": {
           "name": "profile_added_idx",
-          "columns": [
-            "profile_id",
-            "removed_at",
-            "added_at"
-          ],
+          "columns": ["profile_id", "removed_at", "added_at"],
           "isUnique": false
         },
         "my_list_profile_id_meta_id_unique": {
           "name": "my_list_profile_id_meta_id_unique",
-          "columns": [
-            "profile_id",
-            "meta_id"
-          ],
+          "columns": ["profile_id", "meta_id"],
           "isUnique": true
         }
       },
@@ -267,26 +254,17 @@
       "indexes": {
         "video_meta_id_idx": {
           "name": "video_meta_id_idx",
-          "columns": [
-            "meta_id"
-          ],
+          "columns": ["meta_id"],
           "isUnique": false
         },
         "meta_season_episode_idx": {
           "name": "meta_season_episode_idx",
-          "columns": [
-            "meta_id",
-            "season",
-            "episode"
-          ],
+          "columns": ["meta_id", "season", "episode"],
           "isUnique": false
         },
         "videos_meta_id_video_id_unique": {
           "name": "videos_meta_id_video_id_unique",
-          "columns": [
-            "meta_id",
-            "video_id"
-          ],
+          "columns": ["meta_id", "video_id"],
           "isUnique": true
         }
       },
@@ -403,28 +381,17 @@
       "indexes": {
         "profile_status_last_watched_idx": {
           "name": "profile_status_last_watched_idx",
-          "columns": [
-            "profile_id",
-            "status",
-            "last_watched_at"
-          ],
+          "columns": ["profile_id", "status", "last_watched_at"],
           "isUnique": false
         },
         "profile_meta_idx": {
           "name": "profile_meta_idx",
-          "columns": [
-            "profile_id",
-            "meta_id"
-          ],
+          "columns": ["profile_id", "meta_id"],
           "isUnique": false
         },
         "watch_history_profile_id_meta_id_video_id_unique": {
           "name": "watch_history_profile_id_meta_id_video_id_unique",
-          "columns": [
-            "profile_id",
-            "meta_id",
-            "video_id"
-          ],
+          "columns": ["profile_id", "meta_id", "video_id"],
           "isUnique": true
         }
       },

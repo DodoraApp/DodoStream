@@ -1,5 +1,5 @@
 import React, { FC, memo, useMemo, useState, useCallback } from 'react';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
@@ -168,8 +168,8 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
     [onSelectTrack]
   );
 
-  const renderItem: ListRenderItem<SubtitlePickerItem> = useCallback(
-    ({ item }) => (
+  const renderItem = useCallback(
+    ({ item }: LegendListRenderItemProps<SubtitlePickerItem>) => (
       <SubtitleListItem
         item={item}
         isSelected={item.value === selectedValue}
@@ -214,10 +214,11 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
 
           {/* Subtitle list */}
           <Box flex={1}>
-            <FlashList
+            <LegendList
               data={filteredItems}
               renderItem={renderItem}
               keyExtractor={keyExtractor}
+              extraData={selectedValue}
               initialScrollIndex={initialScrollIndex}
               showsVerticalScrollIndicator={false}
             />

@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
-import { Image } from 'expo-image';
+import FastImage from '@d11/react-native-fast-image';
 import { Ionicons } from '@expo/vector-icons';
 
 import type { CastMember } from '@/types/stremio';
@@ -33,11 +33,10 @@ export const CastPersonCard = memo(({ person, onPress, recyclingKey }: CastPerso
           alignItems="center"
           justifyContent="center">
           {person.photo ? (
-            <Image
+            <FastImage
               source={{ uri: person.photo }}
               style={{ width: avatarSize, height: avatarSize }}
-              contentFit="cover"
-              recyclingKey={recyclingKey ?? person.name}
+              resizeMode={FastImage.resizeMode.cover}
             />
           ) : (
             <Ionicons name="person" size={avatarSize / 2} color={theme.colors.textSecondary} />

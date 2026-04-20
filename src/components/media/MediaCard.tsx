@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Box, Text } from '@/theme/theme';
 import { MetaPreview } from '@/types/stremio';
-import { Image } from 'expo-image';
+import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 
@@ -9,7 +9,6 @@ import { Badge } from '@/components/basic/Badge';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import { Focusable } from '@/components/basic/Focusable';
-import { getImageSource } from '@/utils/image';
 import { Pressable } from 'react-native';
 
 interface MediaCardProps {
@@ -35,7 +34,7 @@ export const MediaCard = memo(
   }: MediaCardProps) => {
     const theme = useTheme<Theme>();
 
-    const posterSource = getImageSource(media.poster || media.background, NO_POSTER_PORTRAIT);
+    const posterUri = media.poster || media.background;
 
     // Clamp progress for display
     const clampedProgress = progress != null ? Math.min(1, Math.max(0, progress)) : undefined;
@@ -60,11 +59,11 @@ export const MediaCard = memo(
             overflow="hidden"
             backgroundColor="cardBackground"
             position="relative">
-            <Image
-              source={posterSource}
+            <FastImage
+              source={{ uri: posterUri || '' }}
+              defaultSource={NO_POSTER_PORTRAIT}
               style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-              recyclingKey={media.id}
+              resizeMode={FastImage.resizeMode.cover}
             />
 
             {badgeLabel ? (

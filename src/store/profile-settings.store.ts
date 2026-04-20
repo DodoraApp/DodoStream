@@ -59,7 +59,10 @@ interface ProfileSettingsState {
   setAudioPassthroughForProfile: (profileId: string, audioPassthrough: boolean) => void;
   setEnableWorkaroundsForProfile: (profileId: string, enableWorkarounds: boolean) => void;
   setMatchFrameRateForProfile: (profileId: string, matchFrameRate: boolean) => void;
-  setEnableVideoSoftwareDecodingForProfile: (profileId: string, enableVideoSoftwareDecoding: boolean) => void;
+  setEnableVideoSoftwareDecodingForProfile: (
+    profileId: string,
+    enableVideoSoftwareDecoding: boolean
+  ) => void;
   setSkipIntroEnabledForProfile: (profileId: string, skipIntroEnabled: boolean) => void;
 }
 
@@ -83,6 +86,7 @@ export const useProfileSettingsStore = create<ProfileSettingsState>()(
       byProfile: {},
 
       setActiveProfileId: (profileId) => {
+        if (get().activeProfileId === profileId) return;
         set({ activeProfileId: profileId });
       },
 

@@ -65,9 +65,7 @@ export async function addToMyList(
 export async function removeFromMyList(profileId: string, metaId: string): Promise<void> {
   await initializeDatabase();
 
-  await db
-    .delete(myList)
-    .where(and(eq(myList.profileId, profileId), eq(myList.metaId, metaId)));
+  await db.delete(myList).where(and(eq(myList.profileId, profileId), eq(myList.metaId, metaId)));
 }
 
 export async function removeProfileMyList(profileId: string): Promise<void> {

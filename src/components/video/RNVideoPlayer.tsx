@@ -18,6 +18,7 @@ import {
   useProfileSettingsStore,
   DEFAULT_PROFILE_PLAYBACK_SETTINGS,
 } from '@/store/profile-settings.store';
+import { useShallow } from 'zustand/react/shallow';
 
 const composeErrorString = (error: OnVideoErrorData['error']): string => {
   const errorParts: string[] = [
@@ -58,26 +59,28 @@ export const RNVideoPlayer = memo(
       showVideoStatistics,
       matchFrameRate,
       enableVideoSoftwareDecoding,
-    } = useProfileSettingsStore((state) => {
-      const settings = activeProfileId
-        ? state.byProfile[activeProfileId]
-        : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
-      return {
-        tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
-        audioPassthrough:
-          settings?.audioPassthrough ??
-          (Platform.isTV ? true : DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough),
-        enableWorkarounds:
-          settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
-        showVideoStatistics:
-          settings?.showVideoStatistics ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
-        matchFrameRate:
-          settings?.matchFrameRate ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
-        enableVideoSoftwareDecoding:
-          settings?.enableVideoSoftwareDecoding ??
-          DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
-      };
-    });
+    } = useProfileSettingsStore(
+      useShallow((state) => {
+        const settings = activeProfileId
+          ? state.byProfile[activeProfileId]
+          : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
+        return {
+          tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
+          audioPassthrough:
+            settings?.audioPassthrough ??
+            (Platform.isTV ? true : DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough),
+          enableWorkarounds:
+            settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
+          showVideoStatistics:
+            settings?.showVideoStatistics ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+          matchFrameRate:
+            settings?.matchFrameRate ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
+          enableVideoSoftwareDecoding:
+            settings?.enableVideoSoftwareDecoding ??
+            DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
+        };
+      })
+    );
 
     useImperativeHandle(ref, () => ({
       seekTo: (time: number) => {

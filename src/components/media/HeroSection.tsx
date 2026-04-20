@@ -2,9 +2,16 @@ import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { StyleSheet, TVFocusGuideView } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
+import FastImage, { Source } from '@d11/react-native-fast-image';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
+import { Skeleton } from '@/components/basic/Skeleton';
 import { useHeroCatalogContent } from '@/api/stremio/hooks';
 import { useHomeStore } from '@/store/home.store';
 import { useAddonStore } from '@/store/addon.store';
@@ -155,27 +162,98 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   // Get backdrop image
   const backdropImage = activeItem?.background ?? activeItem?.poster;
 
-  // Don't render if no catalog sources configured or no data
-  if (catalogSources.length === 0 || !hasData || !activeItem) {
+  // ---- Dual-image crossfade: avoids destroying/recreating Image nodes ----
+  // We alternate between two Image layers (A and B). On each transition,
+  // the "front" layer fades in with the new image while the "back" layer
+  // still shows the old image underneath.
+  const [imageSourceA, setImageSourceA] = useState<Source | undefined>(undefined);
+  const [imageSourceB, setImageSourceB] = useState<Source | undefined>(undefined);
+  const activeLayerRef = useRef<'A' | 'B'>('A');
+  const opacityA = useSharedValue(1);
+  const opacityB = useSharedValue(0);
+
+  const animatedStyleA = useAnimatedStyle(() => ({ opacity: opacityA.value }));
+  const animatedStyleB = useAnimatedStyle(() => ({ opacity: opacityB.value }));
+
+  // Prefetch the next hero image before transition
+  useEffect(() => {
+    if (!hasData || heroItems.length <= 1) return;
+    const nextIndex = (safeActiveIndex + 1) % heroItems.length;
+    const nextItem = heroItems[nextIndex];
+    const nextImage = nextItem?.background ?? nextItem?.poster;
+    if (nextImage) {
+      FastImage.preload([{ uri: nextImage }]);
+    }
+  }, [safeActiveIndex, hasData, heroItems]);
+
+  // Update the dual crossfade layers when the active item changes
+  const updateCrossfade = useCallback(
+    (newBackdropImage: string) => {
+      const newSource: Source = { uri: newBackdropImage };
+
+      if (activeLayerRef.current === 'A') {
+        // Currently showing A, load new image into B and fade B in
+        setImageSourceB(newSource);
+        activeLayerRef.current = 'B';
+        opacityB.value = withTiming(1, {
+          duration: HERO_CROSSFADE_DURATION_MS,
+          easing: Easing.inOut(Easing.ease),
+        });
+        opacityA.value = withTiming(0, {
+          duration: HERO_CROSSFADE_DURATION_MS,
+          easing: Easing.inOut(Easing.ease),
+        });
+      } else {
+        // Currently showing B, load new image into A and fade A in
+        setImageSourceA(newSource);
+        activeLayerRef.current = 'A';
+        opacityA.value = withTiming(1, {
+          duration: HERO_CROSSFADE_DURATION_MS,
+          easing: Easing.inOut(Easing.ease),
+        });
+        opacityB.value = withTiming(0, {
+          duration: HERO_CROSSFADE_DURATION_MS,
+          easing: Easing.inOut(Easing.ease),
+        });
+      }
+    },
+    [opacityA, opacityB]
+  );
+
+  useEffect(() => {
+    if (!backdropImage) return;
+    updateCrossfade(backdropImage);
+  }, [backdropImage, updateCrossfade]);
+
+  // No catalog sources configured — hero is disabled entirely
+  if (catalogSources.length === 0) {
     return null;
+  }
+
+  // Sources configured but data not yet ready — hold the space so the list below
+  // doesn't jump when hero content arrives
+  if (!hasData || !activeItem) {
+    return <Skeleton width="100%" height={theme.sizes.heroHeight} style={{ borderRadius: 0 }} />;
   }
 
   return (
     <TVFocusGuideView autoFocus trapFocusRight trapFocusUp>
       <Box height={theme.sizes.heroHeight} width="100%" overflow="hidden">
-        {/* Background Image with Fade Animation */}
-        <MotiView
-          key={activeItem.id}
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ type: 'timing', duration: HERO_CROSSFADE_DURATION_MS }}
-          style={StyleSheet.absoluteFill}>
-          <Image
-            source={{ uri: backdropImage }}
+        {/* Dual-layer crossfade: two persistent Image nodes, opacity animated */}
+        <Animated.View style={[StyleSheet.absoluteFill, animatedStyleA]}>
+          <FastImage
+            source={imageSourceA}
             style={StyleSheet.absoluteFill}
-            contentFit="cover"
+            resizeMode={FastImage.resizeMode.cover}
           />
-        </MotiView>
+        </Animated.View>
+        <Animated.View style={[StyleSheet.absoluteFill, animatedStyleB]}>
+          <FastImage
+            source={imageSourceB}
+            style={StyleSheet.absoluteFill}
+            resizeMode={FastImage.resizeMode.cover}
+          />
+        </Animated.View>
 
         {/* Gradient Overlay */}
         <LinearGradient

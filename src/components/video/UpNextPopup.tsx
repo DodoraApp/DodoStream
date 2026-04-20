@@ -236,7 +236,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
         <ContinueWatchingCard
           entry={upNextEntry}
           hideText
-          hasTVPreferredFocus={controlsVisible && !isInactive}
+          hasTVPreferredFocus={!controlsVisible && !isInactive}
           onPress={onPlayNext}
         />
 

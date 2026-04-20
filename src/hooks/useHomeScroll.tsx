@@ -1,14 +1,15 @@
-import { FlashListRef } from '@shopify/flash-list';
+import type { LegendListRef } from '@legendapp/list/react-native';
 import { createContext, useContext, useCallback, useRef, ReactNode } from 'react';
 import { Platform } from 'react-native';
+import { TV_SCROLL_DEBOUNCE_MS } from '@/constants/ui';
 
 interface HomeScrollContextValue {
   /** Scroll to the very top of the home screen (show hero section) */
   scrollToTop: () => void;
   /** Scroll to a specific section by key */
   scrollToSection: (sectionIndex: number) => void;
-  /** FlashList ref for the home screen */
-  flashListRef: React.RefObject<FlashListRef<any> | null>;
+  /** LegendList ref for the home screen */
+  listRef: React.RefObject<LegendListRef | null>;
   lastScrolledIndex: React.RefObject<number | null>;
   /** Register the section index map for scrollToSection */
   setSectionIndexMap: (map: Record<string, number>) => void;
@@ -22,12 +23,13 @@ interface HomeScrollProviderProps {
 
 /**
  * Provider for home screen scroll functionality.
- * Enables child components to scroll the home FlashList.
+ * Enables child components to scroll the home LegendList.
  */
 export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
-  const flashListRef = useRef<FlashListRef<any> | null>(null);
+  const listRef = useRef<LegendListRef | null>(null);
   const sectionIndexMapRef = useRef<Record<string, number>>({});
   const lastScrolledIndex = useRef<number | null>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTV = Platform.isTV;
 
   const setSectionIndexMap = useCallback((map: Record<string, number>) => {
@@ -38,7 +40,7 @@ export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
     if (!isTV) return;
     // Reset last scrolled key since we're going to top
     lastScrolledIndex.current = null;
-    flashListRef.current?.scrollToOffset({
+    listRef.current?.scrollToOffset({
       offset: 0,
       animated: true,
     });
@@ -51,11 +53,20 @@ export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
       if (lastScrolledIndex.current === sectionIndex) return;
 
       lastScrolledIndex.current = sectionIndex;
-      flashListRef.current?.scrollToIndex({
-        index: sectionIndex,
-        animated: false,
-        viewPosition: 0.5,
-      });
+
+      // Debounce: cancel any pending scroll so rapid D-pad presses only
+      // trigger a single animated scroll once the user pauses.
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        listRef.current?.scrollToIndex({
+          index: sectionIndex,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      }, TV_SCROLL_DEBOUNCE_MS);
     },
     [isTV]
   );
@@ -67,7 +78,7 @@ export function HomeScrollProvider({ children }: HomeScrollProviderProps) {
         scrollToSection,
         setSectionIndexMap,
         lastScrolledIndex,
-        flashListRef,
+        listRef,
       }}>
       {children}
     </HomeScrollContext.Provider>

@@ -72,8 +72,8 @@ export const TagFilters = memo(
     const allSelected = selectedId === null;
 
     return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <Box flexDirection="row" gap="s">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+        <Box flexDirection="row" gap="s" alignItems="flex-start">
           {includeAllOption ? (
             <TagFiltersItem
               id={null}

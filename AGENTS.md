@@ -121,7 +121,7 @@ Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`).
 ## 10. Data Fetching & Lists
 
 - Use React Query (`@tanstack/react-query`) for all data fetching. Never fetch in raw `useEffect`.
-- Use `@shopify/flash-list` for all scrollable lists.
+- Use `@legendapp/list` (LegendList) for all scrollable lists.
 - Use `useRecyclingState` for local state in list items.
 
 ## 11. Animation
@@ -142,7 +142,7 @@ Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`).
 
 - **Unit/Integration:** Jest with `jest-expo` preset. Structure as Arrange / Act / Assert.
 - **Component tests:** React Native Testing Library. Test from user perspective (text, accessibility queries). Avoid testing implementation details.
-- **Mocking:** Mock external systems (network, native modules). See `jest.setup.js` for existing mocks (AsyncStorage, expo-image, expo-haptics, moti, react-query notifyManager).
+- **Mocking:** Mock external systems (network, native modules). See `jest.setup.js` for existing mocks (AsyncStorage, expo-haptics, moti, react-query notifyManager).
 - **Snapshots:** Use sparingly. Prefer explicit assertions.
 - Run `pnpm lint` and `pnpm test` before finishing any task.
 

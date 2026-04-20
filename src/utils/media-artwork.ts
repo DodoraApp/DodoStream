@@ -6,14 +6,14 @@ type DetailsCoverInput = Pick<MetaDetail, 'background' | 'poster'>;
 type DetailsLogoInput = Pick<MetaDetail, 'logo'>;
 
 export const getDetailsCoverSource = (
-    background: DetailsCoverInput['background'],
-    poster: DetailsCoverInput['poster']
+  background: DetailsCoverInput['background'],
+  poster: DetailsCoverInput['poster']
 ) => {
-    const uri = background || poster;
-    return getImageSource(uri, NO_POSTER_LANDSCAPE);
+  const uri = background || poster;
+  return getImageSource(uri, NO_POSTER_LANDSCAPE);
 };
 
 export const getDetailsLogoSource = (logo: DetailsLogoInput['logo']) => {
-    const uri = logo;
-    return getImageSource(uri);
+  const uri = logo;
+  return getImageSource(uri);
 };

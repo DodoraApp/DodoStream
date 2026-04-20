@@ -51,13 +51,13 @@ export async function listWatchHistoryForProfile(profileId: string): Promise<DbW
   return rows.map((row) => ({
     id: row.metaId,
     type: row.type,
-      videoId: row.videoId || undefined,
-      progressSeconds: Number(row.progressSeconds ?? 0),
-      durationSeconds: Number(row.durationSeconds ?? 0),
-      lastStreamTargetType: row.lastStreamTargetType ?? undefined,
-      lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
-      lastWatchedAt: Number(row.lastWatchedAt ?? 0),
-    }));
+    videoId: row.videoId || undefined,
+    progressSeconds: Number(row.progressSeconds ?? 0),
+    durationSeconds: Number(row.durationSeconds ?? 0),
+    lastStreamTargetType: row.lastStreamTargetType ?? undefined,
+    lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+    lastWatchedAt: Number(row.lastWatchedAt ?? 0),
+  }));
 }
 
 /**
@@ -526,55 +526,63 @@ export async function getContinueWatchingWithUpNext(
 
   const resolved = await Promise.all(
     latestItems.slice(0, limit).map(async (item): Promise<ContinueWatchingDbItem | null> => {
-      const progressSeconds = Number(item.progressSeconds ?? 0);
-      const durationSeconds = Number(item.durationSeconds ?? 0);
-      const progressRatio = toRatio(progressSeconds, durationSeconds);
-      const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
+      try {
+        const progressSeconds = Number(item.progressSeconds ?? 0);
+        const durationSeconds = Number(item.durationSeconds ?? 0);
+        const progressRatio = toRatio(progressSeconds, durationSeconds);
+        const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
 
-      const base: ContinueWatchingDbItem = {
-        metaId: item.metaId,
-        type: item.type,
-        videoId: item.currentVideoId || undefined,
-        progressSeconds,
-        durationSeconds,
-        progressRatio,
-        lastWatchedAt: Number(item.lastWatchedAt),
-        isUpNext: false,
-        metaName: item.metaName ?? undefined,
-        imageUrl: item.metaBackground ?? item.metaPoster ?? undefined,
-      };
+        const base: ContinueWatchingDbItem = {
+          metaId: item.metaId,
+          type: item.type,
+          videoId: item.currentVideoId || undefined,
+          progressSeconds,
+          durationSeconds,
+          progressRatio,
+          lastWatchedAt: Number(item.lastWatchedAt),
+          isUpNext: false,
+          metaName: item.metaName ?? undefined,
+          imageUrl: item.metaBackground ?? item.metaPoster ?? undefined,
+        };
 
-      if (isFinished) {
-        // For series, try to find the next unwatched episode
-        if (
-          item.type === 'series' &&
-          item.currentVideoSeason !== null &&
-          item.currentVideoEpisode !== null
-        ) {
-          const nextEpisode = await findNextUnwatchedEpisode(
-            profileId,
-            item.metaId,
-            Number(item.currentVideoSeason),
-            Number(item.currentVideoEpisode)
-          );
+        if (isFinished) {
+          // For series, try to find the next unwatched episode
+          if (
+            item.type === 'series' &&
+            item.currentVideoSeason !== null &&
+            item.currentVideoEpisode !== null
+          ) {
+            const nextEpisode = await findNextUnwatchedEpisode(
+              profileId,
+              item.metaId,
+              Number(item.currentVideoSeason),
+              Number(item.currentVideoEpisode)
+            );
 
-          if (nextEpisode?.videoId) {
-            return {
-              ...base,
-              videoId: nextEpisode.videoId,
-              progressSeconds: 0,
-              durationSeconds: 0,
-              progressRatio: 0,
-              isUpNext: true,
-            };
+            if (nextEpisode?.videoId) {
+              return {
+                ...base,
+                videoId: nextEpisode.videoId,
+                progressSeconds: 0,
+                durationSeconds: 0,
+                progressRatio: 0,
+                isUpNext: true,
+              };
+            }
           }
+
+          // Finished with no next episode (or non-series) — nothing to continue
+          return null;
         }
 
-        // Finished with no next episode (or non-series) — nothing to continue
+        return base;
+      } catch (error) {
+        // Log but don't crash the whole continue-watching list for a single bad item
+        if (__DEV__) {
+          console.warn('[ContinueWatching] Failed to resolve item', item.metaId, error);
+        }
         return null;
       }
-
-      return base;
     })
   );
 
