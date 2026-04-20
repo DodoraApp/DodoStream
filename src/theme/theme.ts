@@ -147,6 +147,7 @@ const createAppTheme = (scalingFactor: number) =>
       loadingIndicatorLogoSizeSmall: withScale(35, scalingFactor),
       loadingIndicatorLogoSizeLarge: withScale(65, scalingFactor),
       progressBarHeight: withScale(6, scalingFactor),
+      episodeThumbnailGradientHeight: withScale(80, scalingFactor),
       mediaDetailsHeader: withScale(350, scalingFactor),
       // Tab bar (mobile only)
       tabBarHeight: withScale(65, scalingFactor),

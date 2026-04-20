@@ -59,7 +59,7 @@ const CertificationBadge = ({ certification }: { certification: string }) => (
     paddingHorizontal="s"
     paddingVertical="xs"
     justifyContent="center">
-    <Text variant="bodySmall" fontWeight="700" color="textSecondary">
+    <Text variant="bodySmall" fontWeight="700" color="textPrimary">
       {certification}
     </Text>
   </Box>
@@ -89,7 +89,7 @@ const ImdbTag = ({ rating }: { rating: number }) => {
         </Text>
       </Box>
       <Box paddingHorizontal="s" paddingVertical="xs" justifyContent="center">
-        <Text variant="bodySmall" fontWeight="700" color="textSecondary">
+        <Text variant="bodySmall" fontWeight="700" color="textPrimary">
           {rating.toFixed(1)}
         </Text>
       </Box>
@@ -147,7 +147,7 @@ export const MediaInfo = ({
     {
       key: 'release',
       node: releaseInfo ? (
-        <Text variant="body" color="textSecondary">
+        <Text variant="body" color="textPrimary">
           {releaseInfo}
         </Text>
       ) : null,
@@ -155,7 +155,7 @@ export const MediaInfo = ({
     {
       key: 'status',
       node: status ? (
-        <Text variant="body" color="textSecondary">
+        <Text variant="body" color="textPrimary">
           {status}
         </Text>
       ) : null,
@@ -163,7 +163,7 @@ export const MediaInfo = ({
     {
       key: 'runtime',
       node: runtime ? (
-        <Text variant="body" color="textSecondary">
+        <Text variant="body" color="textPrimary">
           {runtime}
         </Text>
       ) : null,
@@ -179,7 +179,7 @@ export const MediaInfo = ({
               {({ textProps }) => (
                 <Box>
                   {description ? (
-                    <Text variant="body" color="textSecondary" {...textProps}>
+                    <Text variant="body" color="textPrimary" {...textProps}>
                       {description}
                     </Text>
                   ) : null}
@@ -217,7 +217,7 @@ export const MediaInfo = ({
               {({ textProps }) => (
                 <Box>
                   {description ? (
-                    <Text variant="body" color="textSecondary" {...textProps}>
+                    <Text variant="body" color="textPrimary" {...textProps}>
                       {description}
                     </Text>
                   ) : null}
@@ -250,7 +250,7 @@ export const MediaInfo = ({
             {({ textProps }) => (
               <Box>
                 {description ? (
-                  <Text variant="body" color="textSecondary" {...textProps}>
+                  <Text variant="body" color="textPrimary" {...textProps}>
                     {description}
                   </Text>
                 ) : null}

@@ -6,6 +6,7 @@ import type { Theme } from '@/theme/theme';
 import { useRouter } from 'expo-router';
 
 import type { MetaDetail, CastMember } from '@/types/stremio';
+import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
 import { CastPersonCard } from '@/components/media/CastPersonCard';
 import { HorizontalSpacer } from '@/components/basic/Spacer';
 import FadeIn from '@/components/basic/FadeIn';
@@ -57,7 +58,7 @@ const CastSection: FC<CastSectionProps> = ({ title, members, onPersonPress }) =>
 
   return (
     <Box gap="m">
-      <Text variant="subheader">{title}</Text>
+      <MediaSectionHeader title={title} />
       <LegendList<CastMember>
         data={members}
         horizontal

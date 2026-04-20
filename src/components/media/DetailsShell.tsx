@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { AnimatedImage } from '@/components/basic/AnimatedImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@shopify/restyle';
+import { DETAILS_BACKDROP_GRADIENT_LOCATIONS } from '@/constants/ui';
 
 import type { MetaDetail } from '@/types/stremio';
 import type { Theme } from '@/theme/theme';
@@ -55,7 +56,12 @@ export const DetailsShell = memo(
           style={StyleSheet.absoluteFillObject}
         />
         <LinearGradient
-          colors={[theme.colors.semiTransparentBackground, theme.colors.mainBackground]}
+          colors={[
+            'transparent',
+            theme.colors.semiTransparentBackground,
+            theme.colors.mainBackground,
+          ]}
+          locations={DETAILS_BACKDROP_GRADIENT_LOCATIONS}
           style={StyleSheet.absoluteFillObject}
         />
 

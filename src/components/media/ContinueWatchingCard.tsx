@@ -79,7 +79,12 @@ export const ContinueWatchingCard = memo(
             </Box>
 
             {!isUpNext && clampedProgress > 0 && clampedProgress < 1 ? (
-              <Box position="absolute" left={0} right={0} bottom={0}>
+              <Box
+                position="absolute"
+                left={0}
+                right={0}
+                bottom={0}
+                backgroundColor="mainBackground">
                 <ProgressBar
                   testID="continue-watching-progress"
                   progress={clampedProgress}
@@ -97,7 +102,7 @@ export const ContinueWatchingCard = memo(
                 {title}
               </Text>
               {subtitle ? (
-                <Text variant="caption" numberOfLines={1} color="textSecondary">
+                <Text variant="bodySmall" numberOfLines={1} color="textSecondary">
                   {subtitle}
                 </Text>
               ) : null}

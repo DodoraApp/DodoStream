@@ -73,7 +73,12 @@ export const MediaCard = memo(
             ) : null}
 
             {showProgress ? (
-              <Box position="absolute" left={0} right={0} bottom={0}>
+              <Box
+                position="absolute"
+                left={0}
+                right={0}
+                bottom={0}
+                backgroundColor="mainBackground">
                 <ProgressBar progress={clampedProgress} height={theme.sizes.progressBarHeight} />
               </Box>
             ) : null}

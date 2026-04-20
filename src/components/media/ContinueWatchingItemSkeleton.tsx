@@ -25,7 +25,7 @@ export const ContinueWatchingItemSkeleton = memo(() => {
         {/* Title skeleton */}
         <Skeleton width="75%" height={getTextLineHeight(theme, 'cardTitle')} borderRadius="s" />
         {/* Subtitle skeleton */}
-        <Skeleton width="50%" height={getTextLineHeight(theme, 'caption')} borderRadius="s" />
+        <Skeleton width="50%" height={getTextLineHeight(theme, 'bodySmall')} borderRadius="s" />
       </Box>
     </Box>
   );

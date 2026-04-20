@@ -45,6 +45,11 @@ export const WIZARD_CONTENT_FADE_MS = 250;
 // TV Focus animation timing
 export const TV_FOCUS_ANIMATION_MS = 150;
 
+// Details backdrop gradient stops (0–1 proportional values)
+// Three-stop fade: fully transparent at top → semi-dark at ⅓ → solid background before content area
+// The third stop must land above ~0.72 so the cast/episodes section always sits on a solid background.
+export const DETAILS_BACKDROP_GRADIENT_LOCATIONS: [number, number, number] = [0, 0.35, 0.68];
+
 // TV LegendList configuration for smoother scrolling
 // drawDistance: Pre-render content ahead for smoother scrolling (pixels)
 // TV needs larger values because D-pad navigation can be faster than touch scrolling

@@ -23,7 +23,6 @@ import {
   HERO_CROSSFADE_DURATION_MS,
   HERO_CONTENT_SLIDE_DURATION_MS,
   HERO_CONTENT_SLIDE_DELAY_MS,
-  HERO_DOT_ANIMATION_MS,
 } from '@/constants/ui';
 import { Button } from '@/components/basic/Button';
 
@@ -258,11 +257,24 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
         {/* Gradient Overlay */}
         <LinearGradient
           colors={[
-            'transparent',
+            theme.colors.transparent,
+            theme.colors.transparent,
             theme.colors.semiTransparentBackground,
             theme.colors.mainBackground,
           ]}
-          locations={[0, 0.5, 1]}
+          locations={[0, 0.28, 0.68, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+
+        <LinearGradient
+          colors={[
+            theme.colors.transparent,
+            theme.colors.overlayBackground,
+            theme.colors.mainBackground,
+          ]}
+          locations={[0, 0.72, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
 
@@ -293,8 +305,8 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
           {/* Title */}
           <MotiView
             key={`title-${activeItem.id}`}
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ type: 'timing', duration: HERO_CONTENT_SLIDE_DURATION_MS }}>
             <Text variant="header" numberOfLines={2} marginBottom="s">
               {activeItem.name}
@@ -305,8 +317,8 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
           {activeItem.description && (
             <MotiView
               key={`desc-${activeItem.id}`}
-              from={{ opacity: 0, translateY: 20 }}
-              animate={{ opacity: 1, translateY: 0 }}
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{
                 type: 'timing',
                 duration: HERO_CONTENT_SLIDE_DURATION_MS,
@@ -344,23 +356,21 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
           {/* Pagination Dots - Centered */}
           <Box flexDirection="row" gap="s" alignItems="center" justifyContent="center">
             {heroItems.map((item, index) => (
-              <MotiView
+              <Box
                 key={item.id}
-                animate={{
-                  width:
-                    index === safeActiveIndex ? theme.sizes.iconMedium : theme.sizes.iconMedium / 3,
-                  opacity: index === safeActiveIndex ? 1 : 0.5,
-                }}
-                transition={{ type: 'timing', duration: HERO_DOT_ANIMATION_MS }}>
+                style={{
+                  width: index === safeActiveIndex ? theme.spacing.l : theme.spacing.s,
+                  opacity: index === safeActiveIndex ? 1 : 0.45,
+                }}>
                 <Box
-                  height={theme.sizes.iconMedium / 3}
+                  height={theme.spacing.xs + theme.spacing.xs / 2}
                   borderRadius="full"
                   backgroundColor={
                     index === safeActiveIndex ? 'primaryBackground' : 'textSecondary'
                   }
                   style={{ width: '100%' }}
                 />
-              </MotiView>
+              </Box>
             ))}
           </Box>
         </Box>
