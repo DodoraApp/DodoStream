@@ -24,3 +24,4 @@ expo-env.d.ts
 
 .env.*
 !.env.example
+package-lock.json

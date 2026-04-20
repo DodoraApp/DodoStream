@@ -162,4 +162,76 @@ describe('useAutoPlay', () => {
     // Ensure openStreamFromStream is NOT called
     expect(openStreamFromStream).not.toHaveBeenCalled();
   });
+
+  it('skips lastStreamTarget and starts from candidates when autoPlayAttempt is set (retry mode)', async () => {
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
+
+    (db.getLastStreamTarget as jest.Mock).mockResolvedValue({
+      type: 'url',
+      value: 'http://laststream.com',
+    });
+
+    renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1', autoPlayAttempt: '0' }));
+
+    await waitFor(() => {
+      expect(openStreamFromStream).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: mockStreams[0], autoPlayAttempt: 0 })
+      );
+    });
+
+    expect(openStreamTarget).not.toHaveBeenCalled();
+  });
+
+  it('starts from the correct candidate index when autoPlayAttempt is given', async () => {
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
+
+    renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1', autoPlayAttempt: '1' }));
+
+    await waitFor(() => {
+      expect(openStreamFromStream).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: mockStreams[1], autoPlayAttempt: 1 })
+      );
+    });
+  });
+
+  it('immediately fails when autoPlayAttempt >= MAX_AUTO_PLAY_ATTEMPTS', async () => {
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
+
+    const { result } = renderHook(() =>
+      useAutoPlay({
+        ...defaultProps,
+        autoPlay: '1',
+        autoPlayAttempt: String(MAX_AUTO_PLAY_ATTEMPTS),
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.effectiveAutoPlay).toBe(false);
+    });
+
+    expect(openStreamFromStream).not.toHaveBeenCalled();
+    expect(openStreamTarget).not.toHaveBeenCalled();
+  });
+
+  it('falls back to candidates when lastStreamTarget external open fails', async () => {
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
+
+    (db.getLastStreamTarget as jest.Mock).mockResolvedValue({
+      type: 'external',
+      value: 'vlc://some-stream',
+    });
+
+    openStreamTarget.mockImplementation(({ onExternalOpenFailed }: any) => {
+      onExternalOpenFailed?.();
+      return Promise.resolve(false);
+    });
+
+    renderHook(() => useAutoPlay(defaultProps));
+
+    await waitFor(() => {
+      expect(openStreamFromStream).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: mockStreams[0] })
+      );
+    });
+  });
 });

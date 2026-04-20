@@ -17,6 +17,7 @@ const Play = () => {
     videoId,
     bingeGroup,
     fromAutoPlay,
+    autoPlayAttempt,
     backgroundImage,
     logoImage,
   } = useLocalSearchParams<{
@@ -27,6 +28,7 @@ const Play = () => {
     videoId?: string;
     bingeGroup?: string;
     fromAutoPlay?: string;
+    autoPlayAttempt?: string;
     backgroundImage?: string;
     logoImage?: string;
   }>();
@@ -69,12 +71,34 @@ const Play = () => {
       debug('handleError', { message });
       showToast({ title: 'Playback Error', message, preset: 'error' });
       if (shouldReturnToStreams) {
-        returnToStreams();
+        if (!metaId || !type || !videoId) {
+          router.back();
+          return;
+        }
+        // Increment the attempt index and return to the streams page with
+        // auto-play still enabled so useAutoPlay can try the next stream.
+        const nextAttempt =
+          autoPlayAttempt !== undefined ? parseInt(autoPlayAttempt, 10) + 1 : 0;
+        debug('autoPlayRetry', { nextAttempt });
+        replaceToStreams(
+          { metaId, videoId, type },
+          { bingeGroup, autoPlay: '1', autoPlayAttempt: String(nextAttempt) }
+        );
         return;
       }
       router.back();
     },
-    [debug, returnToStreams, router, shouldReturnToStreams]
+    [
+      autoPlayAttempt,
+      bingeGroup,
+      debug,
+      metaId,
+      replaceToStreams,
+      router,
+      shouldReturnToStreams,
+      type,
+      videoId,
+    ]
   );
 
   if (!metaId || !type) {

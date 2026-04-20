@@ -63,10 +63,48 @@ describe('useMediaNavigation', () => {
         videoId: 'v1',
         bingeGroup: 'bg',
         fromAutoPlay: '1',
+        autoPlayAttempt: undefined,
       },
     });
     expect(openUrlSpy).not.toHaveBeenCalled();
     expect(db.setLastStreamTarget).not.toHaveBeenCalled();
+  });
+
+  it('openStreamTarget passes autoPlayAttempt to play params when fromAutoPlay is true', async () => {
+    const { result } = renderHook(() => useMediaNavigation());
+
+    await result.current.openStreamTarget({
+      metaId: 'm1',
+      videoId: 'v1',
+      type: 'movie' as any,
+      target: { type: 'url', value: 'https://example.com/video.mp4' },
+      fromAutoPlay: true,
+      autoPlayAttempt: 2,
+    });
+
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({ fromAutoPlay: '1', autoPlayAttempt: '2' }),
+      })
+    );
+  });
+
+  it('openStreamTarget does not pass autoPlayAttempt when fromAutoPlay is false', async () => {
+    const { result } = renderHook(() => useMediaNavigation());
+
+    await result.current.openStreamTarget({
+      metaId: 'm1',
+      videoId: 'v1',
+      type: 'movie' as any,
+      target: { type: 'url', value: 'https://example.com/video.mp4' },
+      autoPlayAttempt: 2,
+    });
+
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({ autoPlayAttempt: undefined }),
+      })
+    );
   });
 
   it('openStreamTarget opens and persists external targets', async () => {

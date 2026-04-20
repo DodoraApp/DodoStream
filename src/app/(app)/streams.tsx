@@ -21,12 +21,14 @@ export default function StreamsPage() {
     videoId,
     type = 'movie',
     autoPlay,
+    autoPlayAttempt,
     bingeGroup,
   } = useLocalSearchParams<{
     metaId: string;
     videoId: string;
     type: ContentType;
     autoPlay?: string;
+    autoPlayAttempt?: string;
     bingeGroup?: string;
   }>();
 
@@ -42,6 +44,7 @@ export default function StreamsPage() {
     playerTitle,
     bingeGroup,
     autoPlay,
+    autoPlayAttempt,
     backgroundImage: meta?.background,
     logoImage: meta?.logo,
   });
