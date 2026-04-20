@@ -35,6 +35,7 @@ export interface UpNextPopupProps {
   onDismiss: () => void;
   onPlayNext: () => void;
   onUpNextResolved: (next?: UpNextResolved) => void;
+  onVisibilityChange?: (visible: boolean) => void;
 }
 
 export const UpNextPopup: FC<UpNextPopupProps> = memo(
@@ -51,6 +52,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
     onDismiss,
     onPlayNext,
     onUpNextResolved,
+    onVisibilityChange,
   }) => {
     const theme = useTheme<Theme>();
     const debug = useDebugLogger('UpNextPopup');
@@ -204,6 +206,10 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
       showThreshold,
       upNextVideo?.id,
     ]);
+
+    useEffect(() => {
+      onVisibilityChange?.(shouldShow);
+    }, [onVisibilityChange, shouldShow]);
 
     if (!shouldShow || !upNextEntry) return null;
 

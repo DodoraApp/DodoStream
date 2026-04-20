@@ -1,9 +1,16 @@
-import { and, eq, gte, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { MetaDetail, MetaVideo } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, videos } from '@/db/schema';
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SQLITE_MAX_BIND_PARAMS = 999;
+const STALE_IDS_QUERY_CHUNK_SIZE = 900;
+
+// expo-sqlite uses a synchronous driver — db.transaction() commits before async
+// callbacks complete, so batch inserts run at the top level instead.
+// 50 rows × 9 columns = 450 bound params, safely under SQLite's 999 limit.
+const VIDEO_BATCH_SIZE = 50;
 
 export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
   await initializeDatabase();
@@ -11,11 +18,24 @@ export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
   const now = Date.now();
   const expiresAt = now + CACHE_TTL_MS;
 
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(metaCache)
-      .values({
-        metaId: meta.id,
+  await db
+    .insert(metaCache)
+    .values({
+      metaId: meta.id,
+      type: meta.type,
+      name: meta.name,
+      description: meta.description,
+      poster: meta.poster,
+      background: meta.background,
+      logo: meta.logo,
+      imdbRating: meta.imdbRating,
+      releaseYear: meta.releaseInfo?.split('–')[0],
+      fetchedAt: now,
+      expiresAt,
+    })
+    .onConflictDoUpdate({
+      target: metaCache.metaId,
+      set: {
         type: meta.type,
         name: meta.name,
         description: meta.description,
@@ -26,29 +46,17 @@ export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
         releaseYear: meta.releaseInfo?.split('–')[0],
         fetchedAt: now,
         expiresAt,
-      })
-      .onConflictDoUpdate({
-        target: metaCache.metaId,
-        set: {
-          type: meta.type,
-          name: meta.name,
-          description: meta.description,
-          poster: meta.poster,
-          background: meta.background,
-          logo: meta.logo,
-          imdbRating: meta.imdbRating,
-          releaseYear: meta.releaseInfo?.split('–')[0],
-          fetchedAt: now,
-          expiresAt,
-        },
-      });
+      },
+    });
 
-    if (!meta.videos || meta.videos.length === 0) return;
+  if (!meta.videos || meta.videos.length === 0) return;
 
-    for (const video of meta.videos) {
-      await tx
-        .insert(videos)
-        .values({
+  for (let i = 0; i < meta.videos.length; i += VIDEO_BATCH_SIZE) {
+    const batch = meta.videos.slice(i, i + VIDEO_BATCH_SIZE);
+    await db
+      .insert(videos)
+      .values(
+        batch.map((video) => ({
           metaId: meta.id,
           videoId: video.id,
           title: video.title,
@@ -58,21 +66,26 @@ export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
           overview: video.overview,
           released: video.released,
           fetchedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: [videos.metaId, videos.videoId],
-          set: {
-            title: video.title,
-            season: video.season ?? null,
-            episode: video.episode ?? null,
-            thumbnail: video.thumbnail,
-            overview: video.overview,
-            released: video.released,
-            fetchedAt: now,
-          },
-        });
-    }
-  });
+        }))
+      )
+      .onConflictDoUpdate({
+        target: [videos.metaId, videos.videoId],
+        set: {
+          title: sql`excluded.title`,
+          season: sql`excluded.season`,
+          episode: sql`excluded.episode`,
+          thumbnail: sql`excluded.thumbnail`,
+          overview: sql`excluded.overview`,
+          released: sql`excluded.released`,
+          fetchedAt: now,
+        },
+      });
+  }
+
+  // Remove videos no longer present in the source — untouched rows have an older fetchedAt.
+  await db
+    .delete(videos)
+    .where(and(eq(videos.metaId, meta.id), lt(videos.fetchedAt, now)));
 }
 
 export async function isMetaCacheStale(metaId: string): Promise<boolean> {
@@ -94,13 +107,21 @@ export async function getStaleMetaIds(metaIds: string[]): Promise<string[]> {
 
   const now = Date.now();
 
-  // Query for all requested metaIds that exist and are NOT expired
-  const validRows = await db
-    .select({ metaId: metaCache.metaId })
-    .from(metaCache)
-    .where(and(inArray(metaCache.metaId, metaIds), gte(metaCache.expiresAt, now)));
+  // Keep each query safely below SQLite's bind-variable limit.
+  const safeChunkSize = Math.min(STALE_IDS_QUERY_CHUNK_SIZE, SQLITE_MAX_BIND_PARAMS);
+  const validSet = new Set<string>();
 
-  const validSet = new Set(validRows.map((row) => row.metaId));
+  for (let i = 0; i < metaIds.length; i += safeChunkSize) {
+    const chunk = metaIds.slice(i, i + safeChunkSize);
+    const validRows = await db
+      .select({ metaId: metaCache.metaId })
+      .from(metaCache)
+      .where(and(inArray(metaCache.metaId, chunk), gte(metaCache.expiresAt, now)));
+
+    for (const row of validRows) {
+      validSet.add(row.metaId);
+    }
+  }
 
   // Return all metaIds that are NOT in the valid set (either expired or missing)
   return metaIds.filter((id) => !validSet.has(id));

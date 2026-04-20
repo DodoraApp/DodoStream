@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
@@ -46,7 +46,8 @@ export async function listWatchHistoryForProfile(profileId: string): Promise<DbW
       lastWatchedAt: watchHistory.lastWatchedAt,
     })
     .from(watchHistory)
-    .where(eq(watchHistory.profileId, profileId));
+    .where(eq(watchHistory.profileId, profileId))
+    .orderBy(desc(watchHistory.lastWatchedAt));
 
   return rows.map((row) => ({
     id: row.metaId,
@@ -119,23 +120,22 @@ export async function upsertWatchProgress(params: {
   const progressRatio = toRatio(params.progressSeconds, params.durationSeconds);
   const status = progressRatio >= PLAYBACK_FINISHED_RATIO ? 'completed' : 'watching';
 
-  // Only include stream target fields when explicitly provided to avoid
-  // overwriting previously stored targets on regular progress ticks.
+  // Avoid overwriting stored stream targets on regular progress ticks.
   const hasStreamTarget =
     params.lastStreamTargetType !== undefined && params.lastStreamTargetValue !== undefined;
 
-  const updateSet: Record<string, unknown> = {
+  const updateSet: Partial<typeof watchHistory.$inferInsert> = {
     progressSeconds: params.progressSeconds,
     durationSeconds: params.durationSeconds,
     status,
     dismissedAt: null,
     lastWatchedAt: now,
     updatedAt: now,
+    ...(hasStreamTarget && {
+      lastStreamTargetType: params.lastStreamTargetType,
+      lastStreamTargetValue: params.lastStreamTargetValue,
+    }),
   };
-  if (hasStreamTarget) {
-    updateSet.lastStreamTargetType = params.lastStreamTargetType;
-    updateSet.lastStreamTargetValue = params.lastStreamTargetValue;
-  }
 
   await db
     .insert(watchHistory)
@@ -215,9 +215,16 @@ export async function undismissFromContinueWatching(
   await initializeDatabase();
 
   const now = Date.now();
+  // Recalculate status from progress ratio so completed items stay completed.
   await db
     .update(watchHistory)
-    .set({ status: 'watching', dismissedAt: null, updatedAt: now })
+    .set({
+      status: sql`CASE WHEN ${watchHistory.durationSeconds} > 0
+        AND (${watchHistory.progressSeconds} * 1.0 / ${watchHistory.durationSeconds}) >= ${PLAYBACK_FINISHED_RATIO}
+        THEN 'completed' ELSE 'watching' END`,
+      dismissedAt: null,
+      updatedAt: now,
+    })
     .where(and(eq(watchHistory.profileId, profileId), eq(watchHistory.metaId, metaId)));
 }
 
@@ -302,116 +309,123 @@ export async function getLastStreamTarget(
 ): Promise<{ type: StreamTargetType; value: string } | undefined> {
   await initializeDatabase();
 
-  const scoped = await getWatchHistoryItem(profileId, metaId, videoId);
-  if (scoped?.lastStreamTargetType && scoped?.lastStreamTargetValue) {
-    return {
-      type: scoped.lastStreamTargetType,
-      value: scoped.lastStreamTargetValue,
-    };
-  }
+  // Fetch both video-level and meta-level rows, preferring the exact video match.
+  const resolvedVideoId = videoId ?? '';
+  const rows = await db
+    .select({
+      lastStreamTargetType: watchHistory.lastStreamTargetType,
+      lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+    })
+    .from(watchHistory)
+    .where(
+      and(
+        eq(watchHistory.profileId, profileId),
+        eq(watchHistory.metaId, metaId),
+        or(eq(watchHistory.videoId, resolvedVideoId), eq(watchHistory.videoId, '')),
+        sql`${watchHistory.lastStreamTargetType} IS NOT NULL`,
+        sql`${watchHistory.lastStreamTargetValue} IS NOT NULL`
+      )
+    )
+    .orderBy(
+      // Prefer video-scoped row over meta-level fallback
+      sql`CASE WHEN ${watchHistory.videoId} = ${resolvedVideoId} THEN 0 ELSE 1 END`
+    )
+    .limit(1);
 
-  const metaLevel = await getWatchHistoryItem(profileId, metaId);
-  if (metaLevel?.lastStreamTargetType && metaLevel?.lastStreamTargetValue) {
-    return {
-      type: metaLevel.lastStreamTargetType,
-      value: metaLevel.lastStreamTargetValue,
-    };
-  }
+  if (!rows.length) return undefined;
 
-  return undefined;
+  return {
+    type: rows[0].lastStreamTargetType!,
+    value: rows[0].lastStreamTargetValue!,
+  };
 }
 
 export async function listWatchedMetaSummaries(profileId: string): Promise<DbWatchedMetaSummary[]> {
-  const items = await listWatchHistoryForProfile(profileId);
-  const byMeta = new Map<string, DbWatchHistoryItem[]>();
+  await initializeDatabase();
 
-  for (const item of items) {
-    const arr = byMeta.get(item.id) ?? [];
-    arr.push(item);
-    byMeta.set(item.id, arr);
-  }
-
-  const summaries: DbWatchedMetaSummary[] = [];
-  for (const [id, metaItems] of byMeta.entries()) {
-    const latest = metaItems.reduce<DbWatchHistoryItem | undefined>(
-      (best, item) => (!best || item.lastWatchedAt > best.lastWatchedAt ? item : best),
-      undefined
-    );
-    if (!latest) continue;
-
-    const ratio = latest.durationSeconds > 0 ? latest.progressSeconds / latest.durationSeconds : 0;
-    summaries.push({
-      id,
-      type: latest.type,
-      lastWatchedAt: latest.lastWatchedAt,
-      latestItem: latest.videoId ? latest : undefined,
-      progressRatio: ratio,
-      isInProgress: ratio > 0 && ratio < PLAYBACK_FINISHED_RATIO,
-    });
-  }
-
-  // Fetch display metadata from meta_cache for all summaries in one query
-  const metaIds = summaries.map((s) => s.id);
-  if (metaIds.length > 0) {
-    const cacheRows = await db
+  const rankedWatchHistory = db.$with('ranked_watch_history').as(
+    db
       .select({
-        metaId: metaCache.metaId,
-        name: metaCache.name,
-        poster: metaCache.poster,
-        background: metaCache.background,
+        id: watchHistory.metaId,
+        type: watchHistory.type,
+        videoId: watchHistory.videoId,
+        progressSeconds: watchHistory.progressSeconds,
+        durationSeconds: watchHistory.durationSeconds,
+        lastStreamTargetType: watchHistory.lastStreamTargetType,
+        lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+        lastWatchedAt: watchHistory.lastWatchedAt,
+        rank: sql<number>`row_number() over (
+          partition by ${watchHistory.metaId}
+          order by ${watchHistory.lastWatchedAt} desc, ${watchHistory.id} desc
+        )`.as('rank'),
       })
-      .from(metaCache)
-      .where(inArray(metaCache.metaId, metaIds));
+      .from(watchHistory)
+      .where(eq(watchHistory.profileId, profileId))
+  );
 
-    const cacheMap = new Map(cacheRows.map((r) => [r.metaId, r]));
+  const rows = await db
+    .with(rankedWatchHistory)
+    .select({
+      id: rankedWatchHistory.id,
+      type: rankedWatchHistory.type,
+      videoId: rankedWatchHistory.videoId,
+      progressSeconds: rankedWatchHistory.progressSeconds,
+      durationSeconds: rankedWatchHistory.durationSeconds,
+      lastStreamTargetType: rankedWatchHistory.lastStreamTargetType,
+      lastStreamTargetValue: rankedWatchHistory.lastStreamTargetValue,
+      lastWatchedAt: rankedWatchHistory.lastWatchedAt,
+      metaName: metaCache.name,
+      poster: metaCache.poster,
+      background: metaCache.background,
+      season: videos.season,
+      episode: videos.episode,
+    })
+    .from(rankedWatchHistory)
+    .leftJoin(metaCache, eq(metaCache.metaId, rankedWatchHistory.id))
+    .leftJoin(
+      videos,
+      and(eq(videos.metaId, rankedWatchHistory.id), eq(videos.videoId, rankedWatchHistory.videoId))
+    )
+    .where(eq(rankedWatchHistory.rank, 1))
+    .orderBy(desc(rankedWatchHistory.lastWatchedAt));
 
-    for (const summary of summaries) {
-      const cached = cacheMap.get(summary.id);
-      if (cached) {
-        summary.metaName = cached.name ?? undefined;
-        summary.imageUrl = cached.poster ?? cached.background ?? undefined;
+  return rows.map((row) => {
+    const videoId = row.videoId || undefined;
+    const progressSeconds = Number(row.progressSeconds ?? 0);
+    const durationSeconds = Number(row.durationSeconds ?? 0);
+    const progressRatio = durationSeconds > 0 ? progressSeconds / durationSeconds : 0;
+
+    const latestItem: DbWatchHistoryItem | undefined = videoId
+      ? {
+        id: row.id,
+        type: row.type,
+        videoId,
+        progressSeconds,
+        durationSeconds,
+        lastStreamTargetType: row.lastStreamTargetType ?? undefined,
+        lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+        lastWatchedAt: Number(row.lastWatchedAt ?? 0),
       }
-    }
+      : undefined;
 
-    // Resolve episode data (season/episode) for series entries with a latest videoId
-    const videoLookups = summaries
-      .filter((s) => s.latestItem?.videoId)
-      .map((s) => ({ metaId: s.id, videoId: s.latestItem!.videoId! }));
-
-    if (videoLookups.length > 0) {
-      const videoRows = await db
-        .select({
-          metaId: videos.metaId,
-          videoId: videos.videoId,
-          season: videos.season,
-          episode: videos.episode,
-        })
-        .from(videos)
-        .where(
-          or(
-            ...videoLookups.map((v) =>
-              and(eq(videos.metaId, v.metaId), eq(videos.videoId, v.videoId))
-            )
-          )
-        );
-
-      const videoMap = new Map(videoRows.map((r) => [`${r.metaId}:${r.videoId}`, r]));
-
-      for (const summary of summaries) {
-        if (summary.latestItem?.videoId) {
-          const vRow = videoMap.get(`${summary.id}:${summary.latestItem.videoId}`);
-          if (vRow) {
-            summary.latestVideo = {
-              season: vRow.season ?? undefined,
-              episode: vRow.episode ?? undefined,
-            };
+    return {
+      id: row.id,
+      type: row.type,
+      lastWatchedAt: Number(row.lastWatchedAt ?? 0),
+      latestItem,
+      latestVideo:
+        row.season != null || row.episode != null
+          ? {
+            season: row.season ?? undefined,
+            episode: row.episode ?? undefined,
           }
-        }
-      }
-    }
-  }
-
-  return summaries.sort((a, b) => b.lastWatchedAt - a.lastWatchedAt);
+          : undefined,
+      progressRatio,
+      isInProgress: progressRatio > 0 && progressRatio < PLAYBACK_FINISHED_RATIO,
+      metaName: row.metaName ?? undefined,
+      imageUrl: row.poster ?? row.background ?? undefined,
+    };
+  });
 }
 
 export type ContinueWatchingDbItem = {
@@ -482,50 +496,58 @@ export async function getContinueWatchingWithUpNext(
 ): Promise<ContinueWatchingDbItem[]> {
   await initializeDatabase();
 
+  // CTE deduplicates to one row per metaId (most recent episode) in SQL.
+  const ranked = db.$with('ranked').as(
+    db
+      .select({
+        metaId: watchHistory.metaId,
+        currentVideoId: watchHistory.videoId,
+        type: watchHistory.type,
+        progressSeconds: watchHistory.progressSeconds,
+        durationSeconds: watchHistory.durationSeconds,
+        lastWatchedAt: watchHistory.lastWatchedAt,
+        rank: sql<number>`row_number() over (
+          partition by ${watchHistory.metaId}
+          order by ${watchHistory.lastWatchedAt} desc, ${watchHistory.id} desc
+        )`.as('rank'),
+      })
+      .from(watchHistory)
+      .where(
+        and(
+          eq(watchHistory.profileId, profileId),
+          ne(watchHistory.status, 'dismissed'),
+          sql`${watchHistory.progressSeconds} > 0`
+        )
+      )
+  );
+
   const rows = await db
+    .with(ranked)
     .select({
-      metaId: watchHistory.metaId,
-      currentVideoId: watchHistory.videoId,
-      type: watchHistory.type,
-      progressSeconds: watchHistory.progressSeconds,
-      durationSeconds: watchHistory.durationSeconds,
-      lastWatchedAt: watchHistory.lastWatchedAt,
+      metaId: ranked.metaId,
+      currentVideoId: ranked.currentVideoId,
+      type: ranked.type,
+      progressSeconds: ranked.progressSeconds,
+      durationSeconds: ranked.durationSeconds,
+      lastWatchedAt: ranked.lastWatchedAt,
       metaName: metaCache.name,
       metaPoster: metaCache.poster,
       metaBackground: metaCache.background,
       currentVideoSeason: videos.season,
       currentVideoEpisode: videos.episode,
     })
-    .from(watchHistory)
-    .leftJoin(metaCache, eq(watchHistory.metaId, metaCache.metaId))
+    .from(ranked)
+    .leftJoin(metaCache, eq(ranked.metaId, metaCache.metaId))
     .leftJoin(
       videos,
-      and(eq(watchHistory.metaId, videos.metaId), eq(watchHistory.videoId, videos.videoId))
+      and(eq(ranked.metaId, videos.metaId), eq(ranked.currentVideoId, videos.videoId))
     )
-    .where(
-      and(
-        eq(watchHistory.profileId, profileId),
-        ne(watchHistory.status, 'dismissed'),
-        sql`${watchHistory.progressSeconds} > 0`
-      )
-    )
-    .orderBy(desc(watchHistory.lastWatchedAt))
-    .limit(limit * 3);
-
-  const latestPerMeta = new Map<string, (typeof rows)[number]>();
-  for (const row of rows) {
-    const existing = latestPerMeta.get(row.metaId);
-    if (!existing || Number(row.lastWatchedAt) > Number(existing.lastWatchedAt)) {
-      latestPerMeta.set(row.metaId, row);
-    }
-  }
-
-  const latestItems = Array.from(latestPerMeta.values()).sort(
-    (a, b) => Number(b.lastWatchedAt) - Number(a.lastWatchedAt)
-  );
+    .where(eq(ranked.rank, 1))
+    .orderBy(desc(ranked.lastWatchedAt))
+    .limit(limit);
 
   const resolved = await Promise.all(
-    latestItems.slice(0, limit).map(async (item): Promise<ContinueWatchingDbItem | null> => {
+    rows.map(async (item): Promise<ContinueWatchingDbItem | null> => {
       try {
         const progressSeconds = Number(item.progressSeconds ?? 0);
         const durationSeconds = Number(item.durationSeconds ?? 0);

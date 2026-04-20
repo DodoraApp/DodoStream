@@ -62,7 +62,7 @@ export const ContinueWatchingCard = memo(
             backgroundColor="cardBackground"
             position="relative">
             <FastImage
-              source={{ uri: finalImageUri || '' }}
+              source={finalImageUri ? { uri: finalImageUri } : NO_POSTER_LANDSCAPE}
               defaultSource={NO_POSTER_LANDSCAPE}
               style={{ width: '100%', height: '100%' }}
               resizeMode={FastImage.resizeMode.cover}
