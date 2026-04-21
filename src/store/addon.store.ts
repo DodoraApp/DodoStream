@@ -36,7 +36,7 @@ interface AddonState {
   setError: (error: string | null) => void;
 }
 
-const DEFAULT_ADDON_CONFIG: AddonProfileConfig = {
+export const DEFAULT_ADDON_CONFIG: AddonProfileConfig = {
   isActive: true,
   useCatalogsOnHome: true,
   useCatalogsInSearch: true,
@@ -257,7 +257,10 @@ export const useAddonStore = create<AddonState>()(
         const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
         if (!targetProfileId) return undefined;
 
-        return get().configsByProfile[targetProfileId]?.[id];
+        // Fall back to DEFAULT_ADDON_CONFIG when no per-profile entry exists.
+        // This recovers users whose configsByProfile was not populated during the
+        // broken v2 migration (async migrate is not supported by Zustand's newImpl).
+        return get().configsByProfile[targetProfileId]?.[id] ?? DEFAULT_ADDON_CONFIG;
       },
 
       getAddonsList: () => {
@@ -280,32 +283,25 @@ export const useAddonStore = create<AddonState>()(
       name: 'addon-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ addons: state.addons, configsByProfile: state.configsByProfile }),
-      version: 2,
-      migrate: async (persistedState: any, version) => {
+      version: 3,
+      migrate: (persistedState: any, version) => {
         let state = persistedState as AddonState;
 
-        // Apply migrations sequentially from stored version to current
-        // v0 -> v1: Add useForSubtitles=true to all existing addons
-        // v1 -> v2: Migrate to per-profile configs
+        // v0 -> v1: Add useForSubtitles=true to all existing addons (flat structure)
+        // v1 -> v2: Attempted migration to per-profile configs — the async migrate
+        //           used in 0.9.0 was silently broken: Zustand's newImpl does not
+        //           await the Promise returned by migrate, so configsByProfile was
+        //           never populated and all addons appeared inactive/invisible.
+        // v2 -> v3: No structural change. The missing-config case is now handled at
+        //           read time: getAddonConfig falls back to DEFAULT_ADDON_CONFIG so
+        //           addons with no per-profile config entry are treated as active.
+        //           This recovers users affected by the v2 migration failure without
+        //           requiring profile data at migration time.
+
         if (version < 2 && state.addons) {
+          // Strip legacy flat fields off addon objects (useCatalogsOnHome etc.).
+          // configsByProfile will be populated on first access via the fallback.
           const migratedAddons: Record<string, InstalledAddon> = {};
-          const newConfigs: Record<string, Record<string, AddonProfileConfig>> = {};
-
-          // Read profiles directly from AsyncStorage to avoid a race condition:
-          // useProfileStore.getState() may return empty initial state if the profile
-          // store has not yet finished its own async hydration when this migration runs.
-          let profileIds: string[] = [];
-          try {
-            const raw = await AsyncStorage.getItem('profiles-registry');
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              profileIds = Object.keys(parsed?.state?.profiles || {});
-            }
-          } catch {
-            // If we cannot read profiles, fall back to an empty list — configs will
-            // be created on first use via the normal per-profile config path.
-          }
-
           for (const [id, addon] of Object.entries(state.addons) as [string, any][]) {
             migratedAddons[id] = {
               id: addon.id,
@@ -313,21 +309,9 @@ export const useAddonStore = create<AddonState>()(
               manifest: addon.manifest,
               installedAt: addon.installedAt,
             };
-
-            if (profileIds.length > 0) {
-              profileIds.forEach(profileId => {
-                if (!newConfigs[profileId]) newConfigs[profileId] = {};
-                newConfigs[profileId][id] = {
-                  isActive: true,
-                  useCatalogsOnHome: addon.useCatalogsOnHome ?? true,
-                  useCatalogsInSearch: addon.useCatalogsInSearch ?? true,
-                  useForSubtitles: addon.useForSubtitles ?? true,
-                };
-              });
-            }
           }
           state.addons = migratedAddons;
-          state.configsByProfile = Object.assign(state.configsByProfile || {}, newConfigs);
+          state.configsByProfile = state.configsByProfile || {};
         }
 
         return state as any;
