@@ -14,7 +14,7 @@ import {
   fetchCatalog,
   fetchSubtitles,
 } from './client';
-import { useAddonStore } from '@/store/addon.store';
+import { useAddonStore, DEFAULT_ADDON_CONFIG } from '@/store/addon.store';
 import { useProfileStore } from '@/store/profile.store';
 import { AddonSubtitle, ContentType, InstalledAddon, MetaPreview, Stream } from '@/types/stremio';
 import { useDebugLogger } from '@/utils/debug';
@@ -240,7 +240,7 @@ export function useSearchCatalogs(query: string, enabled: boolean = true) {
   // Get all searchable catalogs from activated addons with useCatalogsInSearch enabled
   const searchableCatalogs = addons
     .filter((addon) => {
-      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
       return config?.isActive && config?.useCatalogsInSearch;
     })
     .flatMap(getSearchableCatalogs);
@@ -329,7 +329,7 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
 
   // Find all activated addons that support this content
   const compatibleAddons = addons.filter((addon) => {
-    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
     return config?.isActive && addonSupportsContent(addon, type, id);
   });
 
@@ -388,7 +388,7 @@ export function useStreams(
 
   // Find all activated addons that support this content and have stream resource
   const compatibleAddons = addons.filter((addon) => {
-    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
     if (!config?.isActive) return false;
 
     const { manifest } = addon;
@@ -492,7 +492,7 @@ export function useSubtitles(
   // Memoize compatible addons to prevent recalculation on every render
   const compatibleAddons = useMemo(() => {
     return Object.values(addons).filter((addon) => {
-      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] : undefined;
+      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
       const { manifest } = addon;
 
       if (!config?.isActive || !config?.useForSubtitles) {
