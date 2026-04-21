@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '@/store/toast.store';
 import * as Linking from 'expo-linking';
+import * as Device from 'expo-device';
 import { useDebugLogger } from '@/utils/debug';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
+import { findMatchingAsset } from '@/utils/github-release-asset';
 
 const STORAGE_KEY_LAST_DISMISSED_TAG = 'githubRelease:lastDismissedTag';
 
@@ -14,6 +17,7 @@ export interface GithubReleaseNotification {
   heading: string;
   subheading: string;
   body: string;
+  hasDirectAsset: boolean;
   onDismiss: () => void;
   onRemindLater: () => void;
   onDownloadRelease: () => void;
@@ -56,6 +60,20 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
   }, [enabled, debug]);
 
   const latestRelease = releaseStatus.latestRelease;
+
+  const directAssetUrl = useMemo(() => {
+    if (Platform.OS !== 'android') return null;
+    if (!latestRelease?.assets?.length) return null;
+
+    const supportedAbis = Device.supportedCpuArchitectures ?? null;
+    const asset = findMatchingAsset(
+      latestRelease.assets,
+      releaseStatus.latestVersion,
+      Platform.isTV,
+      supportedAbis
+    );
+    return asset?.browserDownloadUrl ?? null;
+  }, [latestRelease, releaseStatus.latestVersion]);
 
   const shouldNotify = useMemo(() => {
     if (!enabled) return false;
@@ -122,18 +140,19 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
   }, [latestRelease, debug]);
 
   const downloadRelease = useCallback(async () => {
-    if (!latestRelease?.htmlUrl) return;
+    const url = directAssetUrl ?? latestRelease?.htmlUrl;
+    if (!url) return;
     try {
-      await Linking.openURL(latestRelease.htmlUrl);
+      await Linking.openURL(url);
     } catch (error) {
-      debug('failedToOpenReleaseUrl', { error, url: latestRelease.htmlUrl });
+      debug('failedToOpenReleaseUrl', { error, url });
       showToast({
         title: 'Could not open release',
         message: 'Please try again later.',
         duration: TOAST_DURATION_SHORT,
       });
     }
-  }, [latestRelease, debug]);
+  }, [directAssetUrl, latestRelease, debug]);
 
   const body = useMemo(() => {
     if (!latestRelease) return '';
@@ -152,6 +171,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
       heading: 'Update available',
       subheading: `New GitHub release ${latestRelease.tagName}`,
       body,
+      hasDirectAsset: directAssetUrl !== null,
       onDismiss: () => {
         void dismiss();
       },
@@ -160,7 +180,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         void downloadRelease();
       },
     };
-  }, [latestRelease, shouldNotify, isVisible, body, dismiss, downloadRelease, remindLater]);
+  }, [latestRelease, shouldNotify, isVisible, body, directAssetUrl, dismiss, downloadRelease, remindLater]);
 
   return releaseNotification;
 }
