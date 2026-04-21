@@ -41,6 +41,7 @@
     "@sentry/react-native": "^7.2.0",
     "@shopify/restyle": "^2.4.5",
     "@tanstack/react-query": "^5.90.12",
+    "better-sqlite3": "^12.9.0",
     "drizzle-orm": "^0.45.1",
     "expo": "^54.0.33",
     "expo-build-disk-cache": "^0.7.2",

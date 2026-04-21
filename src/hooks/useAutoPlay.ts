@@ -19,6 +19,14 @@ interface UseAutoPlayParams {
   type: ContentType;
   bingeGroup?: string;
   autoPlay?: string;
+  /**
+   * Tracks which candidate stream index to start from when retrying after a
+   * player error. Passed back from play.tsx via URL params.
+   * - `undefined` → fresh auto-play, use lastStreamTarget if available
+   * - `'0'` → first candidate failed (or lastStreamTarget URL failed), start from index 0
+   * - `'N'` → candidates 0…N-1 failed, start from index N
+   */
+  autoPlayAttempt?: string;
   playerTitle?: string;
   /** Background image URL for player loading screen. */
   backgroundImage?: string;
@@ -33,6 +41,7 @@ export const useAutoPlay = ({
   bingeGroup,
   playerTitle,
   autoPlay,
+  autoPlayAttempt,
   backgroundImage,
   logoImage,
 }: UseAutoPlayParams) => {
@@ -49,7 +58,17 @@ export const useAutoPlay = ({
   const shouldAutoPlay = autoPlayFromParams || autoPlayFromSetting;
   const effectiveAutoPlay = shouldAutoPlay && !autoPlayFailed;
 
-  const autoPlayAttemptRef = useRef(0);
+  // Parse the retry index coming back from play.tsx.
+  // undefined → fresh start; number → retry from that candidate index.
+  const parsedAutoPlayAttempt =
+    autoPlayAttempt !== undefined
+      ? (() => {
+          const n = parseInt(autoPlayAttempt, 10);
+          return isNaN(n) ? undefined : n;
+        })()
+      : undefined;
+
+  const autoPlayAttemptRef = useRef(parsedAutoPlayAttempt ?? 0);
   const didAutoNavigateRef = useRef(false);
   const [lastStreamTarget, setLastStreamTarget] = useState<StreamTarget | undefined>();
 
@@ -75,10 +94,56 @@ export const useAutoPlay = ({
   const { openStreamTarget, openStreamFromStream } = useMediaNavigation();
 
   useEffect(() => {
-    if (!effectiveAutoPlay || didAutoNavigateRef.current || isLoading) return;
+    if (!effectiveAutoPlay || didAutoNavigateRef.current) return;
+
+    // Fast-fail when all retry attempts coming back from play.tsx are exhausted.
+    if (parsedAutoPlayAttempt !== undefined && parsedAutoPlayAttempt >= MAX_AUTO_PLAY_ATTEMPTS) {
+      debug('autoPlayExhausted');
+      setAutoPlayFailed(true);
+      return;
+    }
+
+    if (isLoading) return;
     didAutoNavigateRef.current = true;
 
-    if (lastStreamTarget) {
+    const playableStreams = (streams ?? []).filter(isStreamAvailable);
+    const candidates = bingeGroup
+      ? playableStreams.filter((s) => s.behaviorHints?.group === bingeGroup)
+      : playableStreams;
+
+    // Inner retry function: tries the next candidate stream.
+    const tryNextStream = () => {
+      if (autoPlayAttemptRef.current >= MAX_AUTO_PLAY_ATTEMPTS) {
+        debug('autoPlayExhausted');
+        setAutoPlayFailed(true);
+        return;
+      }
+
+      const streamIdx = autoPlayAttemptRef.current;
+      autoPlayAttemptRef.current++;
+      const stream = candidates[streamIdx];
+      if (!stream) return setAutoPlayFailed(true);
+
+      openStreamFromStream({
+        metaId,
+        videoId,
+        type,
+        title: playerTitle,
+        backgroundImage,
+        logoImage,
+        stream,
+        navigation: 'replace',
+        fromAutoPlay: true,
+        autoPlayAttempt: streamIdx,
+        onExternalOpened: () => setAutoPlayFailed(true),
+        onExternalOpenFailed: () => tryNextStream(),
+      });
+    };
+
+    // Use lastStreamTarget only on a fresh auto-play (no retry in progress).
+    // When parsedAutoPlayAttempt is defined we are already retrying and must
+    // not loop back to the same failed target.
+    if (lastStreamTarget && parsedAutoPlayAttempt === undefined) {
       debug('autoPlayLastTarget', { lastStreamTarget });
 
       openStreamTarget({
@@ -93,15 +158,11 @@ export const useAutoPlay = ({
         navigation: 'replace',
         fromAutoPlay: lastStreamTarget.type === 'url',
         onExternalOpened: () => setAutoPlayFailed(true),
-        onExternalOpenFailed: () => setAutoPlayFailed(true),
+        // Fall back to candidate streams when the saved target cannot be opened.
+        onExternalOpenFailed: () => tryNextStream(),
       });
       return;
     }
-
-    const playableStreams = streams.filter(isStreamAvailable);
-    const candidates = bingeGroup
-      ? playableStreams.filter((s) => s.behaviorHints?.group === bingeGroup)
-      : playableStreams;
 
     if (!candidates.length) {
       showToast({
@@ -113,31 +174,6 @@ export const useAutoPlay = ({
       return;
     }
 
-    const tryNextStream = () => {
-      if (autoPlayAttemptRef.current >= MAX_AUTO_PLAY_ATTEMPTS) {
-        debug('autoPlayExhausted');
-        setAutoPlayFailed(true);
-        return;
-      }
-
-      const stream = candidates[autoPlayAttemptRef.current++];
-      if (!stream) return setAutoPlayFailed(true);
-
-      openStreamFromStream({
-        metaId,
-        videoId,
-        type,
-        title: playerTitle,
-        backgroundImage,
-        logoImage,
-        stream,
-        navigation: 'replace',
-        fromAutoPlay: true,
-        onExternalOpened: () => setAutoPlayFailed(true),
-        onExternalOpenFailed: () => tryNextStream(),
-      });
-    };
-
     tryNextStream();
   }, [
     effectiveAutoPlay,
@@ -147,6 +183,7 @@ export const useAutoPlay = ({
     type,
     bingeGroup,
     lastStreamTarget,
+    parsedAutoPlayAttempt,
     openStreamFromStream,
     openStreamTarget,
     playerTitle,

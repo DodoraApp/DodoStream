@@ -29,6 +29,8 @@ type OpenStreamTargetArgs = {
   target: StreamTarget;
   navigation?: 'push' | 'replace';
   fromAutoPlay?: boolean;
+  /** Index of the current auto-play attempt (for retry tracking). */
+  autoPlayAttempt?: number;
   onExternalOpened?: () => void;
   onExternalOpenFailed?: () => void;
 };
@@ -43,6 +45,8 @@ type OpenStreamFromStreamArgs = {
   stream: Stream;
   navigation?: 'push' | 'replace';
   fromAutoPlay?: boolean;
+  /** Index of the current auto-play attempt (for retry tracking). */
+  autoPlayAttempt?: number;
   onExternalOpened?: () => void;
   onExternalOpenFailed?: () => void;
 };
@@ -106,6 +110,7 @@ export const useMediaNavigation = () => {
       target,
       navigation = 'push',
       fromAutoPlay,
+      autoPlayAttempt,
       onExternalOpened,
       onExternalOpenFailed,
     }: OpenStreamTargetArgs): Promise<boolean> => {
@@ -123,6 +128,8 @@ export const useMediaNavigation = () => {
             backgroundImage,
             logoImage,
             fromAutoPlay: fromAutoPlay ? '1' : undefined,
+            autoPlayAttempt:
+              fromAutoPlay && autoPlayAttempt !== undefined ? String(autoPlayAttempt) : undefined,
           },
         });
         return true;
@@ -169,6 +176,7 @@ export const useMediaNavigation = () => {
       stream,
       navigation,
       fromAutoPlay,
+      autoPlayAttempt,
       onExternalOpened,
       onExternalOpenFailed,
     }: OpenStreamFromStreamArgs): Promise<boolean> => {
@@ -184,6 +192,7 @@ export const useMediaNavigation = () => {
           target: { type: 'url', value: stream.url },
           navigation,
           fromAutoPlay,
+          autoPlayAttempt,
         });
       }
 
