@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InstalledAddon, Manifest } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
+import { moveItem } from '@/utils/array';
 
 export interface AddonProfileConfig {
   isActive: boolean;
@@ -14,6 +15,8 @@ export interface AddonProfileConfig {
 interface AddonState {
   addons: Record<string, InstalledAddon>;
   configsByProfile: Record<string, Record<string, AddonProfileConfig>>;
+  /** Per-profile ordered list of addon IDs. Determines display/catalog order. */
+  addonOrderByProfile: Record<string, string[]>;
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
@@ -24,6 +27,7 @@ interface AddonState {
   activateAddon: (id: string, profileId?: string) => void;
   deactivateAddon: (id: string, profileId?: string) => void;
   updateAddon: (id: string, manifest: Manifest) => void;
+  reorderAddon: (fromIndex: number, toIndex: number, profileId?: string) => void;
   toggleUseCatalogsOnHome: (id: string, profileId?: string) => void;
   toggleUseCatalogsInSearch: (id: string, profileId?: string) => void;
   toggleUseForSubtitles: (id: string, profileId?: string) => void;
@@ -31,6 +35,7 @@ interface AddonState {
   hasAddon: (id: string) => boolean;
   getAddonConfig: (id: string, profileId?: string) => AddonProfileConfig | undefined;
   getAddonsList: () => InstalledAddon[];
+  getOrderedAddonsList: (profileId?: string) => InstalledAddon[];
   setLoading: (isLoading: boolean) => void;
   setInitialized: (isInitialized: boolean) => void;
   setError: (error: string | null) => void;
@@ -49,12 +54,13 @@ export const useAddonStore = create<AddonState>()(
       // Initial state
       addons: {},
       configsByProfile: {},
+      addonOrderByProfile: {},
       isLoading: false,
       isInitialized: false,
       error: null,
 
       addAddon: (id: string, manifestUrl: string, manifest: Manifest) => {
-        const { addons, configsByProfile, hasAddon } = get();
+        const { addons, configsByProfile, addonOrderByProfile, hasAddon } = get();
         const activeProfileId = useProfileStore.getState().activeProfileId;
 
         // Prevent duplicates
@@ -71,6 +77,7 @@ export const useAddonStore = create<AddonState>()(
         };
 
         const newConfigs = { ...configsByProfile };
+        const newOrder = { ...addonOrderByProfile };
         if (activeProfileId) {
           if (!newConfigs[activeProfileId]) {
             newConfigs[activeProfileId] = {};
@@ -79,11 +86,14 @@ export const useAddonStore = create<AddonState>()(
             ...newConfigs[activeProfileId],
             [id]: { ...DEFAULT_ADDON_CONFIG },
           };
+          // Append to end of order for this profile
+          newOrder[activeProfileId] = [...(newOrder[activeProfileId] ?? []), id];
         }
 
         set({
           addons: { ...addons, [id]: newAddon },
           configsByProfile: newConfigs,
+          addonOrderByProfile: newOrder,
           error: null,
         });
       },
@@ -101,9 +111,16 @@ export const useAddonStore = create<AddonState>()(
             }
           }
 
+          // Remove from order in all profiles
+          const newOrder = { ...state.addonOrderByProfile };
+          for (const profileId of Object.keys(newOrder)) {
+            newOrder[profileId] = newOrder[profileId].filter((addonId) => addonId !== id);
+          }
+
           return {
             addons: rest,
             configsByProfile: newConfigs,
+            addonOrderByProfile: newOrder,
             error: null,
           };
         });
@@ -116,6 +133,11 @@ export const useAddonStore = create<AddonState>()(
         set((state) => {
           const profileConfigs = state.configsByProfile[targetProfileId] || {};
           const existingConfig = profileConfigs[id];
+
+          // Append to end of order if not already tracked
+          const currentOrder = state.addonOrderByProfile[targetProfileId] ?? [];
+          const newOrder = currentOrder.includes(id) ? currentOrder : [...currentOrder, id];
+
           return {
             configsByProfile: {
               ...state.configsByProfile,
@@ -127,6 +149,10 @@ export const useAddonStore = create<AddonState>()(
                   isActive: true,
                 },
               },
+            },
+            addonOrderByProfile: {
+              ...state.addonOrderByProfile,
+              [targetProfileId]: newOrder,
             },
           };
         });
@@ -267,6 +293,49 @@ export const useAddonStore = create<AddonState>()(
         return Object.values(get().addons);
       },
 
+      getOrderedAddonsList: (profileId?: string) => {
+        const { addons, addonOrderByProfile } = get();
+        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+        const allAddons = Object.values(addons);
+
+        if (!targetProfileId) return allAddons;
+
+        const order = addonOrderByProfile[targetProfileId];
+        if (!order || order.length === 0) return allAddons;
+
+        // Sort by order, addons not in order go to the end
+        const orderMap = new Map(order.map((id, index) => [id, index]));
+        return [...allAddons].sort((a, b) => {
+          const aIndex = orderMap.get(a.id) ?? Infinity;
+          const bIndex = orderMap.get(b.id) ?? Infinity;
+          return aIndex - bIndex;
+        });
+      },
+
+      reorderAddon: (fromIndex: number, toIndex: number, profileId?: string) => {
+        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+        if (!targetProfileId) return;
+
+        set((state) => {
+          const { addons, addonOrderByProfile } = state;
+          // Build current order, falling back to insertion order for missing entries
+          const allIds = Object.keys(addons);
+          const currentOrder = addonOrderByProfile[targetProfileId] ?? allIds;
+          // Ensure all addon IDs are represented (handles addons added before order tracking)
+          const fullOrder = [
+            ...currentOrder,
+            ...allIds.filter((id) => !currentOrder.includes(id)),
+          ];
+          const newOrder = moveItem(fullOrder, fromIndex, toIndex);
+          return {
+            addonOrderByProfile: {
+              ...addonOrderByProfile,
+              [targetProfileId]: newOrder,
+            },
+          };
+        });
+      },
+
       setLoading: (isLoading: boolean) => {
         set({ isLoading });
       },
@@ -282,7 +351,7 @@ export const useAddonStore = create<AddonState>()(
     {
       name: 'addon-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ addons: state.addons, configsByProfile: state.configsByProfile }),
+      partialize: (state) => ({ addons: state.addons, configsByProfile: state.configsByProfile, addonOrderByProfile: state.addonOrderByProfile }),
       version: 3,
       migrate: (persistedState: any, version) => {
         let state = persistedState as AddonState;

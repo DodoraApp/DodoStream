@@ -101,9 +101,12 @@ export default function Home() {
 const HomeContent = () => {
   const { navigateToDetails } = useMediaNavigation();
   const addons = useAddonStore((state) => state.addons);
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const orderedAddons = useAddonStore((state) =>
+    state.getOrderedAddonsList(activeProfileId ?? undefined)
+  );
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
   const hasAddons = useAddonStore((state) => state.hasAddons());
-  const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const { heroEnabled, heroCatalogSources } = useHomeStore((state) => ({
     heroEnabled: state.getActiveSettings().heroEnabled,
     heroCatalogSources: state.getActiveSettings().heroCatalogSources,
@@ -154,7 +157,7 @@ const HomeContent = () => {
   const listData = useMemo(() => {
     // Catalog sections from addons — track position so renderItem knows priority order
     let catalogIndex = 0;
-    const addonSections: HomeListItem[] = Object.values(addons)
+    const addonSections: HomeListItem[] = orderedAddons
       .filter(
         (addon) =>
           configsByProfile[activeProfileId ?? '']?.[addon.id]?.isActive &&
@@ -211,7 +214,13 @@ const HomeContent = () => {
     }
 
     return [...continueWatchingSections, ...addonSections];
-  }, [addons, configsByProfile, activeProfileId, continueWatchingData, continueWatchingLoading]);
+  }, [
+    orderedAddons,
+    continueWatchingLoading,
+    continueWatchingData,
+    configsByProfile,
+    activeProfileId,
+  ]);
 
   // Priority catalogs are the first N catalog rows visible on screen
   const priorityCatalogs = useMemo<PriorityCatalogEntry[]>(
