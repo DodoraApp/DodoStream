@@ -115,14 +115,19 @@ export const useAddonStore = create<AddonState>()(
 
         set((state) => {
           const profileConfigs = state.configsByProfile[targetProfileId] || {};
+          const existingConfig = profileConfigs[id];
           return {
             configsByProfile: {
               ...state.configsByProfile,
               [targetProfileId]: {
                 ...profileConfigs,
-                [id]: { ...DEFAULT_ADDON_CONFIG },
-              }
-            }
+                [id]: {
+                  ...DEFAULT_ADDON_CONFIG,
+                  ...existingConfig,
+                  isActive: true,
+                },
+              },
+            },
           };
         });
       },
