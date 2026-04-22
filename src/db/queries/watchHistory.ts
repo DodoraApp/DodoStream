@@ -405,7 +405,10 @@ export async function getLastStreamTarget(
   };
 }
 
-export async function listWatchedMetaSummaries(profileId: string): Promise<DbWatchedMetaSummary[]> {
+export async function listWatchedMetaSummaries(
+  profileId: string,
+  options?: { limit?: number; offset?: number }
+): Promise<DbWatchedMetaSummary[]> {
   await initializeDatabase();
 
   const rankedWatchHistory = db.$with('ranked_watch_history').as(
@@ -456,7 +459,9 @@ export async function listWatchedMetaSummaries(profileId: string): Promise<DbWat
       and(eq(videos.metaId, rankedWatchHistory.id), eq(videos.videoId, rankedWatchHistory.videoId))
     )
     .where(eq(rankedWatchHistory.rank, 1))
-    .orderBy(desc(rankedWatchHistory.lastWatchedAt));
+    .orderBy(desc(rankedWatchHistory.lastWatchedAt))
+    .limit(options?.limit ?? 30)
+    .offset(options?.offset ?? 0);
 
   return rows.map((row) => {
     const videoId = row.videoId || undefined;
@@ -728,68 +733,81 @@ export async function getContinueWatchingWithUpNext(
     .orderBy(desc(sql`COALESCE(${ranked.updatedAt}, ${ranked.lastWatchedAt})`))
     .limit(limit);
 
-  const resolved = await Promise.all(
-    rows.map(async (item): Promise<ContinueWatchingDbItem | null> => {
-      try {
-        const progressSeconds = Number(item.progressSeconds ?? 0);
-        const durationSeconds = Number(item.durationSeconds ?? 0);
-        const progressRatio = toRatio(progressSeconds, durationSeconds);
-        const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
-
-        const base: ContinueWatchingDbItem = {
-          metaId: item.metaId,
-          type: item.type,
-          source: item.source,
-          videoId: item.currentVideoId || undefined,
-          progressSeconds,
-          durationSeconds,
-          progressRatio,
-          lastWatchedAt: Number(item.lastWatchedAt),
-          isUpNext: false,
-          metaName: item.metaName ?? undefined,
-          imageUrl: item.metaBackground ?? item.metaPoster ?? undefined,
-        };
-
-        if (isFinished) {
-          // For series, try to find the next unwatched episode
-          if (
-            item.type === 'series' &&
-            item.currentVideoSeason !== null &&
-            item.currentVideoEpisode !== null
-          ) {
-            const nextEpisode = await findNextUnwatchedEpisode(
-              profileId,
-              item.metaId,
-              Number(item.currentVideoSeason),
-              Number(item.currentVideoEpisode)
-            );
-
-            if (nextEpisode?.videoId) {
-              return {
-                ...base,
-                videoId: nextEpisode.videoId,
-                progressSeconds: 0,
-                durationSeconds: 0,
-                progressRatio: 0,
-                isUpNext: true,
-              };
-            }
-          }
-
-          // Finished with no next episode (or non-series) — nothing to continue
-          return null;
-        }
-
-        return base;
-      } catch (error) {
-        // Log but don't crash the whole continue-watching list for a single bad item
-        if (__DEV__) {
-          console.warn('[ContinueWatching] Failed to resolve item', item.metaId, error);
-        }
-        return null;
-      }
-    })
+  // Separate finished series from others
+  const finishedSeries = rows.filter(
+    (item) =>
+      toRatio(Number(item.progressSeconds ?? 0), Number(item.durationSeconds ?? 0)) >=
+        PLAYBACK_FINISHED_RATIO &&
+      item.type === 'series' &&
+      item.currentVideoSeason !== null &&
+      item.currentVideoEpisode !== null
   );
 
-  return resolved.filter((item): item is ContinueWatchingDbItem => item !== null);
+  // Batch-fetch next unwatched episodes for all finished series in one query
+  const nextEpisodesMap = new Map<string, { videoId: string; season: number; episode: number }>();
+  if (finishedSeries.length > 0) {
+    // For each finished series, find the next unwatched episode using a single query per metaId
+    // We use Promise.all here but each is a targeted indexed query (not a full scan)
+    await Promise.all(
+      finishedSeries.map(async (item) => {
+        const next = await findNextUnwatchedEpisode(
+          profileId,
+          item.metaId,
+          Number(item.currentVideoSeason),
+          Number(item.currentVideoEpisode)
+        );
+        if (next?.videoId) {
+          nextEpisodesMap.set(item.metaId, next as { videoId: string; season: number; episode: number });
+        }
+      })
+    );
+  }
+
+  const resolved: ContinueWatchingDbItem[] = [];
+  for (const item of rows) {
+    try {
+      const progressSeconds = Number(item.progressSeconds ?? 0);
+      const durationSeconds = Number(item.durationSeconds ?? 0);
+      const progressRatio = toRatio(progressSeconds, durationSeconds);
+      const isFinished = progressRatio >= PLAYBACK_FINISHED_RATIO;
+
+      const base: ContinueWatchingDbItem = {
+        metaId: item.metaId,
+        type: item.type,
+        source: item.source,
+        videoId: item.currentVideoId || undefined,
+        progressSeconds,
+        durationSeconds,
+        progressRatio,
+        lastWatchedAt: Number(item.lastWatchedAt),
+        isUpNext: false,
+        metaName: item.metaName ?? undefined,
+        imageUrl: item.metaBackground ?? item.metaPoster ?? undefined,
+      };
+
+      if (isFinished) {
+        const nextEpisode = nextEpisodesMap.get(item.metaId);
+        if (nextEpisode?.videoId) {
+          resolved.push({
+            ...base,
+            videoId: nextEpisode.videoId,
+            progressSeconds: 0,
+            durationSeconds: 0,
+            progressRatio: 0,
+            isUpNext: true,
+          });
+        }
+        // Finished with no next episode — skip
+        continue;
+      }
+
+      resolved.push(base);
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('[ContinueWatching] Failed to resolve item', item.metaId, error);
+      }
+    }
+  }
+
+  return resolved;
 }

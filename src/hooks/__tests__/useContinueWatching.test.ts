@@ -11,7 +11,7 @@ import * as db from '@/db';
 
 jest.mock('@/db', () => ({
   getContinueWatchingWithUpNext: jest.fn(),
-  getVideoForEntry: jest.fn().mockResolvedValue(null),
+  getVideosForEntries: jest.fn().mockResolvedValue(new Map()),
   listWatchHistoryForMeta: jest.fn(),
 }));
 

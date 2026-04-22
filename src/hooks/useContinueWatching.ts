@@ -5,7 +5,7 @@ import { useProfileStore } from '@/store/profile.store';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import {
   getContinueWatchingWithUpNext,
-  getVideoForEntry,
+  getVideosForEntries,
   listWatchHistoryForMeta,
   type DbWatchHistoryItem,
 } from '@/db';
@@ -101,30 +101,31 @@ export function useContinueWatching(): { data: ContinueWatchingEntry[]; isLoadin
       if (!activeProfileId) return [];
       const items = await getContinueWatchingWithUpNext(activeProfileId, 50);
 
-      // Resolve video metadata from SQLite for series entries.
-      // This avoids calling useMeta (a network fetcher) per card on the home screen.
-      const entries = await Promise.all(
-        items.map(async (item): Promise<ContinueWatchingEntry> => {
-          let video: MetaVideo | undefined;
-          if (item.videoId) {
-            video = (await getVideoForEntry(item.metaId, item.videoId)) ?? undefined;
-          }
-          return {
-            key: getEntryKey(item.metaId, item.videoId),
-            metaId: item.metaId,
-            type: item.type,
-            videoId: item.videoId,
-            progressSeconds: item.progressSeconds,
-            durationSeconds: item.durationSeconds,
-            progressRatio: item.progressRatio,
-            lastWatchedAt: item.lastWatchedAt,
-            isUpNext: item.isUpNext,
-            video,
-            metaName: item.metaName,
-            imageUrl: item.imageUrl,
-          };
-        })
-      );
+      // Batch-fetch all video metadata in a single query
+      const videoEntries = items
+        .filter((item) => !!item.videoId)
+        .map((item) => ({ metaId: item.metaId, videoId: item.videoId! }));
+      const videosMap = await getVideosForEntries(videoEntries);
+
+      const entries: ContinueWatchingEntry[] = items.map((item) => {
+        const video = item.videoId
+          ? (videosMap.get(`${item.metaId}::${item.videoId}`) ?? undefined)
+          : undefined;
+        return {
+          key: getEntryKey(item.metaId, item.videoId),
+          metaId: item.metaId,
+          type: item.type,
+          videoId: item.videoId,
+          progressSeconds: item.progressSeconds,
+          durationSeconds: item.durationSeconds,
+          progressRatio: item.progressRatio,
+          lastWatchedAt: item.lastWatchedAt,
+          isUpNext: item.isUpNext,
+          video,
+          metaName: item.metaName,
+          imageUrl: item.imageUrl,
+        };
+      });
 
       return entries;
     },

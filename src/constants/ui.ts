@@ -50,16 +50,15 @@ export const TV_FOCUS_ANIMATION_MS = 150;
 // The third stop must land above ~0.72 so the cast/episodes section always sits on a solid background.
 export const DETAILS_BACKDROP_GRADIENT_LOCATIONS: [number, number, number] = [0, 0.35, 0.68];
 
-// TV LegendList configuration for smoother scrolling
-// drawDistance: Pre-render content ahead for smoother scrolling (pixels)
-// TV needs larger values because D-pad navigation can be faster than touch scrolling
-export const TV_DRAW_DISTANCE = 800;
-export const MOBILE_DRAW_DISTANCE = 250;
+// LegendList draw distance tuning to avoid image-loading avalanches
+// when many items are missing metadata
+export const TV_DRAW_DISTANCE = 400;
+export const MOBILE_DRAW_DISTANCE = 150;
 
 // Horizontal list draw distance — controls how many off-screen items are pre-rendered
 // in each horizontal catalog row. Lower values = fewer simultaneous images.
-export const TV_HORIZONTAL_DRAW_DISTANCE = 400;
-export const MOBILE_HORIZONTAL_DRAW_DISTANCE = 200;
+export const TV_HORIZONTAL_DRAW_DISTANCE = 250;
+export const MOBILE_HORIZONTAL_DRAW_DISTANCE = 120;
 
 // Number of extra catalog rows to include in the priority batch beyond what fits on screen.
 // This ensures the row just below the fold is also pre-loaded for smooth initial scrolling.

@@ -118,16 +118,26 @@ async function importItems(
   items: SimklWatchedItem[],
   type: SimklMediaType
 ): Promise<void> {
+  // Collect all progress params first, then batch-write
+  const allParams: Parameters<typeof upsertImportedProgress>[0][] = [];
+
   for (const item of items) {
     try {
       if (type === 'movies' && item.movie) {
-        await importMovie(profileId, item);
+        collectMovieParams(profileId, item, allParams);
       } else if ((type === 'shows' || type === 'anime') && item.show) {
-        await importShow(profileId, item);
+        collectShowParams(profileId, item, allParams);
       }
     } catch (error) {
       debug('importItemError', { error });
     }
+  }
+
+  // Write in parallel batches of 50 to avoid overwhelming SQLite
+  const BATCH_SIZE = 50;
+  for (let i = 0; i < allParams.length; i += BATCH_SIZE) {
+    const batch = allParams.slice(i, i + BATCH_SIZE);
+    await Promise.all(batch.map((params) => upsertImportedProgress(params)));
   }
 }
 
@@ -150,20 +160,23 @@ async function upsertImportedProgress(params: {
   });
 }
 
-async function importMovie(profileId: string, item: SimklWatchedItem): Promise<void> {
+function collectMovieParams(
+  profileId: string,
+  item: SimklWatchedItem,
+  out: Parameters<typeof upsertImportedProgress>[0][]
+): void {
   if (!item.movie) return;
   const metaId = getMetaIdFromIds(item.movie.ids);
   if (!metaId) return;
 
-  await upsertImportedProgress({
-    profileId,
-    metaId,
-    type: 'movie',
-    watchedAt: item.last_watched_at,
-  });
+  out.push({ profileId, metaId, type: 'movie', watchedAt: item.last_watched_at });
 }
 
-async function importShow(profileId: string, item: SimklWatchedItem): Promise<void> {
+function collectShowParams(
+  profileId: string,
+  item: SimklWatchedItem,
+  out: Parameters<typeof upsertImportedProgress>[0][]
+): void {
   if (!item.show) return;
   const metaId = getMetaIdFromIds(item.show.ids);
   if (!metaId) return;
@@ -173,7 +186,7 @@ async function importShow(profileId: string, item: SimklWatchedItem): Promise<vo
   if (item.seasons) {
     for (const season of item.seasons) {
       for (const episode of season.episodes) {
-        await upsertImportedProgress({
+        out.push({
           profileId,
           metaId,
           videoId: `${metaId}:${season.number}:${episode.number}`,
@@ -187,7 +200,7 @@ async function importShow(profileId: string, item: SimklWatchedItem): Promise<vo
 
   if (item.episodes) {
     for (const episode of item.episodes) {
-      await upsertImportedProgress({
+      out.push({
         profileId,
         metaId,
         videoId: `${metaId}:1:${episode.number}`,
@@ -198,12 +211,7 @@ async function importShow(profileId: string, item: SimklWatchedItem): Promise<vo
   }
 
   if (!hasEpisodeArrays && (item.watched_episodes_count ?? 0) > 0) {
-    await upsertImportedProgress({
-      profileId,
-      metaId,
-      type: 'series',
-      watchedAt: item.last_watched_at,
-    });
+    out.push({ profileId, metaId, type: 'series', watchedAt: item.last_watched_at });
   }
 }
 

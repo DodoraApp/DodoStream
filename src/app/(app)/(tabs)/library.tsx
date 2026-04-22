@@ -14,6 +14,7 @@ import type { DbMyListItem, DbWatchedMetaSummary } from '@/db';
 import { MediaCard } from '@/components/media/MediaCard';
 import { HistoryCard } from '@/components/media/HistoryCard';
 import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useMeta } from '@/api/stremio/hooks';
 import { calculateMediaGridColumns } from '@/utils/layout';
@@ -100,7 +101,9 @@ interface MyListTabProps {
 const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
-  const { data = [], isLoading } = useMyList();
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useMyList();
+
+  const flatData = useMemo(() => data?.pages.flat() ?? [], [data]);
 
   const handlePress = useCallback(
     (id: string, type: ContentType) => {
@@ -124,6 +127,21 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
 
   const keyExtractor = useCallback((item: DbMyListItem) => `${item.type}:${item.id}`, []);
 
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <Box paddingVertical="l" alignItems="center">
+        <LoadingIndicator size="small" />
+      </Box>
+    );
+  }, [isFetchingNextPage]);
+
   if (isLoading) {
     return (
       <CardListSkeleton
@@ -137,7 +155,7 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
     );
   }
 
-  if (data.length === 0) {
+  if (flatData.length === 0) {
     return (
       <Text variant="body" color="textSecondary">
         Your saved content will appear here
@@ -147,12 +165,15 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
 
   return (
     <LegendList
-      data={data}
+      data={flatData}
       numColumns={numColumns}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       showsVerticalScrollIndicator={false}
       drawDistance={Platform.isTV ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.3}
+      ListFooterComponent={renderFooter}
       contentContainerStyle={{
         paddingTop: theme.spacing.s,
         paddingBottom: theme.spacing.xl,
@@ -175,8 +196,12 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
 
-  // Only load history data when this component is mounted (lazy loading)
-  const { data = [], isLoading } = useWatchedMetaSummaries();
+  // Only load history data when this component is mounted (lazy loading).
+  // Uses infinite query to paginate (100 items/page) and avoid loading thousands of items
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useWatchedMetaSummaries();
+
+  const flatData = useMemo(() => data?.pages.flat() ?? [], [data]);
 
   const handlePress = useCallback(
     (metaId: string, type: ContentType) => {
@@ -200,6 +225,21 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
 
   const keyExtractor = useCallback((item: DbWatchedMetaSummary) => item.id, []);
 
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <Box paddingVertical="l" alignItems="center">
+        <LoadingIndicator size="small" />
+      </Box>
+    );
+  }, [isFetchingNextPage]);
+
   if (isLoading) {
     return (
       <CardListSkeleton
@@ -213,7 +253,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
     );
   }
 
-  if (data.length === 0) {
+  if (flatData.length === 0) {
     return (
       <Text variant="body" color="textSecondary">
         Your watch history will appear here
@@ -223,12 +263,15 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
 
   return (
     <LegendList
-      data={data}
+      data={flatData}
       numColumns={numColumns}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
       showsVerticalScrollIndicator={false}
       drawDistance={Platform.isTV ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.3}
+      ListFooterComponent={renderFooter}
       contentContainerStyle={{
         paddingTop: theme.spacing.s,
         paddingBottom: theme.spacing.xl,
