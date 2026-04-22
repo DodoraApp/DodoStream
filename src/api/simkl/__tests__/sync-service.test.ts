@@ -17,10 +17,12 @@ jest.mock('../id-resolver', () => ({
 
 const mockUpsertWatchProgress = jest.fn();
 const mockListWatchHistory = jest.fn();
+const mockListExportableWatchHistory = jest.fn();
 const mockRemoveProfileWatchHistory = jest.fn();
 jest.mock('@/db/queries/watchHistory', () => ({
   upsertWatchProgress: (...args: any[]) => mockUpsertWatchProgress(...args),
   listWatchHistoryForProfile: (...args: any[]) => mockListWatchHistory(...args),
+  listExportableWatchHistoryForProfile: (...args: any[]) => mockListExportableWatchHistory(...args),
   removeProfileWatchHistory: (...args: any[]) => mockRemoveProfileWatchHistory(...args),
 }));
 
@@ -42,6 +44,7 @@ describe('simkl sync service', () => {
     mockResolveSimklIds.mockReset();
     mockUpsertWatchProgress.mockReset();
     mockListWatchHistory.mockReset();
+    mockListExportableWatchHistory.mockReset();
     mockRemoveProfileWatchHistory.mockReset();
     mockUpdateSimklCursors.mockReset();
 
@@ -53,6 +56,7 @@ describe('simkl sync service', () => {
     });
     mockGetAllItems.mockResolvedValue({ movies: [], shows: [], anime: [] });
     mockListWatchHistory.mockResolvedValue([]);
+    mockListExportableWatchHistory.mockResolvedValue([]);
     mockResolveSimklIds.mockResolvedValue({ simkl: 10, imdb: 'tt10' });
   });
 
@@ -243,7 +247,7 @@ describe('simkl sync service', () => {
   describe('runExport', () => {
     it('posts completed movies to Simkl (ratio >= 0.9)', async () => {
       // Arrange
-      mockListWatchHistory.mockResolvedValueOnce([
+      mockListExportableWatchHistory.mockResolvedValueOnce([
         {
           id: 'movie-1',
           type: 'movie',
@@ -266,17 +270,8 @@ describe('simkl sync service', () => {
     });
 
     it('skips items below completion threshold', async () => {
-      // Arrange
-      mockListWatchHistory.mockResolvedValueOnce([
-        {
-          id: 'movie-1',
-          type: 'movie',
-          status: 'watching',
-          progressSeconds: 89,
-          durationSeconds: 100,
-          lastWatchedAt: Date.now(),
-        },
-      ]);
+      // Arrange — DB filters out non-completed items; mock returns empty list
+      mockListExportableWatchHistory.mockResolvedValueOnce([]);
 
       // Act
       await runExport('profile-1', 'token', 'client');
@@ -288,7 +283,7 @@ describe('simkl sync service', () => {
 
     it('groups show episodes by season correctly', async () => {
       // Arrange
-      mockListWatchHistory.mockResolvedValueOnce([
+      mockListExportableWatchHistory.mockResolvedValueOnce([
         {
           id: 'show-1',
           type: 'series',
@@ -339,7 +334,7 @@ describe('simkl sync service', () => {
 
     it('does not throw on error (fail-safe)', async () => {
       // Arrange
-      mockListWatchHistory.mockRejectedValueOnce(new Error('db broken'));
+      mockListExportableWatchHistory.mockRejectedValueOnce(new Error('db broken'));
 
       // Act / Assert
       await expect(runExport('profile-1', 'token', 'client')).resolves.toBe(false);
@@ -347,7 +342,7 @@ describe('simkl sync service', () => {
 
     it('skips items where resolveSimklIds returns null', async () => {
       // Arrange
-      mockListWatchHistory.mockResolvedValueOnce([
+      mockListExportableWatchHistory.mockResolvedValueOnce([
         {
           id: 'movie-1',
           type: 'movie',
