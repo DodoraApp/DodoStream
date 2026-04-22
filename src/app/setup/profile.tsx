@@ -29,8 +29,8 @@ export default function ProfileStep() {
       // Store the profile ID for later steps
       setCreatedProfileId(profileId);
 
-      // Navigate to addons step
-      router.push('/setup/addons');
+      // Navigate to integrations step
+      router.push('/setup/integrations');
     },
     [switchProfile, setCreatedProfileId, router]
   );

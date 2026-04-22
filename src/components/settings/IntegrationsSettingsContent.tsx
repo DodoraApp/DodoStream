@@ -109,75 +109,79 @@ const SimklSyncSettings = memo(
 
 SimklSyncSettings.displayName = 'SimklSyncSettings';
 
+interface IntegrationsSettingsContentProps {
+  scrollable?: boolean;
+}
+
 // This component orchestrates provider cards/settings at a higher level.
-export const IntegrationsSettingsContent: FC = memo(() => {
-  const debug = useDebugLogger('IntegrationsSettingsContent');
-  const activeProfileId = useProfileStore((s) => s.activeProfileId);
-  const simklSettings = useIntegrationsStore((s) =>
-    activeProfileId ? s.settings[activeProfileId]?.simkl : undefined
-  );
-  const { disconnectSimkl, setSyncMode } = useIntegrationsStore();
+export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> = memo(
+  ({ scrollable = true }) => {
+    const debug = useDebugLogger('IntegrationsSettingsContent');
+    const activeProfileId = useProfileStore((s) => s.activeProfileId);
+    const simklSettings = useIntegrationsStore((s) =>
+      activeProfileId ? s.settings[activeProfileId]?.simkl : undefined
+    );
+    const { disconnectSimkl, setSyncMode } = useIntegrationsStore();
 
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pendingConnection, setPendingConnection] = useState<SimklConnection | null>(null);
-  const [showFirstConnectModal, setShowFirstConnectModal] = useState(false);
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [pendingConnection, setPendingConnection] = useState<SimklConnection | null>(null);
+    const [showFirstConnectModal, setShowFirstConnectModal] = useState(false);
 
-  const { sync, isSyncing, lastSyncAt } = useSimklSync(activeProfileId);
+    const { sync, isSyncing, lastSyncAt } = useSimklSync(activeProfileId);
 
-  const handleConnectPress = useCallback(() => {
-    setShowPinModal(true);
-  }, []);
+    const handleConnectPress = useCallback(() => {
+      setShowPinModal(true);
+    }, []);
 
-  const handlePinSuccess = useCallback(
-    async (accessToken: string) => {
-      setShowPinModal(false);
+    const handlePinSuccess = useCallback(
+      async (accessToken: string) => {
+        setShowPinModal(false);
+        if (!activeProfileId) return;
+        try {
+          const connection = await completeSimklConnection(activeProfileId, accessToken);
+          // Temporarily store connection for first-connect modal
+          // (connectSimkl will be called again inside the modal with the chosen syncMode)
+          setPendingConnection(connection);
+          setShowFirstConnectModal(true);
+        } catch (error) {
+          debug('completeSimklConnectionError', { error });
+          showToast({
+            title: 'Connection failed',
+            message: 'Could not fetch Simkl user info. Please try again.',
+            preset: 'error',
+            duration: TOAST_DURATION_SHORT,
+          });
+        }
+      },
+      [activeProfileId, debug]
+    );
+
+    const handleFirstConnectDone = useCallback(() => {
+      setShowFirstConnectModal(false);
+      setPendingConnection(null);
+      showToast({
+        title: 'Simkl connected',
+        duration: TOAST_DURATION_SHORT,
+      });
+    }, []);
+
+    const handleDisconnect = useCallback(() => {
       if (!activeProfileId) return;
-      try {
-        const connection = await completeSimklConnection(activeProfileId, accessToken);
-        // Temporarily store connection for first-connect modal
-        // (connectSimkl will be called again inside the modal with the chosen syncMode)
-        setPendingConnection(connection);
-        setShowFirstConnectModal(true);
-      } catch (error) {
-        debug('completeSimklConnectionError', { error });
-        showToast({
-          title: 'Connection failed',
-          message: 'Could not fetch Simkl user info. Please try again.',
-          preset: 'error',
-          duration: TOAST_DURATION_SHORT,
-        });
-      }
-    },
-    [activeProfileId, debug]
-  );
+      disconnectSimkl(activeProfileId);
+      showToast({ title: 'Simkl disconnected', duration: TOAST_DURATION_SHORT });
+    }, [activeProfileId, disconnectSimkl]);
 
-  const handleFirstConnectDone = useCallback(() => {
-    setShowFirstConnectModal(false);
-    setPendingConnection(null);
-    showToast({
-      title: 'Simkl connected',
-      duration: TOAST_DURATION_SHORT,
-    });
-  }, []);
+    const handleSyncModeChange = useCallback(
+      (mode: SyncMode) => {
+        if (!activeProfileId) return;
+        setSyncMode(activeProfileId, mode);
+      },
+      [activeProfileId, setSyncMode]
+    );
 
-  const handleDisconnect = useCallback(() => {
-    if (!activeProfileId) return;
-    disconnectSimkl(activeProfileId);
-    showToast({ title: 'Simkl disconnected', duration: TOAST_DURATION_SHORT });
-  }, [activeProfileId, disconnectSimkl]);
+    const isConnected = !!simklSettings?.connection;
 
-  const handleSyncModeChange = useCallback(
-    (mode: SyncMode) => {
-      if (!activeProfileId) return;
-      setSyncMode(activeProfileId, mode);
-    },
-    [activeProfileId, setSyncMode]
-  );
-
-  const isConnected = !!simklSettings?.connection;
-
-  return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    const content = (
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
         {/* Simkl connection card */}
         <SimklConnectionCard
@@ -195,23 +199,29 @@ export const IntegrationsSettingsContent: FC = memo(() => {
           onSyncNow={sync}
         />
       </Box>
+    );
 
-      <SimklPinAuthModal
-        visible={showPinModal}
-        onSuccess={handlePinSuccess}
-        onCancel={() => setShowPinModal(false)}
-      />
+    return (
+      <>
+        {scrollable ? <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView> : content}
 
-      {pendingConnection && activeProfileId && (
-        <SimklFirstConnectModal
-          visible={showFirstConnectModal}
-          profileId={activeProfileId}
-          connection={pendingConnection}
-          onDone={handleFirstConnectDone}
+        <SimklPinAuthModal
+          visible={showPinModal}
+          onSuccess={handlePinSuccess}
+          onCancel={() => setShowPinModal(false)}
         />
-      )}
-    </ScrollView>
-  );
-});
+
+        {pendingConnection && activeProfileId && (
+          <SimklFirstConnectModal
+            visible={showFirstConnectModal}
+            profileId={activeProfileId}
+            connection={pendingConnection}
+            onDone={handleFirstConnectDone}
+          />
+        )}
+      </>
+    );
+  }
+);
 
 IntegrationsSettingsContent.displayName = 'IntegrationsSettingsContent';
