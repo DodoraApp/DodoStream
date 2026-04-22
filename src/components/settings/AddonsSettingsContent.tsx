@@ -251,7 +251,8 @@ const AddonCard: FC<AddonCardProps> = memo(
     const toggleUseCatalogsInSearch = useAddonStore((state) => state.toggleUseCatalogsInSearch);
     const toggleUseForSubtitles = useAddonStore((state) => state.toggleUseForSubtitles);
     const isActive = config?.isActive === true;
-    const canMoveUp = orderTotal !== undefined && orderTotal > 1 && orderIndex !== undefined && orderIndex > 0;
+    const canMoveUp =
+      orderTotal !== undefined && orderTotal > 1 && orderIndex !== undefined && orderIndex > 0;
     const canMoveDown =
       orderTotal !== undefined &&
       orderTotal > 1 &&

@@ -75,6 +75,12 @@ export default function SettingsLayout() {
           title: 'UI',
         }}
       />
+      <Stack.Screen
+        name="integrations"
+        options={{
+          title: 'Integrations',
+        }}
+      />
     </Stack>
   );
 }

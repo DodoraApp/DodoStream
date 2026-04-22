@@ -8,10 +8,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { LanguagePreferenceModal } from '@/components/settings/LanguagePreferenceModal';
-import {
-  DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-  usePlaybackStore,
-} from '@/store/playback.store';
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import type { PlayerType } from '@/types/player';
 import { useProfileStore } from '@/store/profile.store';
 import { PLAYER_PICKER_ITEMS } from '@/constants/playback';

@@ -180,7 +180,16 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         void downloadRelease();
       },
     };
-  }, [latestRelease, shouldNotify, isVisible, body, directAssetUrl, dismiss, downloadRelease, remindLater]);
+  }, [
+    latestRelease,
+    shouldNotify,
+    isVisible,
+    body,
+    directAssetUrl,
+    dismiss,
+    downloadRelease,
+    remindLater,
+  ]);
 
   return releaseNotification;
 }

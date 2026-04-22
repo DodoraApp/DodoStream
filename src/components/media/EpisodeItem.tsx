@@ -4,13 +4,13 @@ import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
 import FastImage from '@d11/react-native-fast-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 
 import type { MetaVideo } from '@/types/stremio';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { Focusable } from '@/components/basic/Focusable';
-import { useWatchProgress } from '@/hooks/useWatchHistoryDb';
+import { CompletedBadge } from '@/components/basic/CompletedBadge';
+import { useWatchHistoryItem, useWatchProgress } from '@/hooks/useWatchHistoryDb';
 import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
 
 export interface EpisodeItemProps {
@@ -23,6 +23,7 @@ export interface EpisodeItemProps {
 export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: EpisodeItemProps) => {
   const theme = useTheme<Theme>();
 
+  const { data: historyItem } = useWatchHistoryItem(metaId, video.id);
   const progressRatio = useWatchProgress(metaId, video.id);
 
   const clampedProgressRatio = Math.min(1, Math.max(0, progressRatio));
@@ -67,19 +68,10 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
           />
 
           {!!isFinished && (
-            <Box
-              position="absolute"
-              padding="s"
-              top={0}
-              right={0}
-              borderBottomLeftRadius="m"
-              backgroundColor="primaryBackground">
-              <Ionicons
-                name="checkmark-circle"
-                size={theme.sizes.iconSmall}
-                color={theme.colors.primaryForeground}
-              />
-            </Box>
+            <CompletedBadge
+              mode="overlay"
+              showSimklLogo={historyItem?.source === 'simkl'}
+            />
           )}
 
           {!isFinished && clampedProgressRatio > 0 && (

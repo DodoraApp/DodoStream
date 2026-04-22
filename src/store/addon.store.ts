@@ -175,8 +175,8 @@ export const useAddonStore = create<AddonState>()(
                   ...profileConfigs[id],
                   isActive: false,
                 },
-              }
-            }
+              },
+            },
           };
         });
       },
@@ -219,8 +219,8 @@ export const useAddonStore = create<AddonState>()(
                   ...profileConfigs[id],
                   useCatalogsOnHome: !profileConfigs[id].useCatalogsOnHome,
                 },
-              }
-            }
+              },
+            },
           };
         });
       },
@@ -242,8 +242,8 @@ export const useAddonStore = create<AddonState>()(
                   ...profileConfigs[id],
                   useCatalogsInSearch: !profileConfigs[id].useCatalogsInSearch,
                 },
-              }
-            }
+              },
+            },
           };
         });
       },
@@ -265,8 +265,8 @@ export const useAddonStore = create<AddonState>()(
                   ...profileConfigs[id],
                   useForSubtitles: !profileConfigs[id].useForSubtitles,
                 },
-              }
-            }
+              },
+            },
           };
         });
       },
@@ -322,10 +322,7 @@ export const useAddonStore = create<AddonState>()(
           const allIds = Object.keys(addons);
           const currentOrder = addonOrderByProfile[targetProfileId] ?? allIds;
           // Ensure all addon IDs are represented (handles addons added before order tracking)
-          const fullOrder = [
-            ...currentOrder,
-            ...allIds.filter((id) => !currentOrder.includes(id)),
-          ];
+          const fullOrder = [...currentOrder, ...allIds.filter((id) => !currentOrder.includes(id))];
           const newOrder = moveItem(fullOrder, fromIndex, toIndex);
           return {
             addonOrderByProfile: {
@@ -351,7 +348,11 @@ export const useAddonStore = create<AddonState>()(
     {
       name: 'addon-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ addons: state.addons, configsByProfile: state.configsByProfile, addonOrderByProfile: state.addonOrderByProfile }),
+      partialize: (state) => ({
+        addons: state.addons,
+        configsByProfile: state.configsByProfile,
+        addonOrderByProfile: state.addonOrderByProfile,
+      }),
       version: 3,
       migrate: (persistedState: any, version) => {
         let state = persistedState as AddonState;

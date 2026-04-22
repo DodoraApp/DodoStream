@@ -1,10 +1,12 @@
 import { Box, Text } from '@/theme/theme';
 import { Tag } from '@/components/basic/Tag';
 import { ExpandableSection } from '@/components/basic/ExpandableSection';
+import { CompletedBadge } from '@/components/basic/CompletedBadge';
 import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
 import type { ReactNode } from 'react';
 import { ScrollView } from 'react-native';
 import FadeIn from '@/components/basic/FadeIn';
+import { useMediaWatchStatus } from '@/hooks/useMediaWatchStatus';
 import { formatReleaseInfo, formatRuntime, formatDescription } from '@/utils/format';
 
 interface MediaInfoProps {
@@ -120,6 +122,7 @@ export const MediaInfo = ({
   layout = 'default',
 }: MediaInfoProps) => {
   const imdbRating = parseImdbRating(media.imdbRating);
+  const { state: watchState, source: watchSource } = useMediaWatchStatus(media.id);
   const releaseInfo = formatReleaseInfo(media, video);
   const runtime = formatRuntime(media, video);
   const genres = extractGenres(media);
@@ -136,6 +139,16 @@ export const MediaInfo = ({
   const hasExpandableContent = Boolean(descriptionBlock);
 
   const quickInfoItems = [
+    {
+      key: 'watch-status',
+      node:
+        watchState !== 'not-watched' ? (
+          <CompletedBadge
+            variant={watchState === 'completed' ? 'completed' : 'watching'}
+            source={watchSource}
+          />
+        ) : null,
+    },
     {
       key: 'imdb',
       node: imdbRating !== undefined ? <ImdbTag rating={imdbRating} /> : null,

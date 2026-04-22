@@ -9,7 +9,12 @@
  */
 
 import { initializeDatabase, db } from '../client';
-import { upsertMetaCache, isMetaCacheStale, getStaleMetaIds, getVideoForEntry } from '../queries/metaCache';
+import {
+  upsertMetaCache,
+  isMetaCacheStale,
+  getStaleMetaIds,
+  getVideoForEntry,
+} from '../queries/metaCache';
 import { metaCache, videos } from '../schema';
 import { eq } from 'drizzle-orm';
 import type { MetaDetail } from '@/types/stremio';
@@ -513,7 +518,9 @@ describe('upsertMetaCache edge cases (integration)', () => {
       id: 'tt-video-upsert',
       type: 'series',
       name: 'Test',
-      videos: [{ id: 'ep-1', title: 'Original Title', season: 1, episode: 1, released: '2023-01-01' }],
+      videos: [
+        { id: 'ep-1', title: 'Original Title', season: 1, episode: 1, released: '2023-01-01' },
+      ],
     };
     await upsertMetaCache(meta1);
 
@@ -521,7 +528,9 @@ describe('upsertMetaCache edge cases (integration)', () => {
       id: 'tt-video-upsert',
       type: 'series',
       name: 'Test',
-      videos: [{ id: 'ep-1', title: 'Updated Title', season: 1, episode: 1, released: '2023-01-01' }],
+      videos: [
+        { id: 'ep-1', title: 'Updated Title', season: 1, episode: 1, released: '2023-01-01' },
+      ],
     };
     await upsertMetaCache(meta2);
 
@@ -622,10 +631,7 @@ describe('getStaleMetaIds edge cases (integration)', () => {
     }
 
     // Create a list of 950 IDs (5 valid + 945 missing)
-    const allIds = [
-      ...validIds,
-      ...Array.from({ length: 945 }, (_, i) => `missing-${i}`),
-    ];
+    const allIds = [...validIds, ...Array.from({ length: 945 }, (_, i) => `missing-${i}`)];
 
     const result = await getStaleMetaIds(allIds);
 

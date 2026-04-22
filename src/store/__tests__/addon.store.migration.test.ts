@@ -194,7 +194,14 @@ describe('addon store migration', () => {
     it('returns state unchanged when version is 3', () => {
       // Arrange
       const stateV3: AddonState = {
-        addons: { addonOne: { id: 'addonOne', manifestUrl: 'https://x.com/m.json', manifest: {}, installedAt: 1 } },
+        addons: {
+          addonOne: {
+            id: 'addonOne',
+            manifestUrl: 'https://x.com/m.json',
+            manifest: {},
+            installedAt: 1,
+          },
+        },
         configsByProfile: {},
       };
 

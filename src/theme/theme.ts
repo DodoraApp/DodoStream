@@ -192,6 +192,12 @@ const createAppTheme = (scalingFactor: number) =>
         fontSize: withScale(18, scalingFactor),
         color: 'textPrimary',
       },
+      pinCode: {
+        fontFamily: 'Outfit_700Bold',
+        fontSize: withScale(36, scalingFactor),
+        color: 'textPrimary',
+        letterSpacing: withScale(8, scalingFactor),
+      },
       body: {
         fontFamily: 'Poppins_400Regular',
         fontSize: withScale(16, scalingFactor),

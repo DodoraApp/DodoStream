@@ -14,10 +14,7 @@ import Video, {
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
 import { useDebugLogger } from '@/utils/debug';
 import { useProfileStore } from '@/store/profile.store';
-import {
-  usePlaybackStore,
-  DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-} from '@/store/playback.store';
+import { usePlaybackStore, DEFAULT_PROFILE_PLAYBACK_SETTINGS } from '@/store/playback.store';
 import { useShallow } from 'zustand/react/shallow';
 
 const composeErrorString = (error: OnVideoErrorData['error']): string => {

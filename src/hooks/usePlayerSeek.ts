@@ -217,16 +217,13 @@ export const usePlayerSeek = ({
 
   // TV only: Update seek time for display without triggering debounce/commit
   // Used by TVSeekBar which handles its own commit logic
-  const setSeekTimeForDisplay = useCallback(
-    (value: number) => {
-      if (!isSeekingRef.current) {
-        setIsSeeking(true);
-      }
-      setSeekTime(value);
-      lastSeekTimeRef.current = value;
-    },
-    []
-  );
+  const setSeekTimeForDisplay = useCallback((value: number) => {
+    if (!isSeekingRef.current) {
+      setIsSeeking(true);
+    }
+    setSeekTime(value);
+    lastSeekTimeRef.current = value;
+  }, []);
 
   // TV only: Reset seeking state after TVSeekBar commits
   const resetSeekingState = useCallback(() => {

@@ -36,6 +36,13 @@ export const SETTINGS_PROFILE_MENU_ITEMS: SettingsMenuItem[] = [
     icon: 'extension-puzzle-outline',
     href: '/settings/addons',
   },
+  {
+    id: 'integrations',
+    title: 'Integrations',
+    description: 'Connect Simkl and other services',
+    icon: 'sync-outline',
+    href: '/settings/integrations',
+  },
 ];
 
 export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
@@ -70,4 +77,5 @@ export const SETTINGS_ROUTES: Record<string, string> = {
   ui: '/settings/ui',
   addons: '/settings/addons',
   about: '/settings/about',
+  integrations: '/settings/integrations',
 };

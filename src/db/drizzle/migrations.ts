@@ -9,6 +9,13 @@ const journal = {
       tag: '0000_curious_lockheed',
       breakpoints: true,
     },
+    {
+      idx: 1,
+      version: '6',
+      when: 1771357438860,
+      tag: '0001_add_source_column',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -78,9 +85,12 @@ CREATE INDEX \`profile_status_last_watched_idx\` ON \`watch_history\` (\`profile
 CREATE INDEX \`profile_meta_idx\` ON \`watch_history\` (\`profile_id\`,\`meta_id\`);--> statement-breakpoint
 CREATE UNIQUE INDEX \`watch_history_profile_id_meta_id_video_id_unique\` ON \`watch_history\` (\`profile_id\`,\`meta_id\`,\`video_id\`);`;
 
+const m0001 = `ALTER TABLE \`watch_history\` ADD \`source\` text NOT NULL DEFAULT 'internal';`;
+
 export default {
   journal,
   migrations: {
     m0000,
+    m0001,
   },
 };

@@ -22,6 +22,7 @@ import { sortVideosBySeason } from '@/utils/video';
 import { StremioApiError } from '@/api/errors';
 import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 import { upsertMetaCache } from '@/db';
+import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 
 // Normalize `stremio://` scheme to `https://`
 const normalizeManifestUrl = (url: string): string => url.replace(/^stremio:\/\//i, 'https://');
@@ -240,7 +241,9 @@ export function useSearchCatalogs(query: string, enabled: boolean = true) {
   // Get all searchable catalogs from activated addons with useCatalogsInSearch enabled
   const searchableCatalogs = addons
     .filter((addon) => {
-      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
+      const config = activeProfileId
+        ? (configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG)
+        : undefined;
       return config?.isActive && config?.useCatalogsInSearch;
     })
     .flatMap(getSearchableCatalogs);
@@ -323,13 +326,16 @@ function addonSupportsContent(addon: InstalledAddon, type: ContentType, id: stri
  * Returns the first successful response
  */
 export function useMeta(type: ContentType, id: string, enabled: boolean = true) {
+  const queryClient = useQueryClient();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
   const addons = useAddonStore((state) => state.getAddonsList());
 
   // Find all activated addons that support this content
   const compatibleAddons = addons.filter((addon) => {
-    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
+    const config = activeProfileId
+      ? (configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG)
+      : undefined;
     return config?.isActive && addonSupportsContent(addon, type, id);
   });
 
@@ -339,10 +345,27 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
       queryKey: [...stremioKeys.meta(type, id), addon.manifestUrl],
       queryFn: async () => {
         const result = await fetchMeta(addon.manifestUrl, type, id);
-        // Populate the SQLite meta cache so getStaleMetaIds() works correctly
-        // and doesn't trigger spurious re-fetches from useContinueWatching.
+        // Populate the SQLite meta cache so watch-history joins can use fresh meta/video rows.
+        // Keep this side effect fire-and-forget so meta query success is never blocked by cache issues.
         if (result?.meta) {
-          upsertMetaCache(result.meta).catch(() => { });
+          void (async () => {
+            try {
+              await upsertMetaCache(result.meta);
+
+              if (activeProfileId) {
+                await Promise.all([
+                  queryClient.invalidateQueries({
+                    queryKey: watchHistoryKeys.continueWatching(activeProfileId),
+                  }),
+                  queryClient.invalidateQueries({
+                    queryKey: watchHistoryKeys.metaSummaries(activeProfileId),
+                  }),
+                ]);
+              }
+            } catch {
+              // Best-effort cache/invalidation side effect.
+            }
+          })();
         }
         return result;
       },
@@ -388,7 +411,9 @@ export function useStreams(
 
   // Find all activated addons that support this content and have stream resource
   const compatibleAddons = addons.filter((addon) => {
-    const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
+    const config = activeProfileId
+      ? (configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG)
+      : undefined;
     if (!config?.isActive) return false;
 
     const { manifest } = addon;
@@ -492,7 +517,9 @@ export function useSubtitles(
   // Memoize compatible addons to prevent recalculation on every render
   const compatibleAddons = useMemo(() => {
     return Object.values(addons).filter((addon) => {
-      const config = activeProfileId ? configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG : undefined;
+      const config = activeProfileId
+        ? (configsByProfile[activeProfileId]?.[addon.id] ?? DEFAULT_ADDON_CONFIG)
+        : undefined;
       const { manifest } = addon;
 
       if (!config?.isActive || !config?.useForSubtitles) {
