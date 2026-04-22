@@ -20,6 +20,7 @@ export default function SetupLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="ui" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="integrations" />
       <Stack.Screen name="addons" />
       <Stack.Screen name="home" />
       <Stack.Screen name="playback" />

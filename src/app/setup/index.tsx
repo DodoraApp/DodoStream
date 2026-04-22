@@ -33,8 +33,9 @@ export default function WelcomeStep() {
           {/* Feature highlights */}
           <Box gap="m">
             <FeatureItem icon="person-add" title="Create Your First Profile" delay={300} />
-            <FeatureItem icon="extension-puzzle" title="Install Addons" delay={400} />
-            <FeatureItem icon="settings" title="Customize Settings" delay={500} />
+            <FeatureItem icon="sync" title="Connect Integrations" delay={400} />
+            <FeatureItem icon="extension-puzzle" title="Install Addons" delay={500} />
+            <FeatureItem icon="settings" title="Customize Settings" delay={600} />
           </Box>
         </Box>
       </WizardStep>
