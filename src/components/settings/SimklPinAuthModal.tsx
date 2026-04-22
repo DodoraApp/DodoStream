@@ -2,7 +2,6 @@ import { FC, memo, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
-import { Focusable } from '@/components/basic/Focusable';
 import { useSimklPinAuth } from '@/api/simkl/hooks';
 import { SIMKL_PIN_TIMEOUT_S } from '@/constants/ui';
 import { Button } from '@/components/basic/Button';

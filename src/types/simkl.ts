@@ -51,8 +51,12 @@ export interface SimklMediaItem {
   total_episodes?: number;
 }
 
+export type SimklStatus = 'watching' | 'plantowatch' | 'hold' | 'dropped' | 'completed';
+
 export interface SimklWatchedItem {
   last_watched_at?: string;
+  added_at?: string;
+  status?: SimklStatus;
   watched_episodes_count?: number;
   movie?: { ids: SimklIds; title: string };
   show?: { ids: SimklIds; title: string };

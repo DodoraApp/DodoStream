@@ -7,6 +7,7 @@ import migrations from '@/db/drizzle/migrations';
 const debug = createDebugLogger('SQLite');
 
 export const sqliteDb = SQLite.openDatabaseSync('dodostream.db');
+sqliteDb.execSync('PRAGMA journal_mode = WAL;');
 export const db = drizzle(sqliteDb);
 
 let initializationPromise: Promise<void> | null = null;

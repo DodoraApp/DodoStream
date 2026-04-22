@@ -15,6 +15,7 @@ import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSetting
 import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
 import { UISettingsContent } from '@/components/settings/UISettingsContent';
 import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
+import { DataSettingsContent } from '@/components/settings/DataSettingsContent';
 import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
 import { SettingsLink } from '@/components/settings/SettingsLink';
 
@@ -121,6 +122,8 @@ const PageContent = ({ selectedPage }: { selectedPage: string }) => {
       return <UISettingsContent />;
     case 'addons':
       return <AddonsSettingsContent />;
+    case 'data':
+      return <DataSettingsContent />;
     case 'about':
       return <AboutSettingsContent />;
     case 'integrations':

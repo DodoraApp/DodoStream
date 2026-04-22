@@ -12,7 +12,10 @@ const STALE_IDS_QUERY_CHUNK_SIZE = 900;
 // 50 rows × 9 columns = 450 bound params, safely under SQLite's 999 limit.
 const VIDEO_BATCH_SIZE = 50;
 
-export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
+export async function upsertMetaCache(
+  meta: MetaDetail,
+  options: { skipVideoDeletion?: boolean } = {}
+): Promise<void> {
   await initializeDatabase();
 
   const now = Date.now();
@@ -82,8 +85,10 @@ export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
       });
   }
 
-  // Remove videos no longer present in the source — untouched rows have an older fetchedAt.
-  await db.delete(videos).where(and(eq(videos.metaId, meta.id), lt(videos.fetchedAt, now)));
+  if (!options.skipVideoDeletion) {
+    // Remove videos no longer present in the source — untouched rows have an older fetchedAt.
+    await db.delete(videos).where(and(eq(videos.metaId, meta.id), lt(videos.fetchedAt, now)));
+  }
 }
 
 export async function isMetaCacheStale(metaId: string): Promise<boolean> {

@@ -22,17 +22,17 @@ const SYNC_MODE_OPTIONS: { value: SyncMode; label: string; description: string }
   {
     value: 'pull',
     label: 'Import only',
-    description: 'Pull watch history from Simkl into DodoStream',
+    description: 'Pull watch history and watchlist from Simkl into DodoStream',
   },
   {
     value: 'push',
-    label: 'Send history',
-    description: 'Export DodoStream history to Simkl',
+    label: 'Export only',
+    description: 'Export DodoStream history and watchlist to Simkl',
   },
   {
     value: 'full',
     label: 'Full sync',
-    description: 'Import from Simkl and export your history',
+    description: 'Sync history and watchlist in both directions',
   },
 ];
 

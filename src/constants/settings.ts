@@ -54,6 +54,13 @@ export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
     href: '/settings/ui',
   },
   {
+    id: 'data',
+    title: 'Data',
+    description: 'Manage and clear application data',
+    icon: 'server-outline',
+    href: '/settings/data',
+  },
+  {
     id: 'about',
     title: 'About',
     description: 'App info, version, and useful links',
@@ -75,6 +82,7 @@ export const SETTINGS_ROUTES: Record<string, string> = {
   profiles: '/settings/profiles',
   subtitles: '/settings/subtitles',
   ui: '/settings/ui',
+  data: '/settings/data',
   addons: '/settings/addons',
   about: '/settings/about',
   integrations: '/settings/integrations',

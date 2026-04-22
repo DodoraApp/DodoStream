@@ -1,6 +1,6 @@
 import { createDebugLogger } from '@/utils/debug';
 import type { SimklActivities, SimklIds, SimklWatchedItem } from '@/types/simkl';
-import { getActivities, getAllItems, postHistory } from './client';
+import { getActivities, getAllItems, postHistory, postWatchlist } from './client';
 import { resolveSimklIds } from './id-resolver';
 import {
   listExportableWatchHistoryForProfile,
@@ -8,8 +8,10 @@ import {
   upsertWatchProgress,
   removeProfileWatchHistory,
 } from '@/db/queries/watchHistory';
+import { addToMyList, listExportableMyListForProfile } from '@/db/queries/myList';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import type { SimklConnection, SimklMediaType, SimklSyncCursors } from '@/types/integrations';
+import type { ContentType } from '@/types/stremio';
 import { parseVideoId } from '@/utils/id';
 
 const debug = createDebugLogger('SimklSyncService');
@@ -119,25 +121,59 @@ async function importItems(
   type: SimklMediaType
 ): Promise<void> {
   // Collect all progress params first, then batch-write
-  const allParams: Parameters<typeof upsertImportedProgress>[0][] = [];
+  const historyParams: Parameters<typeof upsertImportedProgress>[0][] = [];
+  const myListParams: { metaId: string; type: ContentType; addedAt?: number }[] = [];
 
   for (const item of items) {
     try {
+      const status = item.status;
+
+      // Skip dropped items completely
+      if (status === 'dropped') {
+        continue;
+      }
+
+      // Add plan to watch items to My List
+      if (status === 'plantowatch') {
+        const ids = type === 'movies' ? item.movie?.ids : item.show?.ids;
+        if (!ids) continue;
+
+        const metaId = getMetaIdFromIds(ids);
+        if (metaId) {
+          myListParams.push({
+            metaId,
+            type: type === 'movies' ? 'movie' : 'series',
+            addedAt: item.added_at ? new Date(item.added_at).getTime() : undefined,
+          });
+        }
+        continue;
+      }
+
+      // Add watching and completed (and any other status like 'hold' or undefined) to history
       if (type === 'movies' && item.movie) {
-        collectMovieParams(profileId, item, allParams);
+        collectMovieParams(profileId, item, historyParams);
       } else if ((type === 'shows' || type === 'anime') && item.show) {
-        collectShowParams(profileId, item, allParams);
+        collectShowParams(profileId, item, historyParams);
       }
     } catch (error) {
       debug('importItemError', { error });
     }
   }
 
-  // Write in parallel batches of 50 to avoid overwhelming SQLite
   const BATCH_SIZE = 50;
-  for (let i = 0; i < allParams.length; i += BATCH_SIZE) {
-    const batch = allParams.slice(i, i + BATCH_SIZE);
+
+  // Write history in parallel batches
+  for (let i = 0; i < historyParams.length; i += BATCH_SIZE) {
+    const batch = historyParams.slice(i, i + BATCH_SIZE);
     await Promise.all(batch.map((params) => upsertImportedProgress(params)));
+  }
+
+  // Write My List in parallel batches
+  for (let i = 0; i < myListParams.length; i += BATCH_SIZE) {
+    const batch = myListParams.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map((params) => addToMyList(profileId, params.metaId, params.type, params.addedAt))
+    );
   }
 }
 
@@ -231,27 +267,69 @@ export async function runExport(profileId: string, token: string, clientId: stri
     debug('exportStart', { profileId });
 
     const lastSyncAt = useIntegrationsStore.getState().lastSyncAt[profileId] || 0;
+    
+    // 1. Export Watch History
     const completed = await listExportableWatchHistoryForProfile(profileId, {
       status: 'completed',
       excludeSource: 'simkl',
       minLastWatchedAt: lastSyncAt,
     });
 
-    debug('exportItems', { completed: completed.length });
+    debug('exportHistoryItems', { completed: completed.length });
 
-    const payload = await buildExportPayload(completed, clientId);
+    const historyPayload = await buildExportPayload(completed, clientId);
 
-    if (payload.movies.length > 0 || payload.shows.length > 0) {
-      await postHistory(token, clientId, payload);
-      debug('exportComplete', { movies: payload.movies.length, shows: payload.shows.length });
-    } else {
-      debug('exportNothingToExport');
+    if (historyPayload.movies.length > 0 || historyPayload.shows.length > 0) {
+      await postHistory(token, clientId, historyPayload);
+      debug('exportHistoryComplete', { movies: historyPayload.movies.length, shows: historyPayload.shows.length });
     }
+
+    // 2. Export Watchlist (My List)
+    const myListItems = await listExportableMyListForProfile(profileId, {
+      minAddedAt: lastSyncAt,
+    });
+
+    debug('exportWatchlistItems', { count: myListItems.length });
+
+    const watchlistPayload = await buildWatchlistPayload(myListItems, clientId);
+
+    if (watchlistPayload.movies.length > 0 || watchlistPayload.shows.length > 0) {
+      await postWatchlist(token, clientId, watchlistPayload);
+      debug('exportWatchlistComplete', { movies: watchlistPayload.movies.length, shows: watchlistPayload.shows.length });
+    }
+
     return true;
   } catch (error) {
     debug('exportError', { profileId, error });
     return false;
   }
+}
+
+async function buildWatchlistPayload(
+  items: Awaited<ReturnType<typeof listExportableMyListForProfile>>,
+  clientId: string
+): Promise<HistoryPayload> {
+  const movies: any[] = [];
+  const shows: any[] = [];
+
+  for (const item of items) {
+    const ids = await resolveSimklIds(item.id, item.type, clientId);
+    if (!ids || Object.keys(ids).length === 0) {
+      debug('exportWatchlistItemNotFound', { metaId: item.id });
+      continue;
+    }
+
+    const payloadIds = toHistoryIdsPayload(ids);
+    if (!payloadIds) continue;
+
+    if (item.type === 'movie') {
+      movies.push({ ids: payloadIds, to: 'plantowatch' });
+    } else {
+      shows.push({ ids: payloadIds, to: 'plantowatch' });
+    }
+  }
+
+  return { movies, shows } as any;
 }
 
 async function buildExportPayload(
