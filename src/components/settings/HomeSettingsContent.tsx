@@ -31,16 +31,24 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
     heroEnabled,
     heroItemCount,
     heroCatalogSources,
+    continueWatchingEnabled,
+    myListEnabled,
     setHeroEnabled,
     setHeroItemCount,
     setHeroCatalogSources,
+    setContinueWatchingEnabled,
+    setMyListEnabled,
   } = useHomeStore((state) => ({
     heroEnabled: state.getActiveSettings().heroEnabled,
     heroItemCount: state.getActiveSettings().heroItemCount,
     heroCatalogSources: state.getActiveSettings().heroCatalogSources,
+    continueWatchingEnabled: state.getActiveSettings().continueWatchingEnabled,
+    myListEnabled: state.getActiveSettings().myListEnabled,
     setHeroEnabled: state.setHeroEnabled,
     setHeroItemCount: state.setHeroItemCount,
     setHeroCatalogSources: state.setHeroCatalogSources,
+    setContinueWatchingEnabled: state.setContinueWatchingEnabled,
+    setMyListEnabled: state.setMyListEnabled,
   }));
 
   const addons = useAddonStore((state) => state.addons);
@@ -137,6 +145,21 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
 
   const content = (
     <Box paddingVertical="m" paddingHorizontal="m" gap="l">
+      <SettingsCard title="Catalogs">
+        <SettingsSwitch
+          label="Continue watching"
+          description="Display recently watched content at the top of the home screen"
+          value={continueWatchingEnabled}
+          onValueChange={setContinueWatchingEnabled}
+        />
+        <SettingsSwitch
+          label="My List"
+          description="Display your saved movies and shows on the home screen"
+          value={myListEnabled}
+          onValueChange={setMyListEnabled}
+        />
+      </SettingsCard>
+
       <SettingsCard title="Hero Section">
         <SettingsSwitch
           label="Show Hero Section"

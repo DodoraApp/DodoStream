@@ -125,6 +125,7 @@ export function getVisibleCatalogCount(
   theme: Theme,
   heroEnabled: boolean,
   hasContinueWatching: boolean,
+  hasMyList: boolean,
   bufferRows: number = 1
 ): number {
   let remaining = screenHeight;
@@ -135,6 +136,11 @@ export function getVisibleCatalogCount(
 
   if (hasContinueWatching) {
     remaining -= getSectionHeaderHeight(theme) + getContinueWatchingSectionHeight(theme);
+  }
+
+  if (hasMyList) {
+    // My List section height (approximate TagFilters height as 40px)
+    remaining -= getSectionHeaderHeight(theme) + getMediaSectionHeight(theme) + 40;
   }
 
   const rowHeight = getSectionHeaderHeight(theme) + getMediaSectionHeight(theme);

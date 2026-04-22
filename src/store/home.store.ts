@@ -18,6 +18,10 @@ export interface ProfileHomeSettings {
   heroItemCount: number;
   /** Catalogs that supply hero items */
   heroCatalogSources: HeroCatalogSource[];
+  /** Whether to show the continue watching catalog on home */
+  continueWatchingEnabled: boolean;
+  /** Whether to show the my list catalog on home */
+  myListEnabled: boolean;
 }
 
 interface HomeSettingsState {
@@ -34,6 +38,8 @@ interface HomeSettingsState {
   setHeroEnabled: (enabled: boolean) => void;
   setHeroItemCount: (count: number) => void;
   setHeroCatalogSources: (sources: HeroCatalogSource[]) => void;
+  setContinueWatchingEnabled: (enabled: boolean) => void;
+  setMyListEnabled: (enabled: boolean) => void;
   addHeroCatalogSource: (source: HeroCatalogSource) => void;
   removeHeroCatalogSource: (addonId: string, catalogId: string) => void;
 
@@ -41,12 +47,16 @@ interface HomeSettingsState {
   setHeroEnabledForProfile: (profileId: string, enabled: boolean) => void;
   setHeroItemCountForProfile: (profileId: string, count: number) => void;
   setHeroCatalogSourcesForProfile: (profileId: string, sources: HeroCatalogSource[]) => void;
+  setContinueWatchingEnabledForProfile: (profileId: string, enabled: boolean) => void;
+  setMyListEnabledForProfile: (profileId: string, enabled: boolean) => void;
 }
 
 export const DEFAULT_HOME_SETTINGS: ProfileHomeSettings = {
   heroEnabled: true,
   heroItemCount: 5,
   heroCatalogSources: [],
+  continueWatchingEnabled: true,
+  myListEnabled: true,
 };
 
 export const useHomeStore = create<HomeSettingsState>()(
@@ -83,6 +93,18 @@ export const useHomeStore = create<HomeSettingsState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setHeroCatalogSourcesForProfile(profileId, sources);
+      },
+
+      setContinueWatchingEnabled: (enabled) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setContinueWatchingEnabledForProfile(profileId, enabled);
+      },
+
+      setMyListEnabled: (enabled) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setMyListEnabledForProfile(profileId, enabled);
       },
 
       addHeroCatalogSource: (source) => {
@@ -140,6 +162,30 @@ export const useHomeStore = create<HomeSettingsState>()(
             [profileId]: {
               ...(state.byProfile[profileId] ?? DEFAULT_HOME_SETTINGS),
               heroCatalogSources: sources,
+            },
+          },
+        }));
+      },
+
+      setContinueWatchingEnabledForProfile: (profileId, enabled) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_HOME_SETTINGS),
+              continueWatchingEnabled: enabled,
+            },
+          },
+        }));
+      },
+
+      setMyListEnabledForProfile: (profileId, enabled) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_HOME_SETTINGS),
+              myListEnabled: enabled,
             },
           },
         }));

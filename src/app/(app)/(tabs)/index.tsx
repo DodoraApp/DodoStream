@@ -4,17 +4,20 @@ import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
 import { useProfileStore } from '@/store/profile.store';
-import { useMemo, useCallback, memo } from 'react';
+import { useMemo, useCallback, memo, useState } from 'react';
 import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
 import { MetaPreview } from '@/types/stremio';
 import { LegendList } from '@legendapp/list/react-native';
 import { MotiView } from 'moti';
 import { useContinueWatching, ContinueWatchingEntry } from '@/hooks/useContinueWatching';
+import { useMyList } from '@/hooks/useMyListDb';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
 import { ContinueWatchingListSkeleton } from '@/components/media/ContinueWatchingListSkeleton';
 import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
 import { CatalogSection } from '@/components/media/CatalogSection';
+import { MediaList } from '@/components/media/MediaList';
+import { TagFilters, TagOption } from '@/components/basic/TagFilters';
 import { PickerModal } from '@/components/basic/PickerModal';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
@@ -30,6 +33,7 @@ import {
   HOME_PRIORITY_BUFFER_ROWS,
   ANIMATION_FADE_IN_MS,
 } from '@/constants/ui';
+import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import {
   getMediaSectionHeight,
   getContinueWatchingSectionHeight,
@@ -85,8 +89,14 @@ interface CatalogRowItem {
   catalog: CatalogSectionData;
 }
 
+/** My list row item */
+interface MyListRowItem {
+  kind: 'my-list-row';
+  sectionKey: string;
+}
+
 /** Union type for all home list items */
-type HomeListItem = SectionHeaderItem | ContinueWatchingRowItem | CatalogRowItem;
+type HomeListItem = SectionHeaderItem | ContinueWatchingRowItem | MyListRowItem | CatalogRowItem;
 
 // ============================================================================
 // Main Component
@@ -109,21 +119,29 @@ const HomeContent = () => {
   );
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
   const hasAddons = useAddonStore((state) => state.hasAddons());
-  const { heroEnabled, heroCatalogSources } = useHomeStore((state) => ({
-    heroEnabled: state.getActiveSettings().heroEnabled,
-    heroCatalogSources: state.getActiveSettings().heroCatalogSources,
-  }));
+  const { heroEnabled, heroCatalogSources, continueWatchingEnabled, myListEnabled } = useHomeStore(
+    (state) => ({
+      heroEnabled: state.getActiveSettings().heroEnabled,
+      heroCatalogSources: state.getActiveSettings().heroCatalogSources,
+      continueWatchingEnabled: state.getActiveSettings().continueWatchingEnabled,
+      myListEnabled: state.getActiveSettings().myListEnabled,
+    })
+  );
   const continueWatching = useContinueWatching();
   const continueWatchingData = continueWatching.data;
   const continueWatchingLoading = continueWatching.isLoading;
   const continueWatchingActions = useContinueWatchingActions();
   const syncBadges = useSyncProviderBadges();
+  const myList = useMyList();
   const { scrollToSection, listRef } = useHomeScroll();
   const theme = useTheme<Theme>();
   const { height: screenHeight } = useWindowDimensions();
-
   // Whether the continue watching section will be visible
-  const hasContinueWatching = continueWatchingLoading || continueWatchingData.length > 0;
+  const hasContinueWatching =
+    continueWatchingEnabled && (continueWatchingLoading || continueWatchingData.length > 0);
+
+  // Whether the My List section will be visible
+  const hasMyList = myListEnabled && (myList.isLoading || (myList.data?.pages.flat().length ?? 0) > 0);
 
   // Number of catalog rows that fit above the fold — these load before the list is shown
   const priorityCatalogCount = useMemo(
@@ -133,9 +151,10 @@ const HomeContent = () => {
         theme,
         heroEnabled,
         hasContinueWatching,
+        hasMyList,
         HOME_PRIORITY_BUFFER_ROWS
       ),
-    [screenHeight, theme, heroEnabled, hasContinueWatching]
+    [screenHeight, theme, heroEnabled, hasContinueWatching, hasMyList]
   );
 
   // Resolve hero catalog source addonIds → { manifestUrl, type, id } for the priority hook
@@ -198,8 +217,8 @@ const HomeContent = () => {
 
     const continueWatchingSections: HomeListItem[] = [];
 
-    // Continue watching section: show when loading or when there is data
-    if (continueWatchingLoading || continueWatchingData.length > 0) {
+    // Continue watching section: show when enabled and (loading or has data)
+    if (continueWatchingEnabled && (continueWatchingLoading || continueWatchingData.length > 0)) {
       const sectionKey = 'continue-watching';
       continueWatchingSections.push({
         kind: 'section-header',
@@ -217,7 +236,23 @@ const HomeContent = () => {
       });
     }
 
-    return [...continueWatchingSections, ...addonSections];
+    const myListSections: HomeListItem[] = [];
+    if (hasMyList) {
+      const sectionKey = 'my-list';
+      myListSections.push({
+        kind: 'section-header',
+        sectionKey,
+        title: 'My List',
+        icon: 'bookmark-outline',
+        linkTo: { pathname: '/library', params: { tab: 'my-list' } },
+      });
+      myListSections.push({
+        kind: 'my-list-row',
+        sectionKey,
+      });
+    }
+
+    return [...continueWatchingSections, ...myListSections, ...addonSections];
   }, [
     orderedAddons,
     continueWatchingLoading,
@@ -225,6 +260,8 @@ const HomeContent = () => {
     configsByProfile,
     activeProfileId,
     syncBadges,
+    continueWatchingEnabled,
+    hasMyList,
   ]);
 
   // Priority catalogs are the first N catalog rows visible on screen
@@ -256,6 +293,8 @@ const HomeContent = () => {
           return getSectionHeaderHeight(theme);
         case 'continue-watching-row':
           return getContinueWatchingSectionHeight(theme);
+        case 'my-list-row':
+          return getMediaSectionHeight(theme);
         case 'catalog-row':
           return getMediaSectionHeight(theme);
         default:
@@ -303,6 +342,14 @@ const HomeContent = () => {
               sectionKey={item.sectionKey}
               onSectionFocused={() => handleSectionFocused(index)}
               onLongPressEntry={(entry) => continueWatchingActions.openActions(entry)}
+            />
+          );
+
+        case 'my-list-row':
+          return (
+            <MyListSectionRow
+              onMediaPress={handleMediaPress}
+              onSectionFocused={() => handleSectionFocused(index)}
             />
           );
 
@@ -477,3 +524,77 @@ const ContinueWatchingSectionRow = memo(
 );
 
 ContinueWatchingSectionRow.displayName = 'ContinueWatchingSectionRow';
+
+// ============================================================================
+// My List Row Component
+// ============================================================================
+
+interface MyListSectionRowProps {
+  onMediaPress: (media: Pick<MetaPreview, 'id' | 'type'>) => void;
+  onSectionFocused: () => void;
+}
+
+const MY_LIST_FILTERS: TagOption[] = [
+  { id: 'movie', label: 'Movies' },
+  { id: 'series', label: 'Shows' },
+];
+
+const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSectionRowProps) => {
+  const { data, isLoading } = useMyList();
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+
+  const flatData = useMemo(() => data?.pages.flat() ?? [], [data]);
+
+  const filteredData = useMemo(() => {
+    if (!selectedFilter) return flatData;
+    if (selectedFilter === 'movie') {
+      return flatData.filter((item) => item.type === 'movie');
+    }
+    if (selectedFilter === 'series') {
+      return flatData.filter((item) => item.type === 'series' || item.type === 'tv');
+    }
+    return flatData;
+  }, [flatData, selectedFilter]);
+
+  // Map to MetaPreview and limit to 20 items
+  const mappedData = useMemo<MetaPreview[]>(
+    () =>
+      filteredData.slice(0, 20).map((item) => ({
+        id: item.id,
+        type: item.type,
+        name: item.metaName ?? '',
+        poster: item.imageUrl ?? NO_POSTER_PORTRAIT,
+      })),
+    [filteredData]
+  );
+
+  if (isLoading) {
+    return <ContinueWatchingListSkeleton />;
+  }
+
+  if (flatData.length === 0) {
+    return null;
+  }
+
+  return (
+    <Box gap="s">
+      <Box paddingHorizontal="m">
+        <TagFilters
+          options={MY_LIST_FILTERS}
+          selectedId={selectedFilter}
+          onSelectId={setSelectedFilter}
+          includeAllOption
+          allLabel="All"
+        />
+      </Box>
+      <MediaList
+        data={mappedData}
+        onMediaPress={onMediaPress as any}
+        onItemFocused={onSectionFocused}
+      />
+    </Box>
+  );
+});
+
+MyListSectionRow.displayName = 'MyListSectionRow';
+
