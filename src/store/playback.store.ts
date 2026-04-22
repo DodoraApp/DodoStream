@@ -92,7 +92,10 @@ interface PlaybackState {
   setAudioPassthroughForProfile: (profileId: string, audioPassthrough: boolean) => void;
   setEnableWorkaroundsForProfile: (profileId: string, enableWorkarounds: boolean) => void;
   setMatchFrameRateForProfile: (profileId: string, matchFrameRate: boolean) => void;
-  setEnableVideoSoftwareDecodingForProfile: (profileId: string, enableVideoSoftwareDecoding: boolean) => void;
+  setEnableVideoSoftwareDecodingForProfile: (
+    profileId: string,
+    enableVideoSoftwareDecoding: boolean
+  ) => void;
   setSkipIntroEnabledForProfile: (profileId: string, skipIntroEnabled: boolean) => void;
   setSubtitlePreferenceForProfile: (profileId: string, preference: SubtitlePreference) => void;
   clearSubtitlePreferenceForProfile: (profileId: string) => void;

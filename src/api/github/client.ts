@@ -66,12 +66,10 @@ export async function fetchLatestGithubRelease(releasesApiUrl: string): Promise<
     body: json.body,
     htmlUrl: json.html_url,
     publishedAt: json.published_at,
-    assets: (json.assets ?? [])
-      .filter(isDownloadableAsset)
-      .map((a) => ({
-        name: a.name,
-        browserDownloadUrl: a.browser_download_url,
-        size: a.size,
-      })),
+    assets: (json.assets ?? []).filter(isDownloadableAsset).map((a) => ({
+      name: a.name,
+      browserDownloadUrl: a.browser_download_url,
+      size: a.size,
+    })),
   };
 }

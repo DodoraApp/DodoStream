@@ -83,9 +83,7 @@ export async function upsertMetaCache(meta: MetaDetail): Promise<void> {
   }
 
   // Remove videos no longer present in the source — untouched rows have an older fetchedAt.
-  await db
-    .delete(videos)
-    .where(and(eq(videos.metaId, meta.id), lt(videos.fetchedAt, now)));
+  await db.delete(videos).where(and(eq(videos.metaId, meta.id), lt(videos.fetchedAt, now)));
 }
 
 export async function isMetaCacheStale(metaId: string): Promise<boolean> {

@@ -1,6 +1,7 @@
 import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 export type StreamTargetType = 'url' | 'external' | 'yt';
+export type WatchHistorySource = 'internal' | 'simkl';
 
 const contentTypeColumn = (name: string) =>
   text(name, { enum: ['movie', 'series', 'channel', 'tv'] as const });
@@ -24,6 +25,7 @@ export const watchHistory = sqliteTable(
     lastStreamTargetType: streamTargetTypeColumn('last_stream_target_type'),
     lastStreamTargetValue: text('last_stream_target_value'),
     status: watchStatusColumn('status').notNull().default('watching'),
+    source: text('source', { enum: ['internal', 'simkl'] as const }).notNull().default('internal'),
     lastWatchedAt: integer('last_watched_at').notNull(),
     dismissedAt: integer('dismissed_at'),
     createdAt: integer('created_at').notNull(),

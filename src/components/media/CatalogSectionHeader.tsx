@@ -5,6 +5,9 @@ import { useTheme } from '@shopify/restyle';
 import { TVFocusGuideView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
+import type { SyncProviderBadge } from '@/hooks/useSyncProviderBadges';
+
+import { SyncBadge } from '@/components/basic/SyncBadge';
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   movie: 'film-outline',
@@ -26,10 +29,11 @@ export interface CatalogSectionHeaderProps {
     catalogType: string;
     catalogId: string;
   };
+  syncBadges?: SyncProviderBadge[];
 }
 
 export const CatalogSectionHeader = memo(
-  ({ title, type, icon, onFocused, linkTo, catalogData }: CatalogSectionHeaderProps) => {
+  ({ title, type, icon, onFocused, linkTo, catalogData, syncBadges }: CatalogSectionHeaderProps) => {
     const theme = useTheme<Theme>();
     const router = useRouter();
 
@@ -90,13 +94,22 @@ export const CatalogSectionHeader = memo(
                   )}
                   <Text variant="subheader">{title}</Text>
                 </Box>
-                {isNavigable && (
-                  <Ionicons
-                    name="chevron-forward"
-                    size={theme.sizes.iconMedium}
-                    color={isFocused ? theme.colors.primaryBackground : theme.colors.textSecondary}
-                  />
-                )}
+                <Box flexDirection="row" alignItems="center" gap="s">
+                  {syncBadges && syncBadges.length > 0 && (
+                    <Box flexDirection="row" gap="s">
+                      {syncBadges.map((badge) => (
+                        <SyncBadge key={badge.key} status={badge.status} provider={badge.key} />
+                      ))}
+                    </Box>
+                  )}
+                  {isNavigable && (
+                    <Ionicons
+                      name="chevron-forward"
+                      size={theme.sizes.iconMedium}
+                      color={isFocused ? theme.colors.primaryBackground : theme.colors.textSecondary}
+                    />
+                  )}
+                </Box>
               </Box>
             );
           }}

@@ -1,9 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { useProfileStore } from '@/store/profile.store';
-import {
-  DEFAULT_PROFILE_PLAYBACK_SETTINGS,
-  usePlaybackStore,
-} from '@/store/playback.store';
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import { useShallow } from 'zustand/react/shallow';
 import { VideoPlayerSession, type VideoPlayerProps } from './VideoPlayerSession';
 import { getVideoSessionId } from '@/utils/stream';

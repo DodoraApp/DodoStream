@@ -131,8 +131,8 @@ export const useProfileStore = create<ProfileState>()(
           debug('removeProfileStorageFailed', { id, key: `profile-${id}-home`, error });
         });
 
-        removeProfileWatchHistory(id).catch(() => { });
-        removeProfileMyList(id).catch(() => { });
+        removeProfileWatchHistory(id).catch(() => {});
+        removeProfileMyList(id).catch(() => {});
       },
 
       switchProfile: (id: string, pin?: string) => {

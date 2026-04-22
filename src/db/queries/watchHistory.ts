@@ -3,11 +3,13 @@ import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, videos, watchHistory } from '@/db/schema';
-import type { StreamTargetType } from '@/db/schema';
+import type { StreamTargetType, WatchHistorySource, WatchHistoryStatus } from '@/db/schema';
 
 export type DbWatchHistoryItem = {
   id: string;
   type: ContentType;
+  status: WatchHistoryStatus;
+  source: WatchHistorySource;
   videoId?: string;
   progressSeconds: number;
   durationSeconds: number;
@@ -38,6 +40,8 @@ export async function listWatchHistoryForProfile(profileId: string): Promise<DbW
     .select({
       metaId: watchHistory.metaId,
       type: watchHistory.type,
+      status: watchHistory.status,
+      source: watchHistory.source,
       videoId: watchHistory.videoId,
       progressSeconds: watchHistory.progressSeconds,
       durationSeconds: watchHistory.durationSeconds,
@@ -52,6 +56,56 @@ export async function listWatchHistoryForProfile(profileId: string): Promise<DbW
   return rows.map((row) => ({
     id: row.metaId,
     type: row.type,
+    status: row.status,
+    source: row.source,
+    videoId: row.videoId || undefined,
+    progressSeconds: Number(row.progressSeconds ?? 0),
+    durationSeconds: Number(row.durationSeconds ?? 0),
+    lastStreamTargetType: row.lastStreamTargetType ?? undefined,
+    lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+    lastWatchedAt: Number(row.lastWatchedAt ?? 0),
+  }));
+}
+
+export async function listExportableWatchHistoryForProfile(
+  profileId: string,
+  options: {
+    status: WatchHistoryStatus;
+    excludeSource: WatchHistorySource;
+    minLastWatchedAt: number;
+  }
+): Promise<DbWatchHistoryItem[]> {
+  await initializeDatabase();
+
+  const rows = await db
+    .select({
+      metaId: watchHistory.metaId,
+      type: watchHistory.type,
+      status: watchHistory.status,
+      source: watchHistory.source,
+      videoId: watchHistory.videoId,
+      progressSeconds: watchHistory.progressSeconds,
+      durationSeconds: watchHistory.durationSeconds,
+      lastStreamTargetType: watchHistory.lastStreamTargetType,
+      lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+      lastWatchedAt: watchHistory.lastWatchedAt,
+    })
+    .from(watchHistory)
+    .where(
+      and(
+        eq(watchHistory.profileId, profileId),
+        eq(watchHistory.status, options.status),
+        ne(watchHistory.source, options.excludeSource),
+        sql`${watchHistory.lastWatchedAt} > ${options.minLastWatchedAt}`
+      )
+    )
+    .orderBy(desc(watchHistory.lastWatchedAt));
+
+  return rows.map((row) => ({
+    id: row.metaId,
+    type: row.type,
+    status: row.status,
+    source: row.source,
     videoId: row.videoId || undefined,
     progressSeconds: Number(row.progressSeconds ?? 0),
     durationSeconds: Number(row.durationSeconds ?? 0),
@@ -75,6 +129,8 @@ export async function listWatchHistoryForMeta(
     .select({
       metaId: watchHistory.metaId,
       type: watchHistory.type,
+      status: watchHistory.status,
+      source: watchHistory.source,
       videoId: watchHistory.videoId,
       progressSeconds: watchHistory.progressSeconds,
       durationSeconds: watchHistory.durationSeconds,
@@ -94,6 +150,8 @@ export async function listWatchHistoryForMeta(
   return rows.map((row) => ({
     id: row.metaId,
     type: row.type,
+    status: row.status,
+    source: row.source,
     videoId: row.videoId || undefined,
     progressSeconds: Number(row.progressSeconds ?? 0),
     durationSeconds: Number(row.durationSeconds ?? 0),
@@ -112,6 +170,7 @@ export async function upsertWatchProgress(params: {
   durationSeconds: number;
   lastStreamTargetType?: StreamTargetType;
   lastStreamTargetValue?: string;
+  source?: WatchHistorySource;
   lastWatchedAt?: number;
 }): Promise<void> {
   await initializeDatabase();
@@ -128,6 +187,7 @@ export async function upsertWatchProgress(params: {
     progressSeconds: params.progressSeconds,
     durationSeconds: params.durationSeconds,
     status,
+    source: params.source ?? 'internal',
     dismissedAt: null,
     lastWatchedAt: now,
     updatedAt: now,
@@ -149,6 +209,7 @@ export async function upsertWatchProgress(params: {
       lastStreamTargetType: params.lastStreamTargetType,
       lastStreamTargetValue: params.lastStreamTargetValue,
       status,
+      source: params.source ?? 'internal',
       dismissedAt: null,
       lastWatchedAt: now,
       createdAt: now,
@@ -271,6 +332,8 @@ export async function getWatchHistoryItem(
     .select({
       metaId: watchHistory.metaId,
       type: watchHistory.type,
+      status: watchHistory.status,
+      source: watchHistory.source,
       videoId: watchHistory.videoId,
       progressSeconds: watchHistory.progressSeconds,
       durationSeconds: watchHistory.durationSeconds,
@@ -293,6 +356,8 @@ export async function getWatchHistoryItem(
   return {
     id: row[0].metaId,
     type: row[0].type,
+    status: row[0].status,
+    source: row[0].source,
     videoId: row[0].videoId || undefined,
     progressSeconds: Number(row[0].progressSeconds ?? 0),
     durationSeconds: Number(row[0].durationSeconds ?? 0),
@@ -348,6 +413,8 @@ export async function listWatchedMetaSummaries(profileId: string): Promise<DbWat
       .select({
         id: watchHistory.metaId,
         type: watchHistory.type,
+        status: watchHistory.status,
+        source: watchHistory.source,
         videoId: watchHistory.videoId,
         progressSeconds: watchHistory.progressSeconds,
         durationSeconds: watchHistory.durationSeconds,
@@ -368,6 +435,8 @@ export async function listWatchedMetaSummaries(profileId: string): Promise<DbWat
     .select({
       id: rankedWatchHistory.id,
       type: rankedWatchHistory.type,
+      status: rankedWatchHistory.status,
+      source: rankedWatchHistory.source,
       videoId: rankedWatchHistory.videoId,
       progressSeconds: rankedWatchHistory.progressSeconds,
       durationSeconds: rankedWatchHistory.durationSeconds,
@@ -397,15 +466,17 @@ export async function listWatchedMetaSummaries(profileId: string): Promise<DbWat
 
     const latestItem: DbWatchHistoryItem | undefined = videoId
       ? {
-        id: row.id,
-        type: row.type,
-        videoId,
-        progressSeconds,
-        durationSeconds,
-        lastStreamTargetType: row.lastStreamTargetType ?? undefined,
-        lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
-        lastWatchedAt: Number(row.lastWatchedAt ?? 0),
-      }
+          id: row.id,
+          type: row.type,
+          status: row.status,
+          source: row.source,
+          videoId,
+          progressSeconds,
+          durationSeconds,
+          lastStreamTargetType: row.lastStreamTargetType ?? undefined,
+          lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+          lastWatchedAt: Number(row.lastWatchedAt ?? 0),
+        }
       : undefined;
 
     return {
@@ -416,9 +487,9 @@ export async function listWatchedMetaSummaries(profileId: string): Promise<DbWat
       latestVideo:
         row.season != null || row.episode != null
           ? {
-            season: row.season ?? undefined,
-            episode: row.episode ?? undefined,
-          }
+              season: row.season ?? undefined,
+              episode: row.episode ?? undefined,
+            }
           : undefined,
       progressRatio,
       isInProgress: progressRatio > 0 && progressRatio < PLAYBACK_FINISHED_RATIO,
@@ -431,6 +502,7 @@ export async function listWatchedMetaSummaries(profileId: string): Promise<DbWat
 export type ContinueWatchingDbItem = {
   metaId: string;
   type: ContentType;
+  source: WatchHistorySource;
   videoId?: string;
   progressSeconds: number;
   durationSeconds: number;
@@ -439,6 +511,11 @@ export type ContinueWatchingDbItem = {
   isUpNext: boolean;
   metaName?: string;
   imageUrl?: string;
+};
+
+export type DbMetaWatchStatus = {
+  state: 'not-watched' | 'watching' | 'completed';
+  source?: WatchHistorySource;
 };
 
 async function findNextUnwatchedEpisode(
@@ -490,6 +567,107 @@ async function findNextUnwatchedEpisode(
   return nextEpisode[0];
 }
 
+export async function getMetaWatchStatus(
+  profileId: string,
+  metaId: string
+): Promise<DbMetaWatchStatus> {
+  await initializeDatabase();
+
+  const latest = db.$with('latest').as(
+    db
+      .select({
+        type: watchHistory.type,
+        source: watchHistory.source,
+        progressSeconds: watchHistory.progressSeconds,
+        durationSeconds: watchHistory.durationSeconds,
+        videoId: watchHistory.videoId,
+        season: videos.season,
+        episode: videos.episode,
+      })
+      .from(watchHistory)
+      .leftJoin(
+        videos,
+        and(eq(videos.metaId, watchHistory.metaId), eq(videos.videoId, watchHistory.videoId))
+      )
+      .where(
+        and(
+          eq(watchHistory.profileId, profileId),
+          eq(watchHistory.metaId, metaId),
+          ne(watchHistory.status, 'dismissed')
+        )
+      )
+      .orderBy(desc(watchHistory.lastWatchedAt), desc(watchHistory.id))
+      .limit(1)
+  );
+
+  const rows = await db
+    .with(latest)
+    .select({
+      state: sql<'not-watched' | 'watching' | 'completed'>`
+        CASE
+          WHEN NOT EXISTS (SELECT 1 FROM ${latest}) THEN 'not-watched'
+          WHEN (SELECT ${latest.type} FROM ${latest} LIMIT 1) != 'series' THEN
+            CASE
+              WHEN (SELECT ${latest.durationSeconds} FROM ${latest} LIMIT 1) > 0
+                AND (
+                  (SELECT ${latest.progressSeconds} FROM ${latest} LIMIT 1) * 1.0 /
+                  (SELECT ${latest.durationSeconds} FROM ${latest} LIMIT 1)
+                ) >= ${PLAYBACK_FINISHED_RATIO}
+              THEN 'completed'
+              WHEN (SELECT ${latest.progressSeconds} FROM ${latest} LIMIT 1) > 0 THEN 'watching'
+              ELSE 'not-watched'
+            END
+          ELSE
+            CASE
+              WHEN (SELECT ${latest.durationSeconds} FROM ${latest} LIMIT 1) > 0
+                AND (
+                  (SELECT ${latest.progressSeconds} FROM ${latest} LIMIT 1) * 1.0 /
+                  (SELECT ${latest.durationSeconds} FROM ${latest} LIMIT 1)
+                ) < ${PLAYBACK_FINISHED_RATIO}
+              THEN 'watching'
+              WHEN EXISTS (
+                SELECT 1
+                FROM ${videos} v
+                LEFT JOIN ${watchHistory} wh
+                  ON wh.profile_id = ${profileId}
+                  AND wh.meta_id = v.meta_id
+                  AND wh.video_id = v.video_id
+                  AND wh.status != 'dismissed'
+                WHERE v.meta_id = ${metaId}
+                  AND COALESCE(v.season, 0) != 0
+                  AND (
+                    (v.season = (SELECT ${latest.season} FROM ${latest} LIMIT 1)
+                      AND v.episode > (SELECT ${latest.episode} FROM ${latest} LIMIT 1))
+                    OR (v.season > (SELECT ${latest.season} FROM ${latest} LIMIT 1))
+                  )
+                  AND (
+                    wh.id IS NULL OR (
+                      wh.duration_seconds > 0
+                      AND (wh.progress_seconds * 1.0 / wh.duration_seconds) < ${PLAYBACK_FINISHED_RATIO}
+                    )
+                  )
+              )
+              THEN 'watching'
+              ELSE 'completed'
+            END
+        END
+      `,
+      source: sql<WatchHistorySource | null>`(SELECT ${latest.source} FROM ${latest} LIMIT 1)`,
+    })
+    .from(sql`(SELECT 1)`)
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) {
+    return { state: 'not-watched' };
+  }
+
+  return {
+    state: row.state,
+    source: row.source ?? undefined,
+  };
+}
+
 export async function getContinueWatchingWithUpNext(
   profileId: string,
   limit = 50
@@ -503,12 +681,14 @@ export async function getContinueWatchingWithUpNext(
         metaId: watchHistory.metaId,
         currentVideoId: watchHistory.videoId,
         type: watchHistory.type,
+        source: watchHistory.source,
         progressSeconds: watchHistory.progressSeconds,
         durationSeconds: watchHistory.durationSeconds,
         lastWatchedAt: watchHistory.lastWatchedAt,
+        updatedAt: watchHistory.updatedAt,
         rank: sql<number>`row_number() over (
           partition by ${watchHistory.metaId}
-          order by ${watchHistory.lastWatchedAt} desc, ${watchHistory.id} desc
+          order by coalesce(${watchHistory.updatedAt}, ${watchHistory.lastWatchedAt}) desc, ${watchHistory.id} desc
         )`.as('rank'),
       })
       .from(watchHistory)
@@ -527,9 +707,11 @@ export async function getContinueWatchingWithUpNext(
       metaId: ranked.metaId,
       currentVideoId: ranked.currentVideoId,
       type: ranked.type,
+      source: ranked.source,
       progressSeconds: ranked.progressSeconds,
       durationSeconds: ranked.durationSeconds,
       lastWatchedAt: ranked.lastWatchedAt,
+      updatedAt: ranked.updatedAt,
       metaName: metaCache.name,
       metaPoster: metaCache.poster,
       metaBackground: metaCache.background,
@@ -543,7 +725,7 @@ export async function getContinueWatchingWithUpNext(
       and(eq(ranked.metaId, videos.metaId), eq(ranked.currentVideoId, videos.videoId))
     )
     .where(eq(ranked.rank, 1))
-    .orderBy(desc(ranked.lastWatchedAt))
+    .orderBy(desc(sql`COALESCE(${ranked.updatedAt}, ${ranked.lastWatchedAt})`))
     .limit(limit);
 
   const resolved = await Promise.all(
@@ -557,6 +739,7 @@ export async function getContinueWatchingWithUpNext(
         const base: ContinueWatchingDbItem = {
           metaId: item.metaId,
           type: item.type,
+          source: item.source,
           videoId: item.currentVideoId || undefined,
           progressSeconds,
           durationSeconds,

@@ -21,6 +21,7 @@ import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
 import { HeroSection } from '@/components/media/HeroSection';
 import { useHomeStore } from '@/store/home.store';
 import { useHomePriorityLoading, type PriorityCatalogEntry } from '@/hooks/useHomePriorityLoading';
+import { useSyncProviderBadges, type SyncProviderBadge } from '@/hooks/useSyncProviderBadges';
 import {
   TV_DRAW_DISTANCE,
   MOBILE_DRAW_DISTANCE,
@@ -64,6 +65,7 @@ interface SectionHeaderItem {
     catalogType: string;
     catalogId: string;
   };
+  syncBadges?: SyncProviderBadge[];
 }
 
 /** Continue watching row item */
@@ -115,6 +117,7 @@ const HomeContent = () => {
   const continueWatchingData = continueWatching.data;
   const continueWatchingLoading = continueWatching.isLoading;
   const continueWatchingActions = useContinueWatchingActions();
+  const syncBadges = useSyncProviderBadges();
   const { scrollToSection, listRef } = useHomeScroll();
   const theme = useTheme<Theme>();
   const { height: screenHeight } = useWindowDimensions();
@@ -204,6 +207,7 @@ const HomeContent = () => {
         title: 'Continue Watching',
         icon: 'time-outline',
         linkTo: { pathname: '/library', params: { tab: 'history' } },
+        syncBadges,
       });
       continueWatchingSections.push({
         kind: 'continue-watching-row',
@@ -220,6 +224,7 @@ const HomeContent = () => {
     continueWatchingData,
     configsByProfile,
     activeProfileId,
+    syncBadges,
   ]);
 
   // Priority catalogs are the first N catalog rows visible on screen
@@ -285,6 +290,7 @@ const HomeContent = () => {
               icon={item.icon as any}
               linkTo={item.linkTo}
               catalogData={item.catalogData}
+              syncBadges={item.syncBadges}
               onFocused={() => handleSectionFocused(index + 1)}
             />
           );

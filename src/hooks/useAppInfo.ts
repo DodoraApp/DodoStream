@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import Constants from 'expo-constants';
 
-function getInstalledAppVersion(): string {
+export function getInstalledAppVersion(): string {
   const expoConfigVersion = Constants.expoConfig?.version;
   const manifestVersion = (Constants as any)?.manifest?.version;
   const fallbackVersion = (Constants as any)?.manifest2?.extra?.expoClient?.version;
