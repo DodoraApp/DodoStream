@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { useProfileStore } from '@/store/profile.store';
@@ -82,13 +88,24 @@ export function useLastStreamTarget(metaId: string, videoId?: string) {
 export function useWatchedMetaSummaries() {
   const profileId = useProfileStore((state) => state.activeProfileId);
 
-  return useQuery<DbWatchedMetaSummary[]>({
+  return useInfiniteQuery<
+    DbWatchedMetaSummary[],
+    Error,
+    InfiniteData<DbWatchedMetaSummary[]>,
+    readonly unknown[],
+    number
+  >({
     queryKey: profileId ? watchHistoryKeys.metaSummaries(profileId) : watchHistoryKeys.all,
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
       if (!profileId) return [];
-      return listWatchedMetaSummaries(profileId);
+      return listWatchedMetaSummaries(profileId, { limit: 30, offset: pageParam });
     },
     enabled: !!profileId,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < 30) return undefined;
+      return allPages.reduce((acc, page) => acc + page.length, 0);
+    },
   });
 }
 

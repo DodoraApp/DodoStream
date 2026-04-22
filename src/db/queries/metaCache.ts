@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import type { MetaDetail, MetaVideo } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, videos } from '@/db/schema';
@@ -150,4 +150,40 @@ export async function getVideoForEntry(metaId: string, videoId: string): Promise
     thumbnail: row.thumbnail ?? undefined,
     overview: row.overview ?? undefined,
   };
+}
+
+export async function getVideosForEntries(
+  entries: { metaId: string; videoId: string }[]
+): Promise<Map<string, MetaVideo>> {
+  await initializeDatabase();
+  if (entries.length === 0) return new Map();
+
+  const result = new Map<string, MetaVideo>();
+
+  // Chunk to stay under SQLite bind param limits (each entry needs 2 params)
+  const chunkSize = 400; // 400 entries × 2 params = 800, safely under 999
+  for (let i = 0; i < entries.length; i += chunkSize) {
+    const chunk = entries.slice(i, i + chunkSize);
+    // Build OR conditions for each (metaId, videoId) pair
+    const conditions = chunk.map((e) => and(eq(videos.metaId, e.metaId), eq(videos.videoId, e.videoId)));
+    const rows = await db
+      .select()
+      .from(videos)
+      .where(or(...conditions));
+
+    for (const row of rows) {
+      const key = `${row.metaId}::${row.videoId}`;
+      result.set(key, {
+        id: row.videoId ?? '',
+        title: row.title ?? '',
+        released: row.released ?? '',
+        season: row.season ?? undefined,
+        episode: row.episode ?? undefined,
+        thumbnail: row.thumbnail ?? undefined,
+        overview: row.overview ?? undefined,
+      });
+    }
+  }
+
+  return result;
 }

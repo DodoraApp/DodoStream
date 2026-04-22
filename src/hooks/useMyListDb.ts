@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
-import { addToMyList, listMyListForProfile, removeFromMyList } from '@/db';
+import { addToMyList, listMyListForProfile, removeFromMyList, type DbMyListItem } from '@/db';
 
 const myListKeys = {
   all: ['my-list-db'] as const,
@@ -12,13 +12,24 @@ const myListKeys = {
 export function useMyList() {
   const profileId = useProfileStore((state) => state.activeProfileId);
 
-  return useQuery({
+  return useInfiniteQuery<
+    DbMyListItem[],
+    Error,
+    InfiniteData<DbMyListItem[]>,
+    readonly unknown[],
+    number
+  >({
     queryKey: profileId ? myListKeys.list(profileId) : myListKeys.all,
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
       if (!profileId) return [];
-      return listMyListForProfile(profileId);
+      return listMyListForProfile(profileId, { limit: 30, offset: pageParam });
     },
     enabled: !!profileId,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < 30) return undefined;
+      return allPages.reduce((acc, page) => acc + page.length, 0);
+    },
   });
 }
 
@@ -26,7 +37,8 @@ export function useIsInMyList(metaId: string, type: ContentType) {
   const { data } = useMyList();
 
   return useMemo(() => {
-    return (data ?? []).some((item) => item.id === metaId && item.type === type);
+    const allItems = data?.pages.flat() ?? [];
+    return allItems.some((item) => item.id === metaId && item.type === type);
   }, [data, metaId, type]);
 }
 

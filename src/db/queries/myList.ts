@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, myList } from '@/db/schema';
@@ -11,7 +11,10 @@ export type DbMyListItem = {
   imageUrl?: string;
 };
 
-export async function listMyListForProfile(profileId: string): Promise<DbMyListItem[]> {
+export async function listMyListForProfile(
+  profileId: string,
+  options?: { limit?: number; offset?: number }
+): Promise<DbMyListItem[]> {
   await initializeDatabase();
 
   const rows = await db
@@ -26,7 +29,9 @@ export async function listMyListForProfile(profileId: string): Promise<DbMyListI
     .from(myList)
     .leftJoin(metaCache, eq(myList.metaId, metaCache.metaId))
     .where(and(eq(myList.profileId, profileId)))
-    .orderBy(desc(myList.addedAt));
+    .orderBy(desc(myList.addedAt))
+    .limit(options?.limit ?? 30)
+    .offset(options?.offset ?? 0);
 
   return rows.map((row) => ({
     id: row.metaId,
@@ -60,6 +65,15 @@ export async function addToMyList(
         addedAt: now,
       },
     });
+}
+
+export async function countMyListForProfile(profileId: string): Promise<number> {
+  await initializeDatabase();
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(myList)
+    .where(eq(myList.profileId, profileId));
+  return Number(rows[0]?.count ?? 0);
 }
 
 export async function removeFromMyList(profileId: string, metaId: string): Promise<void> {

@@ -7,6 +7,28 @@ import {
 } from '@/types/stremio';
 import { StremioApiError } from '@/api/errors';
 
+const TIMEOUTS = {
+  manifest: 10_000,
+  catalog: 15_000,
+  meta: 15_000,
+  streams: 20_000,
+  subtitles: 15_000,
+} as const;
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Fetches and validates a Stremio addon manifest
  * @param manifestUrl - The URL ending with manifest.json
@@ -22,11 +44,7 @@ export async function fetchManifest(manifestUrl: string): Promise<Manifest> {
     );
   }
 
-  const response = await fetch(manifestUrl, {
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  const response = await fetchWithTimeout(manifestUrl, TIMEOUTS.manifest);
 
   if (!response.ok) {
     throw StremioApiError.fromResponse(response, manifestUrl);
@@ -86,11 +104,7 @@ export async function fetchCatalog(
 
   const url = `${baseUrl}${catalogPath}`;
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  const response = await fetchWithTimeout(url, TIMEOUTS.catalog);
 
   if (!response.ok) {
     throw StremioApiError.fromResponse(response, url);
@@ -137,11 +151,7 @@ export async function fetchMeta(
   const metaPath = `/meta/${type}/${id}.json`;
   const url = `${baseUrl}${metaPath}`;
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  const response = await fetchWithTimeout(url, TIMEOUTS.meta);
 
   if (!response.ok) {
     throw StremioApiError.fromResponse(response, url);
@@ -170,11 +180,7 @@ export async function fetchStreams(
   const streamPath = `/stream/${type}/${id}.json`;
   const url = `${baseUrl}${streamPath}`;
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  const response = await fetchWithTimeout(url, TIMEOUTS.streams);
 
   if (!response.ok) {
     throw StremioApiError.fromResponse(response, url);
@@ -210,11 +216,7 @@ export async function fetchSubtitles(
 
   const url = `${baseUrl}${subtitlesPath}`;
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  const response = await fetchWithTimeout(url, TIMEOUTS.subtitles);
 
   if (!response.ok) {
     throw StremioApiError.fromResponse(response, url);

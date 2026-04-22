@@ -8,7 +8,6 @@ import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { useMeta } from '@/api/stremio/hooks';
 import type { ContentType, MetaPreview } from '@/types/stremio';
 import type { DbWatchedMetaSummary } from '@/db';
-import { NO_POSTER_PORTRAIT } from '@/constants/images';
 
 interface HistoryCardProps {
   /** The watch history summary for this meta */
@@ -67,7 +66,7 @@ export const HistoryCard = memo(
           id: entry.id,
           type: entry.type,
           name: displayName ?? '',
-          poster: displayImage ?? NO_POSTER_PORTRAIT,
+          poster: displayImage,
           background: displayImage,
         }}
         onPress={handlePress}

@@ -24,8 +24,44 @@ import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 import { upsertMetaCache } from '@/db';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 
+/** Exponential backoff: 1s, 2s, 4s … capped at 10s */
+const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
+
 // Normalize `stremio://` scheme to `https://`
 const normalizeManifestUrl = (url: string): string => url.replace(/^stremio:\/\//i, 'https://');
+
+/**
+ * Simple async semaphore to cap concurrent in-flight requests.
+ * Shared across all useMeta calls so the global limit is respected.
+ */
+function createSemaphore(maxConcurrent: number) {
+  let running = 0;
+  const queue: (() => void)[] = [];
+
+  const acquire = (): Promise<void> =>
+    new Promise((resolve) => {
+      if (running < maxConcurrent) {
+        running++;
+        resolve();
+      } else {
+        queue.push(() => {
+          running++;
+          resolve();
+        });
+      }
+    });
+
+  const release = () => {
+    running--;
+    const next = queue.shift();
+    if (next) next();
+  };
+
+  return { acquire, release };
+}
+
+const metaSemaphore = createSemaphore(3);
+const searchSemaphore = createSemaphore(3);
 
 const toStremioApiError = (error: unknown, endpoint: string): StremioApiError => {
   return error instanceof StremioApiError
@@ -138,6 +174,8 @@ export function useAddonCatalogs(
       queryFn: () => fetchCatalogWithPagination(manifestUrl, type, id, 0),
       enabled: enabled && !!manifestUrl,
       staleTime: 1000 * 60 * 10, // 10 minutes
+      retry: 1,
+      retryDelay,
     })),
   });
 }
@@ -196,6 +234,8 @@ export function useInfiniteCatalog(
     },
     enabled: enabled && !!manifestUrl && !!type && !!id,
     staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: 1,
+    retryDelay,
   });
 }
 
@@ -256,10 +296,18 @@ export function useSearchCatalogs(query: string, enabled: boolean = true) {
           ...stremioKeys.catalog(manifestUrl, catalogType, catalogId, 0),
           { search: query },
         ],
-        queryFn: () => fetchCatalog(manifestUrl, catalogType, catalogId, { search: query }),
+        queryFn: async () => {
+          await searchSemaphore.acquire();
+          try {
+            return fetchCatalog(manifestUrl, catalogType, catalogId, { search: query });
+          } finally {
+            searchSemaphore.release();
+          }
+        },
         enabled: enabled && query.length > 0,
         staleTime: 1000 * 60 * 15, // 15 minutes
         retry: 1,
+        retryDelay,
         meta: { catalogName, addonName, manifestUrl, catalogType, catalogId },
       })
     ),
@@ -344,35 +392,41 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
     queries: compatibleAddons.map((addon) => ({
       queryKey: [...stremioKeys.meta(type, id), addon.manifestUrl],
       queryFn: async () => {
-        const result = await fetchMeta(addon.manifestUrl, type, id);
-        // Populate the SQLite meta cache so watch-history joins can use fresh meta/video rows.
-        // Keep this side effect fire-and-forget so meta query success is never blocked by cache issues.
-        if (result?.meta) {
-          void (async () => {
-            try {
-              await upsertMetaCache(result.meta);
+        await metaSemaphore.acquire();
+        try {
+          const result = await fetchMeta(addon.manifestUrl, type, id);
+          // Populate the SQLite meta cache so watch-history joins can use fresh meta/video rows.
+          // Keep this side effect fire-and-forget so meta query success is never blocked by cache issues.
+          if (result?.meta) {
+            void (async () => {
+              try {
+                await upsertMetaCache(result.meta);
 
-              if (activeProfileId) {
-                await Promise.all([
-                  queryClient.invalidateQueries({
-                    queryKey: watchHistoryKeys.continueWatching(activeProfileId),
-                  }),
-                  queryClient.invalidateQueries({
-                    queryKey: watchHistoryKeys.metaSummaries(activeProfileId),
-                  }),
-                ]);
+                if (activeProfileId) {
+                  await Promise.all([
+                    queryClient.invalidateQueries({
+                      queryKey: watchHistoryKeys.continueWatching(activeProfileId),
+                    }),
+                    queryClient.invalidateQueries({
+                      queryKey: watchHistoryKeys.metaSummaries(activeProfileId),
+                    }),
+                  ]);
+                }
+              } catch {
+                // Best-effort cache/invalidation side effect.
               }
-            } catch {
-              // Best-effort cache/invalidation side effect.
-            }
-          })();
+            })();
+          }
+          return result;
+        } finally {
+          metaSemaphore.release();
         }
-        return result;
       },
       enabled: enabled && !!type && !!id,
       staleTime: 1000 * 60 * 60 * 24, // 24 hours (metadata rarely changes)
       gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
       retry: 1,
+      retryDelay,
     })),
   });
 
@@ -452,6 +506,7 @@ export function useStreams(
       staleTime: 1000 * 60 * 15, // 15 minutes (streams can change)
       gcTime: 1000 * 60 * 30, // 30 minutes
       retry: 1,
+      retryDelay,
       refetchOnMount: false,
     })),
   });
@@ -562,6 +617,7 @@ export function useSubtitles(
       staleTime: 1000 * 60 * 60 * 24, // 24 hours
       gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days
       retry: 1,
+      retryDelay,
     })),
     combine: (results) => {
       const subtitles: AddonSubtitle[] = [];
@@ -646,6 +702,8 @@ export function useHeroCatalogContent(
       enabled: enabled && sources.length > 0,
       staleTime: 1000 * 60 * 10, // 10 minutes - catalog content doesn't change often
       gcTime: 1000 * 60 * 30, // 30 minutes
+      retry: 1,
+      retryDelay,
       refetchOnMount: false,
     })),
   });

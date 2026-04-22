@@ -34,7 +34,13 @@ export const MediaCard = memo(
   }: MediaCardProps) => {
     const theme = useTheme<Theme>();
 
-    const posterUri = media.poster || media.background;
+    // Guard: only use string URIs. media.poster/background must never be a require() number.
+    const posterUri =
+      typeof media.poster === 'string'
+        ? media.poster
+        : typeof media.background === 'string'
+          ? media.background
+          : undefined;
 
     // Clamp progress for display
     const clampedProgress = progress != null ? Math.min(1, Math.max(0, progress)) : undefined;
