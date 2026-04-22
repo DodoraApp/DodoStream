@@ -77,7 +77,8 @@ export function getAllItems(
   type: 'movies' | 'shows' | 'anime',
   dateFrom?: string
 ): Promise<SimklAllItemsResponse> {
-  const params = new URLSearchParams({ extended: 'full', episode_watched_at: 'yes' });
+  const extended = type === 'anime' ? 'full_anime_seasons' : 'full';
+  const params = new URLSearchParams({ extended, episode_watched_at: 'yes' });
   if (dateFrom) params.set('date_from', dateFrom);
   return simklFetch<SimklAllItemsResponse>(`/sync/all-items/${type}?${params.toString()}`, {
     token,
@@ -87,6 +88,15 @@ export function getAllItems(
 
 export function postHistory(token: string, clientId: string, payload: object): Promise<unknown> {
   return simklFetch('/sync/history', {
+    method: 'POST',
+    token,
+    clientId,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function postWatchlist(token: string, clientId: string, payload: object): Promise<unknown> {
+  return simklFetch('/sync/add-to-list', {
     method: 'POST',
     token,
     clientId,

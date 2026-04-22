@@ -10,7 +10,7 @@ import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { Focusable } from '@/components/basic/Focusable';
 import { CompletedBadge } from '@/components/basic/CompletedBadge';
-import { useWatchHistoryItem, useWatchProgress } from '@/hooks/useWatchHistoryDb';
+import { useWatchHistoryItem, getWatchProgressRatio } from '@/hooks/useWatchHistoryDb';
 import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
 
 export interface EpisodeItemProps {
@@ -24,7 +24,7 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
   const theme = useTheme<Theme>();
 
   const { data: historyItem } = useWatchHistoryItem(metaId, video.id);
-  const progressRatio = useWatchProgress(metaId, video.id);
+  const progressRatio = useMemo(() => getWatchProgressRatio(historyItem), [historyItem]);
 
   const clampedProgressRatio = Math.min(1, Math.max(0, progressRatio));
   const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;

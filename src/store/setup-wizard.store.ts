@@ -4,6 +4,7 @@ export const WIZARD_STEPS: string[] = [
   'welcome',
   'ui',
   'profile',
+  'integrations',
   'addons',
   'home',
   'playback',

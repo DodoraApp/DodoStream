@@ -5,7 +5,6 @@ import { SimklLogo } from './SimklLogo';
 import type { IntegrationProvider } from '@/types/integrations';
 
 import type { SyncStatus } from '@/hooks/useSyncProviderBadges';
-import { Badge } from '@/components/basic/Badge';
 
 interface SyncBadgeProps {
   status: SyncStatus;

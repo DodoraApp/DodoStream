@@ -31,19 +31,19 @@ const SYNC_CHOICES: SyncChoice[] = [
   {
     id: 'import',
     label: 'Sync from Simkl',
-    description: 'Pull your Simkl watch history into DodoStream',
+    description: 'Pull your Simkl watch history and watchlist into DodoStream',
     syncMode: 'pull',
   },
   {
     id: 'export',
     label: 'Sync to Simkl',
-    description: 'Synchronize your DodoStream history to Simkl',
+    description: 'Export your DodoStream history and watchlist to Simkl',
     syncMode: 'push',
   },
   {
     id: 'full',
     label: 'Full sync (both)',
-    description: 'Sync with Simkl in both directions',
+    description: 'Full synchronization of history and watchlist in both directions',
     syncMode: 'full',
   },
 ];

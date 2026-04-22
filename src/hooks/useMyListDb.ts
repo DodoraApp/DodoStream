@@ -2,7 +2,7 @@ import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@ta
 import { useMemo } from 'react';
 import type { ContentType } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
-import { addToMyList, listMyListForProfile, removeFromMyList, type DbMyListItem } from '@/db';
+import { addToMyList, listMyListForProfile, removeFromMyList, removeProfileMyList, type DbMyListItem } from '@/db';
 
 const myListKeys = {
   all: ['my-list-db'] as const,
@@ -66,6 +66,14 @@ export function useMyListActions() {
     onSuccess: invalidate,
   });
 
+  const clearList = useMutation({
+    mutationFn: async () => {
+      if (!profileId) return;
+      await removeProfileMyList(profileId);
+    },
+    onSuccess: invalidate,
+  });
+
   const toggleMyList = ({
     id,
     type,
@@ -87,6 +95,7 @@ export function useMyListActions() {
   return {
     addToMyList: addMutation.mutate,
     removeFromMyList: removeMutation.mutate,
+    clearList: clearList.mutate,
     toggleMyList,
   };
 }

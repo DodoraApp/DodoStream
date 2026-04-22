@@ -12,6 +12,7 @@ import {
   getLastStreamTarget,
   getWatchHistoryItem,
   listWatchedMetaSummaries,
+  removeProfileWatchHistory,
   removeWatchHistoryMeta,
   upsertWatchProgress,
   type DbWatchHistoryItem,
@@ -41,6 +42,11 @@ const toWatchState = (item?: DbWatchHistoryItem): 'not-watched' | 'in-progress' 
   return 'not-watched';
 };
 
+export function getWatchProgressRatio(item?: DbWatchHistoryItem | null): number {
+  if (!item || item.durationSeconds <= 0) return 0;
+  return item.progressSeconds / item.durationSeconds;
+}
+
 export function useWatchHistoryItem(metaId: string, videoId?: string) {
   const profileId = useProfileStore((state) => state.activeProfileId);
 
@@ -58,10 +64,7 @@ export function useWatchHistoryItem(metaId: string, videoId?: string) {
 export function useWatchProgress(metaId: string, videoId?: string) {
   const { data: item } = useWatchHistoryItem(metaId, videoId);
 
-  return useMemo(() => {
-    if (!item || item.durationSeconds <= 0) return 0;
-    return item.progressSeconds / item.durationSeconds;
-  }, [item]);
+  return useMemo(() => getWatchProgressRatio(item), [item]);
 }
 
 export function useWatchState(metaId: string, videoId?: string) {
@@ -163,9 +166,18 @@ export function useWatchHistoryActions() {
     onSuccess: invalidateAll,
   });
 
+  const clearHistory = useMutation({
+    mutationFn: async () => {
+      if (!profileId) return;
+      await removeProfileWatchHistory(profileId);
+    },
+    onSuccess: invalidateAll,
+  });
+
   return {
     upsert: upsert.mutate,
     removeMeta: removeMeta.mutate,
+    clearHistory: clearHistory.mutate,
   };
 }
 

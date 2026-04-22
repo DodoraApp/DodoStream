@@ -82,6 +82,22 @@ describe('simkl client', () => {
     expect(secondUrl.searchParams.get('date_from')).toBeNull();
   });
 
+  it('getAllItems uses correct extended param based on type', async () => {
+    // Arrange
+    mockFetch.mockResolvedValue(mockResponse({}));
+
+    // Act
+    await getAllItems('token-1', 'client-id', 'movies');
+    await getAllItems('token-1', 'client-id', 'anime');
+
+    // Assert
+    const movieUrl = new URL(String(mockFetch.mock.calls[0][0]));
+    const animeUrl = new URL(String(mockFetch.mock.calls[1][0]));
+
+    expect(movieUrl.searchParams.get('extended')).toBe('full');
+    expect(animeUrl.searchParams.get('extended')).toBe('full_anime_seasons');
+  });
+
   it('simklFetch throws on non-ok response via exported function', async () => {
     // Arrange
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) });

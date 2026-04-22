@@ -142,7 +142,12 @@ export function useSimklSync(profileId?: string): SimklSyncState {
         setLastSyncAt(profileId, Date.now());
         setSyncStatus(profileId, 'simkl', 'success');
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: watchHistoryKeys.all }),
+          // Invalidate items for this profile
+          queryClient.invalidateQueries({ queryKey: ['my-list-db'] }),
+          queryClient.invalidateQueries({ queryKey: [...watchHistoryKeys.all, 'item', profileId] }),
+          queryClient.invalidateQueries({
+            queryKey: [...watchHistoryKeys.all, 'items-for-meta', profileId],
+          }),
           queryClient.invalidateQueries({ queryKey: watchHistoryKeys.continueWatching(profileId) }),
           queryClient.invalidateQueries({ queryKey: watchHistoryKeys.metaSummaries(profileId) }),
         ]);

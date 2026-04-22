@@ -45,11 +45,12 @@ export async function listMyListForProfile(
 export async function addToMyList(
   profileId: string,
   metaId: string,
-  type: ContentType
+  type: ContentType,
+  addedAt?: number
 ): Promise<void> {
   await initializeDatabase();
 
-  const now = Date.now();
+  const now = addedAt ?? Date.now();
   await db
     .insert(myList)
     .values({
@@ -74,6 +75,34 @@ export async function countMyListForProfile(profileId: string): Promise<number> 
     .from(myList)
     .where(eq(myList.profileId, profileId));
   return Number(rows[0]?.count ?? 0);
+}
+
+export async function listExportableMyListForProfile(
+  profileId: string,
+  options?: { minAddedAt?: number }
+): Promise<DbMyListItem[]> {
+  await initializeDatabase();
+
+  const conditions = [eq(myList.profileId, profileId)];
+
+  if (options?.minAddedAt) {
+    conditions.push(sql`${myList.addedAt} > ${options.minAddedAt}`);
+  }
+
+  const rows = await db
+    .select({
+      metaId: myList.metaId,
+      type: myList.type,
+      addedAt: myList.addedAt,
+    })
+    .from(myList)
+    .where(and(...conditions));
+
+  return rows.map((row) => ({
+    id: row.metaId,
+    type: row.type,
+    addedAt: Number(row.addedAt),
+  }));
 }
 
 export async function removeFromMyList(profileId: string, metaId: string): Promise<void> {

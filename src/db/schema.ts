@@ -69,7 +69,7 @@ export const metaCache = sqliteTable(
     fetchedAt: integer('fetched_at').notNull(),
     expiresAt: integer('expires_at').notNull(),
   },
-  (table) => [index('meta_id_idx').on(table.metaId), index('expires_at_idx').on(table.expiresAt)]
+  (table) => [index('expires_at_idx').on(table.expiresAt)]
 );
 
 export const videos = sqliteTable(
