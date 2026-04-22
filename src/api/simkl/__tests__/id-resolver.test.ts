@@ -72,17 +72,13 @@ describe('resolveSimklIds', () => {
   });
 
   it("handles metaId starting with 'tt' (IMDB format)", async () => {
-    // Arrange
-    const ids = { simkl: 333, imdb: 'tt9999999' };
-    mockSearchById.mockResolvedValueOnce([{ ids }]);
-
-    // Act
+    // Arrange / Act
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { resolveSimklIds } = require('../id-resolver') as typeof import('../id-resolver');
     const result = await resolveSimklIds('tt9999999', 'movie', 'client-1');
 
-    // Assert
-    expect(result).toEqual(ids);
-    expect(mockSearchById).toHaveBeenCalledWith('client-1', 'tt9999999');
+    // Assert — IMDB IDs are returned directly without a network lookup
+    expect(result).toEqual({ imdb: 'tt9999999' });
+    expect(mockSearchById).not.toHaveBeenCalled();
   });
 });
