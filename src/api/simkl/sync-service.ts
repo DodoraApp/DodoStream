@@ -427,20 +427,6 @@ function collectShowParams(
     return out;
   }
 
-  // Optimization: If a show is fully completed, we only store a series-level record.
-  // Storing individual episode history for a finished show would trigger the app's
-  // "Up Next" logic and make it appear in "Continue Watching".
-  if (item.status === 'completed') {
-    out.push({
-      profileId,
-      metaId,
-      type: contentType,
-      watchedAt: item.last_watched_at,
-      isCompleted: true,
-    });
-    return out;
-  }
-
   // Fallback for simple "last watched" strings (e.g. "S01E05")
   if (!hasEpisodeArrays) {
     if (item.last_watched) {
@@ -465,6 +451,17 @@ function collectShowParams(
         isCompleted: false,
       });
     }
+  }
+
+  // If we found no specific episodes but the show is completed, store a series-level record
+  if (item.status === 'completed' && out.length === 0) {
+    out.push({
+      profileId,
+      metaId,
+      type: contentType,
+      watchedAt: item.last_watched_at,
+      isCompleted: true,
+    });
   }
 
   return out;
