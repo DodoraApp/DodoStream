@@ -73,7 +73,9 @@ export const useHomeStore = create<HomeSettingsState>()(
       getActiveSettings: () => {
         const profileId = get().activeProfileId;
         if (!profileId) return DEFAULT_HOME_SETTINGS;
-        return get().byProfile[profileId] ?? DEFAULT_HOME_SETTINGS;
+        const profileSettings = get().byProfile[profileId];
+        if (!profileSettings) return DEFAULT_HOME_SETTINGS;
+        return { ...DEFAULT_HOME_SETTINGS, ...profileSettings };
       },
 
       // Active profile mutations
