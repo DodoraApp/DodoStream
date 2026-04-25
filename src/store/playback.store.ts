@@ -115,7 +115,9 @@ export const usePlaybackStore = create<PlaybackState>()(
       getActiveSettings: () => {
         const profileId = get().activeProfileId;
         if (!profileId) return DEFAULT_PROFILE_PLAYBACK_SETTINGS;
-        return get().byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS;
+        const profileSettings = get().byProfile[profileId];
+        if (!profileSettings) return DEFAULT_PROFILE_PLAYBACK_SETTINGS;
+        return { ...DEFAULT_PROFILE_PLAYBACK_SETTINGS, ...profileSettings };
       },
 
       setPlayer: (player) => {

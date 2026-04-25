@@ -286,7 +286,9 @@ export const useAddonStore = create<AddonState>()(
         // Fall back to DEFAULT_ADDON_CONFIG when no per-profile entry exists.
         // This recovers users whose configsByProfile was not populated during the
         // broken v2 migration (async migrate is not supported by Zustand's newImpl).
-        return get().configsByProfile[targetProfileId]?.[id] ?? DEFAULT_ADDON_CONFIG;
+        const config = get().configsByProfile[targetProfileId]?.[id];
+        if (!config) return DEFAULT_ADDON_CONFIG;
+        return { ...DEFAULT_ADDON_CONFIG, ...config };
       },
 
       getAddonsList: () => {
