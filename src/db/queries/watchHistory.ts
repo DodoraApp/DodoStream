@@ -756,6 +756,7 @@ export async function getContinueWatchingWithUpNext(
       metaBackground: metaCache.background,
       currentVideoSeason: videos.season,
       currentVideoEpisode: videos.episode,
+      videoCount: sql<number>`(SELECT count(*) FROM ${videos} WHERE ${videos.metaId} = ${ranked.metaId})`.as('video_count'),
     })
     .from(ranked)
     .leftJoin(metaCache, eq(ranked.metaId, metaCache.metaId))
@@ -830,7 +831,16 @@ export async function getContinueWatchingWithUpNext(
             progressRatio: 0,
             isUpNext: true,
           });
+          continue;
         }
+
+        // Fallback: If it's a series and we don't have the next episode, but we also
+        // don't have any metadata (videos) for this show, keep it in the list.
+        if (item.type === 'series' && Number(item.videoCount ?? 0) === 0) {
+          resolved.push(base);
+          continue;
+        }
+
         // Finished with no next episode — skip
         continue;
       }
