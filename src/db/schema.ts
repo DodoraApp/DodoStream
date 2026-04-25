@@ -66,6 +66,7 @@ export const metaCache = sqliteTable(
     logo: text('logo'),
     imdbRating: text('imdb_rating'),
     releaseYear: text('release_year'),
+    isPartial: integer('is_partial', { mode: 'boolean' }).notNull().default(false),
     fetchedAt: integer('fetched_at').notNull(),
     expiresAt: integer('expires_at').notNull(),
   },

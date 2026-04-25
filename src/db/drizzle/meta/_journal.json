@@ -15,6 +15,13 @@
       "when": 1777122090693,
       "tag": "0001_fluffy_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777123204029,
+      "tag": "0002_purple_steel_serpent",
+      "breakpoints": true
     }
   ]
 }
