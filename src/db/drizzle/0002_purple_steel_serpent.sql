@@ -1,0 +1,1 @@
+ALTER TABLE `meta_cache` ADD `is_partial` integer DEFAULT false NOT NULL;

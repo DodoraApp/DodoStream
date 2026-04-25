@@ -1,4 +1,5 @@
 import { createDebugLogger } from '@/utils/debug';
+import { getSimklPosterUrl } from '@/utils/media-artwork';
 import type { SimklActivities, SimklActivityCategory, SimklIds, SimklWatchedItem, SimklStatus, SimklAllItemsResponse } from '@/types/simkl';
 import { getActivities, getAllItems, postHistory, postWatchlist, removeFromHistory } from './client';
 import { resolveSimklIds } from './id-resolver';
@@ -9,8 +10,14 @@ import {
   removeProfileWatchHistory,
   removeWatchHistoryMeta,
 } from '@/db/queries/watchHistory';
-import { addToMyList, listExportableMyListForProfile, removeFromMyList, removeProfileMyList } from '@/db/queries/myList';
+import {
+  listExportableMyListForProfile,
+  removeFromMyList,
+  removeProfileMyList,
+  addToMyList,
+} from '@/db/queries/myList';
 import { listSyncQueueForProvider, deleteFromSyncQueue } from '@/db/queries/syncQueue';
+import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import type { SimklConnection, SimklMediaType, SimklSyncCursors, SimklSyncCursor } from '@/types/integrations';
 import type { ContentType } from '@/types/stremio';
@@ -143,6 +150,20 @@ export async function runImport(
           const contentType: ContentType = type === 'movies' ? 'movie' : 'series';
           const metaId = getMetaIdFromWatchedItem(item);
           if (!metaId) continue;
+
+          const title = item.movie?.title ?? item.show?.title;
+          const posterValue =
+            item.movie?.poster ??
+            item.show?.poster;
+          if (title) {
+            await upsertMinimalMetaCache({
+              metaId,
+              type: contentType,
+              name: title,
+              poster: getSimklPosterUrl(posterValue),
+              year: (item.movie?.year ?? item.show?.year)?.toString(),
+            });
+          }
 
           // 3. Route items based on their status
           // 'plantowatch' items are added to My List.

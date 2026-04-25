@@ -23,6 +23,13 @@ const journal = {
       tag: '0002_add_sync_queue',
       breakpoints: true,
     },
+    {
+      idx: 3,
+      version: '6',
+      when: 1771357438862,
+      tag: '0003_add_is_partial',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -107,11 +114,14 @@ const m0002 = `CREATE TABLE \`sync_queue\` (
 --> statement-breakpoint
 CREATE INDEX \`profile_provider_idx\` ON \`sync_queue\` (\`profile_id\`,\`provider\`);`;
 
+const m0003 = `ALTER TABLE \`meta_cache\` ADD \`is_partial\` integer DEFAULT false NOT NULL;`;
+
 export default {
   journal,
   migrations: {
     m0000,
     m0001,
     m0002,
+    m0003,
   },
 };

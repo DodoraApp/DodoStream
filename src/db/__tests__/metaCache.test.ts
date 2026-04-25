@@ -14,6 +14,7 @@ import {
   isMetaCacheStale,
   getStaleMetaIds,
   getVideoForEntry,
+  upsertMinimalMetaCache,
 } from '../queries/metaCache';
 import { metaCache, videos } from '../schema';
 import { eq } from 'drizzle-orm';
@@ -242,6 +243,66 @@ describe('metaCache queries (integration)', () => {
     });
   });
 
+  describe('upsertMinimalMetaCache', () => {
+    it('inserts minimal metadata correctly', async () => {
+      await upsertMinimalMetaCache({
+        metaId: 'tt_minimal',
+        type: 'movie',
+        name: 'Minimal Movie',
+        poster: 'https://example.com/min.jpg',
+        year: '2024',
+      });
+
+      const [cached] = await db.select().from(metaCache).where(eq(metaCache.metaId, 'tt_minimal'));
+      expect(cached.name).toBe('Minimal Movie');
+      expect(cached.isPartial).toBe(true);
+      expect(cached.poster).toBe('https://example.com/min.jpg');
+      expect(cached.releaseYear).toBe('2024');
+    });
+
+    it('does not overwrite full metadata with minimal metadata', async () => {
+      const fullMeta: MetaDetail = {
+        id: 'tt_full',
+        type: 'movie',
+        name: 'Full Movie',
+        description: 'Full description',
+        poster: 'https://example.com/full.jpg',
+      };
+      await upsertMetaCache(fullMeta);
+
+      await upsertMinimalMetaCache({
+        metaId: 'tt_full',
+        type: 'movie',
+        name: 'Minimal Attempt',
+      });
+
+      const [cached] = await db.select().from(metaCache).where(eq(metaCache.metaId, 'tt_full'));
+      expect(cached.name).toBe('Full Movie');
+      expect(cached.isPartial).toBe(false);
+      expect(cached.description).toBe('Full description');
+    });
+
+    it('updates partial metadata with more partial metadata', async () => {
+      await upsertMinimalMetaCache({
+        metaId: 'tt_partial',
+        type: 'movie',
+        name: 'Partial 1',
+      });
+
+      await upsertMinimalMetaCache({
+        metaId: 'tt_partial',
+        type: 'movie',
+        name: 'Partial 2',
+        year: '2025',
+      });
+
+      const [cached] = await db.select().from(metaCache).where(eq(metaCache.metaId, 'tt_partial'));
+      expect(cached.name).toBe('Partial 2');
+      expect(cached.releaseYear).toBe('2025');
+      expect(cached.isPartial).toBe(true);
+    });
+  });
+
   describe('isMetaCacheStale', () => {
     it('returns true when cache does not exist', async () => {
       const result = await isMetaCacheStale('nonexistent-meta');
@@ -292,6 +353,28 @@ describe('metaCache queries (integration)', () => {
       const result = await isMetaCacheStale('edge-case-meta');
 
       expect(result).toBe(true);
+    });
+
+    it('returns true for partial metadata even if not expired (default behavior)', async () => {
+      await upsertMinimalMetaCache({
+        metaId: 'tt_partial_stale',
+        type: 'movie',
+        name: 'Partial',
+      });
+
+      const result = await isMetaCacheStale('tt_partial_stale');
+      expect(result).toBe(true);
+    });
+
+    it('returns false for partial metadata when allowPartial is true', async () => {
+      await upsertMinimalMetaCache({
+        metaId: 'tt_partial_allowed',
+        type: 'movie',
+        name: 'Partial',
+      });
+
+      const result = await isMetaCacheStale('tt_partial_allowed', { allowPartial: true });
+      expect(result).toBe(false);
     });
   });
 
@@ -366,6 +449,31 @@ describe('metaCache queries (integration)', () => {
       expect(result).toContain('missing-mix');
       expect(result).not.toContain('valid-mix');
       expect(result).toHaveLength(2);
+    });
+
+    it('returns IDs that are partial (default behavior)', async () => {
+      await upsertMinimalMetaCache({
+        metaId: 'partial-stale',
+        type: 'movie',
+        name: 'Partial',
+      });
+
+      const result = await getStaleMetaIds(['partial-stale']);
+
+      expect(result).toContain('partial-stale');
+    });
+
+    it('does not return IDs that are partial when allowPartial is true', async () => {
+      await upsertMinimalMetaCache({
+        metaId: 'partial-valid',
+        type: 'movie',
+        name: 'Partial',
+      });
+
+      const result = await getStaleMetaIds(['partial-valid'], { allowPartial: true });
+
+      expect(result).not.toContain('partial-valid');
+      expect(result).toHaveLength(0);
     });
   });
 });

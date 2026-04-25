@@ -17,3 +17,13 @@ export const getDetailsLogoSource = (logo: DetailsLogoInput['logo']) => {
   const uri = logo;
   return getImageSource(uri);
 };
+
+/**
+ * Maps a Simkl poster value to a full URL.
+ * Example: "12/129597638d4467f431" -> "https://simkl.in/posters/12/129597638d4467f431_ca.jpg"
+ */
+export const getSimklPosterUrl = (poster: string | undefined | null) => {
+  if (!poster) return undefined;
+  if (poster.startsWith('http')) return poster;
+  return `https://simkl.in/posters/${poster}_ca.jpg`;
+};

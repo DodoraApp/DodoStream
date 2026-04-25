@@ -33,6 +33,7 @@ export async function upsertMetaCache(
       logo: meta.logo,
       imdbRating: meta.imdbRating,
       releaseYear: meta.releaseInfo?.split('–')[0],
+      isPartial: false,
       fetchedAt: now,
       expiresAt,
     })
@@ -47,6 +48,7 @@ export async function upsertMetaCache(
         logo: meta.logo,
         imdbRating: meta.imdbRating,
         releaseYear: meta.releaseInfo?.split('–')[0],
+        isPartial: false,
         fetchedAt: now,
         expiresAt,
       },
@@ -91,20 +93,63 @@ export async function upsertMetaCache(
   }
 }
 
-export async function isMetaCacheStale(metaId: string): Promise<boolean> {
+export async function upsertMinimalMetaCache(params: {
+  metaId: string;
+  type: 'movie' | 'series';
+  name: string;
+  poster?: string;
+  year?: string;
+}): Promise<void> {
+  await initializeDatabase();
+
+  const now = Date.now();
+  const expiresAt = now + CACHE_TTL_MS;
+
+  await db
+    .insert(metaCache)
+    .values({
+      metaId: params.metaId,
+      type: params.type,
+      name: params.name,
+      poster: params.poster,
+      releaseYear: params.year,
+      isPartial: true,
+      fetchedAt: now,
+      expiresAt,
+    })
+    .onConflictDoUpdate({
+      target: metaCache.metaId,
+      set: {
+        // Only update if current entry is also partial
+        name: sql`CASE WHEN ${metaCache.isPartial} THEN excluded.name ELSE ${metaCache.name} END`,
+        poster: sql`CASE WHEN ${metaCache.isPartial} THEN COALESCE(excluded.poster, ${metaCache.poster}) ELSE ${metaCache.poster} END`,
+        releaseYear: sql`CASE WHEN ${metaCache.isPartial} THEN COALESCE(excluded.release_year, ${metaCache.releaseYear}) ELSE ${metaCache.releaseYear} END`,
+        fetchedAt: sql`CASE WHEN ${metaCache.isPartial} THEN excluded.fetched_at ELSE ${metaCache.fetchedAt} END`,
+      },
+    });
+}
+
+export async function isMetaCacheStale(
+  metaId: string,
+  options: { allowPartial?: boolean } = {}
+): Promise<boolean> {
   await initializeDatabase();
 
   const rows = await db
-    .select({ expiresAt: metaCache.expiresAt })
+    .select({ expiresAt: metaCache.expiresAt, isPartial: metaCache.isPartial })
     .from(metaCache)
     .where(eq(metaCache.metaId, metaId))
     .limit(1);
 
   if (!rows.length) return true;
+  if (rows[0].isPartial && !options.allowPartial) return true;
   return Date.now() > Number(rows[0].expiresAt);
 }
 
-export async function getStaleMetaIds(metaIds: string[]): Promise<string[]> {
+export async function getStaleMetaIds(
+  metaIds: string[],
+  options: { allowPartial?: boolean } = {}
+): Promise<string[]> {
   await initializeDatabase();
   if (metaIds.length === 0) return [];
 
@@ -119,14 +164,20 @@ export async function getStaleMetaIds(metaIds: string[]): Promise<string[]> {
     const validRows = await db
       .select({ metaId: metaCache.metaId })
       .from(metaCache)
-      .where(and(inArray(metaCache.metaId, chunk), gte(metaCache.expiresAt, now)));
+      .where(
+        and(
+          inArray(metaCache.metaId, chunk),
+          gte(metaCache.expiresAt, now),
+          options.allowPartial ? sql`1=1` : eq(metaCache.isPartial, false)
+        )
+      );
 
     for (const row of validRows) {
       validSet.add(row.metaId);
     }
   }
 
-  // Return all metaIds that are NOT in the valid set (either expired or missing)
+  // Return all metaIds that are NOT in the valid set (either expired, missing, or partial when not allowed)
   return metaIds.filter((id) => !validSet.has(id));
 }
 
