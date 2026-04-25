@@ -6,6 +6,7 @@ import type {
   IntegrationSyncStatus,
   ProfileIntegrationSettings,
   SimklConnection,
+  SimklSyncCursors,
   SyncMode,
 } from '@/types/integrations';
 import { createDebugLogger } from '@/utils/debug';
@@ -22,7 +23,7 @@ interface IntegrationsState {
   setSyncMode: (profileId: string, mode: SyncMode) => void;
   updateSimklCursors: (
     profileId: string,
-    cursors: NonNullable<SimklConnection['syncCursors']>
+    cursors: SimklSyncCursors
   ) => void;
   setLastSyncAt: (profileId: string, timestamp: number) => void;
   setSyncStatus: (

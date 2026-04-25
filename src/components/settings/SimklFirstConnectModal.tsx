@@ -65,12 +65,12 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
         useIntegrationsStore.getState().connectSimkl(profileId, connection, choice.syncMode);
 
         if (choice.id === 'import' || choice.id === 'full') {
-          await runImport(profileId, connection.accessToken, SIMKL_CLIENT_ID, undefined, {
+          await runImport(profileId, connection.accessToken, undefined, {
             clearLocalFirst,
           });
         }
         if (choice.id === 'export' || choice.id === 'full') {
-          await runExport(profileId, connection.accessToken, SIMKL_CLIENT_ID);
+          await runExport(profileId, connection.accessToken);
         }
 
         await Promise.all([

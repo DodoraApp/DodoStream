@@ -16,6 +16,13 @@ const journal = {
       tag: '0001_add_source_column',
       breakpoints: true,
     },
+    {
+      idx: 2,
+      version: '6',
+      when: 1771357438861,
+      tag: '0002_add_sync_queue',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -87,10 +94,24 @@ CREATE UNIQUE INDEX \`watch_history_profile_id_meta_id_video_id_unique\` ON \`wa
 
 const m0001 = `ALTER TABLE \`watch_history\` ADD \`source\` text NOT NULL DEFAULT 'internal';`;
 
+const m0002 = `CREATE TABLE \`sync_queue\` (
+	\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	\`profile_id\` text NOT NULL,
+	\`provider\` text NOT NULL,
+	\`action\` text NOT NULL,
+	\`meta_id\` text NOT NULL,
+	\`video_id\` text,
+	\`type\` text NOT NULL,
+	\`created_at\` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX \`profile_provider_idx\` ON \`sync_queue\` (\`profile_id\`,\`provider\`);`;
+
 export default {
   journal,
   migrations: {
     m0000,
     m0001,
+    m0002,
   },
 };

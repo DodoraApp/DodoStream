@@ -27,9 +27,27 @@ import {
 } from '../queries/watchHistory';
 import { upsertMetaCache } from '../queries/metaCache';
 import { initializeDatabase, db } from '../client';
-import { watchHistory, metaCache, videos } from '../schema';
+import { watchHistory, metaCache, videos, syncQueue } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import type { MetaDetail } from '@/types/stremio';
+
+jest.mock('@/store/integrations.store', () => ({
+  useIntegrationsStore: {
+    getState: () => ({
+      settings: {
+        'test-profile-1': {
+          simkl: { connection: true },
+        },
+        'remove-item-profile': {
+          simkl: { connection: true },
+        },
+        'remove-meta-profile': {
+          simkl: { connection: true },
+        },
+      },
+    }),
+  },
+}));
 
 describe('watchHistory queries (integration)', () => {
   const testProfileId = 'test-profile-1';
@@ -42,6 +60,7 @@ describe('watchHistory queries (integration)', () => {
     // Clean up test data
     await db.delete(watchHistory).where(eq(watchHistory.profileId, testProfileId));
     await db.delete(watchHistory).where(eq(watchHistory.profileId, 'test-profile-2'));
+    await db.delete(syncQueue);
   });
 
   describe('upsertWatchProgress', () => {
@@ -344,6 +363,43 @@ describe('watchHistory queries (integration)', () => {
 
         expect(results).toHaveLength(2);
       });
+    });
+
+    it('cancels pending remove_history and remove_watchlist actions in syncQueue', async () => {
+      // First manually insert a syncQueue item
+      await db.insert(syncQueue).values([
+        {
+          profileId: testProfileId,
+          provider: 'simkl',
+          action: 'remove_history',
+          metaId: 'tt-cancel-hist',
+          type: 'movie',
+          createdAt: Date.now(),
+        },
+        {
+          profileId: testProfileId,
+          provider: 'simkl',
+          action: 'remove_watchlist',
+          metaId: 'tt-cancel-hist',
+          type: 'movie',
+          createdAt: Date.now(),
+        },
+      ]);
+
+      await upsertWatchProgress({
+        profileId: testProfileId,
+        metaId: 'tt-cancel-hist',
+        type: 'movie',
+        progressSeconds: 100,
+        durationSeconds: 1000,
+      });
+
+      const queue = await db
+        .select()
+        .from(syncQueue)
+        .where(eq(syncQueue.metaId, 'tt-cancel-hist'));
+      
+      expect(queue).toHaveLength(0);
     });
   });
 
@@ -842,6 +898,29 @@ describe('removeWatchHistoryItem (integration)', () => {
 
     expect(results).toHaveLength(1);
   });
+
+  it('adds remove_history action to syncQueue for active providers', async () => {
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-remove-sync',
+      videoId: 'ep-1',
+      type: 'series',
+      progressSeconds: 500,
+      durationSeconds: 1000,
+    });
+
+    await removeWatchHistoryItem(testProfileId, 'tt-remove-sync', 'ep-1');
+
+    const queue = await db
+      .select()
+      .from(syncQueue)
+      .where(and(eq(syncQueue.metaId, 'tt-remove-sync'), eq(syncQueue.videoId, 'ep-1')));
+
+    expect(queue).toHaveLength(1);
+    expect(queue[0].action).toBe('remove_history');
+    expect(queue[0].provider).toBe('simkl');
+    expect(queue[0].type).toBe('series');
+  });
 });
 
 describe('removeWatchHistoryMeta (integration)', () => {
@@ -912,6 +991,29 @@ describe('removeWatchHistoryMeta (integration)', () => {
 
     expect(remaining).toHaveLength(1);
     expect(remaining[0].metaId).toBe('tt-meta-remove-b');
+  });
+
+  it('adds remove_history action to syncQueue for active providers', async () => {
+    await upsertWatchProgress({
+      profileId: testProfileId,
+      metaId: 'tt-remove-meta-sync',
+      videoId: undefined,
+      type: 'movie',
+      progressSeconds: 500,
+      durationSeconds: 1000,
+    });
+
+    await removeWatchHistoryMeta(testProfileId, 'tt-remove-meta-sync');
+
+    const queue = await db
+      .select()
+      .from(syncQueue)
+      .where(eq(syncQueue.metaId, 'tt-remove-meta-sync'));
+
+    expect(queue).toHaveLength(1);
+    expect(queue[0].action).toBe('remove_history');
+    expect(queue[0].provider).toBe('simkl');
+    expect(queue[0].type).toBe('movie');
   });
 });
 

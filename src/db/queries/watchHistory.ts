@@ -4,6 +4,7 @@ import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, videos, watchHistory } from '@/db/schema';
 import type { StreamTargetType, WatchHistorySource, WatchHistoryStatus } from '@/db/schema';
+import { addToSyncQueue, cancelPendingSyncRemovals, type SyncProvider } from './syncQueue';
 
 export type DbWatchHistoryItem = {
   id: string;
@@ -219,6 +220,8 @@ export async function upsertWatchProgress(params: {
       target: [watchHistory.profileId, watchHistory.metaId, watchHistory.videoId],
       set: updateSet,
     });
+
+  await cancelPendingSyncRemovals(params.profileId, params.metaId, ['remove_history', 'remove_watchlist']);
 }
 
 export async function setLastStreamTarget(params: {
@@ -292,9 +295,24 @@ export async function undismissFromContinueWatching(
 export async function removeWatchHistoryItem(
   profileId: string,
   metaId: string,
-  videoId?: string
+  videoId?: string,
+  ignoreProvider?: SyncProvider
 ): Promise<void> {
   await initializeDatabase();
+
+  const items = await db
+    .select({ type: watchHistory.type, videoId: watchHistory.videoId })
+    .from(watchHistory)
+    .where(
+      and(
+        eq(watchHistory.profileId, profileId),
+        eq(watchHistory.metaId, metaId),
+        videoId ? eq(watchHistory.videoId, videoId) : eq(watchHistory.videoId, '')
+      )
+    )
+    .limit(1);
+
+  if (items.length === 0) return;
 
   await db
     .delete(watchHistory)
@@ -305,14 +323,30 @@ export async function removeWatchHistoryItem(
         videoId ? eq(watchHistory.videoId, videoId) : eq(watchHistory.videoId, '')
       )
     );
+
+  await addToSyncQueue(profileId, 'remove_history', metaId, items[0].type, items[0].videoId, ignoreProvider);
 }
 
-export async function removeWatchHistoryMeta(profileId: string, metaId: string): Promise<void> {
+export async function removeWatchHistoryMeta(
+  profileId: string,
+  metaId: string,
+  ignoreProvider?: SyncProvider
+): Promise<void> {
   await initializeDatabase();
+
+  const items = await db
+    .select({ type: watchHistory.type })
+    .from(watchHistory)
+    .where(and(eq(watchHistory.profileId, profileId), eq(watchHistory.metaId, metaId)))
+    .limit(1);
+
+  if (items.length === 0) return;
 
   await db
     .delete(watchHistory)
     .where(and(eq(watchHistory.profileId, profileId), eq(watchHistory.metaId, metaId)));
+
+  await addToSyncQueue(profileId, 'remove_history', metaId, items[0].type, undefined, ignoreProvider);
 }
 
 export async function removeProfileWatchHistory(profileId: string): Promise<void> {
