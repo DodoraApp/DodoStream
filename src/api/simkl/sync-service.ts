@@ -27,8 +27,8 @@ const debug = createDebugLogger('SimklSyncService');
 
 const BATCH_SIZE = 50;
 
-const IMPORT_PROGRESS_SECONDS = 100;
-const IMPORT_DURATION_SECONDS = 100;
+// Simple mutex to prevent concurrent imports for the same profile
+const activeImports = new Set<string>();
 
 interface HistoryIdsPayload {
   ids: Record<string, string | number>;
@@ -47,6 +47,8 @@ interface HistoryPayload {
 }
 
 const SYNC_STATUSES: (keyof SimklSyncCursor)[] = [
+  'all',
+  'playback',
   'plantowatch',
   'watching',
   'completed',
@@ -54,8 +56,12 @@ const SYNC_STATUSES: (keyof SimklSyncCursor)[] = [
   'dropped',
 ];
 
+/**
+ * Checks if a specific activity status needs synchronization.
+ * Simkl activities provide timestamps for when a category or status last changed.
+ */
 function needsSync(activityCursor: string | object | undefined, storedCursor?: string): boolean {
-  if (!activityCursor || typeof activityCursor === 'object') return false;
+  if (typeof activityCursor !== 'string') return false;
   if (!storedCursor) return true;
   return activityCursor > storedCursor;
 }
@@ -66,6 +72,12 @@ export async function runImport(
   cursors?: SimklSyncCursors,
   opts?: { clearLocalFirst?: boolean }
 ): Promise<boolean> {
+  if (activeImports.has(profileId)) {
+    debug('importSkipped:Concurrent', { profileId });
+    return true;
+  }
+  activeImports.add(profileId);
+
   try {
     debug('importStart', { profileId, hasCursors: !!cursors });
 
@@ -77,65 +89,104 @@ export async function runImport(
       await removeProfileMyList(profileId);
     }
 
-    const typesToSync: { type: SimklMediaType; key: keyof SimklActivities; responseKey: keyof SimklAllItemsResponse }[] = [
+    // Mapping Simkl internal keys to our display and response keys
+    const typesToSync: {
+      type: SimklMediaType;
+      key: keyof SimklActivities;
+      responseKey: keyof SimklAllItemsResponse;
+    }[] = [
       { type: 'movies', key: 'movies', responseKey: 'movies' },
       { type: 'shows', key: 'tv_shows', responseKey: 'shows' },
       { type: 'anime', key: 'anime', responseKey: 'anime' },
     ];
 
+    // 1. Process Removals First (Category-based to prevent cross-category deletion)
+    // We group by our local ContentType because Simkl "Anime" can be either a movie or a series.
+    // If we only checked Simkl's "Shows" list, we might accidentally delete Anime series.
+    const removalCategories = [
+      { contentType: 'movie' as ContentType, types: [typesToSync[0], typesToSync[2]] },
+      { contentType: 'series' as ContentType, types: [typesToSync[1], typesToSync[2]] },
+    ];
+
+    for (const cat of removalCategories) {
+      // Check if any Simkl type that maps to this local category had removals
+      const typesNeedingSync = cat.types.filter((t) =>
+        needsSync(activities[t.key]?.removed_from_list, cursors?.[t.key]?.removed_from_list)
+      );
+
+      if (typesNeedingSync.length > 0) {
+        debug('syncRemovals', { profileId, contentType: cat.contentType });
+        const currentMetaIds = new Set<string>();
+        let anyFailed = false;
+
+        // Fetch IDs for ALL Simkl types in this category to build a complete set of "what should stay"
+        for (const t of cat.types) {
+          const idsResponse = await getAllItems(token, t.type, undefined, 'ids_only');
+          if (!idsResponse) {
+            anyFailed = true; // Safety: abort cleanup if API fails to prevent DB wipe
+            break;
+          }
+          const items =
+            idsResponse?.[t.responseKey] ||
+            idsResponse?.shows ||
+            idsResponse?.movies ||
+            idsResponse?.anime ||
+            [];
+          for (const item of items) {
+            // Only add to the "stay" set if it actually matches the current category we are cleaning
+            const itemContentType: ContentType = item.movie ? 'movie' : 'series';
+
+            if (itemContentType === cat.contentType) {
+              const metaId = getMetaIdFromWatchedItem(item);
+              if (metaId) currentMetaIds.add(metaId);
+            }
+          }
+        }
+
+        if (!anyFailed) {
+          await cleanupRemovedItems(profileId, cat.contentType, currentMetaIds);
+          // Update cursors for all Simkl types that were checked
+          for (const t of typesNeedingSync) {
+            const timestamp = activities[t.key]?.removed_from_list;
+            if (typeof timestamp === 'string') {
+              if (!newCursors[t.key]) newCursors[t.key] = { ...cursors?.[t.key] };
+              newCursors[t.key]!.removed_from_list = timestamp;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Process Additions and Updates
     for (const { type, key, responseKey } of typesToSync) {
       const typeActivities = activities[key];
       if (!typeActivities) continue;
 
       const typeCursors = cursors?.[key] || {};
-      const newTypeCursors: SimklSyncCursor = { ...typeCursors };
+      const newTypeCursors: SimklSyncCursor = { ...typeCursors, ...newCursors[key] };
       newCursors[key] = newTypeCursors;
 
-      // 1. Process Removals First
-      // When items are removed from a Simkl list, the `removed_from_list` activity timestamp updates.
-      // To identify what was removed, we must fetch the entire list using `extended=ids_only` 
-      // (without a date filter) and compare the returned IDs against our local database.
-      const removedActivity = typeActivities.removed_from_list;
-      const removedCursor = typeCursors.removed_from_list;
-      const hasRemovals = needsSync(removedActivity, removedCursor);
-
-      if (hasRemovals) {
-        debug('syncRemovals', { profileId, type });
-        const idsResponse = await getAllItems(token, type, undefined, 'ids_only');
-        const items = idsResponse?.[responseKey] || [];
-        const currentMetaIds = new Set<string>();
-        for (const item of items) {
-          const metaId = getMetaIdFromWatchedItem(item);
-          if (metaId) currentMetaIds.add(metaId);
-        }
-        await cleanupRemovedItems(profileId, type, currentMetaIds);
-        if (typeof removedActivity === 'string') {
-          newTypeCursors.removed_from_list = removedActivity;
-        }
-      }
-
-      // 2. Process Additions and Updates
-      // Simkl tracks separate activity timestamps for each status (watching, completed, plantowatch, etc.).
-      // Instead of making multiple API calls per status, we find the oldest outdated cursor among all statuses
-      // and make a single API call to fetch all items updated since that time.
-      // Track the earliest timestamp we need to fetch updates from.
       let oldestOutdatedCursor: string | undefined;
-      // If any status is completely missing a cursor, we must do a full sync without a date filter.
       let fullSyncRequired = false;
-      // Flag to track if there is any new activity across all tracked statuses.
       let anyUpdates = false;
 
-      for (const status of SYNC_STATUSES) {
-        const activity = typeActivities[status];
-        const cursor = typeCursors[status];
+      const pendingTypeCursors: Partial<SimklSyncCursor> = {};
+
+      for (const statusKey of SYNC_STATUSES) {
+        if (statusKey === 'removed_from_list') continue; // Handled above
+
+        const activity = typeActivities[statusKey];
+        const cursor = typeCursors[statusKey];
         if (needsSync(activity, cursor)) {
           anyUpdates = true;
           if (typeof activity === 'string') {
-            newTypeCursors[status] = activity;
+            pendingTypeCursors[statusKey] = activity;
           }
+          // If we have no local cursor for this status, we must fetch everything (full sync)
           if (!cursor) {
             fullSyncRequired = true;
           } else if (!oldestOutdatedCursor || cursor < oldestOutdatedCursor) {
+            // Track the oldest cursor to fetch all items changed since then
             oldestOutdatedCursor = cursor;
           }
         }
@@ -145,15 +196,20 @@ export async function runImport(
         const dateFrom = fullSyncRequired ? undefined : oldestOutdatedCursor;
         debug('syncUpdates', { profileId, type, dateFrom, fullSyncRequired });
 
-        const itemsResponse = await getAllItems(token, type, dateFrom, 'full');
-        const items = itemsResponse?.[responseKey] || [];
+        const extended = type === 'anime' ? 'full_anime_seasons' : 'full';
+        const itemsResponse = await getAllItems(token, type, dateFrom, extended);
+        const items = itemsResponse?.[responseKey] || itemsResponse?.shows || itemsResponse?.movies || itemsResponse?.anime || [];
+        
+        debug('syncUpdates:fetched', { type, count: items.length });
 
         const myListAdditions: { metaId: string; type: ContentType; addedAt?: number }[] = [];
         const historyUpserts: Parameters<typeof upsertImportedProgress>[0][] = [];
         const removals: { metaId: string; type: ContentType }[] = [];
 
         for (const item of items) {
-          const contentType: ContentType = type === 'movies' ? 'movie' : 'series';
+          const itemStatus = item.status;
+          // Content categorization: presence of 'movie' key determines type
+          const contentType: ContentType = item.movie ? 'movie' : 'series';
           const metaId = getMetaIdFromWatchedItem(item);
           if (!metaId) continue;
 
@@ -168,10 +224,7 @@ export async function runImport(
             });
           }
 
-          // 3. Route items based on their status
-          // 'plantowatch', 'watching' and 'hold' items are added to My List.
-          // 'watching', 'completed' and 'hold' items update the Watch History with watch dates and episode counts.
-          // 'dropped' items are actively removed from both My List and Watch History.
+          // Map Simkl status to our "My List"
           if (item.status === 'plantowatch' || item.status === 'watching' || item.status === 'hold') {
             myListAdditions.push({
               metaId,
@@ -180,20 +233,22 @@ export async function runImport(
             });
           }
 
+          // Map Simkl status to local watch history
           if (item.status === 'watching' || item.status === 'completed' || item.status === 'hold') {
-            if (type === 'movies' && item.movie) {
+            if (contentType === 'movie') {
               const param = collectMovieParam(profileId, item);
               if (param) historyUpserts.push(param);
-            } else if (type === 'shows' || type === 'anime') {
-              const params = collectShowParams(profileId, item);
+            } else {
+              const params = collectShowParams(profileId, item, contentType);
               historyUpserts.push(...params);
             }
-          } else if (item.status === 'dropped') {
+          } else if (itemStatus === 'dropped') {
+            // Dropped items are removed from local history/watchlist to keep it clean
             removals.push({ metaId, type: contentType });
           }
         }
 
-        // Apply changes in batches
+        // Apply changes in batches for performance
         for (let i = 0; i < myListAdditions.length; i += BATCH_SIZE) {
           const batch = myListAdditions.slice(i, i + BATCH_SIZE);
           await Promise.all(batch.map((p) => addToMyList(profileId, p.metaId, p.type, p.addedAt)));
@@ -208,6 +263,9 @@ export async function runImport(
           await removeWatchHistoryMeta(profileId, removal.metaId);
           await removeFromMyList(profileId, removal.metaId);
         }
+
+        // Success! Now update the cursors locally.
+        Object.assign(newTypeCursors, pendingTypeCursors);
       }
     }
 
@@ -217,6 +275,8 @@ export async function runImport(
   } catch (error) {
     debug('importError', { profileId, error });
     return false;
+  } finally {
+    activeImports.delete(profileId);
   }
 }
 
@@ -226,14 +286,16 @@ function getMetaIdFromWatchedItem(item: SimklWatchedItem): string | undefined {
   return getMetaIdFromIds(ids);
 }
 
+/**
+ * Removes local items that are no longer present in the Simkl list for a specific category.
+ */
 async function cleanupRemovedItems(
   profileId: string,
-  type: SimklMediaType,
+  contentType: ContentType,
   currentlyImportedMetaIds: Set<string>
 ): Promise<void> {
   try {
     const localHistory = await listWatchHistoryForProfile(profileId);
-    const contentType: ContentType = type === 'movies' ? 'movie' : 'series';
 
     const itemsToRemove = new Set<string>();
     for (const item of localHistory) {
@@ -256,21 +318,30 @@ async function cleanupRemovedItems(
   }
 }
 
+/**
+ * Persists Simkl watch progress to local DB.
+ * We use artificial duration (100) and progress (1 or 100) to represent state
+ * since Simkl doesn't always provide second-accurate progress.
+ */
 async function upsertImportedProgress(params: {
   profileId: string;
   metaId: string;
   type: 'movie' | 'series';
   videoId?: string;
   watchedAt?: string;
+  isCompleted?: boolean;
 }): Promise<void> {
+  const progressSeconds = params.isCompleted ? 100 : 1;
+  const durationSeconds = 100;
+
   await upsertWatchProgress({
     profileId: params.profileId,
     metaId: params.metaId,
     videoId: params.videoId,
     type: params.type,
     source: 'simkl',
-    progressSeconds: IMPORT_PROGRESS_SECONDS,
-    durationSeconds: IMPORT_DURATION_SECONDS,
+    progressSeconds,
+    durationSeconds,
     lastWatchedAt: params.watchedAt ? new Date(params.watchedAt).getTime() : undefined,
   });
 }
@@ -279,11 +350,18 @@ function collectMovieParam(
   profileId: string,
   item: SimklWatchedItem,
 ): Parameters<typeof upsertImportedProgress>[0] | undefined {
-  if (!item.movie) return;
-  const metaId = getMetaIdFromIds(item.movie.ids);
+  const mediaData = item.movie ?? item.anime;
+  if (!mediaData) return;
+  const metaId = getMetaIdFromIds(mediaData.ids);
   if (!metaId) return;
 
-  return { profileId, metaId, type: 'movie', watchedAt: item.last_watched_at };
+  return {
+    profileId,
+    metaId,
+    type: 'movie',
+    watchedAt: item.last_watched_at,
+    isCompleted: item.status === 'completed',
+  };
 }
 
 function parseSimklLastWatched(lastWatched: string): { season: number; episode: number } | undefined {
@@ -307,6 +385,7 @@ function parseSimklLastWatched(lastWatched: string): { season: number; episode: 
 function collectShowParams(
   profileId: string,
   item: SimklWatchedItem,
+  contentType: 'series' = 'series'
 ): Parameters<typeof upsertImportedProgress>[0][] {
   const out: Parameters<typeof upsertImportedProgress>[0][] = [];
 
@@ -317,6 +396,7 @@ function collectShowParams(
 
   const hasEpisodeArrays = !!item.seasons || !!item.episodes;
 
+  // Process per-episode history if detailed data is available
   if (item.seasons) {
     for (const season of item.seasons) {
       for (const episode of season.episodes) {
@@ -324,8 +404,9 @@ function collectShowParams(
           profileId,
           metaId,
           videoId: `${metaId}:${season.number}:${episode.number}`,
-          type: 'series',
-          watchedAt: episode.watched_at,
+          type: contentType,
+          watchedAt: episode.watched_at || item.last_watched_at,
+          isCompleted: item.status === 'completed' || !!episode.watched_at,
         });
       }
     }
@@ -338,12 +419,29 @@ function collectShowParams(
         profileId,
         metaId,
         videoId: `${metaId}:1:${episode.number}`,
-        type: 'series',
-        watchedAt: episode.watched_at,
+        type: contentType,
+        watchedAt: episode.watched_at || item.last_watched_at,
+        isCompleted: item.status === 'completed' || !!episode.watched_at,
       });
     }
+    return out;
   }
 
+  // Optimization: If a show is fully completed, we only store a series-level record.
+  // Storing individual episode history for a finished show would trigger the app's
+  // "Up Next" logic and make it appear in "Continue Watching".
+  if (item.status === 'completed') {
+    out.push({
+      profileId,
+      metaId,
+      type: contentType,
+      watchedAt: item.last_watched_at,
+      isCompleted: true,
+    });
+    return out;
+  }
+
+  // Fallback for simple "last watched" strings (e.g. "S01E05")
   if (!hasEpisodeArrays) {
     if (item.last_watched) {
       const parsed = parseSimklLastWatched(item.last_watched);
@@ -352,12 +450,20 @@ function collectShowParams(
           profileId,
           metaId,
           videoId: `${metaId}:${parsed.season}:${parsed.episode}`,
-          type: 'series',
+          type: contentType,
           watchedAt: item.last_watched_at,
+          isCompleted: false,
         });
       }
     } else if ((item.watched_episodes_count ?? 0) > 0) {
-      out.push({ profileId, metaId, type: 'series', watchedAt: item.last_watched_at });
+      // Final fallback: just store series-level progress if only a count is known
+      out.push({
+        profileId,
+        metaId,
+        type: contentType,
+        watchedAt: item.last_watched_at,
+        isCompleted: false,
+      });
     }
   }
 
@@ -449,13 +555,10 @@ async function buildWatchlistPayload(
       continue;
     }
 
-    const payloadIds = toHistoryIdsPayload(ids);
-    if (!payloadIds) continue;
-
     if (item.type === 'movie') {
-      movies.push({ ids: payloadIds, to: 'plantowatch' });
+      movies.push({ ids, to: 'plantowatch' });
     } else {
-      shows.push({ ids: payloadIds, to: 'plantowatch' });
+      shows.push({ ids, to: 'plantowatch' });
     }
   }
 
@@ -551,8 +654,11 @@ async function buildExportPayload(
       continue;
     }
 
-    const episodeRef = parseVideoId(item.videoId ?? '');
-    if (!episodeRef) continue;
+    const episodeRef = item.videoId ? parseVideoId(item.videoId) : null;
+    if (!episodeRef) {
+      debug('exportItemInvalidVideoId', { metaId: item.id, videoId: item.videoId });
+      continue;
+    }
 
     if (!showsMap.has(item.id)) {
       showsMap.set(item.id, {
@@ -560,6 +666,7 @@ async function buildExportPayload(
         seasons: new Map(),
       });
     }
+
     const show = showsMap.get(item.id);
     if (!show) continue;
     if (!show.seasons.has(episodeRef.season)) {
@@ -580,10 +687,10 @@ async function buildExportPayload(
 }
 
 function toHistoryIdsPayload(ids: SimklIds): Record<string, string | number> | null {
-  const entries = Object.entries(ids).filter(
-    (entry): entry is [string, string | number] =>
-      typeof entry[1] === 'string' || typeof entry[1] === 'number'
-  );
-  if (entries.length === 0) return null;
-  return Object.fromEntries(entries);
+  const payload: Record<string, string | number> = {};
+  if (ids.simkl) payload.simkl = ids.simkl;
+  if (ids.imdb) payload.imdb = ids.imdb;
+  if (ids.tmdb) payload.tmdb = ids.tmdb;
+
+  return Object.keys(payload).length > 0 ? payload : null;
 }

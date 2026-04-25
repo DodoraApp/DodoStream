@@ -4,6 +4,8 @@ export type IntegrationProvider = 'simkl';
 export type IntegrationSyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 export interface SimklSyncCursor {
+  all?: string;
+  playback?: string;
   plantowatch?: string;
   watching?: string;
   completed?: string;

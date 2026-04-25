@@ -105,11 +105,11 @@ export function getAllItems(
   token: string,
   type: SimklMediaType,
   dateFrom?: string,
-  extended: 'full' | 'ids_only' = 'full'
+  extended: 'full' | 'ids_only' | 'full_anime_seasons' = 'full'
 ): Promise<SimklAllItemsResponse> {
   const path = `/sync/all-items/${type}`;
   const params = new URLSearchParams({ extended });
-  if (extended === 'full') {
+  if (extended === 'full' || extended === 'full_anime_seasons') {
     params.set('episode_watched_at', 'yes');
   }
   if (dateFrom) params.set('date_from', dateFrom);
