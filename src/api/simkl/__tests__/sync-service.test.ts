@@ -88,9 +88,9 @@ describe('simkl sync service', () => {
 
     mockGetActivities.mockResolvedValue({
       all: '2026-01-01T00:00:00.000Z',
-      movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
-      tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
-      anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
+      movies: { all: '2026-01-01T00:00:00.000Z', plantowatch: '2026-01-01T00:00:00.000Z' },
+      tv_shows: { all: '2026-01-01T00:00:00.000Z', plantowatch: '2026-01-01T00:00:00.000Z' },
+      anime: { all: '2026-01-01T00:00:00.000Z', plantowatch: '2026-01-01T00:00:00.000Z' },
     });
     mockGetAllItems.mockResolvedValue({ movies: [], shows: [], anime: [] });
     mockListWatchHistory.mockResolvedValue([]);
@@ -104,7 +104,7 @@ describe('simkl sync service', () => {
     it('skips category when cursor matches activity timestamp', async () => {
       // Arrange
       const cursor = '2026-01-01T00:00:00.000Z';
-      const cursorsObj = { plantowatch: cursor };
+      const cursorsObj = { all: cursor, plantowatch: cursor };
 
       // Act
       await runImport(
@@ -125,15 +125,15 @@ describe('simkl sync service', () => {
       expect(mockGetAllItems).toHaveBeenCalledTimes(3);
       expect(mockGetAllItems).toHaveBeenNthCalledWith(1, 'token', 'movies', undefined, 'full');
       expect(mockGetAllItems).toHaveBeenNthCalledWith(2, 'token', 'shows', undefined, 'full');
-      expect(mockGetAllItems).toHaveBeenNthCalledWith(3, 'token', 'anime', undefined, 'full');
+      expect(mockGetAllItems).toHaveBeenNthCalledWith(3, 'token', 'anime', undefined, 'full_anime_seasons');
     });
 
     it('fetches category when activity timestamp is newer than cursor', async () => {
       // Arrange
       mockGetActivities.mockResolvedValueOnce({
-        movies: { plantowatch: '2026-02-01T00:00:00.000Z' },
-        tv_shows: { plantowatch: '2026-02-01T00:00:00.000Z' },
-        anime: { plantowatch: '2026-02-01T00:00:00.000Z' },
+        movies: { all: '2026-02-01T00:00:00.000Z' },
+        tv_shows: { all: '2026-02-01T00:00:00.000Z' },
+        anime: { all: '2026-02-01T00:00:00.000Z' },
       });
 
       // Act
@@ -141,21 +141,44 @@ describe('simkl sync service', () => {
         'profile-1',
         'token',
         {
-          movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
-          tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
-          anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
+          movies: { all: '2026-01-01T00:00:00.000Z' },
+          tv_shows: { all: '2026-01-01T00:00:00.000Z' },
+          anime: { all: '2026-01-01T00:00:00.000Z' },
         }
       );
 
       // Assert
       expect(mockGetAllItems).toHaveBeenCalledTimes(3);
-      expect(mockGetAllItems).toHaveBeenNthCalledWith(
-        1,
-        'token',
-        'movies',
-        '2026-01-01T00:00:00.000Z',
-        'full'
+      expect(mockUpdateSimklCursors).toHaveBeenCalledWith(
+        'profile-1',
+        expect.objectContaining({
+          movies: expect.objectContaining({ all: '2026-02-01T00:00:00.000Z' }),
+        })
       );
+    });
+
+    it('skips category when object activity timestamp matches cursor', async () => {
+      // Arrange
+      const cursor = '2026-01-01T00:00:00.000Z';
+      mockGetActivities.mockResolvedValueOnce({
+        movies: { all: { all: cursor } },
+        tv_shows: { all: { all: cursor } },
+        anime: { all: { all: cursor } },
+      });
+
+      // Act
+      await runImport(
+        'profile-1',
+        'token',
+        {
+          movies: { all: cursor },
+          tv_shows: { all: cursor },
+          anime: { all: cursor },
+        }
+      );
+
+      // Assert
+      expect(mockGetAllItems).not.toHaveBeenCalled();
     });
 
     it('imports movie items correctly', async () => {
@@ -196,7 +219,7 @@ describe('simkl sync service', () => {
             shows: [
               {
                 show: { ids: { imdb: 'tt12345' }, title: 'Show' },
-                status: 'completed',
+                status: 'watching', // Changed to 'watching' to ensure episodes are imported
                 seasons: [
                   { number: 2, episodes: [{ number: 3, watched_at: '2026-03-02T00:00:00.000Z' }] },
                 ],
