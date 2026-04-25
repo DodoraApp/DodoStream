@@ -3,10 +3,18 @@ export type SimklMediaType = 'movies' | 'shows' | 'anime';
 export type IntegrationProvider = 'simkl';
 export type IntegrationSyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
+export interface SimklSyncCursor {
+  plantowatch?: string;
+  watching?: string;
+  completed?: string;
+  dropped?: string;
+  removed_from_list?: string;
+}
+
 export interface SimklSyncCursors {
-  movies?: string;
-  shows?: string;
-  anime?: string;
+  tv_shows?: SimklSyncCursor;
+  movies?: SimklSyncCursor;
+  anime?: SimklSyncCursor;
 }
 
 export interface SimklConnection {

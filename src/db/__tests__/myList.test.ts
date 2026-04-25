@@ -18,9 +18,21 @@ import {
   type DbMyListItem,
 } from '../queries/myList';
 import { upsertMetaCache } from '../queries/metaCache';
-import { myList, metaCache } from '../schema';
+import { myList, metaCache, syncQueue } from '../schema';
 import { and, eq } from 'drizzle-orm';
 import type { MetaDetail } from '@/types/stremio';
+
+jest.mock('@/store/integrations.store', () => ({
+  useIntegrationsStore: {
+    getState: () => ({
+      settings: {
+        'mylist-test-profile': {
+          simkl: { connection: true },
+        },
+      },
+    }),
+  },
+}));
 
 describe('myList queries (integration)', () => {
   const testProfileId = 'mylist-test-profile';
@@ -34,6 +46,7 @@ describe('myList queries (integration)', () => {
     await db.delete(myList).where(eq(myList.profileId, testProfileId));
     await db.delete(myList).where(eq(myList.profileId, 'mylist-profile-2'));
     await db.delete(metaCache);
+    await db.delete(syncQueue);
   });
 
   describe('addToMyList', () => {
@@ -124,6 +137,26 @@ describe('myList queries (integration)', () => {
 
       expect(secondAdd.addedAt).toBeGreaterThan(firstAddedAt);
     });
+
+    it('cancels pending remove_watchlist actions in syncQueue', async () => {
+      await db.insert(syncQueue).values({
+        profileId: testProfileId,
+        provider: 'simkl',
+        action: 'remove_watchlist',
+        metaId: 'tt-cancel-queue',
+        type: 'movie',
+        createdAt: Date.now(),
+      });
+
+      await addToMyList(testProfileId, 'tt-cancel-queue', 'movie');
+
+      const queue = await db
+        .select()
+        .from(syncQueue)
+        .where(eq(syncQueue.metaId, 'tt-cancel-queue'));
+      
+      expect(queue).toHaveLength(0);
+    });
   });
 
   describe('removeFromMyList', () => {
@@ -152,6 +185,21 @@ describe('myList queries (integration)', () => {
         .where(and(eq(myList.profileId, testProfileId), eq(myList.metaId, 'tt-other')));
 
       expect(results).toHaveLength(1);
+    });
+
+    it('adds remove_watchlist action to syncQueue for active providers', async () => {
+      await addToMyList(testProfileId, 'tt-sync-queue', 'movie');
+      await removeFromMyList(testProfileId, 'tt-sync-queue');
+
+      const queue = await db
+        .select()
+        .from(syncQueue)
+        .where(eq(syncQueue.metaId, 'tt-sync-queue'));
+      
+      expect(queue).toHaveLength(1);
+      expect(queue[0].action).toBe('remove_watchlist');
+      expect(queue[0].provider).toBe('simkl');
+      expect(queue[0].type).toBe('movie');
     });
   });
 

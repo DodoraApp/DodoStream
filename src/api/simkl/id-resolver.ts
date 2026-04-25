@@ -14,12 +14,8 @@ const cache = new Map<string, SimklIds | null>();
  * - Otherwise → passed as-is to /search/id
  * Results are cached in memory for the app session.
  */
-export async function resolveSimklIds(
-  metaId: string,
-  type: ContentType,
-  clientId: string
-): Promise<SimklIds | null> {
-  const cacheKey = `${clientId}:${type}:${metaId}`;
+export async function resolveSimklIds(metaId: string, type: ContentType): Promise<SimklIds | null> {
+  const cacheKey = `${type}:${metaId}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey) ?? null;
   }
@@ -46,7 +42,7 @@ export async function resolveSimklIds(
   }
 
   try {
-    const results = await searchById(clientId, metaId);
+    const results = await searchById(metaId);
 
     if (!results || results.length === 0) {
       debug('notFound', { metaId });

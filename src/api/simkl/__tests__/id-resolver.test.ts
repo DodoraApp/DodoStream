@@ -18,11 +18,11 @@ describe('resolveSimklIds', () => {
     // Act
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { resolveSimklIds } = require('../id-resolver') as typeof import('../id-resolver');
-    const result = await resolveSimklIds('meta-1', 'movie', 'client-1');
+    const result = await resolveSimklIds('meta-1', 'movie');
 
     // Assert
     expect(result).toEqual(ids);
-    expect(mockSearchById).toHaveBeenCalledWith('client-1', 'meta-1');
+    expect(mockSearchById).toHaveBeenCalledWith('meta-1');
   });
 
   it('returns null when searchById returns empty array', async () => {
@@ -32,7 +32,7 @@ describe('resolveSimklIds', () => {
     // Act
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { resolveSimklIds } = require('../id-resolver') as typeof import('../id-resolver');
-    const result = await resolveSimklIds('meta-2', 'series', 'client-1');
+    const result = await resolveSimklIds('meta-2', 'series');
 
     // Assert
     expect(result).toBeNull();
@@ -46,8 +46,8 @@ describe('resolveSimklIds', () => {
     // Act
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { resolveSimklIds } = require('../id-resolver') as typeof import('../id-resolver');
-    const first = await resolveSimklIds('cached-meta', 'movie', 'client-1');
-    const second = await resolveSimklIds('cached-meta', 'movie', 'client-1');
+    const first = await resolveSimklIds('cached-meta', 'movie');
+    const second = await resolveSimklIds('cached-meta', 'movie');
 
     // Assert
     expect(first).toEqual(ids);
@@ -62,8 +62,8 @@ describe('resolveSimklIds', () => {
     // Act
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { resolveSimklIds } = require('../id-resolver') as typeof import('../id-resolver');
-    const first = await resolveSimklIds('error-meta', 'movie', 'client-1');
-    const second = await resolveSimklIds('error-meta', 'movie', 'client-1');
+    const first = await resolveSimklIds('error-meta', 'movie');
+    const second = await resolveSimklIds('error-meta', 'movie');
 
     // Assert
     expect(first).toBeNull();
@@ -75,7 +75,7 @@ describe('resolveSimklIds', () => {
     // Arrange / Act
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { resolveSimklIds } = require('../id-resolver') as typeof import('../id-resolver');
-    const result = await resolveSimklIds('tt9999999', 'movie', 'client-1');
+    const result = await resolveSimklIds('tt9999999', 'movie');
 
     // Assert — IMDB IDs are returned directly without a network lookup
     expect(result).toEqual({ imdb: 'tt9999999' });

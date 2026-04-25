@@ -93,4 +93,22 @@ export const videos = sqliteTable(
   ]
 );
 
+export const syncQueue = sqliteTable(
+  'sync_queue',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    profileId: text('profile_id').notNull(),
+    provider: text('provider', { enum: ['simkl'] }).notNull(), // expandable for trakt, mal, etc.
+    action: text('action', { enum: ['remove_history', 'remove_watchlist'] }).notNull(),
+    metaId: text('meta_id').notNull(),
+    videoId: text('video_id'), // Optional: for episode-specific removals
+    type: contentTypeColumn('type').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [
+    index('profile_provider_idx').on(table.profileId, table.provider),
+  ]
+);
+
 export type WatchHistoryStatus = 'watching' | 'dismissed' | 'completed';
+

@@ -5,10 +5,12 @@ import type {
   SimklUserSettings,
   SimklActivities,
   SimklMediaItem,
+  SimklActivityCategory,
 } from '@/types/simkl';
-import { SIMKL_APP_NAME } from './config';
+import { SIMKL_APP_NAME, SIMKL_CLIENT_ID } from './config';
 import { createDebugLogger } from '@/utils/debug';
 import { getInstalledAppVersion } from '@/hooks/useAppInfo';
+import { SimklMediaType } from '@/types/integrations';
 
 const debug = createDebugLogger('SimklClient');
 
@@ -17,27 +19,54 @@ const BASE_URL = 'https://api.simkl.com';
 /** Append required Simkl query params to any path (preserves existing params). */
 function withSimklParams(path: string): string {
   const separator = path.includes('?') ? '&' : '?';
-  const appVersion = getInstalledAppVersion()
-  return `${path}${separator}app-name=${encodeURIComponent(SIMKL_APP_NAME)}&app-version=${encodeURIComponent(appVersion)}`;
+  const appVersion = getInstalledAppVersion();
+  let url = `${path}${separator}app-name=${encodeURIComponent(
+    SIMKL_APP_NAME
+  )}&app-version=${encodeURIComponent(appVersion)}`;
+
+  if (!path.includes('client_id=')) {
+    url += `&client_id=${encodeURIComponent(SIMKL_CLIENT_ID)}`;
+  }
+  return url;
+}
+
+// Throttler for POST requests (1 request per second)
+let lastPostTime = 0;
+async function throttlePost() {
+  const now = Date.now();
+  const diff = now - lastPostTime;
+  if (diff < 1000) {
+    await new Promise((resolve) => setTimeout(resolve, 1000 - diff));
+  }
+  lastPostTime = Date.now();
 }
 
 async function simklFetch<T>(
   path: string,
-  options: RequestInit & { token?: string; clientId?: string } = {}
+  options: RequestInit & { token?: string } = {}
 ): Promise<T> {
-  const { token, clientId, ...fetchOptions } = options;
-  const userAgent = `${SIMKL_APP_NAME}/${getInstalledAppVersion()}`
+  const { token, ...fetchOptions } = options;
+
+  if (fetchOptions.method === 'POST') {
+    await throttlePost();
+  }
+
+  const userAgent = `${SIMKL_APP_NAME}/${getInstalledAppVersion()}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'User-Agent': userAgent,
+    'simkl-api-key': SIMKL_CLIENT_ID,
     ...(fetchOptions.headers as Record<string, string>),
   };
-  if (clientId) headers['simkl-api-key'] = clientId;
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const url = `${BASE_URL}${withSimklParams(path)}`;
-  
-  debug('request', { url, method: fetchOptions.method || 'GET', body: fetchOptions.body ? JSON.stringify(fetchOptions.body) : undefined });
+
+  debug('request', {
+    url,
+    method: fetchOptions.method || 'GET',
+    body: fetchOptions.body ? JSON.stringify(fetchOptions.body) : undefined,
+  });
 
   const response = await fetch(url, { ...fetchOptions, headers });
 
@@ -47,66 +76,72 @@ async function simklFetch<T>(
   }
 
   const data = (await response.json()) as T;
-  
+
   debug('response', { url, data: JSON.stringify(data) });
 
   return data;
 }
 
-export function getPinCode(clientId: string): Promise<SimklPinResponse> {
-  return simklFetch<SimklPinResponse>(`/oauth/pin?client_id=${encodeURIComponent(clientId)}`);
+export function getPinCode(): Promise<SimklPinResponse> {
+  return simklFetch<SimklPinResponse>('/oauth/pin');
 }
 
-export function pollPin(userCode: string, clientId: string): Promise<SimklPinStatusResponse> {
-  return simklFetch<SimklPinStatusResponse>(
-    `/oauth/pin/${encodeURIComponent(userCode)}?client_id=${encodeURIComponent(clientId)}`
-  );
+export function pollPin(userCode: string): Promise<SimklPinStatusResponse> {
+  return simklFetch<SimklPinStatusResponse>(`/oauth/pin/${encodeURIComponent(userCode)}`);
 }
 
-export function getUserSettings(token: string, clientId: string): Promise<SimklUserSettings> {
-  return simklFetch<SimklUserSettings>('/users/settings', { token, clientId });
+export function getUserSettings(token: string): Promise<SimklUserSettings> {
+  return simklFetch<SimklUserSettings>('/users/settings', { token });
 }
 
-export function getActivities(token: string, clientId: string): Promise<SimklActivities> {
-  return simklFetch<SimklActivities>('/sync/activities', { token, clientId });
+export function getActivities(token: string): Promise<SimklActivities> {
+  return simklFetch<SimklActivities>('/sync/activities', { token });
 }
 
+/**
+ * Fetch items from Simkl.
+ */
 export function getAllItems(
   token: string,
-  clientId: string,
-  type: 'movies' | 'shows' | 'anime',
-  dateFrom?: string
+  type: SimklMediaType,
+  dateFrom?: string,
+  extended: 'full' | 'ids_only' = 'full'
 ): Promise<SimklAllItemsResponse> {
-  const extended = type === 'anime' ? 'full_anime_seasons' : 'full';
-  const params = new URLSearchParams({ extended, episode_watched_at: 'yes' });
+  const path = `/sync/all-items/${type}`;
+  const params = new URLSearchParams({ extended });
+  if (extended === 'full') {
+    params.set('episode_watched_at', 'yes');
+  }
   if (dateFrom) params.set('date_from', dateFrom);
-  return simklFetch<SimklAllItemsResponse>(`/sync/all-items/${type}?${params.toString()}`, {
+  return simklFetch<SimklAllItemsResponse>(`${path}?${params.toString()}`, {
     token,
-    clientId,
   });
 }
 
-export function postHistory(token: string, clientId: string, payload: object): Promise<unknown> {
+export function postHistory(token: string, payload: object): Promise<unknown> {
   return simklFetch('/sync/history', {
     method: 'POST',
     token,
-    clientId,
     body: JSON.stringify(payload),
   });
 }
 
-export function postWatchlist(token: string, clientId: string, payload: object): Promise<unknown> {
+export function postWatchlist(token: string, payload: object): Promise<unknown> {
   return simklFetch('/sync/add-to-list', {
     method: 'POST',
     token,
-    clientId,
     body: JSON.stringify(payload),
   });
 }
 
+export function removeFromHistory(token: string, payload: object): Promise<unknown> {
+  return simklFetch('/sync/history/remove', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  });
+}
 
-export function searchById(clientId: string, imdbId: string): Promise<SimklMediaItem[]> {
-  return simklFetch<SimklMediaItem[]>(
-    `/search/id?imdb=${encodeURIComponent(imdbId)}&client_id=${encodeURIComponent(clientId)}`
-  );
+export function searchById(imdbId: string): Promise<SimklMediaItem[]> {
+  return simklFetch<SimklMediaItem[]>(`/search/id?imdb=${encodeURIComponent(imdbId)}`);
 }

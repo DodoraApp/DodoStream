@@ -4,12 +4,14 @@ const mockGetActivities = jest.fn();
 const mockGetAllItems = jest.fn();
 const mockPostHistory = jest.fn();
 const mockPostWatchlist = jest.fn();
+const mockRemoveFromHistory = jest.fn();
 
 jest.mock('../client', () => ({
   getActivities: (...args: any[]) => mockGetActivities(...args),
   getAllItems: (...args: any[]) => mockGetAllItems(...args),
   postHistory: (...args: any[]) => mockPostHistory(...args),
   postWatchlist: (...args: any[]) => mockPostWatchlist(...args),
+  removeFromHistory: (...args: any[]) => mockRemoveFromHistory(...args),
 }));
 
 const mockResolveSimklIds = jest.fn();
@@ -21,18 +23,35 @@ const mockUpsertWatchProgress = jest.fn();
 const mockListWatchHistory = jest.fn();
 const mockListExportableWatchHistory = jest.fn();
 const mockRemoveProfileWatchHistory = jest.fn();
+const mockRemoveWatchHistoryMeta = jest.fn();
 jest.mock('@/db/queries/watchHistory', () => ({
   upsertWatchProgress: (...args: any[]) => mockUpsertWatchProgress(...args),
   listWatchHistoryForProfile: (...args: any[]) => mockListWatchHistory(...args),
   listExportableWatchHistoryForProfile: (...args: any[]) => mockListExportableWatchHistory(...args),
   removeProfileWatchHistory: (...args: any[]) => mockRemoveProfileWatchHistory(...args),
+  removeWatchHistoryMeta: (...args: any[]) => mockRemoveWatchHistoryMeta(...args),
+}));
+
+const mockAddToSyncQueue = jest.fn();
+const mockCancelPendingSyncRemovals = jest.fn();
+const mockListSyncQueueForProvider = jest.fn();
+const mockDeleteFromSyncQueue = jest.fn();
+jest.mock('@/db/queries/syncQueue', () => ({
+  addToSyncQueue: (...args: any[]) => mockAddToSyncQueue(...args),
+  cancelPendingSyncRemovals: (...args: any[]) => mockCancelPendingSyncRemovals(...args),
+  listSyncQueueForProvider: (...args: any[]) => mockListSyncQueueForProvider(...args),
+  deleteFromSyncQueue: (...args: any[]) => mockDeleteFromSyncQueue(...args),
 }));
 
 const mockAddToMyList = jest.fn();
 const mockListExportableMyList = jest.fn();
+const mockRemoveFromMyList = jest.fn();
+const mockRemoveProfileMyList = jest.fn();
 jest.mock('@/db/queries/myList', () => ({
   addToMyList: (...args: any[]) => mockAddToMyList(...args),
   listExportableMyListForProfile: (...args: any[]) => mockListExportableMyList(...args),
+  removeFromMyList: (...args: any[]) => mockRemoveFromMyList(...args),
+  removeProfileMyList: (...args: any[]) => mockRemoveProfileMyList(...args),
 }));
 
 const mockUpdateSimklCursors = jest.fn();
@@ -57,19 +76,27 @@ describe('simkl sync service', () => {
     mockListExportableWatchHistory.mockReset();
     mockListExportableMyList.mockReset();
     mockRemoveProfileWatchHistory.mockReset();
+    mockRemoveWatchHistoryMeta.mockReset();
     mockUpdateSimklCursors.mockReset();
     mockAddToMyList.mockReset();
+    mockRemoveFromMyList.mockReset();
+    mockRemoveProfileMyList.mockReset();
+    mockAddToSyncQueue.mockReset();
+    mockCancelPendingSyncRemovals.mockReset();
+    mockListSyncQueueForProvider.mockReset();
+    mockDeleteFromSyncQueue.mockReset();
 
     mockGetActivities.mockResolvedValue({
       all: '2026-01-01T00:00:00.000Z',
-      movies: { all: '2026-01-01T00:00:00.000Z' },
-      tv_shows: { all: '2026-01-01T00:00:00.000Z' },
-      anime: { all: '2026-01-01T00:00:00.000Z' },
+      movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
+      tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
+      anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
     });
     mockGetAllItems.mockResolvedValue({ movies: [], shows: [], anime: [] });
     mockListWatchHistory.mockResolvedValue([]);
     mockListExportableWatchHistory.mockResolvedValue([]);
     mockListExportableMyList.mockResolvedValue([]);
+    mockListSyncQueueForProvider.mockResolvedValue([]);
     mockResolveSimklIds.mockResolvedValue({ simkl: 10, imdb: 'tt10' });
   });
 
@@ -77,14 +104,13 @@ describe('simkl sync service', () => {
     it('skips category when cursor matches activity timestamp', async () => {
       // Arrange
       const cursor = '2026-01-01T00:00:00.000Z';
+      const cursorsObj = { plantowatch: cursor };
 
       // Act
       await runImport(
         'profile-1',
         'token',
-        'client',
-        { movies: cursor, shows: cursor, anime: cursor },
-        undefined
+        { movies: cursorsObj, tv_shows: cursorsObj, anime: cursorsObj }
       );
 
       // Assert
@@ -93,35 +119,32 @@ describe('simkl sync service', () => {
 
     it('fetches category when no cursor exists', async () => {
       // Arrange / Act
-      await runImport('profile-1', 'token', 'client');
+      await runImport('profile-1', 'token');
 
       // Assert
       expect(mockGetAllItems).toHaveBeenCalledTimes(3);
-      expect(mockGetAllItems).toHaveBeenNthCalledWith(1, 'token', 'client', 'movies', undefined);
-      expect(mockGetAllItems).toHaveBeenNthCalledWith(2, 'token', 'client', 'shows', undefined);
-      expect(mockGetAllItems).toHaveBeenNthCalledWith(3, 'token', 'client', 'anime', undefined);
+      expect(mockGetAllItems).toHaveBeenNthCalledWith(1, 'token', 'movies', undefined, 'full');
+      expect(mockGetAllItems).toHaveBeenNthCalledWith(2, 'token', 'shows', undefined, 'full');
+      expect(mockGetAllItems).toHaveBeenNthCalledWith(3, 'token', 'anime', undefined, 'full');
     });
 
     it('fetches category when activity timestamp is newer than cursor', async () => {
       // Arrange
       mockGetActivities.mockResolvedValueOnce({
-        all: '2026-02-01T00:00:00.000Z',
-        movies: { all: '2026-02-01T00:00:00.000Z' },
-        tv_shows: { all: '2026-02-01T00:00:00.000Z' },
-        anime: { all: '2026-02-01T00:00:00.000Z' },
+        movies: { plantowatch: '2026-02-01T00:00:00.000Z' },
+        tv_shows: { plantowatch: '2026-02-01T00:00:00.000Z' },
+        anime: { plantowatch: '2026-02-01T00:00:00.000Z' },
       });
 
       // Act
       await runImport(
         'profile-1',
         'token',
-        'client',
         {
-          movies: '2026-01-01T00:00:00.000Z',
-          shows: '2026-01-01T00:00:00.000Z',
-          anime: '2026-01-01T00:00:00.000Z',
-        },
-        undefined
+          movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
+          tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
+          anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
+        }
       );
 
       // Assert
@@ -129,21 +152,22 @@ describe('simkl sync service', () => {
       expect(mockGetAllItems).toHaveBeenNthCalledWith(
         1,
         'token',
-        'client',
         'movies',
-        '2026-01-01T00:00:00.000Z'
+        '2026-01-01T00:00:00.000Z',
+        'full'
       );
     });
 
     it('imports movie items correctly', async () => {
       // Arrange
-      mockGetAllItems.mockImplementation((_token: string, _clientId: string, type: string) => {
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
         if (type === 'movies') {
           return Promise.resolve({
             movies: [
               {
                 movie: { ids: { simkl: 555 }, title: 'Movie' },
                 last_watched_at: '2026-03-01T10:00:00.000Z',
+                status: 'watching',
               },
             ],
           });
@@ -152,7 +176,7 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runImport('profile-1', 'token', 'client');
+      await runImport('profile-1', 'token');
 
       // Assert
       expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
@@ -166,12 +190,13 @@ describe('simkl sync service', () => {
 
     it('imports show episodes correctly with videoId metaId:season:episode', async () => {
       // Arrange
-      mockGetAllItems.mockImplementation((_token: string, _clientId: string, type: string) => {
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
         if (type === 'shows') {
           return Promise.resolve({
             shows: [
               {
                 show: { ids: { imdb: 'tt12345' }, title: 'Show' },
+                status: 'completed',
                 seasons: [
                   { number: 2, episodes: [{ number: 3, watched_at: '2026-03-02T00:00:00.000Z' }] },
                 ],
@@ -183,7 +208,7 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runImport('profile-1', 'token', 'client');
+      await runImport('profile-1', 'token');
 
       // Assert
       expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
@@ -198,12 +223,13 @@ describe('simkl sync service', () => {
 
     it('imports counts-only show items as meta-level series history row', async () => {
       // Arrange
-      mockGetAllItems.mockImplementation((_token: string, _clientId: string, type: string) => {
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
         if (type === 'shows') {
           return Promise.resolve({
             shows: [
               {
                 show: { ids: { imdb: 'tt1695360' }, title: 'Gravity Falls' },
+                status: 'watching',
                 watched_episodes_count: 40,
                 last_watched_at: '2026-03-03T12:34:56.000Z',
               },
@@ -214,7 +240,7 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runImport('profile-1', 'token', 'client');
+      await runImport('profile-1', 'token');
 
       // Assert
       expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
@@ -230,7 +256,7 @@ describe('simkl sync service', () => {
 
     it('filters items by status: plantowatch to My List, dropped ignored', async () => {
       // Arrange
-      mockGetAllItems.mockImplementation((_token: string, _clientId: string, type: string) => {
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
         if (type === 'movies') {
           return Promise.resolve({
             movies: [
@@ -254,7 +280,7 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runImport('profile-1', 'token', 'client');
+      await runImport('profile-1', 'token');
 
       // Assert
       // Plan to watch -> My List
@@ -268,17 +294,15 @@ describe('simkl sync service', () => {
         })
       );
 
-      // Dropped -> Ignored
-      const allUpsertMetaIds = mockUpsertWatchProgress.mock.calls.map(call => call[0].metaId);
-      expect(allUpsertMetaIds).not.toContain('222');
-
-      const allMyListMetaIds = mockAddToMyList.mock.calls.map(call => call[1]);
-      expect(allMyListMetaIds).not.toContain('222');
+      // Dropped -> Ignored (wait, the new logic removes dropped from My List and History!)
+      // My list removals are called:
+      expect(mockRemoveFromMyList).toHaveBeenCalledWith('profile-1', '222');
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', '222');
     });
 
     it('clears local history first when clearLocalFirst is true', async () => {
       // Arrange / Act
-      await runImport('profile-1', 'token', 'client', undefined, { clearLocalFirst: true });
+      await runImport('profile-1', 'token', undefined, { clearLocalFirst: true });
 
       // Assert
       expect(mockRemoveProfileWatchHistory).toHaveBeenCalledWith('profile-1');
@@ -286,13 +310,13 @@ describe('simkl sync service', () => {
 
     it('saves new cursors after successful import', async () => {
       // Arrange / Act
-      await runImport('profile-1', 'token', 'client');
+      await runImport('profile-1', 'token');
 
       // Assert
       expect(mockUpdateSimklCursors).toHaveBeenCalledWith('profile-1', {
-        movies: '2026-01-01T00:00:00.000Z',
-        shows: '2026-01-01T00:00:00.000Z',
-        anime: '2026-01-01T00:00:00.000Z',
+        movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
+        tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
+        anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
       });
     });
 
@@ -301,7 +325,7 @@ describe('simkl sync service', () => {
       mockGetActivities.mockRejectedValueOnce(new Error('boom'));
 
       // Act / Assert
-      await expect(runImport('profile-1', 'token', 'client')).resolves.toBe(false);
+      await expect(runImport('profile-1', 'token')).resolves.toBe(false);
     });
   });
 
@@ -321,10 +345,10 @@ describe('simkl sync service', () => {
       mockResolveSimklIds.mockResolvedValueOnce({ simkl: 77, imdb: 'tt77' });
 
       // Act
-      await runExport('profile-1', 'token', 'client');
+      await runExport('profile-1', 'token');
 
       // Assert
-      expect(mockPostHistory).toHaveBeenCalledWith('token', 'client', {
+      expect(mockPostHistory).toHaveBeenCalledWith('token', {
         movies: [{ ids: { simkl: 77, imdb: 'tt77' } }],
         shows: [],
       });
@@ -335,7 +359,7 @@ describe('simkl sync service', () => {
       mockListExportableWatchHistory.mockResolvedValueOnce([]);
 
       // Act
-      await runExport('profile-1', 'token', 'client');
+      await runExport('profile-1', 'token');
 
       // Assert
       expect(mockResolveSimklIds).not.toHaveBeenCalled();
@@ -376,10 +400,10 @@ describe('simkl sync service', () => {
       mockResolveSimklIds.mockResolvedValue({ simkl: 888, imdb: 'tt888' });
 
       // Act
-      await runExport('profile-1', 'token', 'client');
+      await runExport('profile-1', 'token');
 
       // Assert
-      expect(mockPostHistory).toHaveBeenCalledWith('token', 'client', {
+      expect(mockPostHistory).toHaveBeenCalledWith('token', {
         movies: [],
         shows: [
           {
@@ -398,7 +422,7 @@ describe('simkl sync service', () => {
       mockListExportableWatchHistory.mockRejectedValueOnce(new Error('db broken'));
 
       // Act / Assert
-      await expect(runExport('profile-1', 'token', 'client')).resolves.toBe(false);
+      await expect(runExport('profile-1', 'token')).resolves.toBe(false);
     });
 
     it('skips items where resolveSimklIds returns null', async () => {
@@ -416,7 +440,7 @@ describe('simkl sync service', () => {
       mockResolveSimklIds.mockResolvedValueOnce(null);
 
       // Act
-      await runExport('profile-1', 'token', 'client');
+      await runExport('profile-1', 'token');
 
       // Assert
       expect(mockPostHistory).not.toHaveBeenCalled();
@@ -435,10 +459,10 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runExport('profile-1', 'token', 'client');
+      await runExport('profile-1', 'token');
 
       // Assert
-      expect(mockPostWatchlist).toHaveBeenCalledWith('token', 'client', {
+      expect(mockPostWatchlist).toHaveBeenCalledWith('token', {
         movies: [{ ids: { simkl: 991 }, to: 'plantowatch' }],
         shows: [{ ids: { simkl: 992 }, to: 'plantowatch' }],
       });

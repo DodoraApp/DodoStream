@@ -25,11 +25,22 @@ export interface SimklUserSettings {
   };
 }
 
-export interface SimklActivities {
+export interface SimklActivityCategory {
   all: string;
-  movies?: { all: string };
-  tv_shows?: { all: string };
-  anime?: { all: string };
+  rated_at?: string | object;
+  playback?: string | object;
+  plantowatch?: string | object;
+  watching?: string | object;
+  completed?: string | object;
+  hold?: string | object;
+  dropped?: string | object;
+  removed_from_list?: string | object;
+}
+
+export interface SimklActivities {
+  movies?: SimklActivityCategory;
+  tv_shows?: SimklActivityCategory;
+  anime?: SimklActivityCategory;
 }
 
 export interface SimklIds {
@@ -55,7 +66,7 @@ export type SimklStatus = 'watching' | 'plantowatch' | 'hold' | 'dropped' | 'com
 
 export interface SimklWatchedItem {
   last_watched_at?: string;
-  added_at?: string;
+  added_to_watchlist_at?: string;
   status?: SimklStatus;
   watched_episodes_count?: number;
   movie?: { ids: SimklIds; title: string };

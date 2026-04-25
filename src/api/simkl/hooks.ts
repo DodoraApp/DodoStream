@@ -64,14 +64,14 @@ export function useSimklPinAuth(onSuccess: (accessToken: string) => void): Simkl
       cancel();
       setStatus('pending');
 
-      const pinData = await getPinCode(SIMKL_CLIENT_ID);
+      const pinData = await getPinCode();
       setUserCode(pinData.user_code);
       setVerificationUrl(pinData.verification_url);
 
       // Start polling
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const result = await pollPin(pinData.user_code, SIMKL_CLIENT_ID);
+          const result = await pollPin(pinData.user_code);
           if (result.result === 'OK' && result.access_token) {
             clearTimers();
             setStatus('success');
@@ -132,10 +132,10 @@ export function useSimklSync(profileId?: string): SimklSyncState {
       let exportOk = true;
 
       if (syncMode === 'pull' || syncMode === 'full') {
-        importOk = await runImport(profileId, accessToken, SIMKL_CLIENT_ID, syncCursors);
+        importOk = await runImport(profileId, accessToken, syncCursors);
       }
       if (syncMode === 'push' || syncMode === 'full') {
-        exportOk = await runExport(profileId, accessToken, SIMKL_CLIENT_ID);
+        exportOk = await runExport(profileId, accessToken);
       }
 
       if (importOk && exportOk) {
@@ -203,7 +203,7 @@ export async function completeSimklConnection(
 ): Promise<SimklConnection> {
   debug('completeSimklConnection:start', { profileId });
   try {
-    const userSettings = await getUserSettings(accessToken, SIMKL_CLIENT_ID);
+    const userSettings = await getUserSettings(accessToken);
     const connection: SimklConnection = {
       accessToken,
       userId: String(userSettings.account.id),

@@ -2,6 +2,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, myList } from '@/db/schema';
+import { addToSyncQueue, cancelPendingSyncRemovals, type SyncProvider } from './syncQueue';
 
 export type DbMyListItem = {
   id: string;
@@ -66,6 +67,8 @@ export async function addToMyList(
         addedAt: now,
       },
     });
+
+  await cancelPendingSyncRemovals(profileId, metaId, ['remove_watchlist']);
 }
 
 export async function countMyListForProfile(profileId: string): Promise<number> {
@@ -105,10 +108,23 @@ export async function listExportableMyListForProfile(
   }));
 }
 
-export async function removeFromMyList(profileId: string, metaId: string): Promise<void> {
+export async function removeFromMyList(
+  profileId: string,
+  metaId: string,
+  ignoreProvider?: SyncProvider
+): Promise<void> {
   await initializeDatabase();
 
+  const item = await db
+    .select({ type: myList.type })
+    .from(myList)
+    .where(and(eq(myList.profileId, profileId), eq(myList.metaId, metaId)))
+    .limit(1);
+
+  if (item.length === 0) return;
+
   await db.delete(myList).where(and(eq(myList.profileId, profileId), eq(myList.metaId, metaId)));
+  await addToSyncQueue(profileId, 'remove_watchlist', metaId, item[0].type, undefined, ignoreProvider);
 }
 
 export async function removeProfileMyList(profileId: string): Promise<void> {
