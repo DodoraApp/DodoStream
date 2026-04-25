@@ -162,7 +162,7 @@ describe('Simkl Sync Service - Comprehensive E2E', () => {
         expect(mockRemoveWatchHistoryMeta).not.toHaveBeenCalled();
     });
 
-    it('skips episode-level history for fully completed shows', async () => {
+    it('imports episode-level history for fully completed shows', async () => {
         mockGetAllItems.mockImplementation((_token, type) => {
             if (type === 'shows') {
                 return Promise.resolve({
@@ -180,12 +180,17 @@ describe('Simkl Sync Service - Comprehensive E2E', () => {
 
         await runImport('profile-1', 'token');
 
-        // Should only have 1 call for the series itself, NOT for individual episodes
-        expect(mockUpsertWatchProgress).toHaveBeenCalledTimes(1);
+        // Should have 2 calls for the episodes, NOT a single call for the series
+        expect(mockUpsertWatchProgress).toHaveBeenCalledTimes(2);
         expect(mockUpsertWatchProgress).toHaveBeenCalledWith(expect.objectContaining({
             metaId: 'tt_completed',
-            videoId: undefined,
-            progressSeconds: 100 // isCompleted: true -> 100
+            videoId: 'tt_completed:1:1',
+            progressSeconds: 100
+        }));
+        expect(mockUpsertWatchProgress).toHaveBeenCalledWith(expect.objectContaining({
+            metaId: 'tt_completed',
+            videoId: 'tt_completed:1:2',
+            progressSeconds: 100
         }));
     });
 
