@@ -68,9 +68,12 @@ export interface SimklWatchedItem {
   last_watched_at?: string;
   added_to_watchlist_at?: string;
   status?: SimklStatus;
+  last_watched?: string;
+  next_to_watch?: string;
   watched_episodes_count?: number;
   movie?: { ids: SimklIds; title: string; poster?: string; year?: number };
   show?: { ids: SimklIds; title: string; poster?: string; year?: number };
+  anime?: { ids: SimklIds; title: string; poster?: string; year?: number };
   seasons?: {
     number: number;
     episodes: { number: number; watched_at?: string }[];

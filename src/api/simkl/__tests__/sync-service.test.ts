@@ -286,7 +286,8 @@ describe('simkl sync service', () => {
       // Plan to watch -> My List
       expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', '111', 'movie', undefined);
 
-      // Watching -> History
+      // Watching -> My List AND History
+      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', '333', 'movie', undefined);
       expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
         expect.objectContaining({
           profileId: 'profile-1',
@@ -294,10 +295,42 @@ describe('simkl sync service', () => {
         })
       );
 
-      // Dropped -> Ignored (wait, the new logic removes dropped from My List and History!)
-      // My list removals are called:
+      // Dropped -> Removals
       expect(mockRemoveFromMyList).toHaveBeenCalledWith('profile-1', '222');
       expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', '222');
+    });
+
+    it('imports anime items correctly using the anime property', async () => {
+      // Arrange
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
+        if (type === 'anime') {
+          return Promise.resolve({
+            anime: [
+              {
+                anime: { ids: { kitsu: 123 }, title: 'Anime Series' },
+                status: 'watching',
+                seasons: [
+                  { number: 1, episodes: [{ number: 1, watched_at: '2026-03-01T10:00:00.000Z' }] },
+                ],
+              },
+            ],
+          });
+        }
+        return Promise.resolve({});
+      });
+
+      // Act
+      await runImport('profile-1', 'token');
+
+      // Assert
+      expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          profileId: 'profile-1',
+          metaId: 'kitsu:123',
+          videoId: 'kitsu:123:1:1',
+          type: 'series',
+        })
+      );
     });
 
     it('clears local history first when clearLocalFirst is true', async () => {
@@ -308,16 +341,115 @@ describe('simkl sync service', () => {
       expect(mockRemoveProfileWatchHistory).toHaveBeenCalledWith('profile-1');
     });
 
-    it('saves new cursors after successful import', async () => {
-      // Arrange / Act
+    it('deduplicates metaIds during cleanup', async () => {
+      // Arrange
+      mockGetActivities.mockResolvedValueOnce({
+        movies: { removed_from_list: '2026-02-01T00:00:00.000Z' },
+      });
+      mockGetAllItems.mockResolvedValueOnce({ movies: [] }); // Simkl list is empty
+      mockListWatchHistory.mockResolvedValueOnce([
+        { id: 'movie-1', source: 'simkl', type: 'movie' },
+        { id: 'movie-1', source: 'simkl', type: 'movie' }, // Duplicate metaId
+      ]);
+
+      // Act
+      await runImport('profile-1', 'token', {
+        movies: { removed_from_list: '2026-01-01T00:00:00.000Z' },
+      });
+
+      // Assert
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledTimes(1);
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', 'movie-1');
+    });
+
+    it('imports items with hold status correctly', async () => {
+      // Arrange
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
+        if (type === 'shows') {
+          return Promise.resolve({
+            shows: [
+              {
+                show: { ids: { imdb: 'tt123' }, title: 'Hold Show' },
+                status: 'hold',
+                watched_episodes_count: 5,
+                last_watched_at: '2026-03-01T10:00:00.000Z',
+              },
+            ],
+          });
+        }
+        return Promise.resolve({});
+      });
+
+      // Act
       await runImport('profile-1', 'token');
 
       // Assert
-      expect(mockUpdateSimklCursors).toHaveBeenCalledWith('profile-1', {
-        movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
-        tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
-        anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
+      expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          profileId: 'profile-1',
+          metaId: 'tt123',
+          type: 'series',
+        })
+      );
+      // Hold should also be in My List
+      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', 'tt123', 'series', undefined);
+    });
+
+    it('parses last_watched string into videoId when episode arrays are missing', async () => {
+      // Arrange
+      mockGetAllItems.mockImplementation((_token: string, type: string) => {
+        if (type === 'shows') {
+          return Promise.resolve({
+            shows: [
+              {
+                show: { ids: { imdb: 'tt1317187' }, title: 'The Last of Us' },
+                status: 'watching',
+                last_watched: 'S01E09',
+                last_watched_at: '2025-06-22T11:52:39Z',
+              },
+            ],
+          });
+        }
+        return Promise.resolve({});
       });
+
+      // Act
+      await runImport('profile-1', 'token');
+
+      // Assert
+      expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metaId: 'tt1317187',
+          videoId: 'tt1317187:1:9',
+          type: 'series',
+        })
+      );
+    });
+
+    it('saves all new cursors after successful import', async () => {
+      // Arrange
+      mockGetActivities.mockResolvedValue({
+        movies: {
+          all: '2026-04-25T14:15:00Z',
+          watched_at: '2026-04-25T14:14:00Z',
+          plantowatch: '2026-04-25T14:13:00Z',
+          hold: '2026-04-25T14:12:00Z',
+        },
+      });
+
+      // Act
+      await runImport('profile-1', 'token');
+
+      // Assert
+      expect(mockUpdateSimklCursors).toHaveBeenCalledWith(
+        'profile-1',
+        expect.objectContaining({
+          movies: expect.objectContaining({
+            plantowatch: '2026-04-25T14:13:00Z',
+            hold: '2026-04-25T14:12:00Z',
+          }),
+        })
+      );
     });
 
     it('does not throw on error (fail-safe)', async () => {
@@ -326,6 +458,30 @@ describe('simkl sync service', () => {
 
       // Act / Assert
       await expect(runImport('profile-1', 'token')).resolves.toBe(false);
+    });
+
+    it('handles null response from getAllItems gracefully', async () => {
+      // Arrange
+      mockGetActivities.mockResolvedValueOnce({
+        movies: { plantowatch: '2026-02-01T00:00:00.000Z' },
+        tv_shows: { plantowatch: '2026-02-01T00:00:00.000Z' },
+        anime: { plantowatch: '2026-02-01T00:00:00.000Z' },
+      });
+      // Simulate API returning null (as seen in logs)
+      mockGetAllItems.mockResolvedValue(null);
+
+      // Act
+      const result = await runImport('profile-1', 'token', {
+        movies: { plantowatch: '2026-01-01T00:00:00.000Z' },
+        tv_shows: { plantowatch: '2026-01-01T00:00:00.000Z' },
+        anime: { plantowatch: '2026-01-01T00:00:00.000Z' },
+      });
+
+      // Assert
+      expect(result).toBe(true);
+      expect(mockGetAllItems).toHaveBeenCalled();
+      // Should not have crashed and should have updated cursors
+      expect(mockUpdateSimklCursors).toHaveBeenCalled();
     });
   });
 

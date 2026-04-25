@@ -46,7 +46,13 @@ interface HistoryPayload {
   shows: HistoryShowPayload[];
 }
 
-const SYNC_STATUSES: (keyof SimklSyncCursor)[] = ['plantowatch', 'watching', 'completed', 'dropped'];
+const SYNC_STATUSES: (keyof SimklSyncCursor)[] = [
+  'plantowatch',
+  'watching',
+  'completed',
+  'hold',
+  'dropped',
+];
 
 function needsSync(activityCursor: string | object | undefined, storedCursor?: string): boolean {
   if (!activityCursor || typeof activityCursor === 'object') return false;
@@ -96,7 +102,7 @@ export async function runImport(
       if (hasRemovals) {
         debug('syncRemovals', { profileId, type });
         const idsResponse = await getAllItems(token, type, undefined, 'ids_only');
-        const items = idsResponse[responseKey] || [];
+        const items = idsResponse?.[responseKey] || [];
         const currentMetaIds = new Set<string>();
         for (const item of items) {
           const metaId = getMetaIdFromWatchedItem(item);
@@ -140,7 +146,7 @@ export async function runImport(
         debug('syncUpdates', { profileId, type, dateFrom, fullSyncRequired });
 
         const itemsResponse = await getAllItems(token, type, dateFrom, 'full');
-        const items = itemsResponse[responseKey] || [];
+        const items = itemsResponse?.[responseKey] || [];
 
         const myListAdditions: { metaId: string; type: ContentType; addedAt?: number }[] = [];
         const historyUpserts: Parameters<typeof upsertImportedProgress>[0][] = [];
@@ -151,35 +157,34 @@ export async function runImport(
           const metaId = getMetaIdFromWatchedItem(item);
           if (!metaId) continue;
 
-          const title = item.movie?.title ?? item.show?.title;
-          const posterValue =
-            item.movie?.poster ??
-            item.show?.poster;
-          if (title) {
+          const mediaData = item.movie ?? item.show ?? item.anime;
+          if (mediaData?.title) {
             await upsertMinimalMetaCache({
               metaId,
               type: contentType,
-              name: title,
-              poster: getSimklPosterUrl(posterValue),
-              year: (item.movie?.year ?? item.show?.year)?.toString(),
+              name: mediaData.title,
+              poster: getSimklPosterUrl(mediaData.poster),
+              year: mediaData.year?.toString(),
             });
           }
 
           // 3. Route items based on their status
-          // 'plantowatch' items are added to My List.
-          // 'watching' and 'completed' items update the Watch History with watch dates and episode counts.
+          // 'plantowatch', 'watching' and 'hold' items are added to My List.
+          // 'watching', 'completed' and 'hold' items update the Watch History with watch dates and episode counts.
           // 'dropped' items are actively removed from both My List and Watch History.
-          if (item.status === 'plantowatch') {
+          if (item.status === 'plantowatch' || item.status === 'watching' || item.status === 'hold') {
             myListAdditions.push({
               metaId,
               type: contentType,
               addedAt: item.added_to_watchlist_at ? new Date(item.added_to_watchlist_at).getTime() : undefined,
             });
-          } else if (item.status === 'watching' || item.status === 'completed') {
+          }
+
+          if (item.status === 'watching' || item.status === 'completed' || item.status === 'hold') {
             if (type === 'movies' && item.movie) {
               const param = collectMovieParam(profileId, item);
               if (param) historyUpserts.push(param);
-            } else if ((type === 'shows' || type === 'anime') && item.show) {
+            } else if (type === 'shows' || type === 'anime') {
               const params = collectShowParams(profileId, item);
               historyUpserts.push(...params);
             }
@@ -216,7 +221,7 @@ export async function runImport(
 }
 
 function getMetaIdFromWatchedItem(item: SimklWatchedItem): string | undefined {
-  const ids = item.movie?.ids ?? item.show?.ids;
+  const ids = item.movie?.ids ?? item.show?.ids ?? item.anime?.ids;
   if (!ids) return undefined;
   return getMetaIdFromIds(ids);
 }
@@ -230,12 +235,21 @@ async function cleanupRemovedItems(
     const localHistory = await listWatchHistoryForProfile(profileId);
     const contentType: ContentType = type === 'movies' ? 'movie' : 'series';
 
+    const itemsToRemove = new Set<string>();
     for (const item of localHistory) {
-      if (item.source === 'simkl' && item.type === contentType && !currentlyImportedMetaIds.has(item.id)) {
-        debug('cleanupRemovingItem', { metaId: item.id, type: item.type });
-        await removeWatchHistoryMeta(profileId, item.id);
-        await removeFromMyList(profileId, item.id);
+      if (
+        item.source === 'simkl' &&
+        item.type === contentType &&
+        !currentlyImportedMetaIds.has(item.id)
+      ) {
+        itemsToRemove.add(item.id);
       }
+    }
+
+    for (const metaId of itemsToRemove) {
+      debug('cleanupRemovingItem', { metaId, type: contentType });
+      await removeWatchHistoryMeta(profileId, metaId);
+      await removeFromMyList(profileId, metaId);
     }
   } catch (error) {
     debug('cleanupError', { error });
@@ -272,14 +286,33 @@ function collectMovieParam(
   return { profileId, metaId, type: 'movie', watchedAt: item.last_watched_at };
 }
 
+function parseSimklLastWatched(lastWatched: string): { season: number; episode: number } | undefined {
+  const match = lastWatched.match(/S(\d+)E(\d+)/i);
+  if (match) {
+    return {
+      season: parseInt(match[1], 10),
+      episode: parseInt(match[2], 10),
+    };
+  }
+  const matchE = lastWatched.match(/E(\d+)/i);
+  if (matchE) {
+    return {
+      season: 1,
+      episode: parseInt(matchE[1], 10),
+    };
+  }
+  return undefined;
+}
+
 function collectShowParams(
   profileId: string,
   item: SimklWatchedItem,
 ): Parameters<typeof upsertImportedProgress>[0][] {
   const out: Parameters<typeof upsertImportedProgress>[0][] = [];
 
-  if (!item.show) return out;
-  const metaId = getMetaIdFromIds(item.show.ids);
+  const mediaData = item.show ?? item.anime;
+  if (!mediaData) return out;
+  const metaId = getMetaIdFromIds(mediaData.ids);
   if (!metaId) return out;
 
   const hasEpisodeArrays = !!item.seasons || !!item.episodes;
@@ -311,8 +344,21 @@ function collectShowParams(
     }
   }
 
-  if (!hasEpisodeArrays && (item.watched_episodes_count ?? 0) > 0) {
-    out.push({ profileId, metaId, type: 'series', watchedAt: item.last_watched_at });
+  if (!hasEpisodeArrays) {
+    if (item.last_watched) {
+      const parsed = parseSimklLastWatched(item.last_watched);
+      if (parsed) {
+        out.push({
+          profileId,
+          metaId,
+          videoId: `${metaId}:${parsed.season}:${parsed.episode}`,
+          type: 'series',
+          watchedAt: item.last_watched_at,
+        });
+      }
+    } else if ((item.watched_episodes_count ?? 0) > 0) {
+      out.push({ profileId, metaId, type: 'series', watchedAt: item.last_watched_at });
+    }
   }
 
   return out;

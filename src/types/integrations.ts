@@ -7,6 +7,7 @@ export interface SimklSyncCursor {
   plantowatch?: string;
   watching?: string;
   completed?: string;
+  hold?: string;
   dropped?: string;
   removed_from_list?: string;
 }
