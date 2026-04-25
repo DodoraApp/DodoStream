@@ -146,7 +146,30 @@ export const useIntegrationsStore = create<IntegrationsState>()(
     }),
     {
       name: 'integrations-registry',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0 && persistedState && typeof persistedState === 'object') {
+          const state = persistedState as any;
+          console.log("MIGRATING", state)
+
+          if (state.settings) {
+            for (const profileId in state.settings) {
+              const simkl = state.settings[profileId]?.simkl;
+              const cursors = simkl?.connection?.syncCursors;
+              if (cursors && typeof cursors === 'object') {
+                for (const key of ['movies', 'tv_shows', 'anime']) {
+                  if (typeof cursors[key] === 'string') {
+                    cursors[key] = { all: cursors[key] };
+                  }
+                }
+              }
+            }
+          }
+        }
+        console.log("MIGRATION DONE", persistedState)
+        return persistedState;
+      },
       partialize: (state) => ({
         settings: state.settings,
         lastSyncAt: state.lastSyncAt,
