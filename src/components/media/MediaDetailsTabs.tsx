@@ -1,4 +1,5 @@
 import { FC, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box } from '@/theme/theme';
 
 import type { MetaDetail, MetaVideo } from '@/types/stremio';
@@ -13,20 +14,21 @@ interface MediaDetailsTabsProps {
 }
 
 export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePress }) => {
+  const { t } = useTranslation('media');
   const hasSeasonsTab = (media.videos?.length ?? 0) > 1;
   const hasTrailersTab = (media.trailerStreams?.length ?? 0) > 0;
 
   const tabs = useMemo<DetailsTab[]>(() => {
     const result: DetailsTab[] = [];
     if (hasSeasonsTab) {
-      result.push({ key: 'seasons', label: 'Seasons' });
+      result.push({ key: 'seasons', label: t('seasons') });
     }
-    result.push({ key: 'cast', label: 'Cast' });
+    result.push({ key: 'cast', label: t('cast') });
     if (hasTrailersTab) {
-      result.push({ key: 'trailers', label: 'Trailers' });
+      result.push({ key: 'trailers', label: t('trailers') });
     }
     return result;
-  }, [hasSeasonsTab, hasTrailersTab]);
+  }, [hasSeasonsTab, hasTrailersTab, t]);
 
   const defaultTab = hasSeasonsTab ? 'seasons' : 'cast';
   const [activeTab, setActiveTab] = useState(defaultTab);

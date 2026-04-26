@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getLanguageEntry } from '@/utils/languages';
 import { uniqNormalizedStrings } from '@/utils/array';
 import { Modal } from '@/components/basic/Modal';
@@ -42,6 +43,7 @@ export function LanguagePreferenceModal({
   availableLanguageCodes,
   onChange,
 }: LanguagePreferenceModalProps) {
+  const { t } = useTranslation('settings');
   const selected = uniqNormalizedStrings(selectedLanguageCodes);
   const availableCodes = uniqNormalizedStrings(availableLanguageCodes).filter(
     (code) => !selected.includes(code)
@@ -74,9 +76,9 @@ export function LanguagePreferenceModal({
         selectedItems={selectedItems}
         availableItems={availableItems}
         onChange={handleChange}
-        selectedLabel="Selected (in order)"
-        availableLabel="Add language"
-        emptyPlaceholder="Device default"
+        selectedLabel={t('playback.selected_order')}
+        availableLabel={t('playback.add_language')}
+        emptyPlaceholder={t('playback.device_default')}
       />
     </Modal>
   );

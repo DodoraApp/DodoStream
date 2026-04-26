@@ -5,7 +5,6 @@ import type {
   SimklUserSettings,
   SimklActivities,
   SimklMediaItem,
-  SimklActivityCategory,
 } from '@/types/simkl';
 import { SIMKL_APP_NAME, SIMKL_CLIENT_ID } from './config';
 import { createDebugLogger } from '@/utils/debug';

@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { useProfileStore } from '@/store/profile.store';
@@ -11,7 +12,8 @@ interface ProfileSwitcherCardProps {
 }
 
 export const ProfileSwitcherCard = forwardRef<any, ProfileSwitcherCardProps>(
-  ({ title = 'Current Profile' }, ref) => {
+  ({ title }, ref) => {
+    const { t } = useTranslation(['profiles', 'common']);
     const theme = useTheme<Theme>();
     const router = useRouter();
     const profiles = useProfileStore((state) => state.profiles);
@@ -39,16 +41,16 @@ export const ProfileSwitcherCard = forwardRef<any, ProfileSwitcherCardProps>(
             size="small"
           />
           <Box flex={1} gap="xs">
-            <Text variant="cardTitle">{title}</Text>
+            <Text variant="cardTitle">{title || t('current_profile')}</Text>
             <Text variant="caption" color="textSecondary">
-              {activeProfile?.name ?? 'None'}
+              {activeProfile?.name ?? t('common:none')}
             </Text>
           </Box>
         </Box>
 
         <Button
           ref={ref}
-          title="Switch Profile"
+          title={t('switch_profile')}
           variant="primary"
           icon="swap-horizontal"
           onPress={handleSwitchProfile}

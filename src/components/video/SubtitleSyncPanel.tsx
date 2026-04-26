@@ -1,4 +1,5 @@
 import React, { FC, memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +37,7 @@ const formatDelay = (value: number): string => {
  */
 export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
   ({ selectedTrack, currentTime, delay, onDelayChange }) => {
+    const { t } = useTranslation('player');
     const theme = useTheme<Theme>();
     const { isPlatformTV } = useResponsiveLayout();
     const adjustedTime = currentTime - delay;
@@ -60,7 +62,7 @@ export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
         {/* Header */}
         <Box flexDirection="row" alignItems="center" gap="s" marginBottom="s">
           <Ionicons name="sync" size={theme.sizes.iconMedium} color={theme.colors.mainForeground} />
-          <Text variant="cardTitle">Subtitle Sync</Text>
+          <Text variant="cardTitle">{t('subtitle_sync')}</Text>
         </Box>
 
         {isSyncEnabled ? (
@@ -73,7 +75,7 @@ export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
               maximumValue={SUBTITLE_DELAY_MAX}
               step={SUBTITLE_DELAY_STEP}
               showButtons={!isPlatformTV}
-              label="Delay"
+              label={t('delay')}
               unit="s"
               formatValue={formatDelay}
             />
@@ -88,7 +90,7 @@ export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
         ) : (
           <Box flex={1} justifyContent="center" alignItems="center" padding="l">
             <Text variant="bodySmall" color="textSecondary" textAlign="center">
-              Select an addon subtitle to enable syncing
+              {t('sync_hint')}
             </Text>
           </Box>
         )}

@@ -1,5 +1,6 @@
 import { FC, useCallback, useMemo } from 'react';
 import { LegendList } from '@legendapp/list/react-native';
+import { useTranslation } from 'react-i18next';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -82,6 +83,7 @@ interface CastTabProps {
 
 export const CastTab: FC<CastTabProps> = ({ media, isActive }) => {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const cast = useMemo(() => extractCastMembers(media, 'cast', 'Cast'), [media]);
   const directors = useMemo(() => extractCastMembers(media, 'directors', 'Directors'), [media]);
@@ -97,9 +99,9 @@ export const CastTab: FC<CastTabProps> = ({ media, isActive }) => {
   if (!isActive) return null;
 
   const sections = [
-    { key: 'cast', title: 'Cast', members: cast },
-    { key: 'directors', title: 'Directors', members: directors },
-    { key: 'writers', title: 'Writers', members: writers },
+    { key: 'cast', title: t('media:cast'), members: cast },
+    { key: 'directors', title: t('media:directors'), members: directors },
+    { key: 'writers', title: t('media:writers'), members: writers },
   ].filter((s) => s.members.length > 0);
 
   if (sections.length === 0) {

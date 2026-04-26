@@ -5,6 +5,8 @@ import { Box, Text, type Theme } from '@/theme/theme';
 import { useAddonStore } from '@/store/addon.store';
 import { useProfileStore } from '@/store/profile.store';
 import { useMemo, useCallback, memo, useState } from 'react';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
 import { MetaPreview } from '@/types/stremio';
 import { LegendList } from '@legendapp/list/react-native';
@@ -111,6 +113,7 @@ export default function Home() {
 }
 
 const HomeContent = () => {
+  const { t } = useTranslation('media');
   const { navigateToDetails } = useMediaNavigation();
   const addons = useAddonStore((state) => state.addons);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -141,7 +144,8 @@ const HomeContent = () => {
     continueWatchingEnabled && (continueWatchingLoading || continueWatchingData.length > 0);
 
   // Whether the My List section will be visible
-  const hasMyList = myListEnabled && (myList.isLoading || (myList.data?.pages.flat().length ?? 0) > 0);
+  const hasMyList =
+    myListEnabled && (myList.isLoading || (myList.data?.pages.flat().length ?? 0) > 0);
 
   // Number of catalog rows that fit above the fold — these load before the list is shown
   const priorityCatalogCount = useMemo(
@@ -223,7 +227,7 @@ const HomeContent = () => {
       continueWatchingSections.push({
         kind: 'section-header',
         sectionKey,
-        title: 'Continue Watching',
+        title: t('continue_watching'),
         icon: 'time-outline',
         linkTo: { pathname: '/library', params: { tab: 'history' } },
         syncBadges,
@@ -242,7 +246,7 @@ const HomeContent = () => {
       myListSections.push({
         kind: 'section-header',
         sectionKey,
-        title: 'My List',
+        title: t('my_list'),
         icon: 'bookmark-outline',
         linkTo: { pathname: '/library', params: { tab: 'my-list' } },
       });
@@ -262,6 +266,7 @@ const HomeContent = () => {
     syncBadges,
     continueWatchingEnabled,
     hasMyList,
+    t,
   ]);
 
   // Priority catalogs are the first N catalog rows visible on screen
@@ -413,9 +418,7 @@ const HomeContent = () => {
                   margin="m"
                   borderWidth={1}
                   borderColor="cardBorder">
-                  <Text variant="subheader">
-                    No addons installed. Go to Settings to install addons.
-                  </Text>
+                  <Text variant="subheader">{t('no_addons_title')}</Text>
                 </Box>
               ) : (
                 <Box
@@ -425,7 +428,7 @@ const HomeContent = () => {
                   margin="m"
                   borderWidth={1}
                   borderColor="cardBorder">
-                  <Text variant="subheader">No catalogs available.</Text>
+                  <Text variant="subheader">{t('no_catalogs_title')}</Text>
                 </Box>
               )
             }
@@ -534,12 +537,13 @@ interface MyListSectionRowProps {
   onSectionFocused: () => void;
 }
 
-const MY_LIST_FILTERS: TagOption[] = [
-  { id: 'movie', label: 'Movies' },
-  { id: 'series', label: 'Shows' },
+const getMyListFilters = (t: TFunction): TagOption[] => [
+  { id: 'movie', label: t('media:movies') },
+  { id: 'series', label: t('media:shows') },
 ];
 
 const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSectionRowProps) => {
+  const { t } = useTranslation();
   const { data, isLoading } = useMyList();
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
@@ -580,11 +584,11 @@ const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSection
     <Box gap="s">
       <Box paddingHorizontal="m">
         <TagFilters
-          options={MY_LIST_FILTERS}
+          options={getMyListFilters(t)}
           selectedId={selectedFilter}
           onSelectId={setSelectedFilter}
           includeAllOption
-          allLabel="All"
+          allLabel={t('media:all')}
         />
       </Box>
       <MediaList
@@ -597,4 +601,3 @@ const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSection
 });
 
 MyListSectionRow.displayName = 'MyListSectionRow';
-

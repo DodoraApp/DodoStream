@@ -1,4 +1,5 @@
 import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, TVFocusGuideView } from 'react-native';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,6 +34,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionProps) => {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const { pushToStreams, navigateToDetails } = useMediaNavigation();
 
@@ -339,7 +341,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
             <Button
               variant="primary"
               icon="play"
-              title="Play"
+              title={t('play')}
               onPress={handlePlay}
               hasTVPreferredFocus={hasTVPreferredFocus}
               onFocusChange={handleHeroFocus}
@@ -347,7 +349,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
             <Button
               variant="secondary"
               icon="information-circle-outline"
-              title="Details"
+              title={t('details')}
               onPress={handleDetails}
               onFocusChange={handleHeroFocus}
             />

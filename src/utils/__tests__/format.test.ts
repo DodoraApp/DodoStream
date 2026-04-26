@@ -69,28 +69,30 @@ describe('format utils', () => {
     });
   });
 
+  const mockT = (key: string) => (key === 'media:unknown_episode' ? 'Unknown' : key);
+
   describe('formatEpisodeListTitle', () => {
     it('formats episode number and title', () => {
-      expect(formatEpisodeListTitle({ episode: 5, title: 'Episode Title' })).toBe(
-        '5. Episode Title'
-      );
-    });
+      expect(formatEpisodeListTitle({ episode: 5, title: 'Episode Title' }, mockT as any)).toBe(
+              '5. Episode Title'
+            );
+          });
 
-    it('uses name when title is missing', () => {
-      expect(formatEpisodeListTitle({ episode: 3, name: 'Episode Name' })).toBe('3. Episode Name');
-    });
+          it('falls back to name when title is missing', () => {
+            expect(formatEpisodeListTitle({ episode: 3, name: 'Episode Name' }, mockT as any)).toBe('3. Episode Name');
+          });
 
-    it('uses ? for missing episode number', () => {
-      expect(formatEpisodeListTitle({ title: 'Special' })).toBe('?. Special');
-    });
+          it('uses placeholder when episode is missing', () => {
+            expect(formatEpisodeListTitle({ title: 'Special' }, mockT as any)).toBe('?. Special');
+          });
 
-    it('uses Unknown for missing title/name', () => {
-      expect(formatEpisodeListTitle({ episode: 1 })).toBe('1. Unknown');
-    });
+          it('uses placeholder when title/name is missing', () => {
+            expect(formatEpisodeListTitle({ episode: 1 }, mockT as any)).toBe('1. Unknown');
+          });
 
-    it('handles undefined/null input', () => {
-      expect(formatEpisodeListTitle(undefined)).toBe('?. Unknown');
-      expect(formatEpisodeListTitle(null)).toBe('?. Unknown');
+          it('handles null/undefined video', () => {
+            expect(formatEpisodeListTitle(undefined, mockT as any)).toBe('?. Unknown');
+            expect(formatEpisodeListTitle(null, mockT as any)).toBe('?. Unknown');
     });
   });
 

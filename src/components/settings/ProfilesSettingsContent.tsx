@@ -1,4 +1,5 @@
 import { FC, memo, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -17,6 +18,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
  * Extracted for use in both standalone page and split layout
  */
 export const ProfilesSettingsContent: FC = memo(() => {
+  const { t } = useTranslation(['profiles', 'common']);
   const theme = useTheme<Theme>();
   const profiles = useProfileStore((state) => state.profiles);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -44,14 +46,14 @@ export const ProfilesSettingsContent: FC = memo(() => {
 
       switchProfile(profile.id);
       showToast({
-        title: 'Profile switched',
+        title: t('profiles:profile_switched'),
         message: profile.name,
         preset: 'success',
         duration: TOAST_DURATION_SHORT,
       });
       router.replace('/');
     },
-    [activeProfileId, router, switchProfile]
+    [activeProfileId, router, switchProfile, t]
   );
 
   const confirmSwitchWithPin = useCallback(() => {
@@ -60,14 +62,14 @@ export const ProfilesSettingsContent: FC = memo(() => {
     const ok = switchProfile(pendingSwitch.id, pinInput);
     if (!ok) {
       showToast({
-        title: 'Wrong PIN',
+        title: t('profiles:wrong_pin'),
         preset: 'error',
       });
       return;
     }
 
     showToast({
-      title: 'Profile switched',
+      title: t('profiles:profile_switched'),
       message: pendingSwitch.name,
       preset: 'success',
       duration: TOAST_DURATION_SHORT,
@@ -75,13 +77,13 @@ export const ProfilesSettingsContent: FC = memo(() => {
     setPendingSwitch(undefined);
     setPinInput('');
     router.replace('/');
-  }, [pendingSwitch, pinInput, router, switchProfile]);
+  }, [pendingSwitch, pinInput, router, switchProfile, t]);
 
   const handleDelete = useCallback(
     (profile: Profile) => {
       if (profile.id === activeProfileId) {
         showToast({
-          title: 'Cannot delete active profile',
+          title: t('profiles:cannot_delete_active'),
           preset: 'error',
         });
         return;
@@ -89,25 +91,25 @@ export const ProfilesSettingsContent: FC = memo(() => {
 
       deleteProfile(profile.id);
       showToast({
-        title: 'Profile deleted',
+        title: t('profiles:profile_deleted'),
         message: profile.name,
         preset: 'success',
         duration: TOAST_DURATION_SHORT,
       });
     },
-    [activeProfileId, deleteProfile]
+    [activeProfileId, deleteProfile, t]
   );
 
   return (
     <>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Box padding="m" gap="m">
-          <SettingsCard title="Manage Profiles">
+          <SettingsCard title={t('profiles:title')}>
             <Text variant="caption" color="textSecondary">
-              Switch, edit, or delete profiles. Playback settings and My List are per-profile.
+              {t('profiles:manage_profiles_desc')}
             </Text>
             <Button
-              title="Add Profile"
+              title={t('profiles:add_profile')}
               icon="add"
               onPress={() => {
                 setEditingProfile(undefined);
@@ -115,7 +117,7 @@ export const ProfilesSettingsContent: FC = memo(() => {
               }}
             />
           </SettingsCard>
-          <Text variant="subheader">Profiles</Text>
+          <Text variant="subheader">{t('profiles:title')}</Text>
 
           {profileList.map((profile) => {
             const isActive = profile.id === activeProfileId;
@@ -135,15 +137,15 @@ export const ProfilesSettingsContent: FC = memo(() => {
                   <Box flex={1} gap="xs">
                     <Text variant="cardTitle">
                       {profile.name}
-                      {isActive ? ' (Active)' : ''}
+                      {isActive ? ` (${t('profiles:active')})` : ''}
                     </Text>
                     {profile.pin ? (
                       <Text variant="caption" color="textSecondary">
-                        PIN protected
+                        {t('profiles:pin_protected')}
                       </Text>
                     ) : (
                       <Text variant="caption" color="textSecondary">
-                        No PIN
+                        {t('profiles:no_pin')}
                       </Text>
                     )}
                   </Box>
@@ -190,7 +192,7 @@ export const ProfilesSettingsContent: FC = memo(() => {
 
       <PINPrompt
         visible={!!pendingSwitch}
-        title={`Enter PIN for ${pendingSwitch?.name ?? ''}`}
+        title={t('profiles:enter_pin_for', { name: pendingSwitch?.name ?? '' })}
         value={pinInput}
         onChangeText={setPinInput}
         onCancel={() => {

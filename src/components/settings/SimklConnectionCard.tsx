@@ -1,5 +1,6 @@
 import { FC, memo, useCallback } from 'react';
 import { Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
@@ -17,6 +18,7 @@ interface SimklConnectionCardProps {
 
 export const SimklConnectionCard: FC<SimklConnectionCardProps> = memo(
   ({ settings, onConnect, onDisconnect }) => {
+    const { t } = useTranslation('settings');
     const theme = useTheme<Theme>();
     const isConnected = !!settings?.connection;
 
@@ -40,14 +42,14 @@ export const SimklConnectionCard: FC<SimklConnectionCardProps> = memo(
               resizeMode={FastImage.resizeMode.contain}
             />
             <Text variant="caption" color="textSecondary">
-              Track your watch history. Powered by Simkl.
+              {t('simkl.desc')}
             </Text>
           </Box>
         </Focusable>
 
         {isConnected ? (
           <>
-            <SettingsRow label="Connected as">
+            <SettingsRow label={t('simkl.connected_as')}>
               <Text variant="body" color="textSecondary">
                 {settings!.connection!.username}
               </Text>
@@ -61,7 +63,7 @@ export const SimklConnectionCard: FC<SimklConnectionCardProps> = memo(
                   color={theme.colors.textSecondary}
                 />
                 <Text variant="body" color="textSecondary">
-                  Disconnect
+                  {t('simkl.disconnect')}
                 </Text>
               </Box>
             </Focusable>
@@ -74,7 +76,7 @@ export const SimklConnectionCard: FC<SimklConnectionCardProps> = memo(
                 size={theme.sizes.iconMedium}
                 color={theme.colors.textSecondary}
               />
-              <Text variant="body">Connect with Simkl</Text>
+              <Text variant="body">{t('simkl.connect')}</Text>
             </Box>
           </Focusable>
         )}

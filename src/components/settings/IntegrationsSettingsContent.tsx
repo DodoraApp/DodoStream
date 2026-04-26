@@ -1,5 +1,6 @@
-import { FC, memo, useCallback, useState } from 'react';
+import { FC, memo, useCallback, useState, useMemo } from 'react';
 import { ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useDebugLogger } from '@/utils/debug';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
@@ -17,24 +18,6 @@ import { useSimklSync, completeSimklConnection } from '@/api/simkl/hooks';
 import type { ProfileIntegrationSettings, SyncMode, SimklConnection } from '@/types/integrations';
 import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
-
-const SYNC_MODE_OPTIONS: { value: SyncMode; label: string; description: string }[] = [
-  {
-    value: 'pull',
-    label: 'Import only',
-    description: 'Pull watch history and watchlist from Simkl into DodoStream',
-  },
-  {
-    value: 'push',
-    label: 'Export only',
-    description: 'Export DodoStream history and watchlist to Simkl',
-  },
-  {
-    value: 'full',
-    label: 'Full sync',
-    description: 'Sync history and watchlist in both directions',
-  },
-];
 
 interface SimklSyncSettingsProps {
   isConnected: boolean;
@@ -54,8 +37,30 @@ const SimklSyncSettings = memo(
     onSyncModeChange,
     onSyncNow,
   }: SimklSyncSettingsProps) => {
+    const { t } = useTranslation('settings');
     const theme = useTheme<Theme>();
-    const lastSyncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : 'Never';
+    const lastSyncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : t('simkl.never');
+
+    const SYNC_MODE_OPTIONS: { value: SyncMode; label: string; description: string }[] = useMemo(
+      () => [
+        {
+          value: 'pull',
+          label: t('simkl.sync_mode_import'),
+          description: t('simkl.sync_mode_import_desc'),
+        },
+        {
+          value: 'push',
+          label: t('simkl.sync_mode_export'),
+          description: t('simkl.sync_mode_export_desc'),
+        },
+        {
+          value: 'full',
+          label: t('simkl.sync_mode_full'),
+          description: t('simkl.sync_mode_full_desc'),
+        },
+      ],
+      [t]
+    );
 
     if (!isConnected || !settings) {
       return null;
@@ -63,7 +68,7 @@ const SimklSyncSettings = memo(
 
     return (
       <>
-        <SettingsCard title="Sync Mode">
+        <SettingsCard title={t('simkl.sync_mode')}>
           <Box gap="s">
             {SYNC_MODE_OPTIONS.map((option) => (
               <Focusable
@@ -84,8 +89,8 @@ const SimklSyncSettings = memo(
           </Box>
         </SettingsCard>
 
-        <SettingsCard title="Sync">
-          <SettingsRow label="Last synced">
+        <SettingsCard title={t('simkl.sync')}>
+          <SettingsRow label={t('simkl.last_synced')}>
             <Text variant="body" color="textSecondary">
               {lastSyncLabel}
             </Text>
@@ -98,7 +103,7 @@ const SimklSyncSettings = memo(
                 size={theme.sizes.iconMedium}
                 color={theme.colors.textSecondary}
               />
-              <Text variant="body">{isSyncing ? 'Syncing…' : 'Sync Now'}</Text>
+              <Text variant="body">{isSyncing ? t('simkl.syncing') : t('simkl.sync_now')}</Text>
             </Box>
           </Focusable>
         </SettingsCard>
@@ -116,6 +121,7 @@ interface IntegrationsSettingsContentProps {
 // This component orchestrates provider cards/settings at a higher level.
 export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> = memo(
   ({ scrollable = true }) => {
+    const { t } = useTranslation('settings');
     const debug = useDebugLogger('IntegrationsSettingsContent');
     const activeProfileId = useProfileStore((s) => s.activeProfileId);
     const simklSettings = useIntegrationsStore((s) =>
@@ -146,30 +152,30 @@ export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> =
         } catch (error) {
           debug('completeSimklConnectionError', { error });
           showToast({
-            title: 'Connection failed',
-            message: 'Could not fetch Simkl user info. Please try again.',
+            title: t('simkl.connection_failed'),
+            message: t('simkl.connection_failed_desc'),
             preset: 'error',
             duration: TOAST_DURATION_SHORT,
           });
         }
       },
-      [activeProfileId, debug]
+      [activeProfileId, debug, t]
     );
 
     const handleFirstConnectDone = useCallback(() => {
       setShowFirstConnectModal(false);
       setPendingConnection(null);
       showToast({
-        title: 'Simkl connected',
+        title: t('simkl.connected'),
         duration: TOAST_DURATION_SHORT,
       });
-    }, []);
+    }, [t]);
 
     const handleDisconnect = useCallback(() => {
       if (!activeProfileId) return;
       disconnectSimkl(activeProfileId);
-      showToast({ title: 'Simkl disconnected', duration: TOAST_DURATION_SHORT });
-    }, [activeProfileId, disconnectSimkl]);
+      showToast({ title: t('simkl.disconnected'), duration: TOAST_DURATION_SHORT });
+    }, [activeProfileId, disconnectSimkl, t]);
 
     const handleSyncModeChange = useCallback(
       (mode: SyncMode) => {

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PickerItem } from '@/components/basic/PickerModal';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
@@ -17,6 +18,7 @@ import {
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 
 export const useContinueWatchingActions = () => {
+  const { t } = useTranslation('media');
   const { navigateToDetails, pushToStreams } = useMediaNavigation();
   const profileId = useProfileStore((state) => state.activeProfileId);
   const queryClient = useQueryClient();
@@ -47,22 +49,22 @@ export const useContinueWatchingActions = () => {
     const inProgress = entry.progressRatio > 0;
 
     const next: PickerItem<ContinueWatchingAction>[] = [
-      { label: 'Details', value: 'details', icon: 'information-circle-outline' },
+      { label: t('details'), value: 'details', icon: 'information-circle-outline' },
     ];
 
     if (inProgress) {
       next.push(
-        { label: 'Play from start', value: 'play-from-start', icon: 'refresh' },
-        { label: 'Resume', value: 'resume', icon: 'play' }
+        { label: t('play_from_start'), value: 'play-from-start', icon: 'refresh' },
+        { label: t('resume'), value: 'resume', icon: 'play' }
       );
     } else {
-      next.push({ label: 'Play', value: 'play', icon: 'play' });
+      next.push({ label: t('play'), value: 'play', icon: 'play' });
     }
 
     next.push(
-      { label: 'Hide', value: 'hide', icon: 'eye-off-outline' },
+      { label: t('hide'), value: 'hide', icon: 'eye-off-outline' },
       {
-        label: 'Remove from history',
+        label: t('remove_from_history'),
         value: 'remove-from-history',
         icon: 'trash-outline',
         tone: 'destructive',
@@ -70,7 +72,7 @@ export const useContinueWatchingActions = () => {
     );
 
     return next;
-  }, [activeEntry]);
+  }, [activeEntry, t]);
 
   const handleAction = useCallback(
     (action: ContinueWatchingAction) => {
@@ -140,7 +142,7 @@ export const useContinueWatchingActions = () => {
     [activeEntry, invalidateWatchHistory, navigateToDetails, profileId, pushToStreams]
   );
 
-  const label = activeEntry?.metaName ?? 'Continue Watching';
+  const label = activeEntry?.metaName ?? t('continue_watching');
 
   return {
     isVisible,

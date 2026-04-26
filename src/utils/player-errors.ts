@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+
 /**
  * Player error classification utilities.
  * Used to determine appropriate error handling and fallback behavior.
@@ -20,7 +22,10 @@ export interface PlayerErrorClassification {
  * @param errorMessage - The error message from the player (typically from composeErrorString)
  * @returns Classification containing error type, fallback recommendation, and user-friendly message
  */
-export function classifyPlayerError(errorMessage: string): PlayerErrorClassification {
+export function classifyPlayerError(
+  errorMessage: string,
+  t: TFunction
+): PlayerErrorClassification {
   const lowerMessage = errorMessage.toLowerCase();
 
   // Codec/Decoding errors - SHOULD fallback
@@ -43,7 +48,7 @@ export function classifyPlayerError(errorMessage: string): PlayerErrorClassifica
     return {
       type: 'codec',
       shouldFallback: true,
-      userMessage: 'Video format not supported by this player',
+      userMessage: t('player:error_codec'),
     };
   }
 
@@ -68,7 +73,7 @@ export function classifyPlayerError(errorMessage: string): PlayerErrorClassifica
     return {
       type: 'network',
       shouldFallback: false,
-      userMessage: 'Network error - check your connection',
+      userMessage: t('player:error_network'),
     };
   }
 
@@ -90,7 +95,7 @@ export function classifyPlayerError(errorMessage: string): PlayerErrorClassifica
     return {
       type: 'source',
       shouldFallback: false,
-      userMessage: 'Stream unavailable or expired',
+      userMessage: t('player:error_source'),
     };
   }
 
@@ -99,6 +104,6 @@ export function classifyPlayerError(errorMessage: string): PlayerErrorClassifica
   return {
     type: 'unknown',
     shouldFallback: true,
-    userMessage: 'Playback error occurred',
+    userMessage: t('player:error_unknown'),
   };
 }

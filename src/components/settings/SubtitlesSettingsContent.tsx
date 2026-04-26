@@ -1,4 +1,5 @@
 import { FC, memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box } from '@/theme/theme';
 import { SettingsCard } from '@/components/settings/SettingsCard';
@@ -15,6 +16,7 @@ import {
 import { PickerInput } from '@/components/basic/PickerInput';
 
 export const SubtitlesSettingsContent: FC = memo(() => {
+  const { t } = useTranslation('settings');
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
   const { subtitleStyle, setSubtitleStyleForProfile } = usePlaybackStore((state) => ({
@@ -30,15 +32,15 @@ export const SubtitlesSettingsContent: FC = memo(() => {
     [subtitleStyle]
   );
 
-  const currentPresetLabel = currentPreset?.label ?? 'Custom';
+  const currentPresetLabel = currentPreset?.label ?? t('subtitles.custom');
   const currentPresetValue: SubtitleStylePreset | 'custom' = currentPreset?.id ?? 'custom';
 
   const presetPickerItems: PickerItem<SubtitleStylePreset | 'custom'>[] = useMemo(
     () => [
       ...SUBTITLE_STYLE_PRESETS.map((p) => ({ label: p.label, value: p.id })),
-      { label: 'Custom', value: 'custom' as const },
+      { label: t('subtitles.custom'), value: 'custom' as const },
     ],
-    []
+    [t]
   );
 
   const handlePresetChange = useCallback(
@@ -65,10 +67,10 @@ export const SubtitlesSettingsContent: FC = memo(() => {
 
         {/* Settings */}
         <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-          <SettingsCard title="Subtitles">
-            <SettingsRow label="Preset" description="Apply a predefined subtitle style">
+          <SettingsCard title={t('subtitles.title')}>
+            <SettingsRow label={t('subtitles.preset')} description={t('subtitles.preset_desc')}>
               <PickerInput
-                label="Select Preset"
+                label={t('subtitles.select_preset')}
                 selectedLabel={currentPresetLabel}
                 icon="color-palette"
                 items={presetPickerItems}

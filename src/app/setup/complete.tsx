@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Box, Text } from '@/theme/theme';
 import { MotiView } from 'moti';
 import { WizardContainer } from '@/components/setup/WizardContainer';
@@ -11,6 +12,7 @@ import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
  */
 export default function CompleteStep() {
   const router = useRouter();
+  const { t } = useTranslation('setup');
 
   const handleFinish = useCallback(() => {
     // Navigate to main app - replace so user can't go back to wizard
@@ -26,7 +28,7 @@ export default function CompleteStep() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: WIZARD_CONTENT_FADE_MS, delay: 200 }}>
           <Text variant="header" textAlign="center">
-            You&apos;re All Set!
+            {t('complete.title')}
           </Text>
         </MotiView>
 
@@ -38,7 +40,7 @@ export default function CompleteStep() {
           <Box alignItems="center">
             <Button
               variant="primary"
-              title="Start Exploring"
+              title={t('complete.start_exploring')}
               icon="arrow-forward"
               onPress={handleFinish}
               hasTVPreferredFocus

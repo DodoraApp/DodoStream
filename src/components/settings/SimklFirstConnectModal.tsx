@@ -1,8 +1,8 @@
-import { FC, memo, useCallback, useState } from 'react';
+import { FC, memo, useCallback, useState, useMemo } from 'react';
 import { Modal } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
-import { SIMKL_CLIENT_ID } from '@/api/simkl/config';
 import { runImport, runExport } from '@/api/simkl/sync-service';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 import { useIntegrationsStore } from '@/store/integrations.store';
@@ -27,31 +27,36 @@ interface SyncChoice {
   syncMode: SyncMode;
 }
 
-const SYNC_CHOICES: SyncChoice[] = [
-  {
-    id: 'import',
-    label: 'Sync from Simkl',
-    description: 'Pull your Simkl watch history and watchlist into DodoStream',
-    syncMode: 'pull',
-  },
-  {
-    id: 'export',
-    label: 'Sync to Simkl',
-    description: 'Export your DodoStream history and watchlist to Simkl',
-    syncMode: 'push',
-  },
-  {
-    id: 'full',
-    label: 'Full sync (both)',
-    description: 'Full synchronization of history and watchlist in both directions',
-    syncMode: 'full',
-  },
-];
-
 export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
   ({ visible, profileId, connection, onDone }) => {
+    const { t } = useTranslation('settings');
     const theme = useTheme<Theme>();
     const queryClient = useQueryClient();
+
+    const SYNC_CHOICES: SyncChoice[] = useMemo(
+      () => [
+        {
+          id: 'import',
+          label: t('simkl.sync_from'),
+          description: t('simkl.sync_from_desc'),
+          syncMode: 'pull',
+        },
+        {
+          id: 'export',
+          label: t('simkl.sync_to'),
+          description: t('simkl.sync_to_desc'),
+          syncMode: 'push',
+        },
+        {
+          id: 'full',
+          label: t('simkl.sync_full'),
+          description: t('simkl.sync_full_desc'),
+          syncMode: 'full',
+        },
+      ],
+      [t]
+    );
+
     const [selectedChoice, setSelectedChoice] = useState<SyncChoice['id']>('full');
     const [clearLocalFirst, setClearLocalFirst] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -85,7 +90,7 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
         setIsSyncing(false);
         onDone();
       }
-    }, [selectedChoice, profileId, connection, clearLocalFirst, onDone, queryClient]);
+    }, [selectedChoice, profileId, connection, clearLocalFirst, onDone, queryClient, SYNC_CHOICES]);
 
     const showClearOption = selectedChoice === 'import' || selectedChoice === 'full';
 
@@ -103,10 +108,10 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
             }}>
             <Box gap="xs">
               <Text variant="header" textAlign="center">
-                Welcome to Simkl Sync
+                {t('simkl.welcome')}
               </Text>
               <Text variant="body" color="textSecondary" textAlign="center">
-                Connected as {connection.username}. How would you like to start?
+                {t('simkl.connected_prompt', { username: connection.username })}
               </Text>
             </Box>
 
@@ -142,15 +147,15 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
               <SettingsSwitch
                 value={clearLocalFirst}
                 onValueChange={() => setClearLocalFirst((v) => !v)}
-                label="Clear DodoStream history before importing"
-                description="Removes all local watch history before pulling from Simkl"
+                label={t('simkl.clear_local')}
+                description={t('simkl.clear_local_desc')}
               />
             )}
 
             <Button
               onPress={handleConfirm}
               variant="primary"
-              title={isSyncing ? 'Syncing…' : 'Confirm'}
+              title={isSyncing ? t('simkl.syncing') : t('simkl.confirm')}
               disabled={isSyncing}
             />
           </Box>

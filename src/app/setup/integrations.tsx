@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -11,6 +12,7 @@ import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsS
 export default function IntegrationsStep() {
   const router = useRouter();
   const theme = useTheme<Theme>();
+  const { t } = useTranslation(['setup', 'common']);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -24,11 +26,11 @@ export default function IntegrationsStep() {
     <WizardContainer>
       <WizardStep
         step="integrations"
-        title="Connect Your Accounts"
-        description="Sync your watch history and watchlist with external services"
+        title={t('setup:integrations.title')}
+        description={t('setup:integrations.description')}
         onNext={handleNext}
         onBack={handleBack}
-        nextLabel="Continue"
+        nextLabel={t('common:continue')}
         showSkip={false}
         hasTVPreferredFocus>
         <ScrollView showsVerticalScrollIndicator>
@@ -42,12 +44,11 @@ export default function IntegrationsStep() {
                   color={theme.colors.primaryBackground}
                 />
                 <Text variant="body" style={{ fontWeight: '600' }}>
-                  About Integrations
+                  {t('setup:integrations.about_title')}
                 </Text>
               </Box>
               <Text variant="bodySmall" color="textSecondary">
-                Connect your Simkl account to automatically track what you watch and keep your
-                watchlist in sync across all your devices.
+                {t('setup:integrations.about_description')}
               </Text>
             </Box>
 

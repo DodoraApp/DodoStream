@@ -1,5 +1,6 @@
 import { FC, useState, useCallback, memo } from 'react';
 import { ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -40,6 +41,7 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
     saveButtonLabel,
     scrollable = true,
   }) => {
+    const { t } = useTranslation('profiles');
     const theme = useTheme<Theme>();
     const createProfile = useProfileStore((state) => state.createProfile);
     const updateProfile = useProfileStore((state) => state.updateProfile);
@@ -56,7 +58,7 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
     const handleSave = useCallback(() => {
       if (!name.trim()) {
         showToast({
-          title: 'Profile name required',
+          title: t('name_required'),
           preset: 'error',
         });
         return;
@@ -65,8 +67,8 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
       const normalizedPin = pin.trim();
       if (showPin && normalizedPin.length > 0 && normalizedPin.length < 4) {
         showToast({
-          title: 'Invalid PIN',
-          message: 'PIN must be at least 4 digits',
+          title: t('invalid_pin'),
+          message: t('pin_min_length'),
           preset: 'error',
         });
         return;
@@ -74,8 +76,8 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
 
       if (showPin && normalizedPin.length > 0 && !/^\d+$/.test(normalizedPin)) {
         showToast({
-          title: 'Invalid PIN',
-          message: 'PIN can only contain digits',
+          title: t('invalid_pin'),
+          message: t('pin_digits_only'),
           preset: 'error',
         });
         return;
@@ -108,6 +110,7 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
       createProfile,
       updateProfile,
       onSave,
+      t,
     ]);
 
     const content = (
@@ -116,18 +119,18 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
         <Box alignItems="center" gap="m">
           <ProfileAvatar icon={selectedIcon} color={selectedColor} size="large" />
           <Text variant="body" color="textSecondary">
-            Customize your avatar
+            {t('customize_avatar')}
           </Text>
         </Box>
 
         {/* Settings Section */}
         <Box width="100%" gap="m">
           {/* Name Input */}
-          <SettingsRow label="Profile Name" description="Enter a name for this profile">
+          <SettingsRow label={t('name_label')} description={t('name_description')}>
             <Input
               value={name}
               onChangeText={setName}
-              placeholder="Enter name"
+              placeholder={t('name_placeholder')}
               maxLength={20}
               icon="person"
             />
@@ -135,11 +138,11 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
 
           {/* PIN Input */}
           {showPin && (
-            <SettingsRow label="PIN (optional)" description="4+ digits to protect this profile">
+            <SettingsRow label={t('pin_label')} description={t('pin_description')}>
               <Input
                 value={pin}
                 onChangeText={setPin}
-                placeholder="4+ digits"
+                placeholder={t('pin_placeholder')}
                 keyboardType="number-pad"
                 maxLength={8}
                 secureTextEntry
@@ -149,12 +152,16 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
           )}
 
           {/* Icon Selection */}
-          <SettingsRow label="Avatar Icon" description="Choose an icon for your profile">
+          <SettingsRow
+            label={t('avatar_icon_label')}
+            description={t('avatar_icon_description')}>
             <IconPicker value={selectedIcon} onValueChange={setSelectedIcon} icons={AVATAR_ICONS} />
           </SettingsRow>
 
           {/* Color Selection */}
-          <SettingsRow label="Avatar Color" description="Choose a background color">
+          <SettingsRow
+            label={t('avatar_color_label')}
+            description={t('avatar_color_description')}>
             <ColorPicker
               value={selectedColor}
               onValueChange={setSelectedColor}
@@ -167,7 +174,10 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
         {showSaveButton && (
           <Box width="100%" marginTop="m">
             <Button
-              title={saveButtonLabel ?? (isEditing ? 'Save Changes' : 'Create Profile')}
+              title={
+                saveButtonLabel ??
+                (isEditing ? t('save_changes') : t('create_profile'))
+              }
               onPress={handleSave}
               disabled={!name.trim()}
             />
@@ -196,13 +206,14 @@ interface ProfileEditorProps {
  * Profile editor modal - wraps ProfileEditorContent in a Modal
  */
 export const ProfileEditor: FC<ProfileEditorProps> = ({ profile, onClose, onSave }) => {
+  const { t } = useTranslation('profiles');
   const isEditing = !!profile;
 
   return (
     <Modal
       visible
       onClose={onClose}
-      label={isEditing ? 'Edit Profile' : 'Create Profile'}
+      label={isEditing ? t('edit_profile') : t('create_profile')}
       icon="person"
       animationType="slide"
       closeOnBackdropPress={false}>

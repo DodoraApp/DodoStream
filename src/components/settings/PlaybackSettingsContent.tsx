@@ -1,4 +1,5 @@
 import { FC, memo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, Linking } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useTheme } from '@shopify/restyle';
@@ -32,6 +33,7 @@ export interface PlaybackSettingsContentProps {
  */
 export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
   ({ showPlayerSelection = true, showLanguages = true, scrollable = true }) => {
+    const { t } = useTranslation('settings');
     const theme = useTheme<Theme>();
     const [showAudioLanguagePicker, setShowAudioLanguagePicker] = useState(false);
     const [showSubtitleLanguagePicker, setShowSubtitleLanguagePicker] = useState(false);
@@ -120,7 +122,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
     );
 
     const renderLanguageSummary = (codes: string[]) => {
-      if (!codes || codes.length === 0) return 'Device default';
+      if (!codes || codes.length === 0) return t('playback.device_default');
       return codes.join(', ');
     };
 
@@ -131,10 +133,10 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
     const content = (
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
         {showPlayerSelection && (
-          <SettingsCard title="Playback">
-            <SettingsRow label="Player">
+          <SettingsCard title={t('playback.title')}>
+            <SettingsRow label={t('playback.player')}>
               <PickerInput
-                label="Select Player"
+                label={t('playback.select_player')}
                 icon="play"
                 items={PLAYER_PICKER_ITEMS}
                 selectedLabel={
@@ -148,16 +150,16 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             </SettingsRow>
 
             <SettingsSwitch
-              label="Automatic Fallback"
-              description="Automatically switch to another player if playback fails"
+              label={t('playback.automatic_fallback')}
+              description={t('playback.automatic_fallback_desc')}
               value={automaticFallback}
               onValueChange={(value) =>
                 activeProfileId && setAutomaticFallbackForProfile(activeProfileId, value)
               }
             />
             <SettingsSwitch
-              label="Auto Play First Stream"
-              description="Automatically play the first stream returned"
+              label={t('playback.auto_play')}
+              description={t('playback.auto_play_desc')}
               value={autoPlayFirstStream}
               onValueChange={(value) =>
                 activeProfileId && setAutoPlayFirstStreamForProfile(activeProfileId, value)
@@ -166,65 +168,64 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
           </SettingsCard>
         )}
 
-        <SettingsCard title="Skip Intro">
+        <SettingsCard title={t('playback.skip_intro')}>
           <SettingsSwitch
-            label="Enable Skip Intro"
-            description="Show a skip button during TV show intros"
+            label={t('playback.skip_intro')}
+            description={t('playback.skip_intro_desc')}
             value={skipIntroEnabled}
             onValueChange={(value) =>
               activeProfileId && setSkipIntroEnabledForProfile(activeProfileId, value)
             }
           />
           <Text variant="caption" color="textSecondary">
-            When enabled, episode information (IMDb ID, season, episode) is sent to IntroDB to fetch
-            intro timestamps.
+            {t('playback.skip_intro_info')}
           </Text>
           <TouchableOpacity onPress={handleOpenIntroDB}>
             <Text variant="caption" color="textLink">
-              Powered by IntroDB
+              {t('playback.powered_by', { name: 'IntroDB' })}
             </Text>
           </TouchableOpacity>
         </SettingsCard>
 
-        <SettingsCard title="Android & ExoPlayer">
+        <SettingsCard title={t('playback.android_advanced')}>
           <Text variant="caption" color="textSecondary">
-            Advanced settings for Android ExoPlayer
+            {t('playback.android_advanced_desc')}
           </Text>
           <SettingsSwitch
-            label="Tunneled Playback"
-            description="Use tunneled video playback mode for better performance on some devices"
+            label={t('playback.tunneled')}
+            description={t('playback.tunneled_desc')}
             value={tunneled}
             onValueChange={(value) =>
               activeProfileId && setTunneledForProfile(activeProfileId, value)
             }
           />
           <SettingsSwitch
-            label="Audio Passthrough"
-            description="Enable audio passthrough for surround sound (recommended for TV)"
+            label={t('playback.audio_passthrough')}
+            description={t('playback.audio_passthrough_desc')}
             value={audioPassthrough}
             onValueChange={(value) =>
               activeProfileId && setAudioPassthroughForProfile(activeProfileId, value)
             }
           />
           <SettingsSwitch
-            label="Enable Workarounds"
-            description="Apply compatibility workarounds for certain video formats"
+            label={t('playback.workarounds')}
+            description={t('playback.workarounds_desc')}
             value={enableWorkarounds}
             onValueChange={(value) =>
               activeProfileId && setEnableWorkaroundsForProfile(activeProfileId, value)
             }
           />
           <SettingsSwitch
-            label="Match Frame Rate"
-            description="Automatically match screen refresh rate and resolution to video (supported TV devices only)"
+            label={t('playback.match_frame_rate')}
+            description={t('playback.match_frame_rate_desc')}
             value={matchFrameRate}
             onValueChange={(value) =>
               activeProfileId && setMatchFrameRateForProfile(activeProfileId, value)
             }
           />
           <SettingsSwitch
-            label="Software Video Decoding"
-            description="Use software decoder instead of hardware (may help with compatibility issues but uses more CPU, not recommended on low-end devices such as streaming sticks, set-top boxes and older phones). Disable this if you experience playback stuttering."
+            label={t('playback.software_decoding')}
+            description={t('playback.software_decoding_desc')}
             value={enableVideoSoftwareDecoding}
             onValueChange={(value) =>
               activeProfileId && setEnableVideoSoftwareDecodingForProfile(activeProfileId, value)
@@ -232,10 +233,10 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
           />
         </SettingsCard>
 
-        <SettingsCard title="Diagnostics">
+        <SettingsCard title={t('playback.diagnostics')}>
           <SettingsSwitch
-            label="Show video statistics"
-            description="Display a live stats overlay during playback"
+            label={t('playback.video_stats')}
+            description={t('playback.video_stats_desc')}
             value={showVideoStatistics}
             onValueChange={(value) =>
               activeProfileId && setShowVideoStatisticsForProfile(activeProfileId, value)
@@ -244,10 +245,10 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
         </SettingsCard>
 
         {showLanguages && (
-          <SettingsCard title="Languages">
+          <SettingsCard title={t('playback.languages')}>
             <SettingsRow
-              label="Preferred audio languages"
-              description="The first available one is used">
+              label={t('playback.preferred_audio')}
+              description={t('playback.preferred_audio_desc')}>
               <Focusable
                 onPress={() => setShowAudioLanguagePicker(true)}
                 variant="outline"
@@ -281,8 +282,8 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             </SettingsRow>
 
             <SettingsRow
-              label="Preferred subtitle languages"
-              description="Shown first in the subtitle selector">
+              label={t('playback.preferred_subtitles')}
+              description={t('playback.preferred_subtitles_desc')}>
               <Focusable
                 onPress={() => setShowSubtitleLanguagePicker(true)}
                 variant="outline"
@@ -334,7 +335,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             <LanguagePreferenceModal
               visible={showAudioLanguagePicker}
               onClose={() => setShowAudioLanguagePicker(false)}
-              title="Preferred audio languages"
+              title={t('playback.preferred_audio')}
               selectedLanguageCodes={preferredAudioLanguages}
               availableLanguageCodes={availableLanguageCodes}
               onChange={(next) =>
@@ -345,7 +346,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
             <LanguagePreferenceModal
               visible={showSubtitleLanguagePicker}
               onClose={() => setShowSubtitleLanguagePicker(false)}
-              title="Preferred subtitle languages"
+              title={t('playback.preferred_subtitles')}
               selectedLanguageCodes={preferredSubtitleLanguages}
               availableLanguageCodes={availableLanguageCodes}
               onChange={(next) =>

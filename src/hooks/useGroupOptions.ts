@@ -2,14 +2,14 @@ import { useMemo } from 'react';
 import { TagOption } from '@/components/basic/TagFilters';
 import { PickerItem } from '@/components/basic/PickerModal';
 
-export interface UseGroupOptionsParams<T extends string | number> {
+export interface UseGroupOptionsParams<T extends string | number | undefined> {
   items: PickerItem<T>[];
   getItemGroupId?: (item: PickerItem<T>) => string | null;
   getGroupLabel?: (groupId: string) => string;
   preferredGroupIds?: string[];
 }
 
-export const useGroupOptions = <T extends string | number>({
+export const useGroupOptions = <T extends string | number | undefined>({
   items,
   getItemGroupId,
   getGroupLabel,

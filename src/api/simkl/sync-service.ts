@@ -1,6 +1,6 @@
 import { createDebugLogger } from '@/utils/debug';
 import { getSimklPosterUrl } from '@/utils/media-artwork';
-import type { SimklActivities, SimklActivityCategory, SimklIds, SimklWatchedItem, SimklStatus, SimklAllItemsResponse } from '@/types/simkl';
+import type { SimklActivities, SimklIds, SimklWatchedItem, SimklAllItemsResponse } from '@/types/simkl';
 import { getActivities, getAllItems, postHistory, postWatchlist, removeFromHistory } from './client';
 import { resolveSimklIds } from './id-resolver';
 import {
@@ -19,7 +19,7 @@ import {
 import { listSyncQueueForProvider, deleteFromSyncQueue } from '@/db/queries/syncQueue';
 import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import { useIntegrationsStore } from '@/store/integrations.store';
-import type { SimklConnection, SimklMediaType, SimklSyncCursors, SimklSyncCursor } from '@/types/integrations';
+import type { SimklMediaType, SimklSyncCursors, SimklSyncCursor } from '@/types/integrations';
 import type { ContentType } from '@/types/stremio';
 import { parseVideoId } from '@/utils/id';
 

@@ -1,5 +1,6 @@
 import { FC, useState, useCallback } from 'react';
 import { ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
@@ -17,6 +18,7 @@ interface ProfileSelectorProps {
 }
 
 export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
+  const { t } = useTranslation('profiles');
   const theme = useTheme<Theme>();
   const profiles = useProfileStore((state) => state.getProfilesList());
   const switchProfile = useProfileStore((state) => state.switchProfile);
@@ -79,10 +81,10 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
     }
 
     showToast({
-      title: 'Wrong PIN',
+      title: t('wrong_pin'),
       preset: 'error',
     });
-  }, [selectedProfileForPIN, switchProfile, pinInput, onSelect]);
+  }, [selectedProfileForPIN, switchProfile, pinInput, onSelect, t]);
 
   const handlePINCancel = useCallback(() => {
     setShowPINPrompt(false);
@@ -130,7 +132,7 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
           <Box width="100%" paddingHorizontal="l">
             <Box marginBottom="xl" alignItems="center">
               <Text variant="header" color="mainForeground" textAlign="center">
-                Who&apos;s watching?
+                {t('who_is_watching')}
               </Text>
             </Box>
 
@@ -168,7 +170,7 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
       {/* PIN Prompt Modal */}
       <PINPrompt
         visible={showPINPrompt}
-        title={`Enter PIN for ${selectedProfileForPIN?.name ?? ''}`}
+        title={t('enter_pin_for', { name: selectedProfileForPIN?.name ?? '' })}
         value={pinInput}
         onChangeText={setPinInput}
         onSubmit={handlePINSubmit}

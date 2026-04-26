@@ -1,4 +1,5 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -44,6 +45,7 @@ import {
 } from '@/hooks/useWatchHistoryDb';
 import { setLastStreamTarget } from '@/db';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatFitModeLabel } from '@/utils/format';
 
 export interface VideoPlayerProps {
   source: string;
@@ -111,17 +113,6 @@ const getNextFitMode = (current: VideoFitMode, allowCover: boolean): VideoFitMod
   }
 };
 
-const getFitModeLabel = (mode: VideoFitMode): string => {
-  switch (mode) {
-    case 'cover':
-      return 'Cover';
-    case 'stretch':
-      return 'Stretch';
-    default:
-      return 'Contain';
-  }
-};
-
 export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   source,
   title,
@@ -138,6 +129,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   playerType,
   automaticFallback,
 }) => {
+  const { t } = useTranslation('player');
   const debug = useDebugLogger('VideoPlayer');
   const theme = useTheme<Theme>();
   const queryClient = useQueryClient();
@@ -419,10 +411,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     debug('fitModeChanged', { from: fitMode, to: nextMode });
     setFitMode(nextMode);
     showToast({
-      title: `Video fit: ${getFitModeLabel(nextMode)}`,
+      title: t('video_fit', { mode: formatFitModeLabel(nextMode, t) }),
       duration: TOAST_DURATION_SHORT,
     });
-  }, [allowCoverFit, debug, fitMode]);
+  }, [allowCoverFit, debug, fitMode, t]);
 
   const handleLoad = useCallback(
     (data: { duration: number }) => {
@@ -517,7 +509,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('error', { message, automaticFallback, playerType, usedPlayerType });
 
       // Classify error to determine if fallback is appropriate
-      const errorClassification = classifyPlayerError(message);
+      const errorClassification = classifyPlayerError(message, t);
       debug('errorClassification', errorClassification);
 
       // Only fallback for codec/decoding errors, not network or source errors
@@ -543,7 +535,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
           });
           const playerNames = { vlc: 'VLC', exoplayer: 'ExoPlayer' };
           showToast({
-            title: `Switching to ${playerNames[newPlayer]}`,
+            title: t('switching_to', { name: playerNames[newPlayer] }),
             message: errorClassification.userMessage,
             preset: 'warning',
             duration: TOAST_DURATION_MEDIUM,
@@ -558,14 +550,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       // Use classified message for better UX, or fall back to raw message
       const displayMessage = errorClassification.userMessage || message;
       showToast({
-        title: 'Playback Error',
+        title: t('playback_error'),
         message: displayMessage,
         preset: 'error',
         duration: TOAST_DURATION_LONG,
       });
       onError?.(message);
     },
-    [automaticFallback, debug, playerType, usedPlayerType, setUsedPlayerType, onError]
+    [automaticFallback, debug, playerType, usedPlayerType, setUsedPlayerType, onError, t]
   );
 
   const handlePlayPause = useCallback(() => {

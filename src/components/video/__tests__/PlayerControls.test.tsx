@@ -130,7 +130,7 @@ describe('PlayerControls', () => {
     fireEvent.press(getByTestId('player-controls-invisible-area'));
 
     // Open subtitles modal
-    fireEvent.press(getByText('Subtitles'));
+    fireEvent.press(getByText('subtitles'));
 
     // Assert: All subtitle tracks should be displayed with correct labeling
     // Addon tracks show: "{addonName} | {language}"

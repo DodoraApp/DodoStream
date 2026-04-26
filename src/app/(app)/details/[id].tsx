@@ -1,4 +1,5 @@
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { useMeta } from '@/api/stremio';
@@ -13,6 +14,7 @@ import { MediaButtons } from '@/components/media/MediaButtons';
 import { MediaDetailsTabs } from '@/components/media/MediaDetailsTabs';
 
 export default function MediaDetails() {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const { id, type = 'movie' } = useLocalSearchParams<{ id: string; type?: ContentType }>();
   const { pushToStreams } = useMediaNavigation();
@@ -41,10 +43,10 @@ export default function MediaDetails() {
         isLoading={isLoading}
         isError={isError}
         data={meta}
-        loadingMessage="Loading details..."
+        loadingMessage={t('loading_details')}
         loadingComponent={<MediaDetailsSkeleton />}
-        emptyMessage={`No details available for ID ${id}. Try installing a metadata addon that supports this ID.`}
-        errorMessage="Failed to load details">
+        emptyMessage={t('no_details')}
+        errorMessage={t('failed_load_details')}>
         {(mediaData) => (
           <DetailsShell
             media={mediaData}

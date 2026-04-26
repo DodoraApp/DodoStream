@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { Stream as StreamType, ContentType } from '@/types/stremio';
@@ -36,6 +37,7 @@ export const useAutoPlay = ({
   backgroundImage,
   logoImage,
 }: UseAutoPlayParams) => {
+  const { t } = useTranslation('media');
   const debug = useDebugLogger('useAutoPlay');
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
   const { autoPlayFirstStream } = usePlaybackStore((state) => ({
@@ -105,7 +107,7 @@ export const useAutoPlay = ({
 
     if (!candidates.length) {
       showToast({
-        title: 'No playable stream found',
+        title: t('no_playable_stream'),
         preset: 'error',
         duration: TOAST_DURATION_MEDIUM,
       });
@@ -154,6 +156,7 @@ export const useAutoPlay = ({
     isLoading,
     backgroundImage,
     logoImage,
+    t,
   ]);
 
   return {

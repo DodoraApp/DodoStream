@@ -1,4 +1,5 @@
 import { FC, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
 import { LegendList } from '@legendapp/list/react-native';
 import { Box, Text } from '@/theme/theme';
@@ -22,6 +23,7 @@ interface TrailersTabProps {
 }
 
 export const TrailersTab: FC<TrailersTabProps> = ({ trailers, isActive }) => {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
 
   const handleTrailerPress = useCallback((ytId: string) => {
@@ -47,7 +49,7 @@ export const TrailersTab: FC<TrailersTabProps> = ({ trailers, isActive }) => {
     return (
       <Box padding="l" alignItems="center">
         <Text variant="body" color="textSecondary">
-          No trailers available
+          {t('no_trailers')}
         </Text>
       </Box>
     );
@@ -55,7 +57,7 @@ export const TrailersTab: FC<TrailersTabProps> = ({ trailers, isActive }) => {
   return (
     <FadeIn>
       <Box gap="m">
-        <MediaSectionHeader title="Trailers" />
+        <MediaSectionHeader title={t('trailers')} />
         <LegendList<TrailerStream>
           data={trailers}
           horizontal

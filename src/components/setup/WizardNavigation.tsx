@@ -1,4 +1,5 @@
 import { FC, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box } from '@/theme/theme';
 import { Button } from '@/components/basic/Button';
 import { useSetupWizardStore, SetupWizardStep } from '@/store/setup-wizard.store';
@@ -26,13 +27,14 @@ export const WizardNavigation: FC<WizardNavigationProps> = memo(
     onNext,
     onBack,
     onSkip,
-    nextLabel = 'Continue',
+    nextLabel,
     nextDisabled = false,
     showNext = true,
     showBack = true,
     showSkip,
     hasTVPreferredFocus = false,
   }) => {
+    const { t } = useTranslation('common');
     const isStepSkippable = useSetupWizardStore((state) => state.isStepSkippable);
     const { isTV } = useResponsiveLayout();
 
@@ -48,16 +50,18 @@ export const WizardNavigation: FC<WizardNavigationProps> = memo(
         alignItems="center"
         gap="m"
         paddingVertical="m">
-        {showBack && <Button variant="tertiary" icon="arrow-back" title="Back" onPress={onBack} />}
+        {showBack && (
+          <Button variant="tertiary" icon="arrow-back" title={t('back')} onPress={onBack} />
+        )}
 
         <Box flexDirection="row" gap="m" alignItems="center">
           {isStepSkippable(currentStep) && onSkip && (
-            <Button variant="secondary" title="Skip" onPress={onSkip} />
+            <Button variant="secondary" title={t('skip')} onPress={onSkip} />
           )}
           {showNext && onNext && (
             <Button
               variant="primary"
-              title={nextLabel}
+              title={nextLabel || t('continue')}
               onPress={onNext}
               disabled={nextDisabled}
               hasTVPreferredFocus={hasTVPreferredFocus && isTV}

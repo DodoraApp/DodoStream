@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box } from '@/theme/theme';
 import { WizardContainer } from '@/components/setup/WizardContainer';
@@ -12,6 +13,7 @@ import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
  */
 export default function HomeStep() {
   const router = useRouter();
+  const { t } = useTranslation('setup');
 
   const handleBack = useCallback(() => {
     router.back();
@@ -25,8 +27,8 @@ export default function HomeStep() {
     <WizardContainer>
       <WizardStep
         step="home"
-        title="Customize Home Screen"
-        description="Configure how your home screen looks"
+        title={t('home.title')}
+        description={t('home.description')}
         onNext={handleNext}
         onBack={handleBack}
         onSkip={handleNext}

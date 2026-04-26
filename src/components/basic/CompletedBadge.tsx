@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
+import { useTranslation } from 'react-i18next';
 import { SimklLogo } from '@/components/basic/SimklLogo';
 import type { WatchHistorySource } from '@/db/schema';
 import type { Theme } from '@/theme/theme';
@@ -19,6 +20,7 @@ export const CompletedBadge = ({
   showSimklLogo = false,
 }: CompletedBadgeProps) => {
   const theme = useTheme<Theme>();
+  const { t } = useTranslation('media');
   const isOverlay = mode === 'overlay';
   const isCompleted = variant === 'completed';
   const showProviderIcon = showSimklLogo || source === 'simkl';
@@ -42,7 +44,7 @@ export const CompletedBadge = ({
         color={isCompleted ? theme.colors.primaryForeground : theme.colors.tertiaryForeground}
       />
       <Text variant="bodySmall" fontWeight="700" color={isCompleted ? 'primaryForeground' : 'tertiaryForeground'}>
-        {isCompleted ? 'Completed' : 'Watching'}
+        {isCompleted ? t('completed') : t('watching')}
       </Text>
       {showProviderIcon && <Box testID="status-provider-simkl"><SimklLogo size="iconSmall" /></Box>}
     </Box>

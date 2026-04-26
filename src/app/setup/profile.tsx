@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box } from '@/theme/theme';
 import { WizardContainer } from '@/components/setup/WizardContainer';
@@ -14,6 +15,7 @@ import { useSetupWizardStore } from '@/store/setup-wizard.store';
  */
 export default function ProfileStep() {
   const router = useRouter();
+  const { t } = useTranslation(['setup', 'profiles']);
   const switchProfile = useProfileStore((state) => state.switchProfile);
   const setCreatedProfileId = useSetupWizardStore((state) => state.setCreatedProfileId);
 
@@ -39,8 +41,8 @@ export default function ProfileStep() {
     <WizardContainer>
       <WizardStep
         step="profile"
-        title="Create Your Profile"
-        description="Choose a name and avatar that represents you"
+        title={t('setup:profile.title')}
+        description={t('setup:profile.description')}
         onBack={handleBack}
         showSkip={false}
         showNext={false}>
@@ -50,7 +52,7 @@ export default function ProfileStep() {
               onSave={handleSave}
               showPin={false}
               scrollable={false}
-              saveButtonLabel="Create Profile"
+              saveButtonLabel={t('profiles:create_profile')}
             />
           </Box>
         </ScrollView>

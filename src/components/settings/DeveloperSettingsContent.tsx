@@ -1,4 +1,5 @@
 import { FC, memo, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { showToast } from '@/store/toast.store';
@@ -21,6 +22,7 @@ import { getFocusableBackgroundColor } from '@/utils/focus-colors';
  * Only accessible by tapping the app version 5 times.
  */
 export const DeveloperSettingsContent: FC = memo(() => {
+  const { t } = useTranslation('settings');
   const theme = useTheme<Theme>();
   const debug = useDebugLogger('DeveloperSettingsContent');
 
@@ -38,8 +40,8 @@ export const DeveloperSettingsContent: FC = memo(() => {
     setSentryDsn(dsnInput.trim());
 
     showToast({
-      title: 'Sentry DSN saved',
-      message: 'Restarting app to apply changes...',
+      title: t('developer.sentry.dsn_saved'),
+      message: t('developer.sentry.restarting'),
       duration: TOAST_DURATION_SHORT,
     });
 
@@ -53,14 +55,14 @@ export const DeveloperSettingsContent: FC = memo(() => {
         debug('restartError', { error });
         // If expo-updates reload fails (dev mode), show a toast
         showToast({
-          title: 'Restart Required',
-          message: 'Please close and reopen the app to apply the new Sentry DSN.',
+          title: t('developer.sentry.restart_required'),
+          message: t('developer.sentry.restart_required_desc'),
           preset: 'warning',
         });
         setIsRestarting(false);
       }
     }, 500);
-  }, [dsnInput, setSentryDsn, debug]);
+  }, [dsnInput, setSentryDsn, debug, t]);
 
   const handleReset = useCallback(() => {
     debug('resetDsn');
@@ -68,11 +70,11 @@ export const DeveloperSettingsContent: FC = memo(() => {
     setDsnInput(process.env.EXPO_PUBLIC_SENTRY_DSN ?? '');
 
     showToast({
-      title: 'DSN reset',
-      message: 'Restart the app to apply changes.',
+      title: t('developer.sentry.dsn_reset'),
+      message: t('developer.sentry.reset_desc'),
       duration: TOAST_DURATION_SHORT,
     });
-  }, [resetSentryDsn, debug]);
+  }, [resetSentryDsn, debug, t]);
 
   const hasChanges = dsnInput.trim() !== sentryDsn;
 
@@ -85,14 +87,17 @@ export const DeveloperSettingsContent: FC = memo(() => {
             size={theme.sizes.iconXLarge}
             color={theme.colors.primaryBackground}
           />
-          <Text variant="header">Developer Settings</Text>
+          <Text variant="header">{t('developer.title')}</Text>
           <Text variant="caption" color="textSecondary" textAlign="center">
-            These settings are for development and debugging purposes.
+            {t('developer.desc')}
           </Text>
         </Box>
 
-        <SettingsCard title="Sentry">
-          <SettingsRow label="DSN" description="The Sentry Data Source Name for error reporting" />
+        <SettingsCard title={t('developer.sentry.title')}>
+          <SettingsRow
+            label={t('developer.sentry.dsn')}
+            description={t('developer.sentry.dsn_desc')}
+          />
 
           <Box gap="m">
             <Input
@@ -124,7 +129,7 @@ export const DeveloperSettingsContent: FC = memo(() => {
                         size={theme.sizes.iconMedium}
                         color={theme.colors.textSecondary}
                       />
-                      <Text variant="body">Reset to Default</Text>
+                      <Text variant="body">{t('developer.sentry.reset_to_default')}</Text>
                     </Box>
                   )}
                 </Focusable>
@@ -155,7 +160,9 @@ export const DeveloperSettingsContent: FC = memo(() => {
                       <Text
                         variant="body"
                         color={hasChanges ? 'primaryForeground' : 'textSecondary'}>
-                        {isRestarting ? 'Restarting...' : 'Save & Restart'}
+                        {isRestarting
+                          ? t('developer.sentry.restarting_btn')
+                          : t('developer.sentry.save_and_restart')}
                       </Text>
                     </Box>
                   )}
@@ -165,20 +172,20 @@ export const DeveloperSettingsContent: FC = memo(() => {
           </Box>
         </SettingsCard>
 
-        <SettingsCard title="Current Configuration">
-          <SettingsRow label="Stored DSN">
+        <SettingsCard title={t('developer.config.title')}>
+          <SettingsRow label={t('developer.config.stored_dsn')}>
             <Text
               variant="caption"
               color="textSecondary"
               numberOfLines={1}
               style={{ maxWidth: 200 }}>
-              {sentryDsn || '(not set)'}
+              {sentryDsn || t('developer.config.not_set')}
             </Text>
           </SettingsRow>
 
-          <SettingsRow label="Sentry Enabled">
+          <SettingsRow label={t('developer.config.sentry_enabled')}>
             <Text variant="body" color="textSecondary">
-              {sentryDsn ? 'Yes' : 'No'}
+              {sentryDsn ? t('developer.config.yes') : t('developer.config.no')}
             </Text>
           </SettingsRow>
         </SettingsCard>

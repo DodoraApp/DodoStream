@@ -1,6 +1,7 @@
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box } from '@/theme/theme';
 import { showToast } from '@/store/toast.store';
 import type { ContentType } from '@/types/stremio';
@@ -64,21 +65,23 @@ const Play = () => {
     return true;
   });
 
+  const { t } = useTranslation(['media', 'player']);
+
   const handleError = useCallback(
     (message: string) => {
       debug('handleError', { message });
-      showToast({ title: 'Playback Error', message, preset: 'error' });
+      showToast({ title: t('player:playback_error'), message, preset: 'error' });
       if (shouldReturnToStreams) {
         returnToStreams();
         return;
       }
       router.back();
     },
-    [debug, returnToStreams, router, shouldReturnToStreams]
+    [debug, returnToStreams, router, shouldReturnToStreams, t]
   );
 
   if (!metaId || !type) {
-    showToast({ title: 'Missing playback info', preset: 'error' });
+    showToast({ title: t('media:no_details'), preset: 'error' });
     router.back();
     return null;
   }

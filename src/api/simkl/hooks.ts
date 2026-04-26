@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { SIMKL_CLIENT_ID } from '@/api/simkl/config';
 import {
   SIMKL_AUTO_SYNC_INTERVAL_MS,
   SIMKL_PIN_POLL_INTERVAL_MS,
@@ -107,6 +107,7 @@ export interface SimklSyncState {
 }
 
 export function useSimklSync(profileId?: string): SimklSyncState {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const isSyncingRef = useRef(false);
@@ -154,8 +155,8 @@ export function useSimklSync(profileId?: string): SimklSyncState {
       } else {
         setSyncStatus(profileId, 'simkl', 'error');
         showToast({
-          title: 'Sync failed',
-          message: 'Could not sync with Simkl. Check your connection.',
+          title: t('settings:simkl.sync_failed'),
+          message: t('settings:simkl.sync_failed_desc'),
           preset: 'error',
           duration: TOAST_DURATION_SHORT,
         });
@@ -164,7 +165,7 @@ export function useSimklSync(profileId?: string): SimklSyncState {
       isSyncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [profileId, queryClient, setLastSyncAt, setSyncStatus, simklSettings]);
+  }, [profileId, queryClient, setLastSyncAt, setSyncStatus, simklSettings, t]);
 
   // Sync on mount and when returning from background (throttled to SIMKL_AUTO_SYNC_INTERVAL_MS)
   const shouldSync = useCallback(() => {

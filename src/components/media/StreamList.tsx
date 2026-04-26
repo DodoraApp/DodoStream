@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LegendList } from '@legendapp/list/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
@@ -45,6 +46,7 @@ interface StreamListItemProps {
 }
 
 const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemProps) => {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const available = isStreamAvailable(stream);
 
@@ -101,7 +103,9 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
                   color={theme.colors.textSecondary}
                 />
                 <Text variant="caption" color="textSecondary" numberOfLines={1}>
-                  Available in: {stream.behaviorHints!.countryWhitelist!.join(', ').toUpperCase()}
+                  {t('available_in', {
+                    countries: stream.behaviorHints!.countryWhitelist!.join(', ').toUpperCase(),
+                  })}
                 </Text>
               </Box>
             ) : null}
@@ -126,6 +130,7 @@ interface StreamListInnerProps {
 
 const StreamListInner = memo(
   ({ streamList, isHorizontal, handleSelectStream }: StreamListInnerProps) => {
+    const { t } = useTranslation('media');
     const renderItem = useCallback(
       ({ item }: { item: Stream }) => (
         <StreamListItem stream={item} onSelect={handleSelectStream} horizontal={isHorizontal} />
@@ -141,7 +146,7 @@ const StreamListInner = memo(
     return (
       <Box gap="s">
         <Text variant="bodySmall" color="textSecondary">
-          {streamList.length} stream(s) available
+          {t('streams_available', { count: streamList.length })}
         </Text>
 
         <LegendList
@@ -159,6 +164,7 @@ const StreamListInner = memo(
 
 export const StreamList = memo(
   ({ type, id, videoId, title, backgroundImage, logoImage }: StreamListProps) => {
+    const { t } = useTranslation('media');
     const { data: streams, isLoading, isError, allResults, addons } = useStreams(type, id, videoId);
     const [selectedAddonId, setSelectedAddonId] = useState<string | null>(null);
     const { openStreamFromStream } = useMediaNavigation();
@@ -231,7 +237,7 @@ export const StreamList = memo(
             selectedId={selectedAddonId}
             onSelectId={setSelectedAddonId}
             includeAllOption
-            allLabel="All"
+            allLabel={t('all')}
           />
         </FadeIn>
 
@@ -239,10 +245,10 @@ export const StreamList = memo(
           isLoading={isLoading && !hasAnyAddonFinishedLoading}
           isError={isError}
           data={filteredStreams}
-          loadingMessage="Finding streams..."
+          loadingMessage={t('finding_streams')}
           loadingComponent={<StreamListSkeleton />}
-          errorMessage="Failed to load streams"
-          emptyMessage="No streams available for this content"
+          errorMessage={t('failed_load_streams')}
+          emptyMessage={t('no_streams')}
           isEmpty={(data) => haveAllAddonsFinishedLoading && data.length === 0}>
           {(streamList) => (
             <StreamListInner

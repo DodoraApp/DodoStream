@@ -1,5 +1,6 @@
 import { FC, memo, useState, useCallback } from 'react';
 import { Alert, Linking, TVFocusGuideView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useTheme } from '@shopify/restyle';
 import { useShallow } from 'zustand/react/shallow';
@@ -31,6 +32,7 @@ export interface AddonsSettingsContentProps {
  */
 export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
   ({ showInstall = true, showInstalled = true, scrollable = true }) => {
+    const { t } = useTranslation(['settings', 'common']);
     const [manifestUrl, setManifestUrl] = useState('');
     const theme = useTheme<Theme>();
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
@@ -68,45 +70,55 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
 
     const handleInstall = useCallback(async () => {
       if (!manifestUrl.trim()) {
-        showToast({ title: 'Error', message: 'Please enter a manifest URL', preset: 'error' });
+        showToast({ title: t('common:error'), message: t('common:no_data'), preset: 'error' });
         return;
       }
 
       if (!manifestUrl.endsWith('manifest.json')) {
-        showToast({ title: 'Error', message: 'URL must end with manifest.json', preset: 'error' });
+        showToast({ title: t('common:error'), message: t('addons.url_error'), preset: 'error' });
         return;
       }
 
       try {
         await installAddon.mutateAsync(manifestUrl);
         setManifestUrl('');
-        showToast({ title: 'Success', message: 'Addon installed successfully', preset: 'success' });
+        showToast({
+          title: t('common:success'),
+          message: t('addons.install_success'),
+          preset: 'success',
+        });
       } catch (error) {
         showToast({
-          title: 'Installation Failed',
-          message: error instanceof Error ? error.message : 'Failed to install addon',
+          title: t('addons.install_failed'),
+          message: error instanceof Error ? error.message : t('addons.install_failed'),
           preset: 'error',
         });
       }
-    }, [manifestUrl, installAddon]);
+    }, [manifestUrl, installAddon, t]);
 
-    const handleRemove = useCallback((id: string, name: string) => {
-      Alert.alert('Remove Addon', `Are you sure you want to remove "${name}"?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => useAddonStore.getState().removeAddon(id),
-        },
-      ]);
-    }, []);
+    const handleRemove = useCallback(
+      (id: string, name: string) => {
+        Alert.alert(t('addons.remove_title'), t('addons.remove_confirm', { name }), [
+          { text: t('common:cancel'), style: 'cancel' },
+          {
+            text: t('common:delete'),
+            style: 'destructive',
+            onPress: () => useAddonStore.getState().removeAddon(id),
+          },
+        ]);
+      },
+      [t]
+    );
 
-    const handleConfigure = useCallback((url: string) => {
-      const configureUrl = url.replace(/manifest\.json$/, 'configure');
-      Linking.openURL(configureUrl).catch(() => {
-        showToast({ title: 'Failed to open configuration URL', preset: 'error' });
-      });
-    }, []);
+    const handleConfigure = useCallback(
+      (url: string) => {
+        const configureUrl = url.replace(/manifest\.json$/, 'configure');
+        Linking.openURL(configureUrl).catch(() => {
+          showToast({ title: t('addons.failed_open_config'), preset: 'error' });
+        });
+      },
+      [t]
+    );
 
     const handleMoveUp = useCallback(
       (addonId: string) => {
@@ -134,9 +146,9 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
       <Box padding="m" gap="l" flex={1}>
         {/* Install Addon Section */}
         {showInstall && (
-          <SettingsCard title="Install Addon">
+          <SettingsCard title={t('addons.install_title')}>
             <Input
-              placeholder="https://example.com/manifest.json"
+              placeholder={t('addons.manifest_placeholder')}
               value={manifestUrl}
               onChangeText={setManifestUrl}
               autoCapitalize="none"
@@ -144,13 +156,13 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
             />
             <Button
               variant="primary"
-              title={installAddon.isPending ? 'Installing...' : 'Install Addon'}
+              title={installAddon.isPending ? t('addons.installing') : t('addons.install_button')}
               onPress={handleInstall}
               disabled={installAddon.isPending}
             />
             {(storeError || installAddon.isError) && (
               <Text variant="bodySmall" color="danger">
-                {storeError || 'Failed to install addon'}
+                {storeError || t('addons.install_failed')}
               </Text>
             )}
           </SettingsCard>
@@ -159,16 +171,16 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
         {/* Setup Info */}
         <SettingsCard>
           <Text variant="body" color="textSecondary">
-            Addons are installed globally across the app. You can activate or deactivate them
-            specifically for this profile. Use the ↑↓ arrows on active addons to set the order they
-            appear on Home, Search, and Stream List.
+            {t('addons.addons_info')}
           </Text>
         </SettingsCard>
 
         {/* Active Addons Section */}
         {showInstalled && activeAddons.length > 0 && (
           <Box gap="m">
-            <Text variant="subheader">Active on this Profile ({activeAddons.length})</Text>
+            <Text variant="subheader">
+              {t('addons.active_on_profile', { count: activeAddons.length })}
+            </Text>
             {/* TVFocusGuideView keeps focus inside this group after a reorder re-render */}
             <TVFocusGuideView autoFocus style={{ gap: theme.spacing.s }}>
               {activeAddons.map((item, index) => (
@@ -190,7 +202,9 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
         {/* Installed But Inactive Addons Section */}
         {showInstalled && inactiveAddons.length > 0 && (
           <Box gap="m">
-            <Text variant="subheader">Installed ({inactiveAddons.length})</Text>
+            <Text variant="subheader">
+              {t('addons.installed_count', { count: inactiveAddons.length })}
+            </Text>
             <Box gap="s">
               {inactiveAddons.map((item) => (
                 <AddonCard
@@ -208,7 +222,7 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
         {showInstalled && orderedAddons.length === 0 && (
           <SettingsCard>
             <Text variant="body" color="textSecondary">
-              No addons installed
+              {t('addons.no_addons_installed')}
             </Text>
           </SettingsCard>
         )}
@@ -240,6 +254,7 @@ interface AddonCardProps {
  */
 const AddonCard: FC<AddonCardProps> = memo(
   ({ addon, onRemove, onConfigure, orderIndex, orderTotal, onMoveUp, onMoveDown }) => {
+    const { t } = useTranslation('settings');
     const theme = useTheme<Theme>();
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
     const config = useAddonStore(
@@ -306,7 +321,7 @@ const AddonCard: FC<AddonCardProps> = memo(
             </Text>
             {addon.manifest.catalogs && (
               <Text variant="caption" color="textSecondary">
-                {addon.manifest.catalogs.length} catalog(s)
+                {t('addons.catalogs_count', { count: addon.manifest.catalogs.length })}
               </Text>
             )}
           </Box>
@@ -352,22 +367,22 @@ const AddonCard: FC<AddonCardProps> = memo(
         {isActive && config && (
           <Box gap="s">
             <SettingsSwitch
-              label="Visible on Home"
+              label={t('addons.visible_on_home')}
               value={config.useCatalogsOnHome}
               onValueChange={handleToggleHome}
-              description="Catalogs are visible on the Home screen"
+              description={t('addons.visible_on_home_desc')}
             />
             <SettingsSwitch
-              label="Use in Search"
+              label={t('addons.use_in_search')}
               value={config.useCatalogsInSearch}
               onValueChange={handleToggleSearch}
-              description="Catalogs are used for searching"
+              description={t('addons.use_in_search_desc')}
             />
             <SettingsSwitch
-              label="Use for Subtitles"
+              label={t('addons.use_for_subtitles')}
               value={config.useForSubtitles}
               onValueChange={handleToggleSubtitles}
-              description="Subtitles are fetched from this addon if available"
+              description={t('addons.use_for_subtitles_desc')}
             />
           </Box>
         )}

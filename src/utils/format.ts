@@ -1,4 +1,6 @@
+import { VideoFitMode } from '@/types/player';
 import type { MetaDetail } from '@/types/stremio';
+import type { TFunction } from 'i18next';
 
 // ============================================================================
 // Types
@@ -18,6 +20,17 @@ export interface SeasonEpisodeLike {
 // ============================================================================
 // Pure Formatting Functions
 // ============================================================================
+
+export const formatFitModeLabel = (fitMode: VideoFitMode, t: TFunction): string => {
+  switch (fitMode) {
+    case 'cover':
+      return t('player:cover');
+    case 'stretch':
+      return t('player:stretch');
+    default:
+      return t('player:contain');
+  }
+};
 
 /**
  * Format season/episode label (e.g., "S1E2").
@@ -55,9 +68,12 @@ export const formatEpisodeCardTitle = (video?: SeasonEpisodeLike | null): string
  * Format episode list title (e.g., "2. Episode Title").
  * Used in episode lists.
  */
-export const formatEpisodeListTitle = (video?: SeasonEpisodeLike | null): string => {
+export const formatEpisodeListTitle = (
+  video: SeasonEpisodeLike | null | undefined,
+  t: TFunction
+): string => {
   const episodeNum = video?.episode ?? '?';
-  const title = video?.title ?? video?.name ?? 'Unknown';
+  const title = video?.title ?? video?.name ?? t('media:unknown_episode');
   return `${episodeNum}. ${title}`;
 };
 
