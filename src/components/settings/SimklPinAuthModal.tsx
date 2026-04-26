@@ -1,5 +1,6 @@
 import { FC, memo, useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useSimklPinAuth } from '@/api/simkl/hooks';
@@ -14,6 +15,7 @@ interface SimklPinAuthModalProps {
 
 export const SimklPinAuthModal: FC<SimklPinAuthModalProps> = memo(
   ({ visible, onSuccess, onCancel }) => {
+    const { t } = useTranslation(['settings', 'common']);
     const theme = useTheme<Theme>();
     const [countdown, setCountdown] = useState(SIMKL_PIN_TIMEOUT_S);
 
@@ -69,13 +71,13 @@ export const SimklPinAuthModal: FC<SimklPinAuthModalProps> = memo(
               width: '90%',
             }}>
             <Text variant="header" textAlign="center">
-              Connect Simkl
+              {t('simkl.connect_title')}
             </Text>
 
             {status === 'pending' && (
               <>
                 <Text variant="body" color="textSecondary" textAlign="center">
-                  Visit the URL below and enter the code to authorize DodoStream.
+                  {t('simkl.instructions')}
                 </Text>
 
                 <Box
@@ -85,36 +87,36 @@ export const SimklPinAuthModal: FC<SimklPinAuthModalProps> = memo(
                   alignItems="center"
                   gap="s">
                   <Text variant="caption" color="textSecondary">
-                    Go to
+                    {t('simkl.go_to')}
                   </Text>
                   <Text variant="subheader" color="primaryBackground">
                     {verificationUrl ?? 'simkl.com/pin'}
                   </Text>
                   <Text variant="caption" color="textSecondary">
-                    and enter code
+                    {t('simkl.enter_code')}
                   </Text>
                   <Text variant="pinCode">{userCode ?? '—'}</Text>
                 </Box>
 
                 <Text variant="caption" color="textSecondary" textAlign="center">
-                  Expires in {countdownLabel}
+                  {t('simkl.expires_in', { time: countdownLabel })}
                 </Text>
               </>
             )}
 
             {status === 'expired' && (
               <Text variant="body" color="textSecondary" textAlign="center">
-                The code has expired. Please try again.
+                {t('simkl.code_expired')}
               </Text>
             )}
 
             {status === 'success' && (
               <Text variant="body" color="textSecondary" textAlign="center">
-                Successfully connected!
+                {t('simkl.connected_success')}
               </Text>
             )}
 
-            <Button onPress={handleCancel} variant="primary" title="Cancel" />
+            <Button onPress={handleCancel} variant="primary" title={t('common:cancel')} />
           </Box>
         </Box>
       </Modal>

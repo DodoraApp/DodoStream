@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import type { Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -8,6 +9,7 @@ import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { NAV_ITEMS } from '@/constants/navigation';
 
 export default function TabsLayout() {
+  const { t } = useTranslation('navigation');
   const theme = useTheme<Theme>();
   const { bottom } = useSafeAreaInsets();
   const breakpoint = useBreakpoint();
@@ -45,7 +47,7 @@ export default function TabsLayout() {
             key={item.id}
             name={item.screenName}
             options={{
-              title: item.label,
+              title: t(item.id),
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name={item.icon} size={size} color={color} />
               ),

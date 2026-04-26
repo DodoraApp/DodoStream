@@ -1,4 +1,5 @@
 import React, { FC, memo, useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -115,23 +116,24 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
   onDelayChange,
 }) => {
   const theme = useTheme<Theme>();
+  const { t } = useTranslation('player');
 
   // Convert tracks to picker items
   const items = useMemo<SubtitlePickerItem[]>(() => {
-    const result: SubtitlePickerItem[] = [{ label: 'None', value: -1, groupId: null, track: null }];
+    const result: SubtitlePickerItem[] = [{ label: t('none'), value: -1, groupId: null, track: null }];
 
     for (const track of tracks) {
       result.push({
         label: buildSubtitleLabel(track),
         value: track.index,
         groupId: normalizeLanguageCode(track.language) ?? null,
-        tag: track.source === 'addon' ? 'Addon' : 'Video',
+        tag: track.source === 'addon' ? t('addon') : t('video'),
         track,
       });
     }
 
     return result;
-  }, [tracks]);
+  }, [tracks, t]);
 
   const groups = useGroupOptions<number>({
     items: items.map((i) => ({ label: i.label, value: i.value, groupId: i.groupId })),
@@ -193,7 +195,7 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
               color={theme.colors.mainForeground}
             />
             <Text variant="cardTitle" flexWrap="nowrap">
-              Select Subtitles
+              {t('select_subtitles')}
             </Text>
           </Box>
 
@@ -201,10 +203,10 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
           {groups.length > 1 && (
             <PickerInput
               icon="language"
-              label="Language"
-              selectedLabel={selectedGroupId ? getLanguageDisplayName(selectedGroupId) : 'All'}
+              label={t('language')}
+              selectedLabel={selectedGroupId ? getLanguageDisplayName(selectedGroupId) : t('all')}
               items={[
-                { label: 'All', value: '' },
+                { label: t('all'), value: '' },
                 ...groups.map((g) => ({ label: g.label, value: g.id })),
               ]}
               selectedValue={selectedGroupId ?? ''}

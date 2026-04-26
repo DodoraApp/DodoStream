@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box } from '@/theme/theme';
 import { Tag } from '@/components/basic/Tag';
@@ -66,9 +67,11 @@ export const TagFilters = memo(
     selectedId,
     onSelectId,
     includeAllOption = true,
-    allLabel = 'All',
+    allLabel,
     size = 'default',
   }: TagFiltersProps) => {
+    const { t } = useTranslation('media');
+    const effectiveAllLabel = allLabel || t('all');
     const allSelected = selectedId === null;
 
     return (
@@ -77,7 +80,7 @@ export const TagFilters = memo(
           {includeAllOption ? (
             <TagFiltersItem
               id={null}
-              label={allLabel}
+              label={effectiveAllLabel}
               selected={allSelected}
               hasTVPreferredFocus={true}
               size={size}

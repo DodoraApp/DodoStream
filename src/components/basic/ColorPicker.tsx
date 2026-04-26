@@ -1,4 +1,5 @@
 import React, { FC, memo, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
@@ -66,6 +67,7 @@ ColorSwatch.displayName = 'ColorSwatch';
 export const ColorPicker: FC<ColorPickerProps> = memo(
   ({ value, onValueChange, label, colors = DEFAULT_COLORS, disabled = false }) => {
     const theme = useTheme<Theme>();
+    const { t } = useTranslation('common');
     const [isModalVisible, setIsModalVisible] = useState(false);
 
     const handleOpen = useCallback(() => {
@@ -115,7 +117,7 @@ export const ColorPicker: FC<ColorPickerProps> = memo(
         </Focusable>
 
         {/* Color Picker Modal */}
-        <Modal visible={isModalVisible} onClose={handleClose} label={label ?? 'Select Color'}>
+        <Modal visible={isModalVisible} onClose={handleClose} label={label ?? t('select_color')}>
           <Box flexDirection="row" flexWrap="wrap" justifyContent="center" gap="s">
             {colors.map((color) => (
               <ColorSwatch

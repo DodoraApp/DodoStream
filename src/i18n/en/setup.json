@@ -1,0 +1,59 @@
+{
+  "welcome": {
+    "title": "Welcome to DodoStream",
+    "description": "Let's get you set up in just a few steps",
+    "get_started": "Get Started",
+    "feature_profile": "Create Your First Profile",
+    "feature_integrations": "Connect Integrations",
+    "feature_addons": "Install Addons",
+    "feature_customize": "Customize Settings"
+  },
+  "language": {
+    "title": "Language",
+    "description": "Choose your preferred language for the app",
+    "select_language": "Select Language"
+  },
+  "ui": {
+    "title": "Choose Your Style",
+    "description": "Pick a theme and adjust the UI scaling"
+  },
+  "profile": {
+    "title": "Create Your Profile",
+    "description": "Choose a name and avatar that represents you"
+  },
+  "integrations": {
+    "title": "Connect Your Accounts",
+    "description": "Sync your watch history and watchlist with external services",
+    "about_title": "About Integrations",
+    "about_description": "Connect your Simkl account to automatically track what you watch and keep your watchlist in sync across all your devices."
+  },
+  "addons": {
+    "title": "Add Streaming Sources",
+    "description": "Install addons to discover and stream content",
+    "skip_title": "Skip Addon Setup?",
+    "skip_message": "You need at least one metadata addon to browse content. You can add addons later in Settings.",
+    "skip_anyway": "Skip Anyway",
+    "about_title": "About Addons",
+    "about_description": "DodoStream uses Stremio-compatible addons to provide content. You need at least one metadata addon to browse movies and TV shows.",
+    "about_types": "Addons provide different types of content:",
+    "about_type_metadata": "Metadata",
+    "about_type_metadata_desc": " - Browse catalogs and get information about content",
+    "about_type_streams": "Streams",
+    "about_type_streams_desc": " - Provide playable video streams",
+    "about_type_subtitles": "Subtitles",
+    "about_type_subtitles_desc": " - Add external subtitles"
+  },
+  "home": {
+    "title": "Customize Home Screen",
+    "description": "Configure how your home screen looks"
+  },
+  "playback": {
+    "title": "Playback Preferences",
+    "description": "Configure how content plays",
+    "info_desc": "You can customize subtitle styles, player settings, and more in the Settings menu after setup."
+  },
+  "complete": {
+    "title": "You're All Set!",
+    "start_exploring": "Start Exploring"
+  }
+}

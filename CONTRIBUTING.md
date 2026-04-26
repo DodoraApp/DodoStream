@@ -44,6 +44,17 @@ pnpm test
 - Use the existing theme tokens and shared components.
 - For TV-interactive UI, use the existing focus primitives/components (e.g. `Focusable`).
 - For data fetching, prefer the existing React Query hooks.
+- **Internationalization**: Do not use hardcoded strings in UI components. Use the `useTranslation` hook from `react-i18next` and add strings to the appropriate namespace in `src/i18n/translations/en/`.
+
+## Translating the app
+
+We welcome translations for any language! To add a new language:
+
+1. Create a new folder `src/i18n/translations/<your-language-code>/`.
+2. Copy all JSON files from `src/i18n/translations/en/` to your new folder.
+3. Translate the values in the new JSON files. Keep the keys exactly the same.
+
+We use a namespaced JSON structure where each file represents a namespace (e.g., `common`, `settings`, `profiles`). 
 
 ## Submitting changes
 

@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { ScrollView, TVFocusGuideView, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Box, Text } from '@/theme/theme';
 import { Container } from '@/components/basic/Container';
 import { SettingsShell } from '@/components/settings/SettingsShell';
@@ -20,10 +21,14 @@ import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
 import { SettingsLink } from '@/components/settings/SettingsLink';
 
 export default function Settings() {
+  const { t } = useTranslation('settings');
   const { splitLayout } = useResponsiveLayout();
   // Ref to the first menu item for TV focus navigation (used by SettingsShell)
   const firstMenuItemRef = useRef<View>(null);
   const [selectedPage, setSelectedPage] = useState('profiles');
+
+  const translatedProfileMenuItems = useMemo(() => SETTINGS_PROFILE_MENU_ITEMS(t), [t]);
+  const translatedGlobalMenuItems = useMemo(() => SETTINGS_GLOBAL_MENU_ITEMS(t), [t]);
 
   const handleSelectPage = useCallback((id: string) => {
     setSelectedPage(id);
@@ -38,20 +43,20 @@ export default function Settings() {
           menu={
             <ScrollView showsVerticalScrollIndicator={false}>
               <Box gap="m" paddingHorizontal="s">
-                <Text variant="subheader">Settings</Text>
+                <Text variant="subheader">{t('title')}</Text>
                 <ProfileSwitcherCard ref={firstMenuItemRef} />
 
-                <Text variant="sectionLabel">Profile</Text>
+                <Text variant="sectionLabel">{t('profile_section')}</Text>
                 <SettingsMenu
-                  items={SETTINGS_PROFILE_MENU_ITEMS}
+                  items={translatedProfileMenuItems}
                   selectedId={selectedPage}
                   onSelect={handleSelectPage}
                   scrollable={false}
                 />
 
-                <Text variant="sectionLabel">Global</Text>
+                <Text variant="sectionLabel">{t('global_section')}</Text>
                 <SettingsMenu
-                  items={SETTINGS_GLOBAL_MENU_ITEMS}
+                  items={translatedGlobalMenuItems}
                   selectedId={selectedPage}
                   onSelect={handleSelectPage}
                   scrollable={false}
@@ -71,14 +76,14 @@ export default function Settings() {
   return (
     <Container safeAreaEdges={['left', 'right', 'top']}>
       <Box flex={1}>
-        <PageHeader title="Settings" />
+        <PageHeader title={t('title')} />
         <ScrollView showsVerticalScrollIndicator={false}>
           <Box paddingVertical="m" gap="m">
-            <Text variant="sectionLabel">Profile</Text>
+            <Text variant="sectionLabel">{t('profile_section')}</Text>
             <ProfileSwitcherCard ref={firstMenuItemRef} />
 
             <Box gap="s">
-              {SETTINGS_PROFILE_MENU_ITEMS.map((item) => (
+              {translatedProfileMenuItems.map((item) => (
                 <SettingsLink
                   key={item.id}
                   title={item.title}
@@ -89,9 +94,9 @@ export default function Settings() {
               ))}
             </Box>
 
-            <Text variant="sectionLabel">Global</Text>
+            <Text variant="sectionLabel">{t('global_section')}</Text>
             <Box gap="s">
-              {SETTINGS_GLOBAL_MENU_ITEMS.map((item) => (
+              {translatedGlobalMenuItems.map((item) => (
                 <SettingsLink
                   key={item.id}
                   title={item.title}

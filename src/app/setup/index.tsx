@@ -1,80 +1,76 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { Box, Text, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import { Ionicons } from '@expo/vector-icons';
-import { MotiView } from 'moti';
-import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
+import { useTranslation } from 'react-i18next';
+import { Box } from '@/theme/theme';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
+import { PickerInput } from '@/components/basic/PickerInput';
+import { useUIStore } from '@/store/ui.store';
+import { AVAILABLE_LANGUAGES } from '@/i18n';
+import { getLanguageDisplayName } from '@/utils/languages';
+import type { PickerItem } from '@/components/basic/PickerModal';
 
 /**
- * Welcome step - introduces the setup wizard
+ * Language selection step - first step of the setup wizard
  */
-export default function WelcomeStep() {
+export default function LanguageStep() {
   const router = useRouter();
+  const { t } = useTranslation(['setup', 'settings', 'common']);
+  const language = useUIStore((state) => state.language);
+  const setLanguage = useUIStore((state) => state.setLanguage);
 
   const handleNext = useCallback(() => {
-    router.push('/setup/ui');
+    router.push('/setup/welcome');
   }, [router]);
+
+  /** Picker items for language selection */
+  const languagePickerItems: PickerItem<string | undefined>[] = useMemo(
+    () => [
+      { label: t('settings:ui.system_default'), value: undefined },
+      ...AVAILABLE_LANGUAGES.map((lang) => ({
+        label: getLanguageDisplayName(lang),
+        value: lang,
+      })),
+    ],
+    [t]
+  );
+
+  const currentLanguageLabel = useMemo(() => {
+    if (!language) return t('settings:ui.system_default');
+    return getLanguageDisplayName(language);
+  }, [language, t]);
+
+  const handleLanguageChange = useCallback(
+    (value: string | undefined) => {
+      setLanguage(value);
+    },
+    [setLanguage]
+  );
 
   return (
     <WizardContainer>
       <WizardStep
-        step="welcome"
-        title="Welcome to DodoStream"
-        description="Let's get you set up in just a few steps"
+        step="language"
+        title={t('setup:language.title')}
+        description={t('setup:language.description')}
         onNext={handleNext}
-        nextLabel="Get Started"
+        nextLabel={t('common:next')}
         showBack={false}
         showSkip={false}
         hasTVPreferredFocus>
-        <Box flex={1} justifyContent="center" alignItems="center" gap="xl">
-          {/* Feature highlights */}
-          <Box gap="m">
-            <FeatureItem icon="person-add" title="Create Your First Profile" delay={300} />
-            <FeatureItem icon="sync" title="Connect Integrations" delay={400} />
-            <FeatureItem icon="extension-puzzle" title="Install Addons" delay={500} />
-            <FeatureItem icon="settings" title="Customize Settings" delay={600} />
+        <Box flex={1} justifyContent="center" alignItems="center">
+          <Box width="100%" maxWidth={400}>
+            <PickerInput
+              label={t('setup:language.select_language')}
+              icon="language"
+              items={languagePickerItems}
+              selectedLabel={currentLanguageLabel}
+              selectedValue={language}
+              onValueChange={handleLanguageChange}
+            />
           </Box>
         </Box>
       </WizardStep>
     </WizardContainer>
-  );
-}
-
-interface FeatureItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  delay?: number;
-}
-
-function FeatureItem({ icon, title, delay = 0 }: FeatureItemProps) {
-  const theme = useTheme<Theme>();
-
-  return (
-    <MotiView
-      from={{ opacity: 0, translateX: -20 }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{ type: 'timing', duration: WIZARD_CONTENT_FADE_MS, delay }}>
-      <Box flexDirection="row" gap="m" alignItems="center">
-        <Box
-          width={theme.sizes.iconMedium * 2}
-          height={theme.sizes.iconMedium * 2}
-          borderRadius="m"
-          backgroundColor="cardBackground"
-          justifyContent="center"
-          alignItems="center">
-          <Ionicons
-            name={icon}
-            size={theme.sizes.iconMedium}
-            color={theme.colors.primaryBackground}
-          />
-        </Box>
-        <Box>
-          <Text variant="cardTitle">{title}</Text>
-        </Box>
-      </Box>
-    </MotiView>
   );
 }

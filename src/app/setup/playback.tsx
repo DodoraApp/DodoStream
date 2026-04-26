@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -11,6 +12,7 @@ import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsC
 export default function PlaybackStep() {
   const router = useRouter();
   const theme = useTheme<Theme>();
+  const { t } = useTranslation('setup');
 
   const handleBack = useCallback(() => {
     router.back();
@@ -24,8 +26,8 @@ export default function PlaybackStep() {
     <WizardContainer>
       <WizardStep
         step="playback"
-        title="Playback Preferences"
-        description="Configure how content plays"
+        title={t('playback.title')}
+        description={t('playback.description')}
         onNext={handleNext}
         onBack={handleBack}
         showSkip={false}
@@ -51,8 +53,7 @@ export default function PlaybackStep() {
               />
               <Box flex={1}>
                 <Text variant="bodySmall" color="textSecondary">
-                  You can customize subtitle styles, player settings, and more in the Settings menu
-                  after setup.
+                  {t('playback.info_desc')}
                 </Text>
               </Box>
             </Box>

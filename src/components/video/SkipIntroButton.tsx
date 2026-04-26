@@ -1,4 +1,5 @@
 import { FC, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import { Button } from '@/components/basic/Button';
@@ -22,6 +23,7 @@ interface SkipIntroButtonProps {
  */
 export const SkipIntroButton: FC<SkipIntroButtonProps> = memo(
   ({ introData, currentTime, onSkipIntro }) => {
+    const { t } = useTranslation('player');
     const theme = useTheme<Theme>();
 
     // Convert times to seconds for comparison
@@ -42,7 +44,7 @@ export const SkipIntroButton: FC<SkipIntroButtonProps> = memo(
         right={theme.spacing.m}
         pointerEvents="box-none">
         <Button
-          title="Skip Intro"
+          title={t('skip_intro')}
           icon="skip-forward"
           iconComponent={MaterialCommunityIcons}
           variant="secondary"

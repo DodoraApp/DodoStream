@@ -1,78 +1,73 @@
 import type { SettingsMenuItem } from '@/components/settings/SettingsMenu';
+import { TFunction } from 'i18next';
 
-export const SETTINGS_PROFILE_MENU_ITEMS: SettingsMenuItem[] = [
+export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] = (t) => [
   {
     id: 'profiles',
-    title: 'Profiles',
-    description: 'Manage profiles and switch users',
+    title: t('settings:menu.profiles.title'),
+    description: t('settings:menu.profiles.desc'),
     icon: 'people-outline',
     href: '/settings/profiles',
   },
   {
     id: 'home',
-    title: 'Home',
-    description: 'Customize the home screen hero section',
+    title: t('settings:menu.home.title'),
+    description: t('settings:menu.home.desc'),
     icon: 'home-outline',
     href: '/settings/home',
   },
   {
     id: 'playback',
-    title: 'Playback',
-    description: 'Playback and language preferences for the active profile',
+    title: t('settings:menu.playback.title'),
+    description: t('settings:menu.playback.desc'),
     icon: 'play-circle-outline',
     href: '/settings/playback',
   },
   {
     id: 'subtitles',
-    title: 'Subtitles',
-    description: 'Subtitle style and preview',
+    title: t('settings:menu.subtitles.title'),
+    description: t('settings:menu.subtitles.desc'),
     icon: 'text-outline',
     href: '/settings/subtitles',
   },
   {
     id: 'addons',
-    title: 'Addons',
-    description: 'Install and manage addons',
+    title: t('settings:menu.addons.title'),
+    description: t('settings:menu.addons.desc'),
     icon: 'extension-puzzle-outline',
     href: '/settings/addons',
   },
   {
     id: 'integrations',
-    title: 'Integrations',
-    description: 'Connect Simkl and other services',
+    title: t('settings:menu.integrations.title'),
+    description: t('settings:menu.integrations.desc'),
     icon: 'sync-outline',
     href: '/settings/integrations',
   },
 ];
 
-export const SETTINGS_GLOBAL_MENU_ITEMS: SettingsMenuItem[] = [
+export const SETTINGS_GLOBAL_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] = (t) => [
   {
     id: 'ui',
-    title: 'UI',
-    description: 'Theme and scaling preferences',
+    title: t('settings:menu.ui.title'),
+    description: t('settings:menu.ui.desc'),
     icon: 'color-palette-outline',
     href: '/settings/ui',
   },
   {
     id: 'data',
-    title: 'Data',
-    description: 'Manage and clear application data',
+    title: t('settings:menu.data.title'),
+    description: t('settings:menu.data.desc'),
     icon: 'server-outline',
     href: '/settings/data',
   },
   {
     id: 'about',
-    title: 'About',
-    description: 'App info, version, and useful links',
+    title: t('settings:menu.about.title'),
+    description: t('settings:menu.about.desc'),
     icon: 'information-circle-outline',
     href: '/settings/about',
   },
-];
-
-/** Flat list used in places that don’t render sections */
-export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
-  ...SETTINGS_PROFILE_MENU_ITEMS,
-  ...SETTINGS_GLOBAL_MENU_ITEMS,
 ];
 
 /** Map settings page ID to route path */

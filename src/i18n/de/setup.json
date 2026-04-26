@@ -1,0 +1,59 @@
+{
+  "welcome": {
+    "title": "Willkommen bei DodoStream",
+    "description": "Lass uns die App in nur wenigen Schritten einrichten",
+    "get_started": "Los geht's",
+    "feature_profile": "Erstes Profil erstellen",
+    "feature_integrations": "Integrationen verbinden",
+    "feature_addons": "Addons installieren",
+    "feature_customize": "Einstellungen anpassen"
+  },
+  "language": {
+    "title": "Sprache",
+    "description": "Wähle deine bevorzugte Sprache für die App",
+    "select_language": "Sprache auswählen"
+  },
+  "ui": {
+    "title": "Wähle deinen Stil",
+    "description": "Wähle ein Design und passe die UI-Skalierung an"
+  },
+  "profile": {
+    "title": "Profil erstellen",
+    "description": "Wähle einen Namen und einen Avatar, der dich repräsentiert"
+  },
+  "integrations": {
+    "title": "Konten verbinden",
+    "description": "Synchronisiere deinen Verlauf und deine Merkliste mit externen Diensten",
+    "about_title": "Über Integrationen",
+    "about_description": "Verbinde dein Simkl-Konto, um automatisch zu verfolgen, was du siehst, und deine Merkliste auf allen deinen Geräten synchron zu halten."
+  },
+  "addons": {
+    "title": "Streaming-Quellen hinzufügen",
+    "description": "Installiere Addons, um Inhalte zu entdecken und zu streamen",
+    "skip_title": "Addon-Einrichtung überspringen?",
+    "skip_message": "Du benötigst mindestens ein Metadaten-Addon, um Inhalte zu durchsuchen. Du kannst Addons später in den Einstellungen hinzufügen.",
+    "skip_anyway": "Trotzdem überspringen",
+    "about_title": "Über Addons",
+    "about_description": "DodoStream verwendet Stremio-kompatible Addons, um Inhalte bereitzustellen. Du benötigst mindestens ein Metadaten-Addon, um Filme und Serien zu durchsuchen.",
+    "about_types": "Addons bieten verschiedene Arten von Inhalten:",
+    "about_type_metadata": "Metadaten",
+    "about_type_metadata_desc": " - Kataloge durchsuchen und Informationen über Inhalte erhalten",
+    "about_type_streams": "Streams",
+    "about_type_streams_desc": " - Abspielbare Videostreams bereitstellen",
+    "about_type_subtitles": "Untertitel",
+    "about_type_subtitles_desc": " - Externe Untertitel hinzufügen"
+  },
+  "home": {
+    "title": "Startseite anpassen",
+    "description": "Konfiguriere das Aussehen deiner Startseite"
+  },
+  "playback": {
+    "title": "Wiedergabeeinstellungen",
+    "description": "Konfiguriere, wie Inhalte abgespielt werden",
+    "info_desc": "Du kannst Untertitel-Stile, Player-Einstellungen und mehr nach der Einrichtung im Einstellungsmenü anpassen."
+  },
+  "complete": {
+    "title": "Alles bereit!",
+    "start_exploring": "Jetzt entdecken"
+  }
+}

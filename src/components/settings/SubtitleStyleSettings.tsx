@@ -1,4 +1,5 @@
 import React, { FC, memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWindowDimensions } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -181,6 +182,7 @@ export const SubtitleStylePreview: FC = memo(() => {
 SubtitleStylePreview.displayName = 'SubtitleStylePreview';
 
 export const SubtitleStyleControls: FC = memo(() => {
+  const { t } = useTranslation('settings');
   const { subtitleStyle, updateStyle } = useActiveProfileSubtitleStyle();
 
   const fontFamilyItems: PickerItem<SubtitleFontFamily>[] = useMemo(
@@ -194,17 +196,17 @@ export const SubtitleStyleControls: FC = memo(() => {
 
   const currentFontLabel = useMemo(() => {
     const found = SUBTITLE_FONT_FAMILIES.find((f) => f.value === subtitleStyle.fontFamily);
-    return found?.label ?? 'System Default';
-  }, [subtitleStyle.fontFamily]);
+    return found?.label ?? t('subtitles.system_default');
+  }, [subtitleStyle.fontFamily, t]);
 
   return (
     <Box gap="s">
-      <SectionLabel label="Font" />
+      <SectionLabel label={t('subtitles.font')} />
 
-      <SettingRow label="Font Family">
+      <SettingRow label={t('subtitles.font_family')}>
         <PickerInput
           icon="text"
-          label="Select Font"
+          label={t('subtitles.select_font')}
           items={fontFamilyItems}
           selectedLabel={currentFontLabel}
           selectedValue={subtitleStyle.fontFamily}
@@ -213,7 +215,7 @@ export const SubtitleStyleControls: FC = memo(() => {
       </SettingRow>
 
       <SliderInput
-        label="Font Size"
+        label={t('subtitles.font_size')}
         value={subtitleStyle.fontSize}
         onValueChange={(v) => updateStyle({ fontSize: v })}
         minimumValue={SUBTITLE_FONT_SIZE_MIN}
@@ -222,7 +224,7 @@ export const SubtitleStyleControls: FC = memo(() => {
         unit="px"
       />
 
-      <SettingRow label="Font Color">
+      <SettingRow label={t('subtitles.font_color')}>
         <ColorPicker
           value={subtitleStyle.fontColor}
           onValueChange={(c) => updateStyle({ fontColor: c })}
@@ -231,7 +233,7 @@ export const SubtitleStyleControls: FC = memo(() => {
       </SettingRow>
 
       <SliderInput
-        label="Font Opacity"
+        label={t('subtitles.font_opacity')}
         value={Math.round(subtitleStyle.fontOpacity * 100)}
         onValueChange={(v) => updateStyle({ fontOpacity: v / 100 })}
         minimumValue={50}
@@ -240,9 +242,9 @@ export const SubtitleStyleControls: FC = memo(() => {
         unit="%"
       />
 
-      <SectionLabel label="Background" />
+      <SectionLabel label={t('subtitles.background')} />
 
-      <SettingRow label="Background Color">
+      <SettingRow label={t('subtitles.background_color')}>
         <ColorPicker
           value={subtitleStyle.backgroundColor}
           onValueChange={(c) => updateStyle({ backgroundColor: c })}
@@ -251,7 +253,7 @@ export const SubtitleStyleControls: FC = memo(() => {
       </SettingRow>
 
       <SliderInput
-        label="Background Opacity"
+        label={t('subtitles.background_opacity')}
         value={Math.round(subtitleStyle.backgroundOpacity * 100)}
         onValueChange={(v) => updateStyle({ backgroundOpacity: v / 100 })}
         minimumValue={0}
@@ -260,10 +262,10 @@ export const SubtitleStyleControls: FC = memo(() => {
         unit="%"
       />
 
-      <SectionLabel label="Position" />
+      <SectionLabel label={t('subtitles.position')} />
 
       <SliderInput
-        label="Distance from Bottom"
+        label={t('subtitles.bottom_position')}
         value={subtitleStyle.bottomPosition}
         onValueChange={(v) => updateStyle({ bottomPosition: v })}
         minimumValue={SUBTITLE_POSITION_MIN}

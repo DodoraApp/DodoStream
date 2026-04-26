@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Container } from '@/components/basic/Container';
+import { useTranslation } from 'react-i18next';
 import { TextInput } from 'react-native';
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { Box, Text } from '@/theme/theme';
@@ -21,6 +22,7 @@ type SearchListItem =
   | { type: 'content'; metas: MetaPreview[]; id: string };
 
 export default function SearchTab() {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
   const { query: initialQuery } = useLocalSearchParams<{ query?: string }>();
@@ -88,7 +90,7 @@ export default function SearchTab() {
                 fontSize: theme.textVariants.body.fontSize,
               }}
               placeholderTextColor={theme.colors.textPlaceholder}
-              placeholder="Search movies, shows..."
+              placeholder={t('search_placeholder')}
               returnKeyType="search"
               onSubmitEditing={handleSearch}
               autoFocus={!initialQuery}
@@ -127,7 +129,7 @@ export default function SearchTab() {
               color={theme.colors.textSecondary}
             />
             <Text variant="body" color="textSecondary" marginTop="m" textAlign="center">
-              Search for movies, TV shows, and more
+              {t('search_desc')}
             </Text>
           </Box>
         ) : (
@@ -135,10 +137,10 @@ export default function SearchTab() {
             isLoading={isLoading}
             isError={isError}
             data={searchResults}
-            loadingMessage="Searching..."
+            loadingMessage={t('searching')}
             isEmpty={(data) => data.length === 0}
-            emptyMessage="No results found"
-            errorMessage="Failed to search">
+            emptyMessage={t('no_results')}
+            errorMessage={t('search_failed')}>
             {() => (
               <SearchResultsList searchResults={searchResults} onMediaPress={handleMediaPress} />
             )}

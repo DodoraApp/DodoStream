@@ -120,7 +120,7 @@ describe('useAutoPlay', () => {
     await waitFor(() => {
       expect(toastStore.showToast).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'No playable stream found',
+          title: 'no_playable_stream',
           preset: 'error',
         })
       );

@@ -1,5 +1,6 @@
 import React, { FC, useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
 import { StyleSheet, Pressable, Platform, useTVEventHandler, HWEvent } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
@@ -16,7 +17,7 @@ import { useProfileStore } from '@/store/profile.store';
 import { usePlaybackStore } from '@/store/playback.store';
 import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
 import { getPreferredLanguageCodes, getLanguageDisplayName } from '@/utils/languages';
-import { formatPlaybackTime, formatWallClock } from '@/utils/format';
+import { formatFitModeLabel, formatPlaybackTime, formatWallClock } from '@/utils/format';
 import { sortAudioTracksByPreference, getTrackBadge } from '@/utils/tracks';
 import { ControlButton } from '@/components/video/controls/ControlButton';
 import { TVSeekBar } from '@/components/video/TVSeekBar';
@@ -81,17 +82,6 @@ const getFitModeIcon = (
   }
 };
 
-const getFitModeLabel = (fitMode: VideoFitMode): string => {
-  switch (fitMode) {
-    case 'cover':
-      return 'Cover';
-    case 'stretch':
-      return 'Stretch';
-    default:
-      return 'Contain';
-  }
-};
-
 // ============================================================================
 // Sub-Components (memoized for performance)
 // ============================================================================
@@ -115,6 +105,7 @@ interface ClockDisplayProps {
  * high-frequency currentTime/duration prop churn from the player engine.
  */
 const ClockDisplay = memo<ClockDisplayProps>(({ remainingMinutes }) => {
+  const { t } = useTranslation('player');
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -134,7 +125,7 @@ const ClockDisplay = memo<ClockDisplayProps>(({ remainingMinutes }) => {
       </Text>
       {endsAtStr !== null && (
         <Text variant="bodySmall" color="mainForeground">
-          Ends at {endsAtStr}
+          {t('ends_at', { time: endsAtStr })}
         </Text>
       )}
     </Box>
@@ -143,6 +134,7 @@ const ClockDisplay = memo<ClockDisplayProps>(({ remainingMinutes }) => {
 ClockDisplay.displayName = 'ClockDisplay';
 
 const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings, currentTime, duration }) => {
+  const { t } = useTranslation(['player', 'common']);
   // Round to the nearest minute so ClockDisplay only re-renders ~once/min,
   // not on every player progress tick (~4 Hz).
   const remainingMinutes = Math.round(Math.max(0, duration - currentTime) / 60);
@@ -152,7 +144,7 @@ const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings, currentTime, 
       <ControlButton onPress={onBack} icon="arrow-back" iconComponent={Ionicons} />
       <Box flex={1}>
         <Text variant="cardTitle" color="mainForeground" numberOfLines={1}>
-          {title || 'Play'}
+          {title || t('play')}
         </Text>
       </Box>
       <ClockDisplay remainingMinutes={remainingMinutes} />
@@ -160,7 +152,7 @@ const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings, currentTime, 
         onPress={onOpenSettings}
         icon="settings"
         iconComponent={Ionicons}
-        label="Settings"
+        label={t('common:settings')}
         labelPosition="bottom"
       />
     </Box>
@@ -281,7 +273,9 @@ const LeftControls = memo<LeftControlsProps>(
     fitMode,
     onToggleFitMode,
     onFocusChange,
-  }) => (
+  }) => {
+    const { t } = useTranslation('player');
+    return (
     <Box flexDirection="row" alignItems="center" gap="s">
       {showSkipEpisode && (
         <ControlButton
@@ -289,7 +283,7 @@ const LeftControls = memo<LeftControlsProps>(
           icon="skip-next"
           iconComponent={MaterialCommunityIcons}
           disabled={showLoadingIndicator}
-          label="Skip"
+          label={t('skip')}
           onFocusChange={onFocusChange}
           badge={skipEpisodeLabel}
           badgeVariant="tertiary"
@@ -300,11 +294,12 @@ const LeftControls = memo<LeftControlsProps>(
         icon={getFitModeIcon(fitMode)}
         iconComponent={MaterialCommunityIcons}
         disabled={showLoadingIndicator}
-        label={getFitModeLabel(fitMode)}
+        label={formatFitModeLabel(fitMode, t)}
         onFocusChange={onFocusChange}
       />
     </Box>
-  )
+    );
+  }
 );
 LeftControls.displayName = 'LeftControls';
 
@@ -327,7 +322,9 @@ const PlaybackControls = memo<PlaybackControlsProps>(
     onSkipForward,
     onFocusChange,
     hasTVPreferredFocus,
-  }) => (
+  }) => {
+    const { t } = useTranslation('player');
+    return (
     <Box flexDirection="row" alignItems="center" gap="s">
       <ControlButton
         onPress={onSkipBackward}
@@ -345,7 +342,7 @@ const PlaybackControls = memo<PlaybackControlsProps>(
         hasTVPreferredFocus={hasTVPreferredFocus}
         onFocusChange={onFocusChange}
         variant="primary"
-        label={paused ? 'Play' : 'Pause'}
+        label={paused ? t('play') : t('pause')}
       />
       <ControlButton
         onPress={onSkipForward}
@@ -356,7 +353,8 @@ const PlaybackControls = memo<PlaybackControlsProps>(
         onFocusChange={onFocusChange}
       />
     </Box>
-  )
+    );
+  }
 );
 PlaybackControls.displayName = 'PlaybackControls';
 
@@ -379,7 +377,9 @@ const RightControls = memo<RightControlsProps>(
     onToggleAudioTracks,
     onToggleTextTracks,
     onFocusChange,
-  }) => (
+  }) => {
+    const { t } = useTranslation('player');
+    return (
     <Box flexDirection="row" alignItems="center" gap="s">
       <ControlButton
         onPress={onToggleAudioTracks}
@@ -387,7 +387,7 @@ const RightControls = memo<RightControlsProps>(
         iconComponent={Ionicons}
         disabled={showLoadingIndicator}
         onFocusChange={onFocusChange}
-        label="Audio"
+        label={t('audio')}
         badge={getTrackBadge(selectedAudioLanguage)}
         badgeVariant="tertiary"
       />
@@ -398,13 +398,14 @@ const RightControls = memo<RightControlsProps>(
           iconComponent={MaterialCommunityIcons}
           disabled={showLoadingIndicator}
           onFocusChange={onFocusChange}
-          label="Subtitles"
+          label={t('subtitles')}
           badge={getTrackBadge(selectedTextLanguage)}
           badgeVariant="tertiary"
         />
       )}
     </Box>
-  )
+    );
+  }
 );
 RightControls.displayName = 'RightControls';
 
@@ -444,6 +445,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     suppressPreferredFocus = false,
   }) => {
     const theme = useTheme<Theme>();
+    const { t } = useTranslation('player');
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
     const { preferredAudioLanguages, preferredSubtitleLanguages } = usePlaybackStore(
@@ -810,7 +812,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           <PickerModal
             visible={showAudioTracks}
             onClose={() => setShowAudioTracks(false)}
-            label="Select Audio Track"
+            label={t('select_audio_track')}
             icon="language"
             items={audioTrackItems}
             selectedValue={selectedAudioTrack?.index}

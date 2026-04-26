@@ -5,14 +5,14 @@ import { Focusable } from '@/components/basic/Focusable';
 import { useState } from 'react';
 import { PickerModal, PickerModalProps } from '@/components/basic/PickerModal';
 
-interface PickerInputProps<T extends string | number = string | number> extends Omit<
+interface PickerInputProps<T extends string | number | undefined = string | number | undefined> extends Omit<
   PickerModalProps<T>,
   'visible' | 'onClose'
 > {
   selectedLabel: string;
 }
 
-export function PickerInput<T extends string | number = string | number>({
+export function PickerInput<T extends string | number | undefined = string | number | undefined>({
   selectedLabel,
   ...modalProps
 }: PickerInputProps<T>) {

@@ -1,4 +1,5 @@
 import { FC, memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Box, Text } from '@/theme/theme';
 import { SettingsCard } from '@/components/settings/SettingsCard';
@@ -27,6 +28,7 @@ export interface HomeSettingsContentProps {
  * Allows customizing the home screen hero section per profile
  */
 export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrollable = true }) => {
+  const { t } = useTranslation('settings');
   const {
     heroEnabled,
     heroItemCount,
@@ -145,25 +147,25 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
 
   const content = (
     <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-      <SettingsCard title="Catalogs">
+      <SettingsCard title={t('home.catalogs')}>
         <SettingsSwitch
-          label="Continue watching"
-          description="Display recently watched content at the top of the home screen"
+          label={t('home.continue_watching')}
+          description={t('home.continue_watching_desc')}
           value={continueWatchingEnabled}
           onValueChange={setContinueWatchingEnabled}
         />
         <SettingsSwitch
-          label="My List"
-          description="Display your saved movies and shows on the home screen"
+          label={t('home.my_list')}
+          description={t('home.my_list_desc')}
           value={myListEnabled}
           onValueChange={setMyListEnabled}
         />
       </SettingsCard>
 
-      <SettingsCard title="Hero Section">
+      <SettingsCard title={t('home.hero_section')}>
         <SettingsSwitch
-          label="Show Hero Section"
-          description="Display a featured content carousel at the top of the home screen"
+          label={t('home.show_hero')}
+          description={t('home.show_hero_desc')}
           value={heroEnabled}
           onValueChange={setHeroEnabled}
         />
@@ -174,25 +176,24 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
             maximumValue={15}
             step={1}
             value={heroItemCount}
-            label="Number of Items"
+            label={t('home.item_count')}
             onValueChange={handleItemCountChange}
             showButtons
           />
         </Box>
       </SettingsCard>
 
-      <SettingsCard title="Hero Content Sources">
+      <SettingsCard title={t('home.hero_sources')}>
         <Text variant="bodySmall" color="textPrimary" marginBottom="m">
-          Configure which catalogs provide content for the hero section. Random items will be
-          selected and refreshed every {HERO_CONTENT_REFRESH_MS / 1000 / 60} minutes.
+          {t('home.hero_sources_desc', { minutes: HERO_CONTENT_REFRESH_MS / 1000 / 60 })}
         </Text>
         <OrderableListSection
           selectedItems={selectedCatalogs}
           availableItems={availableCatalogs}
           onChange={handleCatalogChange}
-          selectedLabel="Selected catalogs"
-          availableLabel="Add catalog"
-          emptyPlaceholder="No catalogs selected"
+          selectedLabel={t('home.selected_catalogs')}
+          availableLabel={t('home.add_catalog')}
+          emptyPlaceholder={t('home.no_catalogs')}
         />
       </SettingsCard>
     </Box>

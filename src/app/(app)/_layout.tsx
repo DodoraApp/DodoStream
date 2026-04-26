@@ -1,5 +1,6 @@
 import { Redirect, Stack, useRouter } from 'expo-router';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/theme/theme';
 import { useProfileStore } from '@/store/profile.store';
 import { useAppSettingsStore } from '@/store/app-settings.store';
@@ -13,6 +14,7 @@ import { useTheme } from '@shopify/restyle';
  * If profiles exist but none selected, shows profile selector
  */
 export default function AppLayout() {
+  const { t } = useTranslation('navigation');
   const router = useRouter();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const hasProfiles = useProfileStore((state) => state.hasProfiles());
@@ -59,7 +61,7 @@ export default function AppLayout() {
             headerShown: false,
           }}
         />
-        <Stack.Screen name="catalog" options={{ title: 'Catalog' }} />
+        <Stack.Screen name="catalog" options={{ title: t('catalog') }} />
         <Stack.Screen name="streams" options={{ headerShown: false }} />
         <Stack.Screen name="play" options={{ headerShown: false }} />
       </Stack>

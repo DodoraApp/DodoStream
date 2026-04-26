@@ -1,5 +1,7 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Slot, type ErrorBoundaryProps } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import '@/i18n';
 import { ThemeProvider, useTheme } from '@shopify/restyle';
 import { defaultTheme, Box, Text, type Theme } from '@/theme/theme';
 import { AppThemeProvider } from '@/theme/ThemeContext';
@@ -48,6 +50,7 @@ if (isSentryEnabled) {
 SplashScreen.preventAutoHideAsync();
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation('common');
   const handleRetry = useCallback(() => {
     retry();
   }, [retry]);
@@ -57,12 +60,12 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       <Container>
         <Box flex={1} justifyContent="center" gap="m">
           <Box gap="xs">
-            <Text variant="header">Something went wrong</Text>
+            <Text variant="header">{t('unexpected_error')}</Text>
             <Text variant="body" color="textSecondary">
               {error.name}: {error.message}
             </Text>
           </Box>
-          <Button title="Try again" onPress={handleRetry} hasTVPreferredFocus />
+          <Button title={t('retry')} onPress={handleRetry} hasTVPreferredFocus />
         </Box>
       </Container>
     </ThemeProvider>

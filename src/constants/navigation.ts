@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 
 export interface NavItem {
   id: string;
-  label: string;
   icon: keyof typeof Ionicons.glyphMap;
   route: string;
   screenName: string; // For tab navigator
@@ -12,7 +11,6 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   {
     id: 'home',
-    label: 'Home',
     icon: 'home',
     route: '/',
     screenName: 'index',
@@ -20,7 +18,6 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'search',
-    label: 'Search',
     icon: 'search',
     route: '/search',
     screenName: 'search',
@@ -35,7 +32,6 @@ export const NAV_ITEMS: NavItem[] = [
   // },
   {
     id: 'library',
-    label: 'Library',
     icon: 'library-outline',
     route: '/library',
     screenName: 'library',
@@ -43,7 +39,6 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'settings',
-    label: 'Settings',
     icon: 'settings-outline',
     route: '/settings',
     screenName: 'settings',

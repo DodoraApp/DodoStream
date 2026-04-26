@@ -30,7 +30,7 @@ describe('MediaInfo', () => {
 
     const { getByText } = renderWithProviders(<MediaInfo media={media} />);
 
-    expect(getByText('Completed')).toBeTruthy();
+    expect(getByText('completed')).toBeTruthy();
     expect(getByText('IMDb')).toBeTruthy();
   });
 
@@ -43,7 +43,7 @@ describe('MediaInfo', () => {
 
     const { queryByText } = renderWithProviders(<MediaInfo media={media} />);
 
-    expect(queryByText('Completed')).toBeNull();
+    expect(queryByText('completed')).toBeNull();
   });
 
   it('shows watching badge when media is in-progress', () => {
@@ -55,8 +55,8 @@ describe('MediaInfo', () => {
 
     const { getByText, queryByText } = renderWithProviders(<MediaInfo media={media} />);
 
-    expect(getByText('Watching')).toBeTruthy();
-    expect(queryByText('Completed')).toBeNull();
+    expect(getByText('watching')).toBeTruthy();
+    expect(queryByText('completed')).toBeNull();
   });
 
   it('shows provider icon marker when source is simkl', () => {
@@ -68,7 +68,7 @@ describe('MediaInfo', () => {
 
     const { getByText, getByTestId } = renderWithProviders(<MediaInfo media={media} />);
 
-    expect(getByText('Completed')).toBeTruthy();
+    expect(getByText('completed')).toBeTruthy();
     expect(getByTestId('status-provider-simkl')).toBeTruthy();
   });
 });

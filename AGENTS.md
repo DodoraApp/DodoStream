@@ -127,8 +127,22 @@ const theme = useTheme<Theme>();
 - Focus border width or scale (use `theme.focus`)
 - Toast durations (use constants from `src/constants/ui.ts`)
 - Playback timing values (use constants from `src/constants/playback.ts`)
+- **User-facing strings** (use i18n)
 
-## 6. Error Handling & Logging
+## 6. Internationalization (i18n)
+
+- **Source of truth:** `src/i18n/translations/en/`.
+- **Namespaces:** Translations are split into files (namespaces).
+- **Usage:** Use `useTranslation` hook from `react-i18next`.
+  ```tsx
+  const { t } = useTranslation('profiles');
+  return <Text>{t('who_is_watching')}</Text>;
+  ```
+- **Multiple Namespaces:** `const { t } = useTranslation(['setup', 'common']);` -> `t('common:next')`.
+- **Dynamic Languages:** Available languages are automatically detected from the `translations/` directory using `require.context`. Use `AVAILABLE_LANGUAGES` from `@/i18n`.
+- **Hardcoded Strings:** NEVER use hardcoded strings in components. Always add them to `en/*.json` first.
+
+## 7. Error Handling & Logging
 
 - Handle API errors in React Query `onError` or try/catch in services.
 - Show Toasts for user-facing failures.
@@ -139,7 +153,7 @@ const theme = useTheme<Theme>();
   debug('eventName', { key: value });
   ```
 
-## 7. Component Design & Hooks
+## 8. Component Design & Hooks
 
 - Keep components under ~200 lines. Extract sub-components.
 - Use `memo()` for list items and frequently re-rendered components.
@@ -153,7 +167,7 @@ Effects are for synchronizing with **external systems** only.
 - **Don't use for:** Deriving state from props (compute during render/useMemo), handling user actions (use event handlers), or chains of state updates.
 - **Do use for:** Subscriptions/cleanup, syncing with native modules, timer-based side effects.
 
-## 8. TV Focus & Navigation
+## 9. TV Focus & Navigation
 
 - **Always** use `<Focusable>` from `src/components/basic/Focusable.tsx` for interactive elements.
 - Prefer `variant="background"` or `variant="outline"` (no re-renders).
@@ -189,7 +203,7 @@ Effects are for synchronizing with **external systems** only.
 </Focusable>
 ```
 
-## 9. State Management (Zustand)
+## 10. State Management (Zustand)
 
 - Per-profile data structure: `byProfile: Record<string, Data>`.
 - Access active profile: `useProfileStore.getState().activeProfileId`.
@@ -204,7 +218,7 @@ Effects are for synchronizing with **external systems** only.
 - `addon.store.ts` — Installed Stremio addons
 - `integrations.store.ts` — External service integrations (Simkl, etc.)
 
-## 10. Data Fetching & Lists
+## 11. Data Fetching & Lists
 
 - Use React Query (`@tanstack/react-query`) for all data fetching. Never fetch in raw `useEffect`.
 - Use `@legendapp/list` (LegendList) for all scrollable lists.
@@ -217,21 +231,21 @@ Effects are for synchronizing with **external systems** only.
 - Use `recycleItems` for lists where items have no local state.
 - Wrap `renderItem` in `useCallback` with correct dependencies.
 
-## 11. Animation
+## 12. Animation
 
 - Prefer **Moti** for UI animations (fade, slide, scale, skeleton).
 - Use **Reanimated** directly only if Moti can't express the behavior.
 - **Never** use the legacy `Animated` API.
 - Keep animation timings in `src/constants/ui.ts`.
 
-## 12. Routing (expo-router)
+## 13. Routing (expo-router)
 
 - Files in `src/app/` become routes automatically. Dynamic routes: `[id].tsx`.
 - Navigation: `router.push({ pathname: '/details/[id]', params: { id, type } })`.
 - Params: `const { id, type } = useLocalSearchParams<{ id: string; type: ContentType }>()`.
 - Use `_layout.tsx` for shared layouts.
 
-## 13. Testing
+## 14. Testing
 
 - **Static analysis:** Catch issues early with **TypeScript** (type checking) and **ESLint** (linting).
 - **Write testable code:** Keep modules small; separate **UI (components)** from **business logic/state** so logic can be tested without rendering.
@@ -242,7 +256,7 @@ Effects are for synchronizing with **external systems** only.
 - **E2E tests:** Use device/simulator tests (Detox/Maestro) for critical flows.
 - Run `pnpm lint` and `pnpm test` before finishing any task.
 
-## 14. Forbidden Patterns
+## 15. Forbidden Patterns
 
 - `useMemo` for components (use `memo()` instead).
 - Inline styles with magic numbers (`style={{ width: 100 }}`).
@@ -252,7 +266,7 @@ Effects are for synchronizing with **external systems** only.
 - The legacy `Animated` API (use Moti or Reanimated).
 - `render*` methods in functional components.
 
-## 15. Development Workflow
+## 16. Development Workflow
 
 1. **Analyze:** Read related files and existing patterns.
 2. **Plan:** Check for existing components/utilities before creating new ones.

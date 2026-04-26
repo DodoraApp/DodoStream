@@ -18,6 +18,7 @@ export default function SetupLayout() {
         },
       }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="welcome" />
       <Stack.Screen name="ui" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="integrations" />

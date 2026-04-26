@@ -1,4 +1,5 @@
 import { FC, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LegendList } from '@legendapp/list/react-native';
 import { Box } from '@/theme/theme';
 import { MetaVideo } from '@/types/stremio';
@@ -11,8 +12,6 @@ import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
 import FadeIn from '@/components/basic/FadeIn';
 import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 
-const getSeasonLabel = (season: number) => (season === 0 ? 'Specials' : `Season ${season}`);
-
 interface EpisodeListProps {
   metaId: string;
   videos: MetaVideo[];
@@ -24,9 +23,15 @@ interface GroupedEpisodes {
 }
 
 export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePress }) => {
+  const { t } = useTranslation('media');
   const { isPlatformTV } = useResponsiveLayout();
   const isHorizontal = isPlatformTV;
   const { entry: continueWatching } = useContinueWatchingForMeta(metaId, { videos });
+
+  const getSeasonLabel = useCallback(
+    (season: number) => (season === 0 ? t('specials') : t('season', { number: season })),
+    [t]
+  );
 
   // Group episodes by season
   const groupedEpisodes = useMemo(() => {
@@ -82,7 +87,7 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
     return Array.isArray(seasons)
       ? seasons.map((season) => ({ label: getSeasonLabel(season), value: season }))
       : [];
-  }, [seasons]);
+  }, [getSeasonLabel, seasons]);
 
   const initialScrollIndex = useMemo(() => {
     if (!continueWatching?.video?.episode) return 0;
@@ -128,10 +133,10 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
           gap="m"
           justifyContent={isHorizontal ? undefined : 'space-between'}
           alignItems="center">
-          <MediaSectionHeader title="Episodes" />
+          <MediaSectionHeader title={t('episodes')} />
           {seasons.length > 1 && (
             <PickerInput
-              label="Select Season"
+              label={t('select_season')}
               items={seasonItems}
               selectedValue={selectedSeason}
               onValueChange={handleSeasonChange}

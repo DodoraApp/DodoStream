@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import FastImage from '@d11/react-native-fast-image';
+import { useTranslation } from 'react-i18next';
 import { Box, Text } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
@@ -33,6 +34,7 @@ export const ContinueWatchingCard = memo(
     hasTVPreferredFocus = false,
     testID,
   }: ContinueWatchingCardProps) => {
+    const { t } = useTranslation('media');
     const theme = useTheme<Theme>();
 
     const { isUpNext, progressRatio, video, metaName, imageUrl } = entry;
@@ -74,7 +76,7 @@ export const ContinueWatchingCard = memo(
               right={theme.spacing.s}
               flexDirection="row"
               gap="s">
-              {isUpNext && <Badge label="UP NEXT" variant="tertiary" />}
+              {isUpNext && <Badge label={t('up_next')} variant="tertiary" />}
               {episodeLabel && <Badge label={episodeLabel} />}
             </Box>
 

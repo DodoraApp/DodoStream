@@ -1,4 +1,5 @@
 import { FC, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -14,6 +15,7 @@ interface ProfileCardProps {
 }
 
 export const ProfileCard: FC<ProfileCardProps> = memo(({ profile, onPress, isAddCard = false }) => {
+  const { t } = useTranslation('profiles');
   const theme = useTheme<Theme>();
 
   if (isAddCard) {
@@ -30,7 +32,7 @@ export const ProfileCard: FC<ProfileCardProps> = memo(({ profile, onPress, isAdd
             gap="m">
             <ProfileAvatar icon="add" color={theme.colors.secondaryBackground} size="medium" />
             <Text variant="body" color="textSecondary" textAlign="center">
-              Add Profile
+              {t('add_profile')}
             </Text>
           </Box>
         )}

@@ -1,4 +1,5 @@
 import { FC, memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView } from 'react-native';
 import { Box, Text } from '@/theme/theme';
 import { SettingsCard } from '@/components/settings/SettingsCard';
@@ -16,6 +17,7 @@ export interface DataSettingsContentProps {
 }
 
 export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrollable = true }) => {
+  const { t } = useTranslation(['settings', 'common']);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const { clearHistory } = useWatchHistoryActions();
   const { clearList } = useMyListActions();
@@ -24,60 +26,60 @@ export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrolla
 
   const handleClearHistory = useCallback(() => {
     Alert.alert(
-      'Clear Watch History',
-      'Are you sure you want to clear your entire watch history and "Continue Watching" items for this profile? This action cannot be undone.',
+      t('data.clear_history_confirm_title'),
+      t('data.clear_history_confirm_msg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('common:clear'),
           style: 'destructive',
           onPress: () => {
             clearHistory();
             addToast({
-              title: 'Watch History Cleared',
+              title: t('data.history_cleared'),
               preset: 'success',
             });
           },
         },
       ]
     );
-  }, [clearHistory, addToast]);
+  }, [clearHistory, addToast, t]);
 
   const handleClearList = useCallback(() => {
     Alert.alert(
-      'Clear My List',
-      'Are you sure you want to remove all items from "My List" for this profile? This action cannot be undone.',
+      t('data.clear_list_confirm_title'),
+      t('data.clear_list_confirm_msg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('common:clear'),
           style: 'destructive',
           onPress: () => {
             clearList();
             addToast({
-              title: 'My List Cleared',
+              title: t('data.list_cleared'),
               preset: 'success',
             });
           },
         },
       ]
     );
-  }, [clearList, addToast]);
+  }, [clearList, addToast, t]);
 
   const handleResetSimkl = useCallback(() => {
     Alert.alert(
-      'Reset Simkl Sync',
-      'Are you sure you want to reset your Simkl connection and sync cursors for this profile? You will need to reconnect your Simkl account.',
+      t('data.reset_simkl_confirm_title'),
+      t('data.reset_simkl_confirm_msg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Reset',
+          text: t('common:reset'),
           style: 'destructive',
           onPress: () => {
             if (activeProfileId) {
               clearProfileIntegrations(activeProfileId);
               addToast({
-                title: 'Simkl Sync Reset',
+                title: t('data.simkl_reset'),
                 preset: 'success',
               });
             }
@@ -85,38 +87,31 @@ export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrolla
         },
       ]
     );
-  }, [activeProfileId, clearProfileIntegrations, addToast]);
+  }, [activeProfileId, clearProfileIntegrations, addToast, t]);
 
   const content = (
     <Box paddingVertical="m" paddingHorizontal="m" gap="l" paddingBottom="xl">
-      <SettingsCard title="Watch History">
-        <SettingsRow
-          label="Clear Watch History"
-          description="Remove all watch progress and history items for this profile">
-          <Button title="Clear" onPress={handleClearHistory} variant="secondary" />
+      <SettingsCard title={t('data.watch_history')}>
+        <SettingsRow label={t('data.clear_history')} description={t('data.clear_history_desc')}>
+          <Button title={t('common:clear')} onPress={handleClearHistory} variant="secondary" />
         </SettingsRow>
       </SettingsCard>
 
-      <SettingsCard title="My List">
-        <SettingsRow
-          label="Clear My List"
-          description="Remove all movies and shows saved to your list for this profile">
-          <Button title="Clear" onPress={handleClearList} variant="secondary" />
+      <SettingsCard title={t('data.my_list')}>
+        <SettingsRow label={t('data.clear_list')} description={t('data.clear_list_desc')}>
+          <Button title={t('common:clear')} onPress={handleClearList} variant="secondary" />
         </SettingsRow>
       </SettingsCard>
 
-      <SettingsCard title="Integrations">
-        <SettingsRow
-          label="Reset Simkl Sync"
-          description="Clear Simkl connection and synchronization state for this profile">
-          <Button title="Reset" onPress={handleResetSimkl} variant="secondary" />
+      <SettingsCard title={t('data.integrations')}>
+        <SettingsRow label={t('data.reset_simkl')} description={t('data.reset_simkl_desc')}>
+          <Button title={t('common:reset')} onPress={handleResetSimkl} variant="secondary" />
         </SettingsRow>
       </SettingsCard>
 
       <Box paddingHorizontal="m" marginTop="m">
         <Text variant="caption" color="textSecondary" textAlign="center">
-          These actions only affect the currently active profile. Local settings and other profiles
-          will remain unchanged.
+          {t('data.profile_data_notice')}
         </Text>
       </Box>
     </Box>

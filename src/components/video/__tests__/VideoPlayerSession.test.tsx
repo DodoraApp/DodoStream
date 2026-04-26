@@ -258,7 +258,7 @@ describe('VideoPlayerSession', () => {
     expect(setUsedPlayerType).toHaveBeenCalledWith('vlc');
     expect(mockShowToast).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: expect.stringContaining('Switching to'),
+        title: 'switching_to',
       })
     );
   });

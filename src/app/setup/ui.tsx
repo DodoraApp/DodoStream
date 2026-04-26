@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Box } from '@/theme/theme';
 import { WizardContainer } from '@/components/setup/WizardContainer';
@@ -12,6 +13,7 @@ import { UISettingsContent } from '@/components/settings/UISettingsContent';
  */
 export default function UIStep() {
   const router = useRouter();
+  const { t } = useTranslation('setup');
 
   const handleBack = useCallback(() => {
     router.back();
@@ -25,8 +27,8 @@ export default function UIStep() {
     <WizardContainer>
       <WizardStep
         step="ui"
-        title="Choose Your Style"
-        description="Pick a theme and adjust the UI scaling"
+        title={t('ui.title')}
+        description={t('ui.description')}
         onNext={handleNext}
         onBack={handleBack}
         onSkip={handleNext}

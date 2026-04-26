@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box } from '@/theme/theme';
 import { Button } from '@/components/basic/Button';
 import { ProgressButton } from '@/components/basic/ProgressButton';
@@ -27,6 +28,7 @@ interface MediaButtonsProps {
 }
 
 export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) => {
+  const { t } = useTranslation('media');
   const debug = useDebugLogger('MediaButtons');
   const { isPlatformTV } = useResponsiveLayout();
   const { pushToStreams } = useMediaNavigation();
@@ -53,12 +55,12 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
       currentlyInList: isInMyList,
     });
     showToast({
-      title: nowInList ? 'Added to My List' : 'Removed from My List',
+      title: nowInList ? t('added_to_my_list') : t('removed_from_my_list'),
       message: media.name,
       preset: 'success',
       duration: TOAST_DURATION_SHORT,
     });
-  }, [isInMyList, media.name, metaId, toggleMyList, type]);
+  }, [isInMyList, media.name, metaId, t, toggleMyList, type]);
 
   // Handlers for single-video content
   const handlePlay = useCallback(() => {
@@ -100,15 +102,15 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
 
   const resumeLabel = useMemo(() => {
     const label = formatSeasonEpisodeLabel(continueWatching?.video);
-    return label ? `Resume ${label}` : 'Resume';
-  }, [continueWatching?.video]);
+    return label ? t('resume_label', { label }) : t('resume');
+  }, [continueWatching?.video, t]);
 
   const playLabel = useMemo(() => {
     // For multi-video, show the target episode label (continue watching or first)
     const targetVideo = continueWatching?.video ?? videos?.[0];
     const label = formatSeasonEpisodeLabel(targetVideo);
-    return label ? `Play ${label}` : 'Play';
-  }, [continueWatching?.video, videos]);
+    return label ? t('play_label', { label }) : t('play');
+  }, [continueWatching?.video, t, videos]);
 
   // Common button style props - 100% width on mobile, auto on TV
   const buttonFlex = isPlatformTV ? undefined : 1;
@@ -163,7 +165,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
     return (
       <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
         <ProgressButton
-          title="Resume"
+          title={t('resume')}
           icon="play"
           progress={progressRatio}
           onPress={handlePlay}
@@ -186,7 +188,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   return (
     <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
       <Button
-        title="Play"
+        title={t('play')}
         icon="play"
         variant="primary"
         onPress={handlePlay}

@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
@@ -21,6 +22,7 @@ export interface EpisodeItemProps {
 }
 
 export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: EpisodeItemProps) => {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
 
   const { data: historyItem } = useWatchHistoryItem(metaId, video.id);
@@ -30,7 +32,7 @@ export const EpisodeItem = memo(({ video, metaId, horizontal, onPress }: Episode
   const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;
 
   const releaseLabel = useMemo(() => formatReleaseDate(video.released), [video.released]);
-  const titleText = useMemo(() => formatEpisodeListTitle(video), [video]);
+  const titleText = useMemo(() => formatEpisodeListTitle(video, t), [video, t]);
   const imageSource = video.thumbnail ? { uri: video.thumbnail } : undefined;
 
   return (

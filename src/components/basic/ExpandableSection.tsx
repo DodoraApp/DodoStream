@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { NativeSyntheticEvent, TextLayoutEventData, ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { getFocusableForegroundColor } from '@/utils/focus-colors';
@@ -35,14 +36,17 @@ export const ExpandableSection = memo(
   ({
     collapsedLines = 3,
     hasExtraContent = false,
-    toggleLabelMore = 'Show more',
-    toggleLabelLess = 'Show less',
+    toggleLabelMore,
+    toggleLabelLess,
     toggleTextVariant = 'bodySmall',
     toggleTextColor = 'textLink',
     style,
     children,
   }: ExpandableSectionProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const { t } = useTranslation('common');
+    const resolvedLabelMore = toggleLabelMore ?? t('show_more');
+    const resolvedLabelLess = toggleLabelLess ?? t('show_less');
     const [fullLineCount, setFullLineCount] = useState<number | null>(null);
 
     const handleMeasureLayout = useCallback((e: NativeSyntheticEvent<TextLayoutEventData>) => {
@@ -91,7 +95,7 @@ export const ExpandableSection = memo(
               <Text
                 variant={toggleTextVariant}
                 color={getFocusableForegroundColor({ isFocused, defaultColor: toggleTextColor })}>
-                {isExpanded ? toggleLabelLess : toggleLabelMore}
+                {isExpanded ? resolvedLabelLess : resolvedLabelMore}
               </Text>
             )}
           </Focusable>

@@ -1,4 +1,5 @@
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { Box, type Theme } from '@/theme/theme';
 import { ContentType } from '@/types/stremio';
@@ -15,6 +16,7 @@ import { formatPlayerTitle } from '@/utils/format';
 import { useAutoPlay } from '@/hooks/useAutoPlay';
 
 export default function StreamsPage() {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const {
     metaId,
@@ -51,7 +53,7 @@ export default function StreamsPage() {
       <Container disablePadding safeAreaEdges={['left', 'right', 'bottom']}>
         <Stack.Screen options={{ headerShown: false }} />
         <Box flex={1} backgroundColor="mainBackground">
-          <LoadingIndicator message="Auto playing..." />
+          <LoadingIndicator message={t('auto_playing')} />
         </Box>
       </Container>
     );
@@ -61,7 +63,7 @@ export default function StreamsPage() {
     <Container disablePadding safeAreaEdges={['left', 'right', 'bottom']}>
       <Stack.Screen
         options={{
-          title: 'Select Stream',
+          title: t('select_stream'),
           headerStyle: { backgroundColor: theme.colors.cardBackground },
           headerTintColor: theme.colors.mainForeground,
           headerTitleStyle: {

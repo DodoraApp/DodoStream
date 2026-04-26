@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo } from 'react';
 import { ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
 import { Container } from '@/components/basic/Container';
@@ -71,6 +72,7 @@ ListFooter.displayName = 'ListFooter';
 // ============================================================================
 
 export default function CatalogPage() {
+  const { t } = useTranslation(['media', 'navigation']);
   const theme = useTheme<Theme>();
   const { width } = useWindowDimensions();
   const { navigateToDetails } = useMediaNavigation();
@@ -138,7 +140,7 @@ export default function CatalogPage() {
   );
 
   // Display title
-  const displayTitle = catalogName || catalogId || 'Catalog';
+  const displayTitle = catalogName || catalogId || t('navigation:catalog');
 
   // Loading state
   if (isLoading) {
@@ -159,7 +161,7 @@ export default function CatalogPage() {
         <Stack.Screen options={{ title: displayTitle }} />
         <Box flex={1} justifyContent="center" alignItems="center" padding="m">
           <Text variant="body" color="textSecondary" textAlign="center">
-            Failed to load catalog. Please try again.
+            {t('media:failed_load_catalog')}
           </Text>
         </Box>
       </Container>
@@ -173,7 +175,7 @@ export default function CatalogPage() {
         <Stack.Screen options={{ title: displayTitle }} />
         <Box flex={1} justifyContent="center" alignItems="center" padding="m">
           <Text variant="body" color="textSecondary" textAlign="center">
-            No items found in this catalog.
+            {t('media:no_items_found')}
           </Text>
         </Box>
       </Container>

@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Text } from '@/theme/theme';
 import { Button } from '@/components/basic/Button';
 import { Modal } from '@/components/basic/Modal';
@@ -21,8 +22,15 @@ export const PINPrompt: FC<PINPromptProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const { t } = useTranslation();
+
   return (
-    <Modal visible={visible} onClose={onCancel} label="Enter PIN" icon="lock-closed">
+    <Modal
+      visible={visible}
+      onClose={onCancel}
+      label={t('profiles:enter_pin')}
+      icon="lock-closed"
+    >
       <Box gap="l" paddingHorizontal="s">
         {/* Title */}
         {title ? (
@@ -35,7 +43,7 @@ export const PINPrompt: FC<PINPromptProps> = ({
         <Input
           value={value}
           onChangeText={onChangeText}
-          placeholder="Enter PIN"
+          placeholder={t('profiles:pin_placeholder')}
           secureTextEntry
           keyboardType="numeric"
           maxLength={8}
@@ -47,10 +55,10 @@ export const PINPrompt: FC<PINPromptProps> = ({
         {/* Buttons */}
         <Box flexDirection="row" gap="m">
           <Box flex={1}>
-            <Button title="Cancel" variant="secondary" onPress={onCancel} />
+            <Button title={t('common:cancel')} variant="secondary" onPress={onCancel} />
           </Box>
           <Box flex={1}>
-            <Button title="Submit" onPress={onSubmit} disabled={value.length === 0} />
+            <Button title={t('common:submit')} onPress={onSubmit} disabled={value.length === 0} />
           </Box>
         </Box>
       </Box>

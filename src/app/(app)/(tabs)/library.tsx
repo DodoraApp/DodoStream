@@ -1,6 +1,7 @@
 import { Container } from '@/components/basic/Container';
 import { PageHeader } from '@/components/basic/PageHeader';
 import { TagFilters } from '@/components/basic/TagFilters';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { LegendList } from '@legendapp/list/react-native';
@@ -27,11 +28,6 @@ import { NO_POSTER_PORTRAIT } from '@/constants/images';
 
 type LibraryTab = 'my-list' | 'history';
 
-const LIBRARY_TABS = [
-  { id: 'my-list' as const, label: 'My List' },
-  { id: 'history' as const, label: 'History' },
-];
-
 // ============================================================================
 // My List Card Component
 // ============================================================================
@@ -44,6 +40,7 @@ interface MyListEntryCardProps {
 
 const MyListEntryCard = memo(
   ({ entry, onPress, hasTVPreferredFocus = false }: MyListEntryCardProps) => {
+    const { t } = useTranslation('media');
     const theme = useTheme<Theme>();
     const isMissingMeta = !entry.metaName;
     const { data: resolvedMeta } = useMeta(entry.type, entry.id, isMissingMeta);
@@ -66,7 +63,7 @@ const MyListEntryCard = memo(
           backgroundColor="cardBackground"
           borderRadius="l">
           <Text variant="caption" color="textSecondary">
-            Unavailable
+            {t('unavailable')}
           </Text>
         </Box>
       );
@@ -99,6 +96,7 @@ interface MyListTabProps {
 }
 
 const MyListTab = memo(({ numColumns }: MyListTabProps) => {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useMyList();
@@ -158,7 +156,7 @@ const MyListTab = memo(({ numColumns }: MyListTabProps) => {
   if (flatData.length === 0) {
     return (
       <Text variant="body" color="textSecondary">
-        Your saved content will appear here
+        {t('my_list_empty')}
       </Text>
     );
   }
@@ -193,6 +191,7 @@ interface HistoryTabProps {
 }
 
 const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
 
@@ -256,7 +255,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   if (flatData.length === 0) {
     return (
       <Text variant="body" color="textSecondary">
-        Your watch history will appear here
+        {t('history_empty')}
       </Text>
     );
   }
@@ -285,8 +284,8 @@ HistoryTab.displayName = 'HistoryTab';
 // ============================================================================
 // Main Component
 // ============================================================================
-
 export default function Library() {
+  const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
   const { width } = useWindowDimensions();
 
@@ -294,6 +293,14 @@ export default function Library() {
   const { tab: paramsTab } = useLocalSearchParams<{ tab?: string }>();
   const [selectedTab, setSelectedTab] = useState<LibraryTab>(
     paramsTab === 'history' ? 'history' : 'my-list'
+  );
+
+  const LIBRARY_TABS = useMemo(
+    () => [
+      { id: 'my-list' as const, label: t('my_list') },
+      { id: 'history' as const, label: t('history') },
+    ],
+    [t]
   );
 
   // Calculate grid columns
@@ -308,7 +315,7 @@ export default function Library() {
   return (
     <Container>
       <Box paddingHorizontal="s" paddingTop="m" gap="m">
-        <PageHeader title="Library" />
+        <PageHeader title={t('library_title')} />
         <TagFilters
           options={LIBRARY_TABS}
           selectedId={selectedTab}

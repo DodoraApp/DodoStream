@@ -3,6 +3,7 @@ import { TVFocusGuideView, View, findNodeHandle } from 'react-native';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useRouter, usePathname } from 'expo-router';
 import { NAV_ITEMS, NavItem } from '@/constants/navigation';
 import { Focusable } from '@/components/basic/Focusable';
@@ -124,6 +125,7 @@ interface SidebarItemProps {
 }
 
 const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus, onActiveRef }) => {
+  const { t } = useTranslation('navigation');
   const theme = useTheme<Theme>();
   const pathname = usePathname();
   const nodeHandleRef = useRef<number>(null);
@@ -179,7 +181,7 @@ const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus, onActiveRef
               variant="body"
               style={{ display: 'none', color: textColor }}
               fontFamily={theme.fonts.poppinsSemiBold}>
-              {item.label}
+              {t(item.id)}
             </Text>
           </Box>
         );

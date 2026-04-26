@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,7 +46,7 @@ const getPickerListItemColors = ({
   };
 };
 
-export interface PickerItem<T extends string | number = string | number> {
+export interface PickerItem<T = string | number | undefined> {
   label: string;
   value: T;
   groupId?: string | null; // optional grouping identifier (e.g., language code)
@@ -54,7 +55,7 @@ export interface PickerItem<T extends string | number = string | number> {
   tone?: 'default' | 'destructive';
 }
 
-export interface PickerModalProps<T extends string | number = string | number> {
+export interface PickerModalProps<T = string | number | undefined> {
   visible: boolean;
   onClose: () => void;
   label: string;
@@ -68,14 +69,18 @@ export interface PickerModalProps<T extends string | number = string | number> {
   preferredGroupIds?: string[]; // bring these groups to the front
 }
 
-interface PickerListItemProps {
-  item: PickerItem<string | number>;
+interface PickerListItemProps<T> {
+  item: PickerItem<T>;
   isSelected: boolean;
-  onPress: (value: string | number) => void;
+  onPress: (value: T) => void;
 }
 
 /** Memoized list item to prevent re-renders during filter/scroll */
-const PickerListItem = memo(({ item, isSelected, onPress }: PickerListItemProps) => {
+const PickerListItem = memo(function PickerListItem<T>({
+  item,
+  isSelected,
+  onPress,
+}: PickerListItemProps<T>) {
   const theme = useTheme<Theme>();
 
   return (
@@ -127,11 +132,12 @@ const PickerListItem = memo(({ item, isSelected, onPress }: PickerListItemProps)
       }}
     </Focusable>
   );
-});
+}) as <T>(props: PickerListItemProps<T>) => React.ReactElement;
 
+// @ts-ignore - memo with generics can be tricky with displayName
 PickerListItem.displayName = 'PickerListItem';
 
-export function PickerModal<T extends string | number = string | number>({
+export function PickerModal<T extends string | number | undefined = string | number | undefined>({
   visible,
   onClose,
   label,
@@ -143,6 +149,7 @@ export function PickerModal<T extends string | number = string | number>({
   getGroupLabel,
   preferredGroupIds,
 }: PickerModalProps<T>) {
+  const { t } = useTranslation();
   const handleValueChange = useCallback(
     (value: T) => {
       onValueChange(value);
@@ -188,11 +195,7 @@ export function PickerModal<T extends string | number = string | number>({
 
   const renderItem = useCallback(
     ({ item }: LegendListRenderItemProps<PickerItem<T>>) => (
-      <PickerListItem
-        item={item}
-        isSelected={item.value === selectedValue}
-        onPress={handleValueChange as (value: string | number) => void}
-      />
+      <PickerListItem item={item} isSelected={item.value === selectedValue} onPress={handleValueChange} />
     ),
     [selectedValue, handleValueChange]
   );
@@ -207,7 +210,7 @@ export function PickerModal<T extends string | number = string | number>({
           selectedId={selectedGroupId}
           onSelectId={setSelectedGroupId}
           includeAllOption
-          allLabel="All"
+          allLabel={t('common:all')}
         />
       )}
       <LegendList

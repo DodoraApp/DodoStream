@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, Alert } from 'react-native';
 import { Box, Text, Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
@@ -12,6 +13,7 @@ import { useAddonStore } from '@/store/addon.store';
 export default function AddonsStep() {
   const router = useRouter();
   const theme = useTheme<Theme>();
+  const { t } = useTranslation(['setup', 'common']);
   const hasAnyAddons = useAddonStore((state) => state.hasAddons());
 
   const handleBack = useCallback(() => {
@@ -23,27 +25,27 @@ export default function AddonsStep() {
       return router.push('/setup/home');
     }
     Alert.alert(
-      'Skip Addon Setup?',
-      'You need at least one metadata addon to browse content. You can add addons later in Settings.',
+      t('setup:addons.skip_title'),
+      t('setup:addons.skip_message'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Skip Anyway',
+          text: t('setup:addons.skip_anyway'),
           onPress: () => router.push('/setup/home'),
         },
       ]
     );
-  }, [hasAnyAddons, router]);
+  }, [hasAnyAddons, router, t]);
 
   return (
     <WizardContainer>
       <WizardStep
         step="addons"
-        title="Add Streaming Sources"
-        description="Install addons to discover and stream content"
+        title={t('setup:addons.title')}
+        description={t('setup:addons.description')}
         onNext={handleNext}
         onBack={handleBack}
-        nextLabel={hasAnyAddons ? 'Continue' : 'Skip'}
+        nextLabel={hasAnyAddons ? t('common:continue') : t('common:skip')}
         showSkip={false}
         hasTVPreferredFocus={hasAnyAddons}>
         <ScrollView showsVerticalScrollIndicator>
@@ -57,21 +59,20 @@ export default function AddonsStep() {
                   color={theme.colors.primaryBackground}
                 />
                 <Text variant="body" style={{ fontWeight: '600' }}>
-                  About Addons
+                  {t('setup:addons.about_title')}
                 </Text>
               </Box>
               <Text variant="bodySmall" color="textSecondary">
-                DodoStream uses Stremio-compatible addons to provide content. You need at least one{' '}
-                <Text style={{ fontWeight: '600' }}>metadata addon</Text> to browse movies and TV
-                shows.
+                {t('setup:addons.about_description')}
               </Text>
               <Text variant="bodySmall" color="textSecondary">
-                Addons provide different types of content:{'\n'}•{' '}
-                <Text style={{ fontWeight: '600' }}>Metadata</Text> - Browse catalogs and get
-                information about content{'\n'}• <Text style={{ fontWeight: '600' }}>Streams</Text>{' '}
-                - Provide playable video streams
-                {'\n'}• <Text style={{ fontWeight: '600' }}>Subtitles</Text> - Add external
-                subtitles
+                {t('setup:addons.about_types')}{'\n'}•{' '}
+                <Text style={{ fontWeight: '600' }}>{t('setup:addons.about_type_metadata')}</Text>
+                {t('setup:addons.about_type_metadata_desc')}{'\n'}•{' '}
+                <Text style={{ fontWeight: '600' }}>{t('setup:addons.about_type_streams')}</Text>
+                {t('setup:addons.about_type_streams_desc')}{'\n'}•{' '}
+                <Text style={{ fontWeight: '600' }}>{t('setup:addons.about_type_subtitles')}</Text>
+                {t('setup:addons.about_type_subtitles_desc')}
               </Text>
             </Box>
 

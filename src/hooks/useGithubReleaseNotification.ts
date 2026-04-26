@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { showToast } from '@/store/toast.store';
 import * as Linking from 'expo-linking';
 import * as Device from 'expo-device';
@@ -24,6 +25,7 @@ export interface GithubReleaseNotification {
 }
 
 export function useGithubReleaseNotification(params: { enabled: boolean }) {
+  const { t } = useTranslation('settings');
   const { enabled } = params;
   const debug = useDebugLogger('useGithubReleaseNotification');
 
@@ -147,20 +149,20 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     } catch (error) {
       debug('failedToOpenReleaseUrl', { error, url });
       showToast({
-        title: 'Could not open release',
-        message: 'Please try again later.',
+        title: t('about.could_not_open_release'),
+        message: t('about.try_again_later'),
         duration: TOAST_DURATION_SHORT,
       });
     }
-  }, [directAssetUrl, latestRelease, debug]);
+  }, [directAssetUrl, latestRelease, debug, t]);
 
   const body = useMemo(() => {
     if (!latestRelease) return '';
-    const header = `Installed: ${releaseStatus.installedVersion}\nLatest: ${releaseStatus.latestVersion}`;
+    const header = `${t('about.installed')}: ${releaseStatus.installedVersion}\n${t('about.latest')}: ${releaseStatus.latestVersion}`;
     const releaseTitle = latestRelease.name?.trim() ? `\n\n${latestRelease.name.trim()}` : '';
     const notes = latestRelease.body?.trim() ? `\n\n${latestRelease.body.trim()}` : '';
     return `${header}${releaseTitle}${notes}`.trim();
-  }, [latestRelease, releaseStatus.installedVersion, releaseStatus.latestVersion]);
+  }, [latestRelease, releaseStatus.installedVersion, releaseStatus.latestVersion, t]);
 
   const releaseNotification: GithubReleaseNotification | null = useMemo(() => {
     if (!latestRelease) return null;
@@ -168,8 +170,8 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
 
     return {
       isVisible,
-      heading: 'Update available',
-      subheading: `New GitHub release ${latestRelease.tagName}`,
+      heading: t('about.update_available'),
+      subheading: t('about.new_release', { tag: latestRelease.tagName }),
       body,
       hasDirectAsset: directAssetUrl !== null,
       onDismiss: () => {
@@ -189,6 +191,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     dismiss,
     downloadRelease,
     remindLater,
+    t,
   ]);
 
   return releaseNotification;

@@ -1,4 +1,5 @@
 import React, { FC, memo, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
@@ -58,6 +59,7 @@ IconSwatch.displayName = 'IconSwatch';
 export const IconPicker: FC<IconPickerProps> = memo(
   ({ value, onValueChange, label, icons, disabled = false }) => {
     const theme = useTheme<Theme>();
+    const { t } = useTranslation('common');
     const [isModalVisible, setIsModalVisible] = useState(false);
 
     const handleOpen = useCallback(() => {
@@ -112,7 +114,7 @@ export const IconPicker: FC<IconPickerProps> = memo(
         </Focusable>
 
         {/* Icon Picker Modal */}
-        <Modal visible={isModalVisible} onClose={handleClose} label={label ?? 'Select Icon'}>
+        <Modal visible={isModalVisible} onClose={handleClose} label={label ?? t('select_icon')}>
           <Box flexDirection="row" flexWrap="wrap" justifyContent="center" gap="s">
             {icons.map((icon) => (
               <IconSwatch
