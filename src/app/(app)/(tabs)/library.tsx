@@ -314,7 +314,7 @@ export default function Library() {
 
   return (
     <Container>
-      <Box paddingHorizontal="s" paddingTop="m" gap="m">
+      <Box paddingHorizontal="s" gap="m">
         <PageHeader title={t('library_title')} />
         <TagFilters
           options={LIBRARY_TABS}

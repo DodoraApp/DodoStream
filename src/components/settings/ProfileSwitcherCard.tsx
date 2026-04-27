@@ -48,14 +48,15 @@ export const ProfileSwitcherCard = forwardRef<any, ProfileSwitcherCardProps>(
           </Box>
         </Box>
 
-        <Button
-          ref={ref}
-          title={t('switch_profile')}
-          variant="primary"
-          icon="swap-horizontal"
-          onPress={handleSwitchProfile}
-          disabled={!canSwitch}
-        />
+        {canSwitch && (
+          <Button
+            ref={ref}
+            title={t('switch_profile')}
+            variant="primary"
+            icon="swap-horizontal"
+            onPress={handleSwitchProfile}
+          />
+        )}
       </Box>
     );
   }

@@ -37,23 +37,22 @@ export function DismissableModal({
   const showTertiary = !!tertiaryActionText && !!onTertiaryAction;
 
   return (
-    <Modal visible={visible} onClose={onDismiss}>
-      <Box gap="s">
-        <Box gap="xs">
-          <Text variant="header">{heading}</Text>
-          {subheading ? (
-            <Text variant="subheader" color="textSecondary">
-              {subheading}
-            </Text>
-          ) : null}
-        </Box>
-        <ScrollView showsVerticalScrollIndicator={false}>
+    <Modal visible={visible} onClose={onDismiss} label={heading}>
+      <Box flex={1} gap="s">
+        <ScrollView style={{ flex: 1 }}>
+          <Box gap="xs">
+            {subheading ? (
+              <Text variant="subheader" color="textSecondary">
+                {subheading}
+              </Text>
+            ) : null}
+          </Box>
           <Text variant="body" color="mainForeground">
             {body}
           </Text>
         </ScrollView>
 
-        <Box flexDirection="row" gap="s" justifyContent="flex-end" flexWrap="wrap">
+        <Box flexDirection="row" gap="s" justifyContent="flex-end" flexWrap="wrap" style={{ flexShrink: 0 }}>
           <Button
             variant="primary"
             title={primaryActionText}

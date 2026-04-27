@@ -1,5 +1,6 @@
 import { FC, memo, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -33,6 +34,8 @@ export const ProfilesSettingsContent: FC = memo(() => {
   const [pinInput, setPinInput] = useState('');
 
   const profileList = useMemo(() => Object.values(profiles), [profiles]);
+
+  const canSwitch = profileList.length > 1;
 
   const beginSwitch = useCallback(
     (profile: Profile) => {
@@ -89,13 +92,26 @@ export const ProfilesSettingsContent: FC = memo(() => {
         return;
       }
 
-      deleteProfile(profile.id);
-      showToast({
-        title: t('profiles:profile_deleted'),
-        message: profile.name,
-        preset: 'success',
-        duration: TOAST_DURATION_SHORT,
-      });
+      Alert.alert(
+        t('profiles:delete_confirm_title'),
+        t('profiles:delete_confirm_msg', { name: profile.name }),
+        [
+          { text: t('common:cancel'), style: 'cancel' },
+          {
+            text: t('common:delete'),
+            style: 'destructive',
+            onPress: () => {
+              deleteProfile(profile.id);
+              showToast({
+                title: t('profiles:profile_deleted'),
+                message: profile.name,
+                preset: 'success',
+                duration: TOAST_DURATION_SHORT,
+              });
+            },
+          },
+        ]
+      );
     },
     [activeProfileId, deleteProfile, t]
   );
@@ -152,13 +168,15 @@ export const ProfilesSettingsContent: FC = memo(() => {
                 </Box>
 
                 <Box flexDirection="row" gap="s" alignSelf="flex-end">
-                  <Button
-                    variant="secondary"
-                    icon="swap-horizontal"
-                    disabled={isActive}
-                    onPress={() => beginSwitch(profile)}
-                    style={{ flex: 1 }}
-                  />
+                  {canSwitch && (
+                    <Button
+                      variant="secondary"
+                      icon="swap-horizontal"
+                      disabled={isActive}
+                      onPress={() => beginSwitch(profile)}
+                      style={{ flex: 1 }}
+                    />
+                  )}
                   <Button
                     variant="secondary"
                     icon="create-outline"

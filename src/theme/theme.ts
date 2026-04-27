@@ -150,8 +150,8 @@ const createAppTheme = (scalingFactor: number) =>
       episodeThumbnailGradientHeight: withScale(80, scalingFactor),
       mediaDetailsHeader: withScale(350, scalingFactor),
       // Tab bar (mobile only)
-      tabBarHeight: withScale(65, scalingFactor),
-      tabBarPaddingTop: withScale(10, scalingFactor),
+      tabBarHeight: withScale(50, scalingFactor),
+      tabBarPadding: withScale(10, scalingFactor),
       // Toast
       toastMaxWidth: withScale(400, scalingFactor),
       toastStackGap: withScale(8, scalingFactor),

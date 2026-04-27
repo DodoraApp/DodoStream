@@ -50,7 +50,7 @@ export default function StreamsPage() {
 
   if (effectiveAutoPlay) {
     return (
-      <Container disablePadding safeAreaEdges={['left', 'right', 'bottom']}>
+      <Container disablePadding safeAreaEdges={['left', 'right', 'top', 'bottom']}>
         <Stack.Screen options={{ headerShown: false }} />
         <Box flex={1} backgroundColor="mainBackground">
           <LoadingIndicator message={t('auto_playing')} />
@@ -60,7 +60,7 @@ export default function StreamsPage() {
   }
 
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right', 'bottom']}>
+    <Container disablePadding safeAreaEdges={['left', 'right', 'top', 'bottom']}>
       <Stack.Screen
         options={{
           title: t('select_stream'),
