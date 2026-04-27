@@ -1,0 +1,59 @@
+{
+  "welcome": {
+    "title": "Bem-vindo ao DodoStream",
+    "description": "Vamos configurar tudo em apenas alguns passos",
+    "get_started": "Começar",
+    "feature_profile": "Cria o Teu Primeiro Perfil",
+    "feature_integrations": "Liga Integrações",
+    "feature_addons": "Instala Addons",
+    "feature_customize": "Personaliza as Definições"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "Escolhe o idioma preferido da aplicação",
+    "select_language": "Selecionar Idioma"
+  },
+  "ui": {
+    "title": "Escolhe o Teu Estilo",
+    "description": "Escolhe um tema e ajusta a escala da interface"
+  },
+  "profile": {
+    "title": "Cria o Teu Perfil",
+    "description": "Escolhe um nome e avatar que te representem"
+  },
+  "integrations": {
+    "title": "Liga as Tuas Contas",
+    "description": "Sincroniza o teu histórico e lista com serviços externos",
+    "about_title": "Sobre as Integrações",
+    "about_description": "Liga a tua conta Simkl para acompanhar automaticamente o que vês e manter a tua lista sincronizada em todos os dispositivos."
+  },
+  "addons": {
+    "title": "Adicionar Fontes de Streaming",
+    "description": "Instala addons para descobrir e transmitir conteúdo",
+    "skip_title": "Saltar Configuração de Addons?",
+    "skip_message": "Precisas de pelo menos um addon de metadados para navegar no conteúdo. Podes adicionar addons mais tarde nas Definições.",
+    "skip_anyway": "Saltar Mesmo Assim",
+    "about_title": "Sobre os Addons",
+    "about_description": "O DodoStream usa addons compatíveis com o Stremio para fornecer conteúdo. Precisas de pelo menos um addon de metadados para navegar em filmes e séries.",
+    "about_types": "Os addons fornecem diferentes tipos de conteúdo:",
+    "about_type_metadata": "Metadados",
+    "about_type_metadata_desc": " - Navega em catálogos e obtém informações sobre o conteúdo",
+    "about_type_streams": "Streams",
+    "about_type_streams_desc": " - Fornecem streams de vídeo reproduzíveis",
+    "about_type_subtitles": "Legendas",
+    "about_type_subtitles_desc": " - Adicionam legendas externas"
+  },
+  "home": {
+    "title": "Personalizar Ecrã Inicial",
+    "description": "Configura como o teu ecrã inicial aparece"
+  },
+  "playback": {
+    "title": "Preferências de Reprodução",
+    "description": "Configura como o conteúdo é reproduzido",
+    "info_desc": "Podes personalizar estilos de legendas, definições do leitor e mais no menu de Definições após a configuração."
+  },
+  "complete": {
+    "title": "Estás Pronto!",
+    "start_exploring": "Começar a Explorar"
+  }
+}
