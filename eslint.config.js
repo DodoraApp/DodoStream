@@ -7,7 +7,7 @@ module.exports = defineConfig([
   expoConfig,
   reactCompiler.configs.recommended,
   {
-    ignores: ['dist/*', '.expo/**'],
+    ignores: ['dist/*', '.expo/**', 'remote-ui/**'],
   },
   {
     rules: {

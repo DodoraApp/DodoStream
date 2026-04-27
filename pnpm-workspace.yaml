@@ -1,2 +1,5 @@
+packages:
+  - 'remote-ui'
+
 onlyBuiltDependencies:
   - 'react-native-video'

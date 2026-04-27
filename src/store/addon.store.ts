@@ -2,19 +2,17 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { InstalledAddon, Manifest } from '@/types/stremio';
+import { type AddonConfig } from '@/types/addon-config';
 import { useProfileStore } from '@/store/profile.store';
 import { moveItem } from '@/utils/array';
+import { createDebugLogger } from '@/utils/debug';
 
-export interface AddonProfileConfig {
-  isActive: boolean;
-  useCatalogsOnHome: boolean;
-  useCatalogsInSearch: boolean;
-  useForSubtitles: boolean;
-}
+const debug = createDebugLogger('AddonStore');
 
+let initializing = false;
 interface AddonState {
   addons: Record<string, InstalledAddon>;
-  configsByProfile: Record<string, Record<string, AddonProfileConfig>>;
+  configsByProfile: Record<string, Record<string, AddonConfig>>;
   /** Per-profile ordered list of addon IDs. Determines display/catalog order. */
   addonOrderByProfile: Record<string, string[]>;
   isLoading: boolean;
@@ -31,9 +29,10 @@ interface AddonState {
   toggleUseCatalogsOnHome: (id: string, profileId?: string) => void;
   toggleUseCatalogsInSearch: (id: string, profileId?: string) => void;
   toggleUseForSubtitles: (id: string, profileId?: string) => void;
+  setAddonConfig: (id: string, config: Partial<AddonConfig>, profileId?: string) => void;
   hasAddons: () => boolean;
   hasAddon: (id: string) => boolean;
-  getAddonConfig: (id: string, profileId?: string) => AddonProfileConfig | undefined;
+  getAddonConfig: (id: string, profileId?: string) => AddonConfig | undefined;
   getAddonsList: () => InstalledAddon[];
   getOrderedAddonsList: (profileId?: string) => InstalledAddon[];
   setLoading: (isLoading: boolean) => void;
@@ -41,312 +40,342 @@ interface AddonState {
   setError: (error: string | null) => void;
 }
 
-export const DEFAULT_ADDON_CONFIG: AddonProfileConfig = {
-  isActive: true,
-  useCatalogsOnHome: true,
-  useCatalogsInSearch: true,
-  useForSubtitles: true,
-};
 
 export const useAddonStore = create<AddonState>()(
   persist(
-    (set, get) => ({
-      // Initial state
-      addons: {},
-      configsByProfile: {},
-      addonOrderByProfile: {},
-      isLoading: false,
-      isInitialized: false,
-      error: null,
-
-      addAddon: (id: string, manifestUrl: string, manifest: Manifest) => {
-        const { addons, configsByProfile, addonOrderByProfile, hasAddon } = get();
-        const activeProfileId = useProfileStore.getState().activeProfileId;
-
-        // Prevent duplicates
-        if (hasAddon(id)) {
-          set({ error: 'Addon already installed' });
+    (set, get) => {
+      const toggleConfigField = (
+        id: string,
+        field: keyof Omit<AddonConfig, 'isActive'>,
+        profileId?: string,
+      ) => {
+        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+        debug('toggleConfigField', { id, field, targetProfileId, profileIdArg: profileId });
+        if (!targetProfileId) {
+          debug('toggleConfigField: no targetProfileId, aborting');
           return;
         }
-
-        const newAddon: InstalledAddon = {
-          id,
-          manifestUrl,
-          manifest,
-          installedAt: Date.now(),
-        };
-
-        const newConfigs = { ...configsByProfile };
-        const newOrder = { ...addonOrderByProfile };
-        if (activeProfileId) {
-          if (!newConfigs[activeProfileId]) {
-            newConfigs[activeProfileId] = {};
-          }
-          newConfigs[activeProfileId] = {
-            ...newConfigs[activeProfileId],
-            [id]: { ...DEFAULT_ADDON_CONFIG },
-          };
-          // Append to end of order for this profile
-          newOrder[activeProfileId] = [...(newOrder[activeProfileId] ?? []), id];
-        }
-
-        set({
-          addons: { ...addons, [id]: newAddon },
-          configsByProfile: newConfigs,
-          addonOrderByProfile: newOrder,
-          error: null,
-        });
-      },
-
-      removeAddon: (id: string) => {
         set((state) => {
-          const { [id]: removed, ...rest } = state.addons;
-
-          // Remove config from all profiles
-          const newConfigs = { ...state.configsByProfile };
-          for (const profileId of Object.keys(newConfigs)) {
-            if (newConfigs[profileId] && newConfigs[profileId][id]) {
-              const { [id]: _, ...restConfigs } = newConfigs[profileId];
-              newConfigs[profileId] = restConfigs;
-            }
+          const profileConfigs = state.configsByProfile[targetProfileId];
+          if (!profileConfigs || !profileConfigs[id]) {
+            debug('toggleConfigField: no config entry for addon', {
+              targetProfileId, id, hasProfileConfigs: !!profileConfigs,
+            });
+            return state;
           }
-
-          // Remove from order in all profiles
-          const newOrder = { ...state.addonOrderByProfile };
-          for (const profileId of Object.keys(newOrder)) {
-            newOrder[profileId] = newOrder[profileId].filter((addonId) => addonId !== id);
-          }
-
+          const oldValue = profileConfigs[id][field];
+          debug('toggleConfigField: toggling', { id, field, from: oldValue, to: !oldValue });
           return {
-            addons: rest,
+            configsByProfile: {
+              ...state.configsByProfile,
+              [targetProfileId]: {
+                ...profileConfigs,
+                [id]: {
+                  ...profileConfigs[id],
+                  [field]: !oldValue,
+                },
+              },
+            },
+          };
+        });
+      };
+
+      return {
+        // Initial state
+        addons: {},
+        configsByProfile: {},
+        addonOrderByProfile: {},
+        isLoading: false,
+        isInitialized: false,
+        error: null,
+
+        addAddon: (id: string, manifestUrl: string, manifest: Manifest) => {
+          const { addons, configsByProfile, addonOrderByProfile, hasAddon } = get();
+          const activeProfileId = useProfileStore.getState().activeProfileId;
+
+          // Prevent duplicates
+          if (hasAddon(id)) {
+            set({ error: 'Addon already installed' });
+            return;
+          }
+
+          const newAddon: InstalledAddon = {
+            id,
+            manifestUrl,
+            manifest,
+            installedAt: Date.now(),
+          };
+
+          const newConfigs = { ...configsByProfile };
+          const newOrder = { ...addonOrderByProfile };
+          if (activeProfileId) {
+            if (!newConfigs[activeProfileId]) {
+              newConfigs[activeProfileId] = {};
+            }
+            newConfigs[activeProfileId] = {
+              ...newConfigs[activeProfileId],
+              [id]: { isActive: true, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true },
+            };
+            // Append to end of order for this profile
+            newOrder[activeProfileId] = [...(newOrder[activeProfileId] ?? []), id];
+          }
+
+          set({
+            addons: { ...addons, [id]: newAddon },
             configsByProfile: newConfigs,
             addonOrderByProfile: newOrder,
             error: null,
-          };
-        });
-      },
+          });
+        },
 
-      activateAddon: (id: string, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return;
+        removeAddon: (id: string) => {
+          set((state) => {
+            const { [id]: removed, ...rest } = state.addons;
 
-        set((state) => {
-          const profileConfigs = state.configsByProfile[targetProfileId] || {};
-          const existingConfig = profileConfigs[id];
+            // Remove config from all profiles
+            const newConfigs = { ...state.configsByProfile };
+            for (const profileId of Object.keys(newConfigs)) {
+              if (newConfigs[profileId] && newConfigs[profileId][id]) {
+                const { [id]: _, ...restConfigs } = newConfigs[profileId];
+                newConfigs[profileId] = restConfigs;
+              }
+            }
 
-          // Append to end of order if not already tracked
-          const currentOrder = state.addonOrderByProfile[targetProfileId] ?? [];
-          const newOrder = currentOrder.includes(id) ? currentOrder : [...currentOrder, id];
+            // Remove from order in all profiles
+            const newOrder = { ...state.addonOrderByProfile };
+            for (const profileId of Object.keys(newOrder)) {
+              newOrder[profileId] = newOrder[profileId].filter((addonId) => addonId !== id);
+            }
 
-          return {
-            configsByProfile: {
-              ...state.configsByProfile,
-              [targetProfileId]: {
-                ...profileConfigs,
-                [id]: {
-                  ...DEFAULT_ADDON_CONFIG,
-                  ...existingConfig,
-                  isActive: true,
+            return {
+              addons: rest,
+              configsByProfile: newConfigs,
+              addonOrderByProfile: newOrder,
+              error: null,
+            };
+          });
+        },
+
+        activateAddon: (id: string, profileId?: string) => {
+          const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+          debug('activateAddon', { id, targetProfileId, profileIdArg: profileId });
+          if (!targetProfileId) {
+            debug('activateAddon: no targetProfileId, aborting');
+            return;
+          }
+
+          set((state) => {
+            const profileConfigs = state.configsByProfile[targetProfileId] || {};
+            const existingConfig = profileConfigs[id];
+            debug('activateAddon: existing config', {
+              id, hasExistingConfig: !!existingConfig,
+              previousIsActive: existingConfig?.isActive,
+            });
+
+            // Append to end of order if not already tracked
+            const currentOrder = state.addonOrderByProfile[targetProfileId] ?? [];
+            const newOrder = currentOrder.includes(id) ? currentOrder : [...currentOrder, id];
+
+            return {
+              configsByProfile: {
+                ...state.configsByProfile,
+                [targetProfileId]: {
+                  ...profileConfigs,
+                  [id]: {
+                    ...existingConfig,
+                    isActive: true,
+                  },
                 },
               },
-            },
-            addonOrderByProfile: {
-              ...state.addonOrderByProfile,
-              [targetProfileId]: newOrder,
-            },
-          };
-        });
-      },
+              addonOrderByProfile: {
+                ...state.addonOrderByProfile,
+                [targetProfileId]: newOrder,
+              },
+            };
+          });
+        },
 
-      deactivateAddon: (id: string, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return;
+        deactivateAddon: (id: string, profileId?: string) => {
+          const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+          debug('deactivateAddon', { id, targetProfileId, profileIdArg: profileId });
+          if (!targetProfileId) {
+            debug('deactivateAddon: no targetProfileId, aborting');
+            return;
+          }
 
-        set((state) => {
-          const profileConfigs = state.configsByProfile[targetProfileId];
-          if (!profileConfigs || !profileConfigs[id]) return state;
+          set((state) => {
+            const profileConfigs = state.configsByProfile[targetProfileId];
+            if (!profileConfigs || !profileConfigs[id]) {
+              debug('deactivateAddon: no config entry, silently aborting', {
+                targetProfileId, id, hasProfileConfigs: !!profileConfigs,
+                profileAddonIds: profileConfigs ? Object.keys(profileConfigs) : [],
+              });
+              return state;
+            }
 
-          return {
-            configsByProfile: {
-              ...state.configsByProfile,
-              [targetProfileId]: {
-                ...profileConfigs,
-                [id]: {
-                  ...profileConfigs[id],
-                  isActive: false,
+            debug('deactivateAddon: deactivating', {
+              id, previousIsActive: profileConfigs[id].isActive,
+            });
+            return {
+              configsByProfile: {
+                ...state.configsByProfile,
+                [targetProfileId]: {
+                  ...profileConfigs,
+                  [id]: {
+                    ...profileConfigs[id],
+                    isActive: false,
+                  },
                 },
               },
-            },
-          };
-        });
-      },
+            };
+          });
+        },
 
-      updateAddon: (id: string, manifest: Manifest) => {
-        const { addons } = get();
-        const existingAddon = addons[id];
+        updateAddon: (id: string, manifest: Manifest) => {
+          const { addons } = get();
+          const existingAddon = addons[id];
 
-        if (!existingAddon) {
-          set({ error: 'Addon not found' });
-          return;
-        }
+          if (!existingAddon) {
+            set({ error: 'Addon not found' });
+            return;
+          }
 
-        set((state) => ({
-          addons: {
-            ...state.addons,
-            [id]: {
-              ...existingAddon,
-              manifest,
-            },
-          },
-          error: null,
-        }));
-      },
-
-      toggleUseCatalogsOnHome: (id: string, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return;
-
-        set((state) => {
-          const profileConfigs = state.configsByProfile[targetProfileId];
-          if (!profileConfigs || !profileConfigs[id]) return state;
-
-          return {
-            configsByProfile: {
-              ...state.configsByProfile,
-              [targetProfileId]: {
-                ...profileConfigs,
-                [id]: {
-                  ...profileConfigs[id],
-                  useCatalogsOnHome: !profileConfigs[id].useCatalogsOnHome,
-                },
+          set((state) => ({
+            addons: {
+              ...state.addons,
+              [id]: {
+                ...existingAddon,
+                manifest,
               },
             },
-          };
-        });
-      },
+            error: null,
+          }));
+        },
 
-      toggleUseCatalogsInSearch: (id: string, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return;
+        toggleUseCatalogsOnHome: (id: string, profileId?: string) =>
+          toggleConfigField(id, 'useCatalogsOnHome', profileId),
 
-        set((state) => {
-          const profileConfigs = state.configsByProfile[targetProfileId];
-          if (!profileConfigs || !profileConfigs[id]) return state;
+        toggleUseCatalogsInSearch: (id: string, profileId?: string) =>
+          toggleConfigField(id, 'useCatalogsInSearch', profileId),
 
-          return {
-            configsByProfile: {
-              ...state.configsByProfile,
-              [targetProfileId]: {
-                ...profileConfigs,
-                [id]: {
-                  ...profileConfigs[id],
-                  useCatalogsInSearch: !profileConfigs[id].useCatalogsInSearch,
-                },
+        toggleUseForSubtitles: (id: string, profileId?: string) =>
+          toggleConfigField(id, 'useForSubtitles', profileId),
+
+
+        setAddonConfig: (id: string, config: Partial<AddonConfig>, profileId?: string) => {
+          const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+          if (!targetProfileId) {
+            debug('setAddonConfig: no targetProfileId, aborting');
+            return;
+          }
+
+          set((state) => {
+            const profileConfigs = state.configsByProfile[targetProfileId] ?? {};
+            const existing = profileConfigs[id] ?? { isActive: false, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true };
+            const next: AddonConfig = { ...existing, ...config };
+
+            debug('setAddonConfig', { id, targetProfileId, keys: Object.keys(config) });
+
+            // Ensure the addon is in the profile's order list when activating.
+            const currentOrder = state.addonOrderByProfile[targetProfileId] ?? [];
+            const newOrder = next.isActive && !currentOrder.includes(id)
+              ? [...currentOrder, id]
+              : currentOrder;
+
+            return {
+              configsByProfile: {
+                ...state.configsByProfile,
+                [targetProfileId]: { ...profileConfigs, [id]: next },
               },
-            },
-          };
-        });
-      },
+              ...(newOrder !== currentOrder
+                ? { addonOrderByProfile: { ...state.addonOrderByProfile, [targetProfileId]: newOrder } }
+                : {}),
+            };
+          });
+        },
 
-      toggleUseForSubtitles: (id: string, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return;
+        hasAddons: () => {
+          return Object.keys(get().addons).length > 0;
+        },
 
-        set((state) => {
-          const profileConfigs = state.configsByProfile[targetProfileId];
-          if (!profileConfigs || !profileConfigs[id]) return state;
+        hasAddon: (id: string) => {
+          return id in get().addons;
+        },
 
-          return {
-            configsByProfile: {
-              ...state.configsByProfile,
-              [targetProfileId]: {
-                ...profileConfigs,
-                [id]: {
-                  ...profileConfigs[id],
-                  useForSubtitles: !profileConfigs[id].useForSubtitles,
-                },
+        getAddonConfig: (id: string, profileId?: string) => {
+          const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+          if (!targetProfileId) {
+            debug('getAddonConfig: no targetProfileId', { id, profileIdArg: profileId });
+            return undefined;
+          }
+
+          const profileConfigs = get().configsByProfile[targetProfileId];
+          const config = profileConfigs?.[id];
+          if (config) {
+            return config;
+          }
+
+          debug('getAddonConfig: no config found', { id, targetProfileId });
+          return undefined;
+        },
+
+        getAddonsList: () => {
+          return Object.values(get().addons);
+        },
+
+        getOrderedAddonsList: (profileId?: string) => {
+          const { addons, addonOrderByProfile } = get();
+          const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+          const allAddons = Object.values(addons);
+
+          if (!targetProfileId) return allAddons;
+
+          const order = addonOrderByProfile[targetProfileId];
+          if (!order || order.length === 0) return allAddons;
+
+          // Sort by order; addons not in order go to the end, with a stable tiebreaker.
+          const orderMap = new Map(order.map((id, index) => [id, index]));
+          return [...allAddons].sort((a, b) => {
+            const aIndex = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+            const bIndex = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+            return aIndex - bIndex || a.id.localeCompare(b.id);
+          });
+        },
+
+        reorderAddon: (fromIndex: number, toIndex: number, profileId?: string) => {
+          const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
+          if (!targetProfileId) return;
+
+          set((state) => {
+            const { addons, addonOrderByProfile } = state;
+            // Build current order, falling back to insertion order for missing entries
+            const allIds = Object.keys(addons);
+            const currentOrder = addonOrderByProfile[targetProfileId] ?? allIds;
+            // Ensure all addon IDs are represented (handles addons added before order tracking)
+            const fullOrder = [...currentOrder, ...allIds.filter((id) => !currentOrder.includes(id))];
+            const newOrder = moveItem(fullOrder, fromIndex, toIndex);
+            return {
+              addonOrderByProfile: {
+                ...addonOrderByProfile,
+                [targetProfileId]: newOrder,
               },
-            },
-          };
-        });
-      },
+            };
+          });
+        },
 
-      hasAddons: () => {
-        return Object.keys(get().addons).length > 0;
-      },
+        setLoading: (isLoading: boolean) => {
+          set({ isLoading });
+        },
 
-      hasAddon: (id: string) => {
-        return id in get().addons;
-      },
+        setInitialized: (isInitialized: boolean) => {
+          set({ isInitialized });
+        },
 
-      getAddonConfig: (id: string, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return undefined;
-
-        // Fall back to DEFAULT_ADDON_CONFIG when no per-profile entry exists.
-        // This recovers users whose configsByProfile was not populated during the
-        // broken v2 migration (async migrate is not supported by Zustand's newImpl).
-        const config = get().configsByProfile[targetProfileId]?.[id];
-        if (!config) return DEFAULT_ADDON_CONFIG;
-        return { ...DEFAULT_ADDON_CONFIG, ...config };
-      },
-
-      getAddonsList: () => {
-        return Object.values(get().addons);
-      },
-
-      getOrderedAddonsList: (profileId?: string) => {
-        const { addons, addonOrderByProfile } = get();
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        const allAddons = Object.values(addons);
-
-        if (!targetProfileId) return allAddons;
-
-        const order = addonOrderByProfile[targetProfileId];
-        if (!order || order.length === 0) return allAddons;
-
-        // Sort by order, addons not in order go to the end
-        const orderMap = new Map(order.map((id, index) => [id, index]));
-        return [...allAddons].sort((a, b) => {
-          const aIndex = orderMap.get(a.id) ?? Infinity;
-          const bIndex = orderMap.get(b.id) ?? Infinity;
-          return aIndex - bIndex;
-        });
-      },
-
-      reorderAddon: (fromIndex: number, toIndex: number, profileId?: string) => {
-        const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-        if (!targetProfileId) return;
-
-        set((state) => {
-          const { addons, addonOrderByProfile } = state;
-          // Build current order, falling back to insertion order for missing entries
-          const allIds = Object.keys(addons);
-          const currentOrder = addonOrderByProfile[targetProfileId] ?? allIds;
-          // Ensure all addon IDs are represented (handles addons added before order tracking)
-          const fullOrder = [...currentOrder, ...allIds.filter((id) => !currentOrder.includes(id))];
-          const newOrder = moveItem(fullOrder, fromIndex, toIndex);
-          return {
-            addonOrderByProfile: {
-              ...addonOrderByProfile,
-              [targetProfileId]: newOrder,
-            },
-          };
-        });
-      },
-
-      setLoading: (isLoading: boolean) => {
-        set({ isLoading });
-      },
-
-      setInitialized: (isInitialized: boolean) => {
-        set({ isInitialized });
-      },
-
-      setError: (error: string | null) => {
-        set({ error });
-      },
-    }),
+        setError: (error: string | null) => {
+          set({ error });
+        },
+      };
+    },
     {
       name: 'addon-storage',
       storage: createJSONStorage(() => AsyncStorage),
@@ -364,15 +393,10 @@ export const useAddonStore = create<AddonState>()(
         //           used in 0.9.0 was silently broken: Zustand's newImpl does not
         //           await the Promise returned by migrate, so configsByProfile was
         //           never populated and all addons appeared inactive/invisible.
-        // v2 -> v3: No structural change. The missing-config case is now handled at
-        //           read time: getAddonConfig falls back to DEFAULT_ADDON_CONFIG so
-        //           addons with no per-profile config entry are treated as active.
-        //           This recovers users affected by the v2 migration failure without
-        //           requiring profile data at migration time.
-
+        // v2 -> v3: No structural change. Addons without per-profile config entries
+        //           are now treated as inactive (users must re-enable them).
         if (version < 2 && state.addons) {
           // Strip legacy flat fields off addon objects (useCatalogsOnHome etc.).
-          // configsByProfile will be populated on first access via the fallback.
           const migratedAddons: Record<string, InstalledAddon> = {};
           for (const [id, addon] of Object.entries(state.addons) as [string, any][]) {
             migratedAddons[id] = {
@@ -396,9 +420,10 @@ export const initializeAddons = async () => {
   const { addons, updateAddon, setInitialized, setLoading, isInitialized } =
     useAddonStore.getState();
 
-  if (isInitialized) {
+  if (isInitialized || initializing) {
     return;
   }
+  initializing = true;
 
   setLoading(true);
 
@@ -417,5 +442,6 @@ export const initializeAddons = async () => {
   } finally {
     setLoading(false);
     setInitialized(true);
+    initializing = false;
   }
 };

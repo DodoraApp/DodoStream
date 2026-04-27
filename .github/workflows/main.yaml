@@ -82,6 +82,9 @@ jobs:
           CI: true
           EXPO_NO_TELEMETRY: 1
 
+      - name: 🧪 Run expo prebuild
+        run: pnpm exec expo prebuild
+
       - name: 🧪 Run TypeScript check
         run: pnpm tsc
 

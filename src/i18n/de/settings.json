@@ -274,5 +274,32 @@
     "reset_simkl_confirm_msg": "Bist du sicher, dass du deine Simkl-Verbindung und Synchronisations-Cursor für dieses Profil zurücksetzen möchtest? Du musst dein Simkl-Konto erneut verbinden.",
     "simkl_reset": "Simkl-Synchronisation zurückgesetzt",
     "profile_data_notice": "Diese Aktionen betreffen nur das aktuell aktive Profil. Lokale Einstellungen und andere Profile bleiben unverändert."
+  },
+  "remoteControl": {
+    "title": "Fernsteuerung",
+    "description": "Der Fernsteuerungsserver startet automatisch, damit du Addons von deinem Telefon oder Computer aus verwalten kannst.",
+    "starting": "Startet\u2026",
+    "url": "URL",
+    "loading_address": "Adresse wird geladen...",
+    "ip_fallback": "Der Server läuft auf Port {{port}}. Öffne die Web-UI unter http://<deine-geräte-ip>:{{port}}",
+    "address_unavailable": "Adresse nicht verfügbar",
+    "ip_hint_ios": "Finde die IP deines iPhones/iPads: Einstellungen > WLAN > (i) neben deinem Netzwerk > IP-Adresse.",
+    "ip_hint_android": "Finde die IP deines Geräts: Einstellungen > Netzwerk & Internet > WLAN > dein Netzwerk > IP-Adresse.",
+    "pin": "PIN",
+    "regenerate_pin": "PIN neu generieren",
+    "stop": "Fernsteuerung stoppen",
+    "footer": "Der Server stoppt automatisch, wenn du dieses Panel schließt.",
+    "manage_title": "Addons remote verwalten",
+    "manage_desc": "Fernsteuerung öffnen, um vom Telefon aus zu synchronisieren",
+    "toast": {
+      "pin_updated_title": "PIN aktualisiert",
+      "pin_updated_msg": "Eine neue PIN wurde generiert.",
+      "no_network_title": "Keine Netzwerkadresse gefunden",
+      "no_network_msg": "Verbinde dich mit einem WLAN-Netzwerk und versuche es erneut.",
+      "ip_error_title": "IP-Adresse konnte nicht abgerufen werden",
+      "ip_error_msg": "Bitte überprüfe deine Netzwerkverbindung.",
+      "server_failed_title": "Server konnte nicht gestartet werden",
+      "server_failed_msg": "Bitte versuche es erneut."
+    }
   }
 }

@@ -8,9 +8,8 @@
  *
  * Fix (0.9.1):
  *  - version bumped to 3 with a synchronous migrate
- *  - configsByProfile lookup falls back to DEFAULT_ADDON_CONFIG so addons with
- *    missing per-profile config entries (victims of the broken v2 migration) are
- *    treated as active instead of invisible
+ *  - addons without per-profile config entries are treated as inactive
+ *    (pre-migration users must re-enable addons)
  */
 
 interface AddonProfileConfig {
@@ -32,12 +31,6 @@ interface AddonState {
   configsByProfile: Record<string, Record<string, AddonProfileConfig>>;
 }
 
-const DEFAULT_ADDON_CONFIG: AddonProfileConfig = {
-  isActive: true,
-  useCatalogsOnHome: true,
-  useCatalogsInSearch: true,
-  useForSubtitles: true,
-};
 
 /** Mirrors the synchronous migrate function in addon.store.ts (version 3). */
 const migrateAddonStoreState = (
@@ -63,12 +56,12 @@ const migrateAddonStoreState = (
   return state;
 };
 
-/** Simulates the config lookup used in hooks.ts with the DEFAULT_ADDON_CONFIG fallback. */
+/** Simulates the config lookup used in hooks.ts (no fallback — missing config = undefined). */
 const getConfig = (
   configsByProfile: Record<string, Record<string, AddonProfileConfig>>,
   profileId: string,
   addonId: string
-): AddonProfileConfig => configsByProfile[profileId]?.[addonId] ?? DEFAULT_ADDON_CONFIG;
+): AddonProfileConfig | undefined => configsByProfile[profileId]?.[addonId];
 
 describe('addon store migration', () => {
   describe('v1 -> v3: strips legacy flat fields from addon objects', () => {
@@ -213,20 +206,16 @@ describe('addon store migration', () => {
     });
   });
 
-  describe('DEFAULT_ADDON_CONFIG fallback (recovery for broken v2 migration victims)', () => {
-    it('treats addon with no config entry as active with all defaults', () => {
-      // Arrange — configsByProfile is empty (broken v2 migration result)
+  describe('config lookup without fallback (addons without config are inactive)', () => {
+    it('returns undefined when configsByProfile is empty', () => {
+      // Arrange — configsByProfile is empty
       const configsByProfile: Record<string, Record<string, AddonProfileConfig>> = {};
 
       // Act
       const config = getConfig(configsByProfile, 'profileA', 'addonOne');
 
       // Assert
-      expect(config).toEqual(DEFAULT_ADDON_CONFIG);
-      expect(config.isActive).toBe(true);
-      expect(config.useCatalogsOnHome).toBe(true);
-      expect(config.useCatalogsInSearch).toBe(true);
-      expect(config.useForSubtitles).toBe(true);
+      expect(config).toBeUndefined();
     });
 
     it('returns the stored config when one exists', () => {
@@ -244,10 +233,10 @@ describe('addon store migration', () => {
 
       // Assert — stored config wins (including isActive: false)
       expect(config).toBe(storedConfig);
-      expect(config.isActive).toBe(false);
+      expect(config!.isActive).toBe(false);
     });
 
-    it('falls back to DEFAULT_ADDON_CONFIG for a profile that has no entries at all', () => {
+    it('returns undefined for a profile that has no entry for this addon', () => {
       // Arrange — profile exists in configsByProfile but has no entry for this addon
       const configsByProfile: Record<string, Record<string, AddonProfileConfig>> = {
         profileA: {},
@@ -257,7 +246,7 @@ describe('addon store migration', () => {
       const config = getConfig(configsByProfile, 'profileA', 'addonOne');
 
       // Assert
-      expect(config).toEqual(DEFAULT_ADDON_CONFIG);
+      expect(config).toBeUndefined();
     });
   });
 });
