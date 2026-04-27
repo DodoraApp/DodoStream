@@ -274,5 +274,32 @@
     "reset_simkl_confirm_msg": "Are you sure you want to reset your Simkl connection and sync cursors for this profile? You will need to reconnect your Simkl account.",
     "simkl_reset": "Simkl Sync Reset",
     "profile_data_notice": "These actions only affect the currently active profile. Local settings and other profiles will remain unchanged."
+  },
+  "remoteControl": {
+    "title": "Remote Control",
+    "description": "The remote control server starts automatically so you can manage addons from your phone or computer.",
+    "starting": "Starting\u2026",
+    "url": "URL",
+    "loading_address": "Loading address...",
+    "ip_fallback": "The server is running on port {{port}}. Open the web UI on http://<your-device-ip>:{{port}}",
+    "address_unavailable": "Address unavailable",
+    "ip_hint_ios": "Find your iPhone/iPad IP: Settings > Wi-Fi > tap (i) next to your network > IP Address.",
+    "ip_hint_android": "Find your device IP: Settings > Network & Internet > Wi-Fi > your network > IP Address.",
+    "pin": "PIN",
+    "regenerate_pin": "Regenerate PIN",
+    "stop": "Stop Remote Control",
+    "footer": "The server stops automatically when you close this panel.",
+    "manage_title": "Manage addons remotely",
+    "manage_desc": "Open Remote Control to sync from your phone",
+    "toast": {
+      "pin_updated_title": "PIN updated",
+      "pin_updated_msg": "A new PIN has been generated.",
+      "no_network_title": "No network address found",
+      "no_network_msg": "Connect to a Wi-Fi network and try again.",
+      "ip_error_title": "Unable to get IP",
+      "ip_error_msg": "Please check your network connection.",
+      "server_failed_title": "Server failed to start",
+      "server_failed_msg": "Please try again."
+    }
   }
 }

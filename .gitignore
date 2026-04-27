@@ -24,3 +24,6 @@ expo-env.d.ts
 
 .env.*
 !.env.example
+
+# Generated web UI embed
+src/api/local-server/web-ui.ts

@@ -16,6 +16,11 @@ import { InstalledAddon } from '@/types/stremio';
 import { showToast } from '@/store/toast.store';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { Focusable } from '@/components/basic/Focusable';
+import { RemoteControlModal } from '@/components/settings/RemoteControlModal';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { createDebugLogger } from '@/utils/debug';
+
+const debug = createDebugLogger('AddonsSettings');
 
 export interface AddonsSettingsContentProps {
   /** Whether to show the install addon section (default: true) */
@@ -34,6 +39,8 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
   ({ showInstall = true, showInstalled = true, scrollable = true }) => {
     const { t } = useTranslation(['settings', 'common']);
     const [manifestUrl, setManifestUrl] = useState('');
+    const [isRemoteControlVisible, setIsRemoteControlVisible] = useState(false);
+    const { isWide } = useResponsiveLayout();
     const theme = useTheme<Theme>();
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
     const { configsByProfile, orderedAddons, storeError, reorderAddon } = useAddonStore(
@@ -142,8 +149,20 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
       [activeAddons, orderedAddons, reorderAddon, activeProfileId]
     );
 
+    const handleOpenRemoteControl = useCallback(() => {
+      setIsRemoteControlVisible(true);
+    }, []);
+
+    const handleCloseRemoteControl = useCallback(() => {
+      setIsRemoteControlVisible(false);
+    }, []);
+
     const content = (
       <Box padding="m" gap="l" flex={1}>
+        {(isWide || __DEV__) && (
+          <RemoteControlShortcut onPress={handleOpenRemoteControl} />
+        )}
+
         {/* Install Addon Section */}
         {showInstall && (
           <SettingsCard title={t('addons.install_title')}>
@@ -230,12 +249,71 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
     );
 
     if (scrollable) {
-      return <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>;
+      return (
+        <>
+          <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>
+          <RemoteControlModal
+            visible={isRemoteControlVisible}
+            onClose={handleCloseRemoteControl}
+          />
+        </>
+      );
     }
 
-    return content;
+    return (
+      <>
+        {content}
+        <RemoteControlModal visible={isRemoteControlVisible} onClose={handleCloseRemoteControl} />
+      </>
+    );
   }
 );
+
+interface RemoteControlShortcutProps {
+  onPress: () => void;
+}
+
+/**
+ * Shortcut card that opens the remote control modal.
+ * Shown on wide layouts and in dev mode.
+ */
+const RemoteControlShortcut: FC<RemoteControlShortcutProps> = memo(({ onPress }) => {
+  const theme = useTheme<Theme>();
+  const { t } = useTranslation('settings');
+
+  return (
+    <Focusable variant="none" onPress={onPress} hasTVPreferredFocus>
+      {({ isFocused }) => (
+        <Box
+          flexDirection="row"
+          alignItems="center"
+          gap="l"
+          padding="l"
+          backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}
+          borderRadius="m">
+          <Ionicons
+            name="wifi"
+            size={theme.sizes.iconMedium}
+            color={isFocused ? theme.colors.focusForeground : theme.colors.textSecondary}
+          />
+          <Box flex={1} gap="xs">
+            <Text variant="cardTitle" color={isFocused ? 'focusForeground' : 'textPrimary'}>
+              {t('remoteControl.manage_title')}
+            </Text>
+            <Text variant="caption" color={isFocused ? 'focusForeground' : 'textSecondary'}>
+              {t('remoteControl.manage_desc')}
+            </Text>
+          </Box>
+          <Ionicons
+            name="chevron-forward"
+            size={theme.sizes.iconMedium}
+            color={isFocused ? theme.colors.focusForeground : theme.colors.textSecondary}
+          />
+        </Box>
+      )}
+    </Focusable>
+  );
+});
 
 interface AddonCardProps {
   addon: InstalledAddon;
@@ -283,12 +361,20 @@ const AddonCard: FC<AddonCardProps> = memo(
     }, [addon.manifestUrl, onConfigure]);
 
     const handleToggleActive = useCallback(() => {
+      debug('AddonCard.handleToggleActive', {
+        addonId: addon.id,
+        addonName: addon.manifest.name,
+        activeProfileId,
+        currentIsActive: isActive,
+        action: isActive ? 'deactivate' : 'activate',
+        hasConfig: !!config,
+      });
       if (isActive) {
         deactivateAddon(addon.id);
       } else {
         activateAddon(addon.id);
       }
-    }, [isActive, addon.id, activateAddon, deactivateAddon]);
+    }, [isActive, addon.id, activateAddon, deactivateAddon, activeProfileId, config, addon.manifest.name]);
 
     const handleToggleHome = useCallback(() => {
       toggleUseCatalogsOnHome(addon.id);

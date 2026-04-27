@@ -17,11 +17,10 @@ jest.mock('../client', () => ({
 const mockAddAddon = jest.fn();
 const mockGetAddonsList = jest.fn();
 jest.mock('@/store/addon.store', () => ({
-  DEFAULT_ADDON_CONFIG: { isActive: true },
   useAddonStore: jest.fn((selector: any) =>
     selector({
       addAddon: mockAddAddon,
-      configsByProfile: {},
+      configsByProfile: { 'profile-1': { 'addon.id': { isActive: true, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true } } },
       getAddonsList: mockGetAddonsList,
     })
   ),

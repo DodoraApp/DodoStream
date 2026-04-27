@@ -1,6 +1,7 @@
+// Register ts-node so Expo can evaluate this ESM config file at prebuild time.
 import 'tsx/cjs';
-import { ExpoConfig, ConfigContext } from 'expo/config';
-const packageJson = require('./package.json');
+import type { ExpoConfig, ConfigContext } from 'expo/config';
+import packageJson from './package.json' with { type: 'json' };
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const appBackgroundColor = '#181A20';
@@ -85,6 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           project: process.env.SENTRY_PROJECT ?? 'dodostream',
         },
       ],
+      './plugins/withRemoteUIBuild',
       './plugins/withReactNativeTVOSPnpmFix',
       './plugins/withAndroidBuildOptimizations',
       './plugins/withAndroidConfigChanges',
@@ -118,6 +120,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       permissions: [
         'android.permission.FOREGROUND_SERVICE',
         'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+        'android.permission.INTERNET',
+        'android.permission.ACCESS_NETWORK_STATE',
+        'android.permission.ACCESS_WIFI_STATE'
       ],
     },
     extra: {
