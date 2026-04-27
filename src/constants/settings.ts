@@ -10,6 +10,20 @@ export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] =
     href: '/settings/profiles',
   },
   {
+    id: 'addons',
+    title: t('settings:menu.addons.title'),
+    description: t('settings:menu.addons.desc'),
+    icon: 'extension-puzzle-outline',
+    href: '/settings/addons',
+  },
+  {
+    id: 'integrations',
+    title: t('settings:menu.integrations.title'),
+    description: t('settings:menu.integrations.desc'),
+    icon: 'sync-outline',
+    href: '/settings/integrations',
+  },
+  {
     id: 'home',
     title: t('settings:menu.home.title'),
     description: t('settings:menu.home.desc'),
@@ -29,20 +43,6 @@ export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] =
     description: t('settings:menu.subtitles.desc'),
     icon: 'text-outline',
     href: '/settings/subtitles',
-  },
-  {
-    id: 'addons',
-    title: t('settings:menu.addons.title'),
-    description: t('settings:menu.addons.desc'),
-    icon: 'extension-puzzle-outline',
-    href: '/settings/addons',
-  },
-  {
-    id: 'integrations',
-    title: t('settings:menu.integrations.title'),
-    description: t('settings:menu.integrations.desc'),
-    icon: 'sync-outline',
-    href: '/settings/integrations',
   },
 ];
 

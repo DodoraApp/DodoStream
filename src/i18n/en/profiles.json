@@ -26,6 +26,8 @@
   "profile_switched": "Profile switched",
   "cannot_delete_active": "Cannot delete active profile",
   "profile_deleted": "Profile deleted",
+  "delete_confirm_title": "Delete Profile",
+  "delete_confirm_msg": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
   "current_profile": "Current Profile",
   "switch_profile": "Switch Profile",
   "manage_profiles_desc": "Switch, edit, or delete profiles. Playback settings and My List are per-profile.",

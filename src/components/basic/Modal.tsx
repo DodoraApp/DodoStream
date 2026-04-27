@@ -4,14 +4,15 @@ import {
   Pressable,
   StyleSheet,
   TVFocusGuideView,
+  useWindowDimensions,
   type ModalProps as RNModalProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@shopify/restyle';
 import { Box, Text, Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/basic/Button';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useTheme } from '@shopify/restyle';
 
 export interface ModalProps {
   label?: string;
@@ -52,6 +53,7 @@ export const Modal: FC<ModalProps> = ({
   const theme = useTheme<Theme>();
   const insets = useSafeAreaInsets();
   const { breakpoint } = useResponsiveLayout();
+  const { height: windowHeight } = useWindowDimensions();
 
   return (
     <RNModal
@@ -82,9 +84,10 @@ export const Modal: FC<ModalProps> = ({
             trapFocusDown
             trapFocusLeft
             trapFocusRight
-            style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <Pressable onPress={() => {}} focusable={false}>
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Pressable onPress={() => {}} focusable={false} style={{ flex: 1 }}>
               <Box
+                flex={1}
                 backgroundColor="cardBackground"
                 borderRadius="l"
                 paddingVertical={disablePadding ? undefined : 'm'}
@@ -95,6 +98,8 @@ export const Modal: FC<ModalProps> = ({
                     ? theme.sizes.modalMinWidthWide[breakpoint]
                     : theme.sizes.modalMinWidth[breakpoint],
                   maxWidth: theme.sizes.modalMaxWidth[breakpoint],
+                  maxHeight: windowHeight - insets.top - insets.bottom, // Ensure modal doesn't exceed screen height
+                  overflow: 'hidden' as const,
                 }}>
                 <Box
                   flexDirection="row"

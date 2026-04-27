@@ -38,6 +38,10 @@
     "about": {
       "title": "About",
       "desc": "App info, version, and useful links"
+    },
+    "developer": {
+      "title": "Developer",
+      "desc": "Development and debugging tools"
     }
   },
   "ui": {

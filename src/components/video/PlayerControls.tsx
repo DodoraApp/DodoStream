@@ -5,6 +5,7 @@ import { Box, Text, Theme } from '@/theme/theme';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
 import { useShallow } from 'zustand/react/shallow';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
@@ -381,16 +382,6 @@ const RightControls = memo<RightControlsProps>(
     const { t } = useTranslation('player');
     return (
     <Box flexDirection="row" alignItems="center" gap="s">
-      <ControlButton
-        onPress={onToggleAudioTracks}
-        icon="globe"
-        iconComponent={Ionicons}
-        disabled={showLoadingIndicator}
-        onFocusChange={onFocusChange}
-        label={t('audio')}
-        badge={getTrackBadge(selectedAudioLanguage)}
-        badgeVariant="tertiary"
-      />
       {hasTextTracks && (
         <ControlButton
           onPress={onToggleTextTracks}
@@ -403,6 +394,16 @@ const RightControls = memo<RightControlsProps>(
           badgeVariant="tertiary"
         />
       )}
+      <ControlButton
+        onPress={onToggleAudioTracks}
+        icon="globe"
+        iconComponent={Ionicons}
+        disabled={showLoadingIndicator}
+        onFocusChange={onFocusChange}
+        label={t('audio')}
+        badge={getTrackBadge(selectedAudioLanguage)}
+        badgeVariant="tertiary"
+      />
     </Box>
     );
   }
@@ -445,6 +446,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     suppressPreferredFocus = false,
   }) => {
     const theme = useTheme<Theme>();
+    const insets = useSafeAreaInsets();
     const { t } = useTranslation('player');
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
@@ -516,11 +518,13 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     visibleRef.current = visible;
     const isSkipIntroVisibleRef = useRef(isSkipIntroVisible);
     isSkipIntroVisibleRef.current = isSkipIntroVisible;
+    const suppressPreferredFocusRef = useRef(suppressPreferredFocus);
+    suppressPreferredFocusRef.current = suppressPreferredFocus;
 
     // Listen for TV D-pad events when controls are hidden to determine focus target
     const handleTVEvent = useCallback(
       (event: HWEvent) => {
-        if (visibleRef.current) return;
+        if (visibleRef.current || suppressPreferredFocusRef.current) return;
         if (event.eventType === 'up' || event.eventType === 'down') {
           setFocusTarget('play-pause');
           showControls();
@@ -751,9 +755,12 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           {/* Bottom Controls */}
           <Box
             paddingHorizontal="m"
-            paddingVertical="m"
+            paddingTop="m"
             gap="s"
-            style={{ backgroundColor: theme.colors.semiTransparentBackground }}>
+            style={{
+              backgroundColor: theme.colors.semiTransparentBackground,
+              paddingBottom: insets.bottom > 0 ? insets.bottom + theme.spacing.m : theme.spacing.m,
+            }}>
             {/* Time Display + Seek Bar */}
             <Box>
               <TimeDisplay displayedTime={displayedTime} duration={duration} />
@@ -776,13 +783,13 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
 
             {/* Control Buttons */}
             <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-              <LeftControls
-                showSkipEpisode={showSkipEpisode}
-                skipEpisodeLabel={skipEpisodeLabel}
+              <RightControls
                 showLoadingIndicator={showLoadingIndicator}
-                onSkipEpisode={handleSkipEpisode}
-                fitMode={fitMode}
-                onToggleFitMode={handleToggleFitMode}
+                hasTextTracks={textTracks.length > 0}
+                selectedAudioLanguage={selectedAudioTrack?.language}
+                selectedTextLanguage={selectedTextTrack?.language}
+                onToggleAudioTracks={handleToggleAudioTracks}
+                onToggleTextTracks={handleToggleTextTracks}
                 onFocusChange={handleButtonFocusChange}
               />
 
@@ -796,13 +803,13 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
                 hasTVPreferredFocus={focusTarget === 'play-pause'}
               />
 
-              <RightControls
+              <LeftControls
+                showSkipEpisode={showSkipEpisode}
+                skipEpisodeLabel={skipEpisodeLabel}
                 showLoadingIndicator={showLoadingIndicator}
-                hasTextTracks={textTracks.length > 0}
-                selectedAudioLanguage={selectedAudioTrack?.language}
-                selectedTextLanguage={selectedTextTrack?.language}
-                onToggleAudioTracks={handleToggleAudioTracks}
-                onToggleTextTracks={handleToggleTextTracks}
+                onSkipEpisode={handleSkipEpisode}
+                fitMode={fitMode}
+                onToggleFitMode={handleToggleFitMode}
                 onFocusChange={handleButtonFocusChange}
               />
             </Box>
