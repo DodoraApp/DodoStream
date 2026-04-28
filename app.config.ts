@@ -79,13 +79,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       'expo-libvlc-player',
-      [
-        '@sentry/react-native/expo',
-        {
-          organization: process.env.SENTRY_ORG ?? 'dodora',
-          project: process.env.SENTRY_PROJECT ?? 'dodostream',
-        },
-      ],
       './plugins/withRemoteUIBuild',
       './plugins/withReactNativeTVOSPnpmFix',
       './plugins/withAndroidBuildOptimizations',

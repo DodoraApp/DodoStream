@@ -1,11 +1,10 @@
-import { FC, memo, useCallback, useMemo, useRef } from 'react';
+import { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { showToast } from '@/store/toast.store';
 import { useTheme } from '@shopify/restyle';
-import { useRouter } from 'expo-router';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
 import { AppLogo } from '@/components/basic/AppLogo';
@@ -73,9 +72,6 @@ const AboutLinkRow: FC<AboutLinkRowProps> = memo(({ item, onPress }) => {
 
 AboutLinkRow.displayName = 'AboutLinkRow';
 
-const DEVELOPER_TAP_COUNT = 5;
-const TAP_TIMEOUT_MS = 2000;
-
 /**
  * About settings content component
  * Shows app metadata and useful support links
@@ -83,13 +79,8 @@ const TAP_TIMEOUT_MS = 2000;
 export const AboutSettingsContent: FC = memo(() => {
   const { t } = useTranslation('settings');
   const theme = useTheme<Theme>();
-  const router = useRouter();
   const debug = useDebugLogger('AboutSettingsContent');
   const info = useAppInfo();
-
-  // Developer mode tap counter
-  const tapCountRef = useRef(0);
-  const lastTapTimeRef = useRef(0);
 
   const releaseCheckOnStartup = useAppSettingsStore((state) => state.releaseCheckOnStartup);
   const setReleaseCheckOnStartup = useAppSettingsStore((state) => state.setReleaseCheckOnStartup);
@@ -147,35 +138,6 @@ export const AboutSettingsContent: FC = memo(() => {
     ],
     [t]
   );
-
-  const handleVersionTap = useCallback(() => {
-    const now = Date.now();
-
-    // Reset counter if too much time has passed since last tap
-    if (now - lastTapTimeRef.current > TAP_TIMEOUT_MS) {
-      tapCountRef.current = 0;
-    }
-
-    lastTapTimeRef.current = now;
-    tapCountRef.current += 1;
-
-    debug('versionTap', { count: tapCountRef.current });
-
-    const remaining = DEVELOPER_TAP_COUNT - tapCountRef.current;
-
-    if (remaining > 0 && remaining <= 3) {
-      showToast({
-        title: t('about.developer_mode_tap', { count: remaining }),
-        duration: TOAST_DURATION_SHORT,
-      });
-    }
-
-    if (tapCountRef.current >= DEVELOPER_TAP_COUNT) {
-      tapCountRef.current = 0;
-      debug('developerModeActivated');
-      router.push('/(app)/(tabs)/settings/developer');
-    }
-  }, [debug, router, t]);
 
   const handleOpenLink = useCallback(
     async (item: AboutLinkItem) => {
@@ -238,11 +200,9 @@ export const AboutSettingsContent: FC = memo(() => {
         </Box>
 
         <SettingsCard title={t('about.app')}>
-          <Focusable onPress={handleVersionTap} variant="background">
-            <SettingsRow label={t('about.version')}>
-              <Text variant="body">{info.appVersion}</Text>
-            </SettingsRow>
-          </Focusable>
+          <SettingsRow label={t('about.version')}>
+            <Text variant="body">{info.appVersion}</Text>
+          </SettingsRow>
 
           <SettingsRow label={t('about.commit')}>
             <Text variant="body" color="textSecondary" numberOfLines={1}>

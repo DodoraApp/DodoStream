@@ -38,10 +38,6 @@
     "about": {
       "title": "About",
       "desc": "App info, version, and useful links"
-    },
-    "developer": {
-      "title": "Developer",
-      "desc": "Development and debugging tools"
     }
   },
   "ui": {
@@ -120,7 +116,6 @@
     "could_not_open_link": "Could not open link",
     "could_not_open_release": "Could not open release",
     "try_again_later": "Please try again later.",
-    "developer_mode_tap": "{{count}} taps to developer mode",
     "repo_title": "GitHub Repository",
     "repo_desc": "Source code and releases",
     "bug_title": "Report a Bug",
@@ -215,32 +210,6 @@
     "confirm": "Confirm",
     "sync": "Sync",
     "last_synced": "Last synced"
-  },
-  "developer": {
-    "title": "Developer Settings",
-    "desc": "These settings are for development and debugging purposes.",
-    "sentry": {
-      "title": "Sentry",
-      "dsn": "DSN",
-      "dsn_desc": "The Sentry Data Source Name for error reporting",
-      "dsn_saved": "Sentry DSN saved",
-      "restarting": "Restarting app to apply changes...",
-      "restart_required": "Restart Required",
-      "restart_required_desc": "Please close and reopen the app to apply the new Sentry DSN.",
-      "dsn_reset": "DSN reset",
-      "reset_desc": "Restart the app to apply changes.",
-      "reset_to_default": "Reset to Default",
-      "save_and_restart": "Save & Restart",
-      "restarting_btn": "Restarting..."
-    },
-    "config": {
-      "title": "Current Configuration",
-      "stored_dsn": "Stored DSN",
-      "sentry_enabled": "Sentry Enabled",
-      "not_set": "(not set)",
-      "yes": "Yes",
-      "no": "No"
-    }
   },
   "home": {
     "catalogs": "Catalogs",

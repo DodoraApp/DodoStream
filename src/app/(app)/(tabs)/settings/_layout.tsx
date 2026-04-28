@@ -66,12 +66,6 @@ export default function SettingsLayout() {
         }}
       />
       <Stack.Screen
-        name="developer"
-        options={{
-          title: t('menu.developer.title'),
-        }}
-      />
-      <Stack.Screen
         name="ui"
         options={{
           title: t('menu.ui.title'),

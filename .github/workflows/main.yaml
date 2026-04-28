@@ -43,7 +43,6 @@ env:
   # Expose commit hash to the app (used by the About page)
   EXPO_PUBLIC_GIT_COMMIT_HASH: ${{ github.sha }}
   EXPO_PUBLIC_GITHUB_RELEASES_URL: ${{ github.server_url }}/${{ github.repository }}/releases
-  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
 jobs:
   test:
