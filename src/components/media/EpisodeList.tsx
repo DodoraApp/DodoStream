@@ -16,13 +16,14 @@ interface EpisodeListProps {
   metaId: string;
   videos: MetaVideo[];
   onEpisodePress: (video: MetaVideo) => void;
+  onEpisodeLongPress?: (video: MetaVideo) => void;
 }
 
 interface GroupedEpisodes {
   [season: number]: MetaVideo[];
 }
 
-export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePress }) => {
+export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePress, onEpisodeLongPress }) => {
   const { t } = useTranslation('media');
   const { isPlatformTV } = useResponsiveLayout();
   const isHorizontal = isPlatformTV;
@@ -111,10 +112,11 @@ export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePre
         metaId={metaId}
         video={item}
         onPress={() => handleEpisodePress(item)}
+        onLongPress={onEpisodeLongPress ? () => onEpisodeLongPress(item) : undefined}
         horizontal={isHorizontal}
       />
     ),
-    [metaId, handleEpisodePress, isHorizontal]
+    [metaId, handleEpisodePress, onEpisodeLongPress, isHorizontal]
   );
 
   const keyExtractor = useCallback((item: MetaVideo) => item.id, []);

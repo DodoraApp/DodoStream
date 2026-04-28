@@ -22,6 +22,8 @@ import { calculateMediaGridColumns } from '@/utils/layout';
 import { TV_DRAW_DISTANCE, MOBILE_DRAW_DISTANCE } from '@/constants/ui';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 
+import { PickerModal } from '@/components/basic/PickerModal';
+import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
 // ============================================================================
 // Types
 // ============================================================================
@@ -195,6 +197,17 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   const theme = useTheme<Theme>();
   const { navigateToDetails } = useMediaNavigation();
 
+  // Long-press context menu for history cards
+  const [activeEntry, setActiveEntry] = useState<DbWatchedMetaSummary | null>(null);
+  const mediaActions = useMediaDetailsActions({
+    metaId: activeEntry?.id ?? '',
+    type: activeEntry?.type ?? 'movie',
+    metaName: activeEntry?.metaName ?? '',
+    targetVideoId: activeEntry?.latestItem?.videoId,
+    targetDurationSeconds: activeEntry?.latestItem?.durationSeconds,
+  });
+  const { openActions: openMediaActions } = mediaActions;
+
   // Only load history data when this component is mounted (lazy loading).
   // Uses infinite query to paginate (100 items/page) and avoid loading thousands of items
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
@@ -209,17 +222,26 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
     [navigateToDetails]
   );
 
+  const handleLongPress = useCallback(
+    (entry: DbWatchedMetaSummary) => {
+      setActiveEntry(entry);
+      openMediaActions();
+    },
+    [openMediaActions]
+  );
+
   const renderItem = useCallback(
     ({ item, index }: { item: DbWatchedMetaSummary; index: number }) => (
       <Box flex={1} alignItems="center" paddingBottom="m">
         <HistoryCard
           entry={item}
           onPress={handlePress}
+          onLongPress={handleLongPress}
           hasTVPreferredFocus={Platform.isTV && index === 0}
         />
       </Box>
     ),
-    [handlePress]
+    [handlePress, handleLongPress]
   );
 
   const keyExtractor = useCallback((item: DbWatchedMetaSummary) => item.id, []);
@@ -261,21 +283,30 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
   }
 
   return (
-    <LegendList
-      data={flatData}
-      numColumns={numColumns}
-      keyExtractor={keyExtractor}
-      renderItem={renderItem}
-      showsVerticalScrollIndicator={false}
-      drawDistance={Platform.isTV ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
-      onEndReached={handleEndReached}
-      onEndReachedThreshold={0.3}
-      ListFooterComponent={renderFooter}
-      contentContainerStyle={{
-        paddingTop: theme.spacing.s,
-        paddingBottom: theme.spacing.xl,
-      }}
-    />
+    <>
+      <LegendList
+        data={flatData}
+        numColumns={numColumns}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
+        drawDistance={Platform.isTV ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={renderFooter}
+        contentContainerStyle={{
+          paddingTop: theme.spacing.s,
+          paddingBottom: theme.spacing.xl,
+        }}
+      />
+      <PickerModal
+        visible={mediaActions.isVisible}
+        onClose={mediaActions.closeActions}
+        label={activeEntry?.metaName ?? ''}
+        items={mediaActions.items}
+        onValueChange={mediaActions.handleAction}
+      />
+    </>
   );
 });
 

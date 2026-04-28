@@ -14,13 +14,15 @@ interface HistoryCardProps {
   entry: DbWatchedMetaSummary;
   /** Callback when the card is pressed */
   onPress: (metaId: string, type: ContentType) => void;
+  /** Callback when the card is long-pressed */
+  onLongPress?: (entry: DbWatchedMetaSummary) => void;
   /** Whether this card should receive TV focus by default */
   hasTVPreferredFocus?: boolean;
   testID?: string;
 }
 
 export const HistoryCard = memo(
-  ({ entry, onPress, hasTVPreferredFocus = false, testID }: HistoryCardProps) => {
+  ({ entry, onPress, onLongPress, hasTVPreferredFocus = false, testID }: HistoryCardProps) => {
     const theme = useTheme<Theme>();
     const isMissingMeta = !entry.metaName;
     const { data: resolvedMeta } = useMeta(entry.type, entry.id, isMissingMeta);
@@ -33,6 +35,13 @@ export const HistoryCard = memo(
         onPress(media.id, media.type);
       },
       [onPress]
+    );
+
+    const handleLongPress = useCallback(
+      (_media: MetaPreview) => {
+        onLongPress?.(entry);
+      },
+      [onLongPress, entry]
     );
 
     // Show placeholder if meta_cache hasn't been populated yet (first launch)
@@ -70,6 +79,7 @@ export const HistoryCard = memo(
           background: displayImage,
         }}
         onPress={handlePress}
+        onLongPress={onLongPress ? handleLongPress : undefined}
         badgeLabel={episodeLabel}
         progress={progress}
         hasTVPreferredFocus={hasTVPreferredFocus}

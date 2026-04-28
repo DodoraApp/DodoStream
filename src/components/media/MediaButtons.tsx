@@ -1,8 +1,10 @@
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TVFocusGuideView } from 'react-native';
 import { Box } from '@/theme/theme';
 import { Button } from '@/components/basic/Button';
 import { ProgressButton } from '@/components/basic/ProgressButton';
+import { PickerModal } from '@/components/basic/PickerModal';
 import { MyListHeaderButton } from '@/components/media/MyListHeaderButton';
 import type { ContentType, MetaDetail } from '@/types/stremio';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
@@ -15,6 +17,7 @@ import {
 import { useIsInMyList, useMyListActions } from '@/hooks/useMyListDb';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
+import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { createDebugLogger } from '@/utils/debug'
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
@@ -44,6 +47,15 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const progressRatio = useWatchProgress(metaId, videoId);
   const { data: historyItem } = useWatchHistoryItem(metaId, videoId);
   const { upsert } = useWatchHistoryActions();
+
+
+  // Media actions context menu (three-dots button)
+  const mediaActions = useMediaDetailsActions({
+    metaId,
+    type,
+    metaName: media.name,
+    videos: media.videos,
+  });
 
   // My List state
   const isInMyList = useIsInMyList(metaId, type);
@@ -116,22 +128,60 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   // Common button style props - 100% width on mobile, auto on TV
   const buttonFlex = isPlatformTV ? undefined : 1;
 
+  const renderActions = () => (
+    <TVFocusGuideView trapFocusRight>
+      <Box flexDirection="row" gap="s">
+        <MyListHeaderButton isInMyList={isInMyList} onPress={handleToggleMyList} />
+        {mediaActions.items.length > 0 && (
+          <Button
+            icon="ellipsis-horizontal"
+            variant="secondary"
+            onPress={mediaActions.openActions}
+          />
+        )}
+      </Box>
+    </TVFocusGuideView>
+  );
+
+  const renderPickerModal = () => (
+    <PickerModal
+      visible={mediaActions.isVisible}
+      onClose={mediaActions.closeActions}
+      label={media.name}
+      items={mediaActions.items}
+      onValueChange={mediaActions.handleAction}
+    />
+  );
+
   // Render buttons based on content type and watch state
   if (isMultiVideo) {
     const hasWatchedBefore = !!continueWatching;
 
     return (
-      <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
-        {hasWatchedBefore ? (
-          multiVideoIsInProgress ? (
-            <ProgressButton
-              title={resumeLabel}
-              icon="play"
-              progress={multiVideoProgressRatio}
-              onPress={handleContinue}
-              hasTVPreferredFocus={isPlatformTV}
-              flex={buttonFlex}
-            />
+      <>
+        <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
+          {hasWatchedBefore ? (
+            multiVideoIsInProgress ? (
+              <ProgressButton
+                title={resumeLabel}
+                icon="play"
+                progress={multiVideoProgressRatio}
+                onPress={handleContinue}
+                hasTVPreferredFocus={isPlatformTV}
+                flex={buttonFlex}
+              />
+            ) : (
+              <Button
+                title={playLabel}
+                icon="play"
+                variant="primary"
+                onPress={handleContinue}
+                hasTVPreferredFocus={isPlatformTV}
+                paddingHorizontal="l"
+                paddingVertical="m"
+                flex={buttonFlex}
+              />
+            )
           ) : (
             <Button
               title={playLabel}
@@ -143,63 +193,59 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
               paddingVertical="m"
               flex={buttonFlex}
             />
-          )
-        ) : (
-          <Button
-            title={playLabel}
-            icon="play"
-            variant="primary"
-            onPress={handleContinue}
-            hasTVPreferredFocus={isPlatformTV}
-            paddingHorizontal="l"
-            paddingVertical="m"
-            flex={buttonFlex}
-          />
-        )}
-        <MyListHeaderButton isInMyList={isInMyList} onPress={handleToggleMyList} />
-      </Box>
+          )}
+          {renderActions()}
+        </Box>
+        {renderPickerModal()}
+      </>
     );
   }
 
   // Single video content - in progress
   if (watchState === 'in-progress') {
     return (
-      <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
-        <ProgressButton
-          title={t('resume')}
-          icon="play"
-          progress={progressRatio}
-          onPress={handlePlay}
-          hasTVPreferredFocus={isPlatformTV}
-          flex={buttonFlex}
-        />
-        <Button
-          icon="refresh"
-          variant="secondary"
-          onPress={handleStartOver}
-          paddingHorizontal="l"
-          paddingVertical="m"
-        />
-        <MyListHeaderButton isInMyList={isInMyList} onPress={handleToggleMyList} />
-      </Box>
+      <>
+        <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
+          <ProgressButton
+            title={t('resume')}
+            icon="play"
+            progress={progressRatio}
+            onPress={handlePlay}
+            hasTVPreferredFocus={isPlatformTV}
+            flex={buttonFlex}
+          />
+          <Button
+            icon="refresh"
+            variant="secondary"
+            onPress={handleStartOver}
+            paddingHorizontal="l"
+            paddingVertical="m"
+          />
+          {renderActions()}
+        </Box>
+        {renderPickerModal()}
+      </>
     );
   }
 
   // Not watched or fully watched - show Play
   return (
-    <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
-      <Button
-        title={t('play')}
-        icon="play"
-        variant="primary"
-        onPress={handlePlay}
-        hasTVPreferredFocus={isPlatformTV}
-        paddingHorizontal="l"
-        paddingVertical="m"
-        flex={buttonFlex}
-      />
-      <MyListHeaderButton isInMyList={isInMyList} onPress={handleToggleMyList} />
-    </Box>
+    <>
+      <Box width="100%" flexDirection="row" gap="s" flexWrap={isPlatformTV ? 'nowrap' : 'wrap'}>
+        <Button
+          title={t('play')}
+          icon="play"
+          variant="primary"
+          onPress={handlePlay}
+          hasTVPreferredFocus={isPlatformTV}
+          paddingHorizontal="l"
+          paddingVertical="m"
+          flex={buttonFlex}
+        />
+        {renderActions()}
+      </Box>
+      {renderPickerModal()}
+    </>
   );
 });
 
