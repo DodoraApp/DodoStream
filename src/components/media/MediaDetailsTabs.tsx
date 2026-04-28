@@ -11,9 +11,10 @@ import { TrailersTab } from '@/components/media/TrailersTab';
 interface MediaDetailsTabsProps {
   media: MetaDetail;
   onEpisodePress: (video: MetaVideo) => void;
+  onEpisodeLongPress?: (video: MetaVideo) => void;
 }
 
-export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePress }) => {
+export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePress, onEpisodeLongPress }) => {
   const { t } = useTranslation('media');
   const hasSeasonsTab = (media.videos?.length ?? 0) > 1;
   const hasTrailersTab = (media.trailerStreams?.length ?? 0) > 0;
@@ -45,7 +46,7 @@ export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePr
       <DetailsTabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
 
       {activeTab === 'seasons' && hasSeasonsTab && media.videos && (
-        <EpisodeList metaId={media.id} videos={media.videos} onEpisodePress={onEpisodePress} />
+        <EpisodeList metaId={media.id} videos={media.videos} onEpisodePress={onEpisodePress} onEpisodeLongPress={onEpisodeLongPress} />
       )}
 
       <CastTab media={media} isActive={activeTab === 'cast'} />

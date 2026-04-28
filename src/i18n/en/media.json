@@ -52,5 +52,6 @@
   "hide": "Hide",
   "remove_from_history": "Remove from history",
   "watching": "Watching",
-  "completed": "Completed"
+  "completed": "Completed",
+  "mark_as_watched": "Mark as watched"
 }

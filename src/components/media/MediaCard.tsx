@@ -14,6 +14,7 @@ import { Pressable } from 'react-native';
 interface MediaCardProps {
   media: MetaPreview;
   onPress: (media: MetaPreview) => void;
+  onLongPress?: (media: MetaPreview) => void;
   badgeLabel?: string;
   /** Progress ratio (0-1) to show at bottom of card */
   progress?: number;
@@ -26,6 +27,7 @@ export const MediaCard = memo(
   ({
     media,
     onPress,
+    onLongPress,
     badgeLabel,
     progress,
     testID,
@@ -50,6 +52,7 @@ export const MediaCard = memo(
       <Box width={theme.cardSizes.media.width} gap="s">
         <Focusable
           onPress={() => onPress(media)}
+          onLongPress={onLongPress ? () => onLongPress(media) : undefined}
           variant="outline"
           testID={testID}
           hasTVPreferredFocus={hasTVPreferredFocus}

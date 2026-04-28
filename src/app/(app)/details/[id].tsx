@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@shopify/restyle';
@@ -12,6 +13,8 @@ import { DetailsShell } from '@/components/media/DetailsShell';
 import FadeIn from '@/components/basic/FadeIn';
 import { MediaButtons } from '@/components/media/MediaButtons';
 import { MediaDetailsTabs } from '@/components/media/MediaDetailsTabs';
+import { PickerModal } from '@/components/basic/PickerModal';
+import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
 
 export default function MediaDetails() {
   const { t } = useTranslation('media');
@@ -20,10 +23,33 @@ export default function MediaDetails() {
   const { pushToStreams } = useMediaNavigation();
   const { data: meta, isLoading, isError } = useMeta(type, id);
 
-  const handleEpisodePress = (video: MetaVideo) => {
-    if (!meta) return;
-    pushToStreams({ metaId: id, videoId: video.id, type });
-  };
+  // Episode long-press context menu
+  const [activeEpisode, setActiveEpisode] = useState<MetaVideo | null>(null);
+
+  const episodeActions = useMediaDetailsActions({
+    metaId: id,
+    type,
+    metaName: activeEpisode?.title ?? activeEpisode?.name ?? '',
+    targetVideoId: activeEpisode?.id,
+    removalScope: 'item',
+  });
+
+  const handleEpisodePress = useCallback(
+    (video: MetaVideo) => {
+      if (!meta) return;
+      pushToStreams({ metaId: id, videoId: video.id, type });
+    },
+    [meta, id, type, pushToStreams]
+  );
+
+  const { openActions: openEpisodeActions } = episodeActions;
+  const handleEpisodeLongPress = useCallback(
+    (video: MetaVideo) => {
+      setActiveEpisode(video);
+      openEpisodeActions();
+    },
+    [openEpisodeActions]
+  );
 
   return (
     <Container disablePadding safeAreaEdges={['left', 'right', 'bottom']}>
@@ -55,10 +81,22 @@ export default function MediaDetails() {
                 <MediaButtons metaId={id} type={type} media={mediaData} />
               </FadeIn>
             }>
-            <MediaDetailsTabs media={mediaData} onEpisodePress={handleEpisodePress} />
+            <MediaDetailsTabs
+              media={mediaData}
+              onEpisodePress={handleEpisodePress}
+              onEpisodeLongPress={handleEpisodeLongPress}
+            />
           </DetailsShell>
         )}
       </LoadingQuery>
+
+      <PickerModal
+        visible={episodeActions.isVisible}
+        onClose={episodeActions.closeActions}
+        label={activeEpisode?.title ?? activeEpisode?.name ?? ''}
+        items={episodeActions.items}
+        onValueChange={episodeActions.handleAction}
+      />
     </Container>
   );
 }

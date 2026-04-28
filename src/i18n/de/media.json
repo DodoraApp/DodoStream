@@ -52,5 +52,6 @@
   "play_from_start": "Vom Start spielen",
   "remove_from_history": "Aus Verlauf löschen",
   "watching": "Watching",
-  "completed": "Gesehen"
+  "completed": "Gesehen",
+  "mark_as_watched": "Als gesehen markieren"
 }
