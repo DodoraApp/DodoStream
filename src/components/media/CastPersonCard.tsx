@@ -1,12 +1,13 @@
 import { memo } from 'react';
-import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
-import { Box, Text } from '@/theme/theme';
+
 import FastImage from '@d11/react-native-fast-image';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
 
-import type { CastMember } from '@/types/stremio';
 import { Focusable } from '@/components/basic/Focusable';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import type { CastMember } from '@/types/stremio';
 
 interface CastPersonCardProps {
   person: CastMember;

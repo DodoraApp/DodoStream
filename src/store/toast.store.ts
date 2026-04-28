@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { TOAST_DURATION_MEDIUM, TOAST_MAX_VISIBLE } from '@/constants/ui';
 
 export type ToastPreset = 'default' | 'success' | 'error' | 'warning';

@@ -1,11 +1,11 @@
+import { StremioApiError } from '@/api/errors';
 import {
-  Manifest,
   CatalogResponse,
+  Manifest,
   MetaResponse,
   StreamResponse,
   SubtitlesResponse,
 } from '@/types/stremio';
-import { StremioApiError } from '@/api/errors';
 
 const TIMEOUTS = {
   manifest: 10_000,

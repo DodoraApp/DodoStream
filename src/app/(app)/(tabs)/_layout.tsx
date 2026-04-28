@@ -1,12 +1,14 @@
-import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
-import type { Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import { Tabs } from 'expo-router';
+
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { NAV_ITEMS } from '@/constants/navigation';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+import type { Theme } from '@/theme/theme';
 
 export default function TabsLayout() {
   const { t } = useTranslation('navigation');

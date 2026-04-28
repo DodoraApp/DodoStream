@@ -1,12 +1,12 @@
-import { TextTrack, TextTrackSource, SubtitleCue } from '@/types/player';
-import { AddonSubtitle } from '@/types/stremio';
-import {
-  normalizeLanguageCode,
-  getPreferredLanguageCodes,
-  getLanguageDisplayName,
-} from '@/utils/languages';
-import { createDebugLogger } from '@/utils/debug';
 import { SUBTITLE_FETCH_TIMEOUT_MS } from '@/constants/subtitles';
+import { SubtitleCue, TextTrack, TextTrackSource } from '@/types/player';
+import { AddonSubtitle } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
+import {
+  getLanguageDisplayName,
+  getPreferredLanguageCodes,
+  normalizeLanguageCode,
+} from '@/utils/languages';
 
 const debug = createDebugLogger('Subtitles');
 

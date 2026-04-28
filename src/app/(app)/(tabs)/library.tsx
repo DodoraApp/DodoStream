@@ -1,29 +1,30 @@
-import { Container } from '@/components/basic/Container';
-import { PageHeader } from '@/components/basic/PageHeader';
-import { TagFilters } from '@/components/basic/TagFilters';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
-import { LegendList } from '@legendapp/list/react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, useWindowDimensions } from 'react-native';
+
+import { LegendList } from '@legendapp/list/react-native';
+import { useTheme } from '@shopify/restyle';
 import { useLocalSearchParams } from 'expo-router';
-import type { ContentType } from '@/types/stremio';
+
+import { useMeta } from '@/api/stremio/hooks';
+import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
+import { Container } from '@/components/basic/Container';
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { PageHeader } from '@/components/basic/PageHeader';
+import { PickerModal } from '@/components/basic/PickerModal';
+import { TagFilters } from '@/components/basic/TagFilters';
+import { HistoryCard } from '@/components/media/HistoryCard';
+import { MediaCard } from '@/components/media/MediaCard';
+import { NO_POSTER_PORTRAIT } from '@/constants/images';
+import { MOBILE_DRAW_DISTANCE, TV_DRAW_DISTANCE } from '@/constants/ui';
+import type { DbMyListItem, DbWatchedMetaSummary } from '@/db';
+import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useMyList } from '@/hooks/useMyListDb';
 import { useWatchedMetaSummaries } from '@/hooks/useWatchHistoryDb';
-import type { DbMyListItem, DbWatchedMetaSummary } from '@/db';
-import { MediaCard } from '@/components/media/MediaCard';
-import { HistoryCard } from '@/components/media/HistoryCard';
-import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useMeta } from '@/api/stremio/hooks';
+import { Box, Text, Theme } from '@/theme/theme';
+import type { ContentType } from '@/types/stremio';
 import { calculateMediaGridColumns } from '@/utils/layout';
-import { TV_DRAW_DISTANCE, MOBILE_DRAW_DISTANCE } from '@/constants/ui';
-import { NO_POSTER_PORTRAIT } from '@/constants/images';
-
-import { PickerModal } from '@/components/basic/PickerModal';
-import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
 // ============================================================================
 // Types
 // ============================================================================

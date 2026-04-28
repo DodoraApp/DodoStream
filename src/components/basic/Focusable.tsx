@@ -1,14 +1,16 @@
-import { FC, ReactNode, useCallback, useState, useRef, RefObject, useMemo, useEffect } from 'react';
+import { FC, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Platform,
   Pressable,
   PressableProps,
-  ViewStyle,
-  View,
-  Platform,
   StyleProp,
   StyleSheet,
+  View,
+  ViewStyle,
 } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
+
 import { Theme } from '@/theme/theme';
 
 /**

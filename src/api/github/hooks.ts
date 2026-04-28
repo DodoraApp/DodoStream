@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { fetchLatestGithubRelease } from './client';
 
 export const githubKeys = {

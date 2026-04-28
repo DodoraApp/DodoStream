@@ -1,8 +1,10 @@
 import { memo } from 'react';
-import { Skeleton } from '@/components/basic/Skeleton';
-import { Box } from '@/theme/theme';
-import type { Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+
+import { Skeleton } from '@/components/basic/Skeleton';
+import type { Theme } from '@/theme/theme';
+import { Box } from '@/theme/theme';
 import { getTextLineHeight } from '@/utils/layout';
 
 /**

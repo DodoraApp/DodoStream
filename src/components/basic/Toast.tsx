@@ -1,14 +1,15 @@
 import { FC, memo, useCallback, useEffect } from 'react';
-import { Pressable, Platform } from 'react-native';
-import { MotiView, AnimatePresence } from 'moti';
-import { useTheme } from '@shopify/restyle';
+import { Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
-import { Box, Text, Theme } from '@/theme/theme';
-import { useToastStore, Toast as ToastType, ToastPreset, ToastHaptic } from '@/store/toast.store';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import * as Haptics from 'expo-haptics';
+import { AnimatePresence, MotiView } from 'moti';
+
 import { TOAST_ENTER_DURATION_MS, TOAST_EXIT_DURATION_MS } from '@/constants/ui';
+import { Toast as ToastType, ToastHaptic, ToastPreset, useToastStore } from '@/store/toast.store';
+import { Box, Text, Theme } from '@/theme/theme';
 
 const triggerHaptic = (haptic: ToastHaptic) => {
   if (Platform.isTV || haptic === 'none') return;

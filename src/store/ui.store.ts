@@ -1,14 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import * as Localization from 'expo-localization';
-import {
-  DEFAULT_THEME_PRESET_ID,
-  DEFAULT_SCALING_FACTOR,
-  SCALING_FACTOR_MIN,
-  SCALING_FACTOR_MAX,
-} from '@/theme/theme-presets';
+
 import i18n from '@/i18n';
+import {
+  DEFAULT_SCALING_FACTOR,
+  DEFAULT_THEME_PRESET_ID,
+  SCALING_FACTOR_MAX,
+  SCALING_FACTOR_MIN,
+} from '@/theme/theme-presets';
 
 interface UIState {
   /** Currently selected theme preset ID */

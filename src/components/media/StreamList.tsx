@@ -1,22 +1,23 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LegendList } from '@legendapp/list/react-native';
+
 import { Ionicons } from '@expo/vector-icons';
+import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
 
 import { useStreams } from '@/api/stremio';
-import { LoadingQuery } from '@/components/basic/LoadingQuery';
-import { StreamListSkeleton } from '@/components/media/StreamListSkeleton';
-import type { ContentType, Stream } from '@/types/stremio';
-import { Focusable } from '@/components/basic/Focusable';
-import { getStreamStableId } from '@/utils/stream';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import FadeIn from '@/components/basic/FadeIn';
+import { Focusable } from '@/components/basic/Focusable';
+import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
 import { TagFilters, TagOption } from '@/components/basic/TagFilters';
+import { StreamListSkeleton } from '@/components/media/StreamListSkeleton';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { Box, Text, type Theme } from '@/theme/theme';
+import type { ContentType, Stream } from '@/types/stremio';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
+import { getStreamStableId } from '@/utils/stream';
 
 interface AddonOption {
   id: string;

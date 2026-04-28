@@ -1,17 +1,20 @@
-import { FC, memo, useCallback, useState, useMemo } from 'react';
-import { Modal } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Modal } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
-import { runImport, runExport } from '@/api/simkl/sync-service';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { runExport, runImport } from '@/api/simkl/sync-service';
+import { Button } from '@/components/basic/Button';
+import { Focusable } from '@/components/basic/Focusable';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import { Box, Text, Theme } from '@/theme/theme';
 import type { SimklConnection, SyncMode } from '@/types/integrations';
-import { Focusable } from '@/components/basic/Focusable';
-import { SettingsSwitch } from './SettingsSwitch';
+
 import { RadioButton } from './RadioButton';
-import { Button } from '@/components/basic/Button';
+import { SettingsSwitch } from './SettingsSwitch';
 
 interface SimklFirstConnectModalProps {
   visible: boolean;

@@ -1,14 +1,16 @@
 import React, { FC, memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Text, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
 import { SliderInput } from '@/components/basic/SliderInput';
 import { SubtitleCuePreview } from '@/components/video/SubtitleCuePreview';
-import type { TextTrack } from '@/types/player';
-import { useSubtitleCues } from '@/hooks/useSubtitleCues';
-import { SUBTITLE_DELAY_MIN, SUBTITLE_DELAY_MAX, SUBTITLE_DELAY_STEP } from '@/constants/subtitles';
+import { SUBTITLE_DELAY_MAX, SUBTITLE_DELAY_MIN, SUBTITLE_DELAY_STEP } from '@/constants/subtitles';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useSubtitleCues } from '@/hooks/useSubtitleCues';
+import { Box, Text, Theme } from '@/theme/theme';
+import type { TextTrack } from '@/types/player';
 
 interface SubtitleSyncPanelProps {
   /** Currently selected subtitle track (used to load cues) */

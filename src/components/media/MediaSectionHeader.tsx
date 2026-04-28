@@ -1,7 +1,9 @@
 import { memo } from 'react';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text } from '@/theme/theme';
+
 import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 
 interface MediaSectionHeaderProps {
   title: string;

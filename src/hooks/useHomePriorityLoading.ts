@@ -1,5 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
-import { stremioKeys, fetchCatalogWithPagination } from '@/api/stremio';
+
+import { fetchCatalogWithPagination, stremioKeys } from '@/api/stremio';
 
 export interface PriorityCatalogEntry {
   manifestUrl: string;

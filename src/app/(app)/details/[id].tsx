@@ -1,20 +1,22 @@
-import { useState, useCallback } from 'react';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
+import { Stack, useLocalSearchParams } from 'expo-router';
+
 import { useMeta } from '@/api/stremio';
-import { LoadingQuery } from '@/components/basic/LoadingQuery';
-import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
-import { ContentType, MetaVideo } from '@/types/stremio';
 import { Container } from '@/components/basic/Container';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { DetailsShell } from '@/components/media/DetailsShell';
 import FadeIn from '@/components/basic/FadeIn';
-import { MediaButtons } from '@/components/media/MediaButtons';
-import { MediaDetailsTabs } from '@/components/media/MediaDetailsTabs';
+import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { PickerModal } from '@/components/basic/PickerModal';
+import { DetailsShell } from '@/components/media/DetailsShell';
+import { MediaButtons } from '@/components/media/MediaButtons';
+import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
+import { MediaDetailsTabs } from '@/components/media/MediaDetailsTabs';
 import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import type { Theme } from '@/theme/theme';
+import { ContentType, MetaVideo } from '@/types/stremio';
 
 export default function MediaDetails() {
   const { t } = useTranslation('media');

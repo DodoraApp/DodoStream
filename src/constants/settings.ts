@@ -1,5 +1,6 @@
-import type { SettingsMenuItem } from '@/components/settings/SettingsMenu';
 import { TFunction } from 'i18next';
+
+import type { SettingsMenuItem } from '@/components/settings/SettingsMenu';
 
 export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] = (t) => [
   {

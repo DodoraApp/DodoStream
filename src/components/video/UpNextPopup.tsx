@@ -1,19 +1,21 @@
 import { FC, memo, useEffect, useMemo, useRef, useState } from 'react';
-import { MotiView } from 'moti';
-import type { ContentType } from '@/types/stremio';
-import { useMeta } from '@/api/stremio';
-import {
-  UPNEXT_POPUP_SERIES_RATIO,
-  UPNEXT_POPUP_MOVIE_RATIO,
-  UPNEXT_POPUP_INACTIVE_DELAY_MS,
-} from '@/constants/playback';
-import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
-import { useNextVideo, type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
-import { formatSeasonEpisodeLabel } from '@/utils/format';
-import { createDebugLogger } from '@/utils/debug'
-import { Button } from '@/components/basic/Button';
+
 import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+
+import { useMeta } from '@/api/stremio';
+import { Button } from '@/components/basic/Button';
+import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
+import {
+  UPNEXT_POPUP_INACTIVE_DELAY_MS,
+  UPNEXT_POPUP_MOVIE_RATIO,
+  UPNEXT_POPUP_SERIES_RATIO,
+} from '@/constants/playback';
+import { type ContinueWatchingEntry, useNextVideo } from '@/hooks/useContinueWatching';
 import type { Theme } from '@/theme/theme';
+import type { ContentType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
 
 const debug = createDebugLogger('UpNextPopup');
 
@@ -197,14 +199,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
           nextVideoId: upNextVideo?.id,
         });
       }
-    }, [
-      autoplayCancelled,
-      dismissed,
-      progressRatio,
-      shouldShow,
-      showThreshold,
-      upNextVideo?.id,
-    ]);
+    }, [autoplayCancelled, dismissed, progressRatio, shouldShow, showThreshold, upNextVideo?.id]);
 
     useEffect(() => {
       onVisibilityChange?.(shouldShow);

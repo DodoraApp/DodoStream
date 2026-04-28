@@ -1,8 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm';
+
 import { db, initializeDatabase } from '@/db/client';
 import { syncQueue } from '@/db/schema';
-import type { ContentType } from '@/types/stremio';
 import { useIntegrationsStore } from '@/store/integrations.store';
+import type { ContentType } from '@/types/stremio';
 
 export type SyncAction = 'remove_history' | 'remove_watchlist';
 export type SyncProvider = 'simkl';
@@ -28,7 +29,7 @@ export async function addToSyncQueue(
   if (activeProviders.length === 0) return;
 
   const now = Date.now();
-  const inserts = activeProviders.map(provider => ({
+  const inserts = activeProviders.map((provider) => ({
     profileId,
     provider,
     action,
@@ -60,21 +61,13 @@ export async function cancelPendingSyncRemovals(
   }
 }
 
-export async function listSyncQueueForProvider(
-  profileId: string,
-  provider: SyncProvider
-) {
+export async function listSyncQueueForProvider(profileId: string, provider: SyncProvider) {
   await initializeDatabase();
 
   return db
     .select()
     .from(syncQueue)
-    .where(
-      and(
-        eq(syncQueue.profileId, profileId),
-        eq(syncQueue.provider, provider)
-      )
-    );
+    .where(and(eq(syncQueue.profileId, profileId), eq(syncQueue.provider, provider)));
 }
 
 export async function deleteFromSyncQueue(ids: number[]): Promise<void> {

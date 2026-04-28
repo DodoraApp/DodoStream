@@ -1,20 +1,22 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Container } from '@/components/basic/Container';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TextInput } from 'react-native';
-import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
-import { Box, Text } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
-import { useSearchCatalogs } from '@/api/stremio';
-import { MetaPreview } from '@/types/stremio';
-import { LoadingQuery } from '@/components/basic/LoadingQuery';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
-import { StaticCatalogSection } from '@/components/media/CatalogSection';
+
 import { Ionicons } from '@expo/vector-icons';
-import { Focusable } from '@/components/basic/Focusable';
+import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
+import { useTheme } from '@shopify/restyle';
 import { useLocalSearchParams } from 'expo-router';
+
+import { useSearchCatalogs } from '@/api/stremio';
+import { Container } from '@/components/basic/Container';
+import { Focusable } from '@/components/basic/Focusable';
+import { LoadingQuery } from '@/components/basic/LoadingQuery';
+import { StaticCatalogSection } from '@/components/media/CatalogSection';
+import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import { MetaPreview } from '@/types/stremio';
 
 /** Item types for the flattened search results list */
 type SearchListItem =

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import {
   InfiniteData,
   useInfiniteQuery,
@@ -5,20 +7,20 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { useMemo } from 'react';
+
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
-import { useProfileStore } from '@/store/profile.store';
 import {
+  type DbWatchedMetaSummary,
+  type DbWatchHistoryItem,
   getLastStreamTarget,
   getWatchHistoryItem,
   listWatchedMetaSummaries,
   removeProfileWatchHistory,
   removeWatchHistoryMeta,
   upsertWatchProgress,
-  type DbWatchHistoryItem,
-  type DbWatchedMetaSummary,
 } from '@/db';
 import type { StreamTargetType } from '@/db/schema';
+import { useProfileStore } from '@/store/profile.store';
 import type { ContentType } from '@/types/stremio';
 
 const watchHistoryKeys = {

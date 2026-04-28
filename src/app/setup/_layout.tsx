@@ -1,6 +1,7 @@
-import { Stack } from 'expo-router';
-import { Theme } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
+import { Stack } from 'expo-router';
+
+import { Theme } from '@/theme/theme';
 
 /**
  * Setup wizard layout

@@ -159,8 +159,8 @@ export function useToggleActiveMutation(profileId: string, onSessionEnded?: () =
         queryClient.setQueryData<Addon[]>(
           key,
           previousAddons.map((a) =>
-            a.id === addonId ? { ...a, config: { ...a.config, isActive } } : a,
-          ),
+            a.id === addonId ? { ...a, config: { ...a.config, isActive } } : a
+          )
         );
       }
 
@@ -199,8 +199,8 @@ export function useUpdateAddonConfigMutation(profileId: string, onSessionEnded?:
         queryClient.setQueryData<Addon[]>(
           key,
           previousAddons.map((a) =>
-            a.id === addonId ? { ...a, config: { ...a.config, ...configUpdates } } : a,
-          ),
+            a.id === addonId ? { ...a, config: { ...a.config, ...configUpdates } } : a
+          )
         );
       }
 

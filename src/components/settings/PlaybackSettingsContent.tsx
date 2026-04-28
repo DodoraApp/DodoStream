@@ -1,22 +1,24 @@
-import { FC, memo, useState, useCallback } from 'react';
+import { FC, memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TouchableOpacity, Linking } from 'react-native';
+import { Linking, TouchableOpacity } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
+import { Focusable } from '@/components/basic/Focusable';
+import { PickerInput } from '@/components/basic/PickerInput';
+import { LanguagePreferenceModal } from '@/components/settings/LanguagePreferenceModal';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
-import { LanguagePreferenceModal } from '@/components/settings/LanguagePreferenceModal';
-import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
-import type { PlayerType } from '@/types/player';
-import { useProfileStore } from '@/store/profile.store';
-import { PLAYER_PICKER_ITEMS } from '@/constants/playback';
 import { COMMON_LANGUAGE_CODES } from '@/constants/languages';
+import { PLAYER_PICKER_ITEMS } from '@/constants/playback';
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Box, Text, type Theme } from '@/theme/theme';
+import type { PlayerType } from '@/types/player';
 import { getDevicePreferredLanguageCodes } from '@/utils/languages';
-import { PickerInput } from '@/components/basic/PickerInput';
-import { Focusable } from '@/components/basic/Focusable';
 
 export interface PlaybackSettingsContentProps {
   /** Whether to show the player selection section (default: true) */

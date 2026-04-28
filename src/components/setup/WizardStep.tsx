@@ -1,10 +1,13 @@
 import { FC, memo, ReactNode } from 'react';
-import { Box, Text } from '@/theme/theme';
+
 import { MotiView } from 'moti';
+
 import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
 import { SetupWizardStep } from '@/store/setup-wizard.store';
-import { WizardProgress } from './WizardProgress';
+import { Box, Text } from '@/theme/theme';
+
 import { WizardNavigation } from './WizardNavigation';
+import { WizardProgress } from './WizardProgress';
 
 export interface WizardStepProps {
   /** Current step identifier */

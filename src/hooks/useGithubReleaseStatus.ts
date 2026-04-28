@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+
 import { toGithubLatestReleaseApiUrl } from '@/api/github/client';
 import { useLatestGithubRelease } from '@/api/github/hooks';
 import type { GithubRelease } from '@/api/github/types';

@@ -1,9 +1,10 @@
-import { memo, useCallback, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { NativeSyntheticEvent, TextLayoutEventData, ViewStyle } from 'react-native';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Text, Theme } from '@/theme/theme';
+import type { NativeSyntheticEvent, TextLayoutEventData, ViewStyle } from 'react-native';
+
 import { Focusable } from '@/components/basic/Focusable';
+import { Box, Text, Theme } from '@/theme/theme';
 import { getFocusableForegroundColor } from '@/utils/focus-colors';
 
 type TextVariant = Exclude<keyof Theme['textVariants'], 'defaults'>;

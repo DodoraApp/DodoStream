@@ -1,13 +1,15 @@
-import { VideoPlayer } from '@/components/video/VideoPlayer';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box } from '@/theme/theme';
-import { showToast } from '@/store/toast.store';
-import type { ContentType } from '@/types/stremio';
-import { createDebugLogger } from '@/utils/debug'
+
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+
+import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useTVBackButton } from '@/hooks/useTVBackButton';
+import { showToast } from '@/store/toast.store';
+import { Box } from '@/theme/theme';
+import type { ContentType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('Play');
 

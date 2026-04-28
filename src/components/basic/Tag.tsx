@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { memo } from 'react';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text } from '@/theme/theme';
-import type { Theme } from '@/theme/theme';
+
 import { Focusable } from '@/components/basic/Focusable';
-import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 import type { FocusColorScheme } from '@/utils/focus-colors';
+import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 type TagVariant = 'default' | 'glass';
 type TagSize = 'default' | 'large';

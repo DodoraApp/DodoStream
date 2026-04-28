@@ -1,11 +1,12 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
-import { createDebugLogger } from '@/utils/debug';
-import { usePlaybackStore } from '@/store/playback.store';
-import { useHomeStore } from '@/store/home.store';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import { AVATAR_COLORS, AVATAR_ICONS } from '@/constants/profiles';
 import { removeProfileMyList, removeProfileWatchHistory } from '@/db';
+import { useHomeStore } from '@/store/home.store';
+import { usePlaybackStore } from '@/store/playback.store';
+import { createDebugLogger } from '@/utils/debug';
 
 export interface Profile extends ProfileOptions {
   id: string;

@@ -1,8 +1,10 @@
 import { memo } from 'react';
-import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
-import type { Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+
+import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import type { Theme } from '@/theme/theme';
 
 export interface StreamListSkeletonProps {
   count?: number;

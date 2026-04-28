@@ -31,13 +31,12 @@ interface AddonState {
   configsByProfile: Record<string, Record<string, AddonProfileConfig>>;
 }
 
-
 /** Mirrors the synchronous migrate function in addon.store.ts (version 3). */
 const migrateAddonStoreState = (
   persistedState: AddonState & { addons?: Record<string, any> },
   version: number
 ): AddonState => {
-  let state = persistedState as AddonState;
+  const state = persistedState as AddonState;
 
   if (version < 2 && state.addons) {
     const migratedAddons: Record<string, InstalledAddon> = {};

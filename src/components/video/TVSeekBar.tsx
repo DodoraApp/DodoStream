@@ -1,22 +1,24 @@
-import React, { FC, memo, useState, useRef, useEffect, useCallback } from 'react';
+import React, { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  StyleSheet,
+  HWEvent,
   Platform,
   Pressable,
-  useTVEventHandler,
-  HWEvent,
+  StyleSheet,
   TVFocusGuideView,
+  useTVEventHandler,
+  View,
 } from 'react-native';
-import { Box, Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+
 import {
   PLAYER_SEEK_STEP_SECONDS,
-  TV_SEEK_REPEAT_INTERVAL_MS,
-  TV_SEEK_COMMIT_DELAY_MS,
-  TV_SEEK_ACCELERATION_THRESHOLD,
   TV_SEEK_ACCELERATION_MULTIPLIER,
+  TV_SEEK_ACCELERATION_THRESHOLD,
+  TV_SEEK_COMMIT_DELAY_MS,
+  TV_SEEK_REPEAT_INTERVAL_MS,
 } from '@/constants/playback';
+import { Box, Theme } from '@/theme/theme';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('TVSeekBar');

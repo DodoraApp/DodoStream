@@ -1,9 +1,11 @@
 import { FC, memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import { Button } from '@/components/basic/Button';
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
+import { Button } from '@/components/basic/Button';
+import { Box, Theme } from '@/theme/theme';
 import type { IntroData } from '@/types/introdb';
 
 interface SkipIntroButtonProps {

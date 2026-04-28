@@ -1,9 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTheme } from '@shopify/restyle';
-import { Theme, Text, Box } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
 import { Focusable } from '@/components/basic/Focusable';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export interface ProgressButtonProps extends Omit<
   React.ComponentProps<typeof Focusable>,

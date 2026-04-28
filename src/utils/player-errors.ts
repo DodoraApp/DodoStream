@@ -22,10 +22,7 @@ export interface PlayerErrorClassification {
  * @param errorMessage - The error message from the player (typically from composeErrorString)
  * @returns Classification containing error type, fallback recommendation, and user-friendly message
  */
-export function classifyPlayerError(
-  errorMessage: string,
-  t: TFunction
-): PlayerErrorClassification {
+export function classifyPlayerError(errorMessage: string, t: TFunction): PlayerErrorClassification {
   const lowerMessage = errorMessage.toLowerCase();
 
   // Codec/Decoding errors - SHOULD fallback

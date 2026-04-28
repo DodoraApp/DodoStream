@@ -1,6 +1,7 @@
+import type { TFunction } from 'i18next';
+
 import { VideoFitMode } from '@/types/player';
 import type { MetaDetail } from '@/types/stremio';
-import type { TFunction } from 'i18next';
 
 // ============================================================================
 // Types

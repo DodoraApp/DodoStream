@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+
 import Constants from 'expo-constants';
 
 export function getInstalledAppVersion(): string {

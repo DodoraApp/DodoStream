@@ -1,12 +1,12 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box } from '@/theme/theme';
 
-import type { MetaDetail, MetaVideo } from '@/types/stremio';
-import { DetailsTabBar, DetailsTab } from '@/components/media/DetailsTabBar';
-import { EpisodeList } from '@/components/media/EpisodeList';
 import { CastTab } from '@/components/media/CastTab';
+import { DetailsTab, DetailsTabBar } from '@/components/media/DetailsTabBar';
+import { EpisodeList } from '@/components/media/EpisodeList';
 import { TrailersTab } from '@/components/media/TrailersTab';
+import { Box } from '@/theme/theme';
+import type { MetaDetail, MetaVideo } from '@/types/stremio';
 
 interface MediaDetailsTabsProps {
   media: MetaDetail;
@@ -14,7 +14,11 @@ interface MediaDetailsTabsProps {
   onEpisodeLongPress?: (video: MetaVideo) => void;
 }
 
-export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePress, onEpisodeLongPress }) => {
+export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({
+  media,
+  onEpisodePress,
+  onEpisodeLongPress,
+}) => {
   const { t } = useTranslation('media');
   const hasSeasonsTab = (media.videos?.length ?? 0) > 1;
   const hasTrailersTab = (media.trailerStreams?.length ?? 0) > 0;
@@ -46,7 +50,12 @@ export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({ media, onEpisodePr
       <DetailsTabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
 
       {activeTab === 'seasons' && hasSeasonsTab && media.videos && (
-        <EpisodeList metaId={media.id} videos={media.videos} onEpisodePress={onEpisodePress} onEpisodeLongPress={onEpisodeLongPress} />
+        <EpisodeList
+          metaId={media.id}
+          videos={media.videos}
+          onEpisodePress={onEpisodePress}
+          onEpisodeLongPress={onEpisodeLongPress}
+        />
       )}
 
       <CastTab media={media} isActive={activeTab === 'cast'} />

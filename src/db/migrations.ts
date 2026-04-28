@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ContentType } from '@/types/stremio';
-import { createDebugLogger } from '@/utils/debug';
+
 import { initializeDatabase } from '@/db/client';
 import { addToMyList } from '@/db/queries/myList';
 import { dismissFromContinueWatching, upsertWatchProgress } from '@/db/queries/watchHistory';
+import type { ContentType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('SqliteMigration');
 const MIGRATION_KEY = 'sqlite-migration-v1-done';

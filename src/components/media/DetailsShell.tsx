@@ -1,19 +1,20 @@
-import { memo, PropsWithChildren, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { memo, PropsWithChildren, useMemo } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { AnimatedImage } from '@/components/basic/AnimatedImage';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '@shopify/restyle';
-import { DETAILS_BACKDROP_GRADIENT_LOCATIONS } from '@/constants/ui';
 
-import type { MetaDetail } from '@/types/stremio';
-import type { Theme } from '@/theme/theme';
-import { Box, Text } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { AnimatedImage } from '@/components/basic/AnimatedImage';
+import FadeIn from '@/components/basic/FadeIn';
 import { MediaDetailsHeader } from '@/components/media/MediaDetailsHeader';
 import { MediaInfo } from '@/components/media/MediaInfo';
+import { DETAILS_BACKDROP_GRADIENT_LOCATIONS } from '@/constants/ui';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import type { MetaDetail } from '@/types/stremio';
 import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
-import FadeIn from '@/components/basic/FadeIn';
 
 interface DetailsShellProps {
   media: MetaDetail;

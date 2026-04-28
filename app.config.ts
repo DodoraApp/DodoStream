@@ -1,7 +1,9 @@
 // Register ts-node so Expo can evaluate this ESM config file at prebuild time.
-import 'tsx/cjs';
-import type { ExpoConfig, ConfigContext } from 'expo/config';
+import type { ConfigContext, ExpoConfig } from 'expo/config';
+
 import packageJson from './package.json' with { type: 'json' };
+
+import 'tsx/cjs';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const appBackgroundColor = '#181A20';
@@ -115,7 +117,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
         'android.permission.INTERNET',
         'android.permission.ACCESS_NETWORK_STATE',
-        'android.permission.ACCESS_WIFI_STATE'
+        'android.permission.ACCESS_WIFI_STATE',
       ],
     },
     extra: {

@@ -1,6 +1,7 @@
-import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+
 import * as Localization from 'expo-localization';
+import i18n from 'i18next';
 
 /**
  * Dynamically load all translation files from the translations directory.
@@ -34,18 +35,16 @@ export const AVAILABLE_LANGUAGES = Object.keys(resources);
 const deviceLocale = Localization.getLocales()?.[0]?.languageCode ?? 'en';
 
 // eslint-disable-next-line import/no-named-as-default-member
-i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: deviceLocale,
-    fallbackLng: 'en',
-    ns: Array.from(namespaces),
-    defaultNS: 'common',
-    interpolation: {
-      escapeValue: false, // react already safes from xss
-    },
-    compatibilityJSON: 'v4', // Essential for React Native
-  });
+i18n.use(initReactI18next).init({
+  resources,
+  lng: deviceLocale,
+  fallbackLng: 'en',
+  ns: Array.from(namespaces),
+  defaultNS: 'common',
+  interpolation: {
+    escapeValue: false, // react already safes from xss
+  },
+  compatibilityJSON: 'v4', // Essential for React Native
+});
 
 export default i18n;

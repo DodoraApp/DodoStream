@@ -1,9 +1,11 @@
 import { FC, memo, ReactNode } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Box, Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
 import { MotiView } from 'moti';
+
 import { WIZARD_STEP_ANIMATION_MS } from '@/constants/ui';
+import { Box, Theme } from '@/theme/theme';
 
 interface WizardContainerProps {
   children: ReactNode;

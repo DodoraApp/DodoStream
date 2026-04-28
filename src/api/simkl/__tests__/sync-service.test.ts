@@ -107,11 +107,11 @@ describe('simkl sync service', () => {
       const cursorsObj = { all: cursor, plantowatch: cursor };
 
       // Act
-      await runImport(
-        'profile-1',
-        'token',
-        { movies: cursorsObj, tv_shows: cursorsObj, anime: cursorsObj }
-      );
+      await runImport('profile-1', 'token', {
+        movies: cursorsObj,
+        tv_shows: cursorsObj,
+        anime: cursorsObj,
+      });
 
       // Assert
       expect(mockGetAllItems).not.toHaveBeenCalled();
@@ -125,7 +125,13 @@ describe('simkl sync service', () => {
       expect(mockGetAllItems).toHaveBeenCalledTimes(3);
       expect(mockGetAllItems).toHaveBeenNthCalledWith(1, 'token', 'movies', undefined, 'full');
       expect(mockGetAllItems).toHaveBeenNthCalledWith(2, 'token', 'shows', undefined, 'full');
-      expect(mockGetAllItems).toHaveBeenNthCalledWith(3, 'token', 'anime', undefined, 'full_anime_seasons');
+      expect(mockGetAllItems).toHaveBeenNthCalledWith(
+        3,
+        'token',
+        'anime',
+        undefined,
+        'full_anime_seasons'
+      );
     });
 
     it('fetches category when activity timestamp is newer than cursor', async () => {
@@ -137,15 +143,11 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runImport(
-        'profile-1',
-        'token',
-        {
-          movies: { all: '2026-01-01T00:00:00.000Z' },
-          tv_shows: { all: '2026-01-01T00:00:00.000Z' },
-          anime: { all: '2026-01-01T00:00:00.000Z' },
-        }
-      );
+      await runImport('profile-1', 'token', {
+        movies: { all: '2026-01-01T00:00:00.000Z' },
+        tv_shows: { all: '2026-01-01T00:00:00.000Z' },
+        anime: { all: '2026-01-01T00:00:00.000Z' },
+      });
 
       // Assert
       expect(mockGetAllItems).toHaveBeenCalledTimes(3);
@@ -167,15 +169,11 @@ describe('simkl sync service', () => {
       });
 
       // Act
-      await runImport(
-        'profile-1',
-        'token',
-        {
-          movies: { all: cursor },
-          tv_shows: { all: cursor },
-          anime: { all: cursor },
-        }
-      );
+      await runImport('profile-1', 'token', {
+        movies: { all: cursor },
+        tv_shows: { all: cursor },
+        anime: { all: cursor },
+      });
 
       // Assert
       expect(mockGetAllItems).not.toHaveBeenCalled();

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Platform, BackHandler } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 
 /**
  * Hook to handle TV remote back button

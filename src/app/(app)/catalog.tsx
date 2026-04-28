@@ -1,17 +1,19 @@
 import { memo, useCallback, useMemo } from 'react';
-import { ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
+
 import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
-import { Container } from '@/components/basic/Container';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { MediaCard } from '@/components/media/MediaCard';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { Stack, useLocalSearchParams } from 'expo-router';
+
 import { useInfiniteCatalog } from '@/api/stremio';
+import { Container } from '@/components/basic/Container';
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { MediaCard } from '@/components/media/MediaCard';
+import { MOBILE_DRAW_DISTANCE, TV_DRAW_DISTANCE } from '@/constants/ui';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { Box, Text, type Theme } from '@/theme/theme';
 import type { MetaPreview } from '@/types/stremio';
-import { TV_DRAW_DISTANCE, MOBILE_DRAW_DISTANCE } from '@/constants/ui';
 import { calculateMediaGridColumns } from '@/utils/layout';
 
 // ============================================================================

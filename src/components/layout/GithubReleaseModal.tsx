@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { DismissableModal } from '@/components/basic/DismissableModal';
 import { useGithubReleaseNotification } from '@/hooks/useGithubReleaseNotification';
 
@@ -21,7 +22,11 @@ export const GithubReleaseModal = memo(function GithubReleaseModal({
       heading={releaseNotification.heading}
       subheading={releaseNotification.subheading}
       body={releaseNotification.body}
-      primaryActionText={releaseNotification.hasDirectAsset ? t('settings:about.download_apk') : t('settings:about.view_release')}
+      primaryActionText={
+        releaseNotification.hasDirectAsset
+          ? t('settings:about.download_apk')
+          : t('settings:about.view_release')
+      }
       secondaryActionText={t('settings:about.dismiss')}
       tertiaryActionText={t('settings:about.remind_later')}
       preferredAction="tertiary"

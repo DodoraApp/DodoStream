@@ -1,14 +1,16 @@
 import { useCallback, useMemo } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Box } from '@/theme/theme';
+
+import { useRouter } from 'expo-router';
+
+import { PickerInput } from '@/components/basic/PickerInput';
+import type { PickerItem } from '@/components/basic/PickerModal';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
-import { PickerInput } from '@/components/basic/PickerInput';
-import { useUIStore } from '@/store/ui.store';
 import { AVAILABLE_LANGUAGES } from '@/i18n';
+import { useUIStore } from '@/store/ui.store';
+import { Box } from '@/theme/theme';
 import { getLanguageDisplayName } from '@/utils/languages';
-import type { PickerItem } from '@/components/basic/PickerModal';
 
 /**
  * Language selection step - first step of the setup wizard

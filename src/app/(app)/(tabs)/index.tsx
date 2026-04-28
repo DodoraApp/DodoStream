@@ -1,49 +1,50 @@
-import { Container } from '@/components/basic/Container';
-import { Platform, TVFocusGuideView, useWindowDimensions } from 'react-native';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { useAddonStore } from '@/store/addon.store';
-import { useProfileStore } from '@/store/profile.store';
-import { useMemo, useCallback, memo, useState } from 'react';
-import type { TFunction } from 'i18next';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
-import { MetaPreview } from '@/types/stremio';
+import { Platform, TVFocusGuideView, useWindowDimensions } from 'react-native';
+
 import { LegendList } from '@legendapp/list/react-native';
+import { useTheme } from '@shopify/restyle';
+import type { Href } from 'expo-router';
+import type { TFunction } from 'i18next';
 import { MotiView } from 'moti';
-import { useContinueWatching, ContinueWatchingEntry } from '@/hooks/useContinueWatching';
-import { useMyList } from '@/hooks/useMyListDb';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+
+import { Container } from '@/components/basic/Container';
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { PickerModal } from '@/components/basic/PickerModal';
+import { TagFilters, TagOption } from '@/components/basic/TagFilters';
+import { CatalogSection } from '@/components/media/CatalogSection';
+import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
 import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
 import { ContinueWatchingListSkeleton } from '@/components/media/ContinueWatchingListSkeleton';
-import { CatalogSectionHeader } from '@/components/media/CatalogSectionHeader';
-import { CatalogSection } from '@/components/media/CatalogSection';
-import { MediaList } from '@/components/media/MediaList';
-import { TagFilters, TagOption } from '@/components/basic/TagFilters';
-import { PickerModal } from '@/components/basic/PickerModal';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
-import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
 import { HeroSection } from '@/components/media/HeroSection';
-import { useHomeStore } from '@/store/home.store';
-import { useHomePriorityLoading, type PriorityCatalogEntry } from '@/hooks/useHomePriorityLoading';
-import { useSyncProviderBadges, type SyncProviderBadge } from '@/hooks/useSyncProviderBadges';
-import {
-  TV_DRAW_DISTANCE,
-  MOBILE_DRAW_DISTANCE,
-  TV_HORIZONTAL_DRAW_DISTANCE,
-  MOBILE_HORIZONTAL_DRAW_DISTANCE,
-  HOME_PRIORITY_BUFFER_ROWS,
-  ANIMATION_FADE_IN_MS,
-} from '@/constants/ui';
+import { MediaList } from '@/components/media/MediaList';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import {
-  getMediaSectionHeight,
+  ANIMATION_FADE_IN_MS,
+  HOME_PRIORITY_BUFFER_ROWS,
+  MOBILE_DRAW_DISTANCE,
+  MOBILE_HORIZONTAL_DRAW_DISTANCE,
+  TV_DRAW_DISTANCE,
+  TV_HORIZONTAL_DRAW_DISTANCE,
+} from '@/constants/ui';
+import { ContinueWatchingEntry, useContinueWatching } from '@/hooks/useContinueWatching';
+import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
+import { type PriorityCatalogEntry, useHomePriorityLoading } from '@/hooks/useHomePriorityLoading';
+import { HomeScrollProvider, useHomeScroll } from '@/hooks/useHomeScroll';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { useMyList } from '@/hooks/useMyListDb';
+import { type SyncProviderBadge, useSyncProviderBadges } from '@/hooks/useSyncProviderBadges';
+import { useAddonStore } from '@/store/addon.store';
+import { useHomeStore } from '@/store/home.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Box, Text, type Theme } from '@/theme/theme';
+import { MetaPreview } from '@/types/stremio';
+import {
   getContinueWatchingSectionHeight,
+  getMediaSectionHeight,
   getSectionHeaderHeight,
   getVisibleCatalogCount,
 } from '@/utils/layout';
-
-import type { Href } from 'expo-router';
 
 // ============================================================================
 // Types

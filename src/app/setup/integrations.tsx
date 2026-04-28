@@ -1,13 +1,15 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import { Box, Text, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import { useRouter } from 'expo-router';
+
+import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
-import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export default function IntegrationsStep() {
   const router = useRouter();

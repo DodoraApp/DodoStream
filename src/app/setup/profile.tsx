@@ -1,13 +1,15 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import { Box } from '@/theme/theme';
+
+import { useRouter } from 'expo-router';
+
+import { ProfileEditorContent } from '@/components/profile/ProfileEditor';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
-import { ProfileEditorContent } from '@/components/profile/ProfileEditor';
 import { useProfileStore } from '@/store/profile.store';
 import { useSetupWizardStore } from '@/store/setup-wizard.store';
+import { Box } from '@/theme/theme';
 
 /**
  * Profile creation step - mandatory step to create first profile

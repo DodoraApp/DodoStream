@@ -1,6 +1,8 @@
-import type { LegendListRef } from '@legendapp/list/react-native';
-import { createContext, useContext, useCallback, useRef, ReactNode } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useRef } from 'react';
 import { Platform } from 'react-native';
+
+import type { LegendListRef } from '@legendapp/list/react-native';
+
 import { TV_SCROLL_DEBOUNCE_MS } from '@/constants/ui';
 
 interface HomeScrollContextValue {

@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+
 import {
   PLAYER_SEEK_DEBOUNCE_MS,
   PLAYER_SEEK_UI_SYNC_THRESHOLD_SECONDS,

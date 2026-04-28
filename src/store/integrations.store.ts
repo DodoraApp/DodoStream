@@ -1,6 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
 import type {
   IntegrationProvider,
   IntegrationSyncStatus,
@@ -21,10 +22,7 @@ interface IntegrationsState {
   connectSimkl: (profileId: string, connection: SimklConnection, syncMode: SyncMode) => void;
   disconnectSimkl: (profileId: string) => void;
   setSyncMode: (profileId: string, mode: SyncMode) => void;
-  updateSimklCursors: (
-    profileId: string,
-    cursors: SimklSyncCursors
-  ) => void;
+  updateSimklCursors: (profileId: string, cursors: SimklSyncCursors) => void;
   setLastSyncAt: (profileId: string, timestamp: number) => void;
   setSyncStatus: (
     profileId: string,
@@ -151,7 +149,6 @@ export const useIntegrationsStore = create<IntegrationsState>()(
       migrate: (persistedState: any, version: number) => {
         if (version === 0 && persistedState && typeof persistedState === 'object') {
           const state = persistedState as any;
-          console.log("MIGRATING", state)
 
           if (state.settings) {
             for (const profileId in state.settings) {
@@ -167,7 +164,6 @@ export const useIntegrationsStore = create<IntegrationsState>()(
             }
           }
         }
-        console.log("MIGRATION DONE", persistedState)
         return persistedState;
       },
       partialize: (state) => ({

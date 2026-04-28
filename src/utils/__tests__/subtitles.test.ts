@@ -1,6 +1,7 @@
-import { combineSubtitles, parseSubtitles, findCurrentCue } from '../subtitles';
-import type { TextTrack, SubtitleCue } from '@/types/player';
+import type { SubtitleCue, TextTrack } from '@/types/player';
 import type { AddonSubtitle } from '@/types/stremio';
+
+import { combineSubtitles, findCurrentCue, parseSubtitles } from '../subtitles';
 
 describe('combineSubtitles', () => {
   const createVideoSubtitle = (index: number, language: string, title?: string): TextTrack => ({

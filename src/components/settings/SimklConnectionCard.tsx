@@ -1,13 +1,15 @@
 import { FC, memo, useCallback } from 'react';
-import { Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
+import { Linking } from 'react-native';
+
 import FastImage from '@d11/react-native-fast-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
+
 import { Focusable } from '@/components/basic/Focusable';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
+import { Box, Text, type Theme } from '@/theme/theme';
 import type { ProfileIntegrationSettings } from '@/types/integrations';
 
 interface SimklConnectionCardProps {

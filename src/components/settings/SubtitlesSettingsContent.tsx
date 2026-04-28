@@ -1,19 +1,20 @@
 import { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import { Box } from '@/theme/theme';
+
+import { PickerInput } from '@/components/basic/PickerInput';
+import { PickerItem } from '@/components/basic/PickerModal';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
-import { PickerItem } from '@/components/basic/PickerModal';
-import { useProfileStore } from '@/store/profile.store';
-import { usePlaybackStore } from '@/store/playback.store';
-import { DEFAULT_SUBTITLE_STYLE, SUBTITLE_STYLE_PRESETS } from '@/constants/subtitles';
-import type { SubtitleStylePreset } from '@/types/subtitles';
 import {
   SubtitleStyleControls,
   SubtitleStylePreview,
 } from '@/components/settings/SubtitleStyleSettings';
-import { PickerInput } from '@/components/basic/PickerInput';
+import { DEFAULT_SUBTITLE_STYLE, SUBTITLE_STYLE_PRESETS } from '@/constants/subtitles';
+import { usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Box } from '@/theme/theme';
+import type { SubtitleStylePreset } from '@/types/subtitles';
 
 export const SubtitlesSettingsContent: FC = memo(() => {
   const { t } = useTranslation('settings');

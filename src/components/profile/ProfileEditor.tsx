@@ -1,18 +1,21 @@
-import { FC, useState, useCallback, memo } from 'react';
-import { ScrollView } from 'react-native';
+import { FC, memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
-import { ProfileAvatar } from './ProfileAvatar';
-import { useProfileStore, Profile } from '@/store/profile.store';
+
 import { Button } from '@/components/basic/Button';
-import { Input } from '@/components/basic/Input';
-import { Modal } from '@/components/basic/Modal';
 import { ColorPicker } from '@/components/basic/ColorPicker';
 import { IconPicker } from '@/components/basic/IconPicker';
+import { Input } from '@/components/basic/Input';
+import { Modal } from '@/components/basic/Modal';
 import { SettingsRow } from '@/components/settings/SettingsRow';
-import { AVATAR_ICONS, AVATAR_COLORS } from '@/constants/profiles';
+import { AVATAR_COLORS, AVATAR_ICONS } from '@/constants/profiles';
+import { Profile, useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
+import { Box, Text, Theme } from '@/theme/theme';
+
+import { ProfileAvatar } from './ProfileAvatar';
 
 export interface ProfileEditorContentProps {
   /** Existing profile to edit, or undefined for creating new profile */
@@ -152,16 +155,12 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
           )}
 
           {/* Icon Selection */}
-          <SettingsRow
-            label={t('avatar_icon_label')}
-            description={t('avatar_icon_description')}>
+          <SettingsRow label={t('avatar_icon_label')} description={t('avatar_icon_description')}>
             <IconPicker value={selectedIcon} onValueChange={setSelectedIcon} icons={AVATAR_ICONS} />
           </SettingsRow>
 
           {/* Color Selection */}
-          <SettingsRow
-            label={t('avatar_color_label')}
-            description={t('avatar_color_description')}>
+          <SettingsRow label={t('avatar_color_label')} description={t('avatar_color_description')}>
             <ColorPicker
               value={selectedColor}
               onValueChange={setSelectedColor}
@@ -174,10 +173,7 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
         {showSaveButton && (
           <Box width="100%" marginTop="m">
             <Button
-              title={
-                saveButtonLabel ??
-                (isEditing ? t('save_changes') : t('create_profile'))
-              }
+              title={saveButtonLabel ?? (isEditing ? t('save_changes') : t('create_profile'))}
               onPress={handleSave}
               disabled={!name.trim()}
             />

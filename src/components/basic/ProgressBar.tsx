@@ -1,4 +1,5 @@
 import { FC, memo } from 'react';
+
 import { Box } from '@/theme/theme';
 
 interface ProgressBarProps {

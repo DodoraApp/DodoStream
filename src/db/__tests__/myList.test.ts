@@ -9,18 +9,20 @@
  * - removeProfileMyList: hard delete for profile cleanup
  */
 
-import { initializeDatabase, db } from '../client';
+import { and, eq } from 'drizzle-orm';
+
+import type { MetaDetail } from '@/types/stremio';
+
+import { db, initializeDatabase } from '../client';
+import { upsertMetaCache } from '../queries/metaCache';
 import {
   addToMyList,
-  removeFromMyList,
-  listMyListForProfile,
-  removeProfileMyList,
   type DbMyListItem,
+  listMyListForProfile,
+  removeFromMyList,
+  removeProfileMyList,
 } from '../queries/myList';
-import { upsertMetaCache } from '../queries/metaCache';
-import { myList, metaCache, syncQueue } from '../schema';
-import { and, eq } from 'drizzle-orm';
-import type { MetaDetail } from '@/types/stremio';
+import { metaCache, myList, syncQueue } from '../schema';
 
 jest.mock('@/store/integrations.store', () => ({
   useIntegrationsStore: {
@@ -154,7 +156,7 @@ describe('myList queries (integration)', () => {
         .select()
         .from(syncQueue)
         .where(eq(syncQueue.metaId, 'tt-cancel-queue'));
-      
+
       expect(queue).toHaveLength(0);
     });
   });
@@ -191,11 +193,8 @@ describe('myList queries (integration)', () => {
       await addToMyList(testProfileId, 'tt-sync-queue', 'movie');
       await removeFromMyList(testProfileId, 'tt-sync-queue');
 
-      const queue = await db
-        .select()
-        .from(syncQueue)
-        .where(eq(syncQueue.metaId, 'tt-sync-queue'));
-      
+      const queue = await db.select().from(syncQueue).where(eq(syncQueue.metaId, 'tt-sync-queue'));
+
       expect(queue).toHaveLength(1);
       expect(queue[0].action).toBe('remove_watchlist');
       expect(queue[0].provider).toBe('simkl');

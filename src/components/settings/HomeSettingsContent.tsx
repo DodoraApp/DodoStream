@@ -1,15 +1,16 @@
 import { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
-import { Box, Text } from '@/theme/theme';
+
+import { SliderInput } from '@/components/basic/SliderInput';
+import { OrderableItem, OrderableListSection } from '@/components/settings/OrderableListSection';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
-import { OrderableListSection, OrderableItem } from '@/components/settings/OrderableListSection';
-import { HeroCatalogSource, useHomeStore } from '@/store/home.store';
-import { useAddonStore } from '@/store/addon.store';
-import { useProfileStore } from '@/store/profile.store';
-import { SliderInput } from '@/components/basic/SliderInput';
 import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
+import { useAddonStore } from '@/store/addon.store';
+import { HeroCatalogSource, useHomeStore } from '@/store/home.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Box, Text } from '@/theme/theme';
 
 /** Catalog item for the orderable list */
 interface CatalogOrderableItem extends OrderableItem {

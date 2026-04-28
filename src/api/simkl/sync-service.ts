@@ -1,27 +1,39 @@
-import { createDebugLogger } from '@/utils/debug';
-import { getSimklPosterUrl } from '@/utils/media-artwork';
-import type { SimklActivities, SimklIds, SimklWatchedItem, SimklAllItemsResponse } from '@/types/simkl';
-import { getActivities, getAllItems, postHistory, postWatchlist, removeFromHistory } from './client';
-import { resolveSimklIds } from './id-resolver';
+import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import {
-  listExportableWatchHistoryForProfile,
-  listWatchHistoryForProfile,
-  upsertWatchProgress,
-  removeProfileWatchHistory,
-  removeWatchHistoryMeta,
-} from '@/db/queries/watchHistory';
-import {
+  addToMyList,
   listExportableMyListForProfile,
   removeFromMyList,
   removeProfileMyList,
-  addToMyList,
 } from '@/db/queries/myList';
-import { listSyncQueueForProvider, deleteFromSyncQueue } from '@/db/queries/syncQueue';
-import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
+import { deleteFromSyncQueue, listSyncQueueForProvider } from '@/db/queries/syncQueue';
+import {
+  listExportableWatchHistoryForProfile,
+  listWatchHistoryForProfile,
+  removeProfileWatchHistory,
+  removeWatchHistoryMeta,
+  upsertWatchProgress,
+} from '@/db/queries/watchHistory';
 import { useIntegrationsStore } from '@/store/integrations.store';
-import type { SimklMediaType, SimklSyncCursors, SimklSyncCursor } from '@/types/integrations';
+import type { SimklMediaType, SimklSyncCursor, SimklSyncCursors } from '@/types/integrations';
+import type {
+  SimklActivities,
+  SimklAllItemsResponse,
+  SimklIds,
+  SimklWatchedItem,
+} from '@/types/simkl';
 import type { ContentType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
 import { parseVideoId } from '@/utils/id';
+import { getSimklPosterUrl } from '@/utils/media-artwork';
+
+import {
+  getActivities,
+  getAllItems,
+  postHistory,
+  postWatchlist,
+  removeFromHistory,
+} from './client';
+import { resolveSimklIds } from './id-resolver';
 
 const debug = createDebugLogger('SimklSyncService');
 
@@ -198,8 +210,13 @@ export async function runImport(
 
         const extended = type === 'anime' ? 'full_anime_seasons' : 'full';
         const itemsResponse = await getAllItems(token, type, dateFrom, extended);
-        const items = itemsResponse?.[responseKey] || itemsResponse?.shows || itemsResponse?.movies || itemsResponse?.anime || [];
-        
+        const items =
+          itemsResponse?.[responseKey] ||
+          itemsResponse?.shows ||
+          itemsResponse?.movies ||
+          itemsResponse?.anime ||
+          [];
+
         debug('syncUpdates:fetched', { type, count: items.length });
 
         const myListAdditions: { metaId: string; type: ContentType; addedAt?: number }[] = [];
@@ -225,11 +242,17 @@ export async function runImport(
           }
 
           // Map Simkl status to our "My List"
-          if (item.status === 'plantowatch' || item.status === 'watching' || item.status === 'hold') {
+          if (
+            item.status === 'plantowatch' ||
+            item.status === 'watching' ||
+            item.status === 'hold'
+          ) {
             myListAdditions.push({
               metaId,
               type: contentType,
-              addedAt: item.added_to_watchlist_at ? new Date(item.added_to_watchlist_at).getTime() : undefined,
+              addedAt: item.added_to_watchlist_at
+                ? new Date(item.added_to_watchlist_at).getTime()
+                : undefined,
             });
           }
 
@@ -348,7 +371,7 @@ async function upsertImportedProgress(params: {
 
 function collectMovieParam(
   profileId: string,
-  item: SimklWatchedItem,
+  item: SimklWatchedItem
 ): Parameters<typeof upsertImportedProgress>[0] | undefined {
   const mediaData = item.movie ?? item.anime;
   if (!mediaData) return;
@@ -364,7 +387,9 @@ function collectMovieParam(
   };
 }
 
-function parseSimklLastWatched(lastWatched: string): { season: number; episode: number } | undefined {
+function parseSimklLastWatched(
+  lastWatched: string
+): { season: number; episode: number } | undefined {
   const match = lastWatched.match(/S(\d+)E(\d+)/i);
   if (match) {
     return {
@@ -467,7 +492,12 @@ function collectShowParams(
   return out;
 }
 
-function getMetaIdFromIds(ids: { imdb?: string; simkl?: number; kitsu?: number; mal?: number }): string | undefined {
+function getMetaIdFromIds(ids: {
+  imdb?: string;
+  simkl?: number;
+  kitsu?: number;
+  mal?: number;
+}): string | undefined {
   if (ids.imdb) return ids.imdb;
   if (ids.kitsu) return `kitsu:${ids.kitsu}`;
   if (ids.simkl) return String(ids.simkl);
@@ -494,11 +524,14 @@ export async function runExport(profileId: string, token: string): Promise<boole
 
       if (removalPayload.movies.length > 0 || removalPayload.shows.length > 0) {
         await removeFromHistory(token, removalPayload);
-        debug('exportRemovalsComplete', { movies: removalPayload.movies.length, shows: removalPayload.shows.length });
+        debug('exportRemovalsComplete', {
+          movies: removalPayload.movies.length,
+          shows: removalPayload.shows.length,
+        });
       }
 
       // Cleanup processed items
-      const processedIds = newRemovals.map(r => r.id);
+      const processedIds = newRemovals.map((r) => r.id);
       await deleteFromSyncQueue(processedIds);
     }
 
@@ -515,7 +548,10 @@ export async function runExport(profileId: string, token: string): Promise<boole
 
     if (historyPayload.movies.length > 0 || historyPayload.shows.length > 0) {
       await postHistory(token, historyPayload);
-      debug('exportHistoryComplete', { movies: historyPayload.movies.length, shows: historyPayload.shows.length });
+      debug('exportHistoryComplete', {
+        movies: historyPayload.movies.length,
+        shows: historyPayload.shows.length,
+      });
     }
 
     // 2. Export Watchlist (My List)
@@ -529,7 +565,10 @@ export async function runExport(profileId: string, token: string): Promise<boole
 
     if (watchlistPayload.movies.length > 0 || watchlistPayload.shows.length > 0) {
       await postWatchlist(token, watchlistPayload);
-      debug('exportWatchlistComplete', { movies: watchlistPayload.movies.length, shows: watchlistPayload.shows.length });
+      debug('exportWatchlistComplete', {
+        movies: watchlistPayload.movies.length,
+        shows: watchlistPayload.shows.length,
+      });
     }
 
     return true;
@@ -566,7 +605,10 @@ async function buildRemovalPayload(
   removals: { metaId: string; type: ContentType; videoId: string | null }[]
 ): Promise<HistoryPayload> {
   const movies: HistoryIdsPayload[] = [];
-  const showsMap = new Map<string, { ids: Record<string, string | number>; seasons: Map<number, Set<number>> }>();
+  const showsMap = new Map<
+    string,
+    { ids: Record<string, string | number>; seasons: Map<number, Set<number>> }
+  >();
 
   for (const item of removals) {
     const ids = await resolveSimklIds(item.metaId, item.type);
@@ -631,7 +673,10 @@ async function buildExportPayload(
   completed: Awaited<ReturnType<typeof listWatchHistoryForProfile>>
 ): Promise<HistoryPayload> {
   const movies: HistoryIdsPayload[] = [];
-  const showsMap = new Map<string, { ids: Record<string, string | number>; seasons: Map<number, Set<number>> }>();
+  const showsMap = new Map<
+    string,
+    { ids: Record<string, string | number>; seasons: Map<number, Set<number>> }
+  >();
 
   for (const item of completed) {
     const ids = await resolveSimklIds(item.id, item.type);

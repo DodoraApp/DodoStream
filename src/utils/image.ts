@@ -1,4 +1,5 @@
 import type { ImageRequireSource } from 'react-native';
+
 import type { Source } from '@d11/react-native-fast-image';
 
 export const getImageSource = (

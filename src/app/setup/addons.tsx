@@ -1,14 +1,16 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Alert } from 'react-native';
-import { Box, Text, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
+import { Alert, ScrollView } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import { useRouter } from 'expo-router';
+
+import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
-import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
 import { useAddonStore } from '@/store/addon.store';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export default function AddonsStep() {
   const router = useRouter();
@@ -24,17 +26,13 @@ export default function AddonsStep() {
     if (hasAnyAddons) {
       return router.push('/setup/home');
     }
-    Alert.alert(
-      t('setup:addons.skip_title'),
-      t('setup:addons.skip_message'),
-      [
-        { text: t('common:cancel'), style: 'cancel' },
-        {
-          text: t('setup:addons.skip_anyway'),
-          onPress: () => router.push('/setup/home'),
-        },
-      ]
-    );
+    Alert.alert(t('setup:addons.skip_title'), t('setup:addons.skip_message'), [
+      { text: t('common:cancel'), style: 'cancel' },
+      {
+        text: t('setup:addons.skip_anyway'),
+        onPress: () => router.push('/setup/home'),
+      },
+    ]);
   }, [hasAnyAddons, router, t]);
 
   return (
@@ -66,11 +64,14 @@ export default function AddonsStep() {
                 {t('setup:addons.about_description')}
               </Text>
               <Text variant="bodySmall" color="textSecondary">
-                {t('setup:addons.about_types')}{'\n'}•{' '}
+                {t('setup:addons.about_types')}
+                {'\n'}•{' '}
                 <Text style={{ fontWeight: '600' }}>{t('setup:addons.about_type_metadata')}</Text>
-                {t('setup:addons.about_type_metadata_desc')}{'\n'}•{' '}
+                {t('setup:addons.about_type_metadata_desc')}
+                {'\n'}•{' '}
                 <Text style={{ fontWeight: '600' }}>{t('setup:addons.about_type_streams')}</Text>
-                {t('setup:addons.about_type_streams_desc')}{'\n'}•{' '}
+                {t('setup:addons.about_type_streams_desc')}
+                {'\n'}•{' '}
                 <Text style={{ fontWeight: '600' }}>{t('setup:addons.about_type_subtitles')}</Text>
                 {t('setup:addons.about_type_subtitles_desc')}
               </Text>

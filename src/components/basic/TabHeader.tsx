@@ -1,11 +1,12 @@
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { DrawerNavigationProp } from '@react-navigation/drawer';
-
 import { ReactNode } from 'react';
+import { TouchableOpacity } from 'react-native';
+
+import { Ionicons } from '@expo/vector-icons';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '@shopify/restyle';
+
+import { Box, Text, type Theme } from '@/theme/theme';
 
 interface TabHeaderProps {
   title?: string;

@@ -1,17 +1,20 @@
-import { FC, useState, useCallback } from 'react';
-import { ScrollView } from 'react-native';
+import { FC, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@shopify/restyle';
-import { MotiView } from 'moti';
+import { ScrollView } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+
+import { PROFILE_EXIT_ANIMATION_MS } from '@/constants/ui';
+import { Profile, useProfileStore } from '@/store/profile.store';
+import { showToast } from '@/store/toast.store';
 import { Box, Text, Theme } from '@/theme/theme';
+
+import { PINPrompt } from './PINPrompt';
 import { ProfileCard } from './ProfileCard';
 import { ProfileEditor } from './ProfileEditor';
-import { PINPrompt } from './PINPrompt';
-import { useProfileStore, Profile } from '@/store/profile.store';
-import { PROFILE_EXIT_ANIMATION_MS } from '@/constants/ui';
-import { showToast } from '@/store/toast.store';
 
 interface ProfileSelectorProps {
   onSelect: () => void;

@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { PLAYER_CONTROLS_AUTO_HIDE_MS } from '@/constants/playback';
 
 export interface UseControlsVisibilityOptions {

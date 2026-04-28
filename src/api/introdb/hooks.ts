@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchIntro } from './client';
+
 import type { IntroData } from '@/types/introdb';
 import type { ContentType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
 import { isImdbId, parseVideoId } from '@/utils/id';
-import { createDebugLogger } from '@/utils/debug'
+
+import { fetchIntro } from './client';
 
 const debug = createDebugLogger('useIntro');
 

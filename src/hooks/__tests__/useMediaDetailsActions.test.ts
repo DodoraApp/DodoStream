@@ -1,5 +1,8 @@
 import { act, waitFor } from '@testing-library/react-native';
+
 import { createTestQueryClient, renderHookWithProviders } from '@/utils/test-utils';
+
+import { useMediaDetailsActions } from '../useMediaDetailsActions';
 
 const mockUpsertWatchProgress = jest.fn().mockResolvedValue(undefined);
 const mockRemoveWatchHistoryMeta = jest.fn().mockResolvedValue(undefined);
@@ -55,8 +58,6 @@ jest.mock('@/hooks/useContinueWatching', () => ({
   useContinueWatchingForMeta: () => ({ entry: undefined, isLoading: false }),
 }));
 
-import { useMediaDetailsActions } from '../useMediaDetailsActions';
-
 function setupProfile(profileId: string | null = 'profile-1') {
   mockUseProfileStore.mockImplementation((selector: any) =>
     selector({ activeProfileId: profileId })
@@ -84,9 +85,7 @@ describe('useMediaDetailsActions', () => {
 
   describe('items', () => {
     it('shows only "mark as watched" when not-watched (no history to remove)', () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].value).toBe('mark-as-watched');
     });
@@ -94,9 +93,7 @@ describe('useMediaDetailsActions', () => {
     it('shows "mark as watched" when in-progress', () => {
       mockWatchState = 'in-progress';
       mockHistoryItem = { durationSeconds: 3600 };
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       expect(result.current.items).toHaveLength(2);
       expect(result.current.items[0].value).toBe('mark-as-watched');
       expect(result.current.items[1].value).toBe('remove-from-history');
@@ -105,9 +102,7 @@ describe('useMediaDetailsActions', () => {
     it('shows only "remove from history" when fully watched', () => {
       mockWatchState = 'watched';
       mockHistoryItem = { durationSeconds: 3600 };
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].value).toBe('remove-from-history');
     });
@@ -115,9 +110,7 @@ describe('useMediaDetailsActions', () => {
     it('"remove from history" has destructive tone', () => {
       mockWatchState = 'in-progress';
       mockHistoryItem = { durationSeconds: 3600 };
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       expect(result.current.items[1].tone).toBe('destructive');
     });
   });
@@ -136,17 +129,13 @@ describe('useMediaDetailsActions', () => {
     };
 
     it('always shows "mark as watched" for series', () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(seriesParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(seriesParams));
       expect(result.current.items.some((i) => i.value === 'mark-as-watched')).toBe(true);
     });
 
     it('shows "remove from history" when meta has history', async () => {
       mockListWatchHistoryForMeta.mockResolvedValue([{ id: 'tt1234567' }]);
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(seriesParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(seriesParams));
       await waitFor(() => {
         expect(result.current.items.some((i) => i.value === 'remove-from-history')).toBe(true);
       });
@@ -154,9 +143,7 @@ describe('useMediaDetailsActions', () => {
 
     it('hides "remove from history" when no meta history', () => {
       mockListWatchHistoryForMeta.mockResolvedValue([]);
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(seriesParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(seriesParams));
       expect(result.current.items.some((i) => i.value === 'remove-from-history')).toBe(false);
     });
   });
@@ -167,24 +154,18 @@ describe('useMediaDetailsActions', () => {
 
   describe('visibility', () => {
     it('starts hidden', () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       expect(result.current.isVisible).toBe(false);
     });
 
     it('openActions makes it visible', () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       act(() => result.current.openActions());
       expect(result.current.isVisible).toBe(true);
     });
 
     it('closeActions hides it', () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
       act(() => result.current.openActions());
       act(() => result.current.closeActions());
       expect(result.current.isVisible).toBe(false);
@@ -202,9 +183,7 @@ describe('useMediaDetailsActions', () => {
     });
 
     it('calls upsertWatchProgress with correct params', async () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
 
       await act(async () => {
         result.current.handleAction('mark-as-watched');
@@ -245,9 +224,7 @@ describe('useMediaDetailsActions', () => {
     });
 
     it('closes the picker after action', async () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
 
       act(() => result.current.openActions());
       await act(async () => {
@@ -258,9 +235,7 @@ describe('useMediaDetailsActions', () => {
     });
 
     it('shows toast on success', async () => {
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
 
       await act(async () => {
         result.current.handleAction('mark-as-watched');
@@ -338,9 +313,7 @@ describe('useMediaDetailsActions', () => {
     it('calls removeWatchHistoryMeta by default (meta scope)', async () => {
       mockWatchState = 'in-progress';
       mockHistoryItem = { durationSeconds: 3600 };
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
 
       await act(async () => {
         result.current.handleAction('remove-from-history');
@@ -380,9 +353,7 @@ describe('useMediaDetailsActions', () => {
     it('closes the picker and shows toast', async () => {
       mockWatchState = 'in-progress';
       mockHistoryItem = { durationSeconds: 3600 };
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
 
       act(() => result.current.openActions());
       await act(async () => {
@@ -407,9 +378,7 @@ describe('useMediaDetailsActions', () => {
       setupProfile(null);
       mockWatchState = 'in-progress';
       mockHistoryItem = { durationSeconds: 3600 };
-      const { result } = renderHookWithProviders(() =>
-        useMediaDetailsActions(baseParams)
-      );
+      const { result } = renderHookWithProviders(() => useMediaDetailsActions(baseParams));
 
       await act(async () => {
         result.current.handleAction('mark-as-watched');

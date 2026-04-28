@@ -1,8 +1,10 @@
 import { memo } from 'react';
-import { useTheme } from '@shopify/restyle';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { type Theme } from '@/theme/theme';
+
+import { useTheme } from '@shopify/restyle';
+
 import { LOGO_PATH_D } from '@/constants/logo-path';
+import { type Theme } from '@/theme/theme';
 
 interface AppLogoProps {
   size: number;

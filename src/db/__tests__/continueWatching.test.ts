@@ -9,17 +9,19 @@
  * - Returns isUpNext=true when showing next episode
  */
 
+import { eq } from 'drizzle-orm';
+
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
-import { initializeDatabase, db } from '../client';
+import type { MetaDetail } from '@/types/stremio';
+
+import { db, initializeDatabase } from '../client';
+import { upsertMetaCache } from '../queries/metaCache';
 import {
+  dismissFromContinueWatching,
   getContinueWatchingWithUpNext,
   upsertWatchProgress,
-  dismissFromContinueWatching,
 } from '../queries/watchHistory';
-import { upsertMetaCache } from '../queries/metaCache';
-import { watchHistory, metaCache, videos } from '../schema';
-import { eq } from 'drizzle-orm';
-import type { MetaDetail } from '@/types/stremio';
+import { metaCache, videos, watchHistory } from '../schema';
 
 describe('getContinueWatchingWithUpNext (integration)', () => {
   const testProfileId = 'cw-test-profile';

@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { showToast } from '@/store/toast.store';
-import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
-import { Stream as StreamType, ContentType } from '@/types/stremio';
-import { createDebugLogger } from '@/utils/debug'
-import { useMediaNavigation, type StreamTarget } from '@/hooks/useMediaNavigation';
-import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
+
 import { useStreams } from '@/api/stremio';
-import { usePlaybackStore } from '@/store/playback.store';
-import { parseBooleanParam } from '@/utils/params';
+import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
+import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { getLastStreamTarget } from '@/db';
+import { type StreamTarget, useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { usePlaybackStore } from '@/store/playback.store';
+import { showToast } from '@/store/toast.store';
+import { ContentType, Stream as StreamType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
+import { parseBooleanParam } from '@/utils/params';
 
 const debug = createDebugLogger('useAutoPlay');
 

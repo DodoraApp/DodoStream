@@ -1,15 +1,17 @@
 import { useMemo } from 'react';
+
 import { useQuery } from '@tanstack/react-query';
-import type { ContentType, MetaDetail, MetaVideo } from '@/types/stremio';
-import { useProfileStore } from '@/store/profile.store';
+
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import {
+  type DbWatchHistoryItem,
   getContinueWatchingWithUpNext,
   getVideosForEntries,
   listWatchHistoryForMeta,
-  type DbWatchHistoryItem,
 } from '@/db';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
+import { useProfileStore } from '@/store/profile.store';
+import type { ContentType, MetaDetail, MetaVideo } from '@/types/stremio';
 
 // ============================================================================
 // Types

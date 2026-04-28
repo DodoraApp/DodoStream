@@ -1,7 +1,9 @@
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import { useTheme } from '@shopify/restyle';
-import { Box, type Theme } from '@/theme/theme';
 import { FC, PropsWithChildren } from 'react';
+import { type Edge, SafeAreaView } from 'react-native-safe-area-context';
+
+import { useTheme } from '@shopify/restyle';
+
+import { Box, type Theme } from '@/theme/theme';
 
 interface ContainerProps {
   disablePadding?: boolean;

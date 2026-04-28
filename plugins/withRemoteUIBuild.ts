@@ -1,7 +1,7 @@
-import { ConfigPlugin, withDangerousMod } from 'expo/config-plugins';
 import { execSync } from 'child_process';
-import path from 'path';
+import { ConfigPlugin, withDangerousMod } from 'expo/config-plugins';
 import fs from 'fs';
+import path from 'path';
 
 /**
  * Expo config plugin that builds the remote-ui SPA and embeds it

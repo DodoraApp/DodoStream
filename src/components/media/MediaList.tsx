@@ -1,12 +1,15 @@
 import { memo, useCallback, useMemo } from 'react';
 import { Platform, TVFocusGuideView } from 'react-native';
-import { useTheme } from '@shopify/restyle';
+
 import { LegendList } from '@legendapp/list/react-native';
+import { useTheme } from '@shopify/restyle';
+
+import { MOBILE_HORIZONTAL_DRAW_DISTANCE, TV_HORIZONTAL_DRAW_DISTANCE } from '@/constants/ui';
 import type { Theme } from '@/theme/theme';
-import { MediaCard } from './MediaCard';
 import { MetaPreview } from '@/types/stremio';
 import { getMediaSectionHeight } from '@/utils/layout';
-import { TV_HORIZONTAL_DRAW_DISTANCE, MOBILE_HORIZONTAL_DRAW_DISTANCE } from '@/constants/ui';
+
+import { MediaCard } from './MediaCard';
 
 interface MediaListProps {
   data: MetaPreview[];

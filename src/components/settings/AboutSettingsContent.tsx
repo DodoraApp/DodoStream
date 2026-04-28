@@ -1,22 +1,24 @@
 import { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
+
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
-import { showToast } from '@/store/toast.store';
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
-import { Box, Text } from '@/theme/theme';
+import * as Linking from 'expo-linking';
+
 import { AppLogo } from '@/components/basic/AppLogo';
 import { Focusable } from '@/components/basic/Focusable';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
-import { createDebugLogger } from '@/utils/debug'
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 import { useAppSettingsStore } from '@/store/app-settings.store';
+import { showToast } from '@/store/toast.store';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import { createDebugLogger } from '@/utils/debug';
 
 interface AboutLinkItem {
   id: string;

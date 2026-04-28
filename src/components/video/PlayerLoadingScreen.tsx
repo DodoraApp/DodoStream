@@ -1,13 +1,15 @@
 import { memo } from 'react';
 import { StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
+
 import FastImage from '@d11/react-native-fast-image';
-import { Box } from '@/theme/theme';
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
+import { MotiView } from 'moti';
+
 import { AppLogo } from '@/components/basic/AppLogo';
 import { LOADING_LOGO_ANIMATION_DURATION_MS } from '@/constants/ui';
+import type { Theme } from '@/theme/theme';
+import { Box } from '@/theme/theme';
 
 interface PlayerLoadingScreenProps {
   /** Background image URL */

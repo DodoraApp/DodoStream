@@ -1,16 +1,18 @@
 import { FC, useCallback, useEffect, useMemo, useRef } from 'react';
-import { TVFocusGuideView, View, findNodeHandle } from 'react-native';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useRouter, usePathname } from 'expo-router';
-import { NAV_ITEMS, NavItem } from '@/constants/navigation';
-import { Focusable } from '@/components/basic/Focusable';
+import { findNodeHandle, TVFocusGuideView, View } from 'react-native';
+
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import { usePathname, useRouter } from 'expo-router';
+
 import { AppLogo } from '@/components/basic/AppLogo';
-import { useProfileStore } from '@/store/profile.store';
+import { Focusable } from '@/components/basic/Focusable';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { NAV_ITEMS, NavItem } from '@/constants/navigation';
+import { useProfileStore } from '@/store/profile.store';
 import { useSidebarFocusStore } from '@/store/sidebar-focus.store';
+import { Box, Text, type Theme } from '@/theme/theme';
 
 interface TVSidebarProps {
   onItemFocus?: () => void;

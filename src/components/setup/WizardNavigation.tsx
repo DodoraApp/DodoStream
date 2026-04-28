@@ -1,9 +1,10 @@
 import { FC, memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box } from '@/theme/theme';
+
 import { Button } from '@/components/basic/Button';
-import { useSetupWizardStore, SetupWizardStep } from '@/store/setup-wizard.store';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { SetupWizardStep, useSetupWizardStore } from '@/store/setup-wizard.store';
+import { Box } from '@/theme/theme';
 
 interface WizardNavigationProps {
   currentStep: SetupWizardStep;

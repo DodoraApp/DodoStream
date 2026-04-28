@@ -1,11 +1,13 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { useAutoPlay } from '../useAutoPlay';
-import * as toastStore from '@/store/toast.store';
+
 import * as streamsApi from '@/api/stremio';
+import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
+import * as db from '@/db';
 import * as mediaNav from '@/hooks/useMediaNavigation';
 import * as profileStore from '@/store/playback.store';
-import * as db from '@/db';
-import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
+import * as toastStore from '@/store/toast.store';
+
+import { useAutoPlay } from '../useAutoPlay';
 
 jest.mock('@/store/toast.store', () => ({ showToast: jest.fn() }));
 jest.mock('@/api/stremio');

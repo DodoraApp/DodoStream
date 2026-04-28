@@ -1,6 +1,6 @@
 import { useAddonStore } from '@/store/addon.store';
-import { type AddonConfig } from '@/types/addon-config';
 import { useProfileStore } from '@/store/profile.store';
+import { type AddonConfig } from '@/types/addon-config';
 import type { Manifest } from '@/types/stremio';
 
 export interface RouteResult {
@@ -52,7 +52,12 @@ export function getProfileAddons(profileId: string): RouteResult {
     description: addon.manifest.description,
     configurable: addon.manifest.behaviorHints?.configurable ?? false,
     manifestUrl: addon.manifestUrl,
-    config: addonStore.getAddonConfig(addon.id, profileId) ?? { isActive: false, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true },
+    config: addonStore.getAddonConfig(addon.id, profileId) ?? {
+      isActive: false,
+      useCatalogsOnHome: true,
+      useCatalogsInSearch: true,
+      useForSubtitles: true,
+    },
   }));
 
   return { status: 200, body: addons };
@@ -93,11 +98,7 @@ export function deleteAddon(addonId: string): RouteResult {
   return { status: 204 };
 }
 
-export function patchProfileAddon(
-  profileId: string,
-  addonId: string,
-  input: unknown
-): RouteResult {
+export function patchProfileAddon(profileId: string, addonId: string, input: unknown): RouteResult {
   const { profiles } = useProfileStore.getState();
   if (!profiles[profileId]) {
     return { status: 404, body: { error: 'Profile not found' } };
@@ -109,8 +110,10 @@ export function patchProfileAddon(
   // Build the partial config from explicitly-provided boolean fields.
   const updates: Partial<AddonConfig> = {};
   if (typeof body.isActive === 'boolean') updates.isActive = body.isActive;
-  if (typeof body.useCatalogsOnHome === 'boolean') updates.useCatalogsOnHome = body.useCatalogsOnHome;
-  if (typeof body.useCatalogsInSearch === 'boolean') updates.useCatalogsInSearch = body.useCatalogsInSearch;
+  if (typeof body.useCatalogsOnHome === 'boolean')
+    updates.useCatalogsOnHome = body.useCatalogsOnHome;
+  if (typeof body.useCatalogsInSearch === 'boolean')
+    updates.useCatalogsInSearch = body.useCatalogsInSearch;
   if (typeof body.useForSubtitles === 'boolean') updates.useForSubtitles = body.useForSubtitles;
 
   if (Object.keys(updates).length === 0) {

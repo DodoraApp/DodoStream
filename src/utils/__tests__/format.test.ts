@@ -1,14 +1,14 @@
 import {
-  formatSeasonEpisodeLabel,
-  formatEpisodeTitle,
+  formatDescription,
   formatEpisodeCardTitle,
   formatEpisodeListTitle,
+  formatEpisodeTitle,
   formatPlayerTitle,
   formatReleaseDate,
-  formatReleaseYear,
   formatReleaseInfo,
+  formatReleaseYear,
   formatRuntime,
-  formatDescription,
+  formatSeasonEpisodeLabel,
 } from '@/utils/format';
 
 describe('format utils', () => {
@@ -74,25 +74,27 @@ describe('format utils', () => {
   describe('formatEpisodeListTitle', () => {
     it('formats episode number and title', () => {
       expect(formatEpisodeListTitle({ episode: 5, title: 'Episode Title' }, mockT as any)).toBe(
-              '5. Episode Title'
-            );
-          });
+        '5. Episode Title'
+      );
+    });
 
-          it('falls back to name when title is missing', () => {
-            expect(formatEpisodeListTitle({ episode: 3, name: 'Episode Name' }, mockT as any)).toBe('3. Episode Name');
-          });
+    it('falls back to name when title is missing', () => {
+      expect(formatEpisodeListTitle({ episode: 3, name: 'Episode Name' }, mockT as any)).toBe(
+        '3. Episode Name'
+      );
+    });
 
-          it('uses placeholder when episode is missing', () => {
-            expect(formatEpisodeListTitle({ title: 'Special' }, mockT as any)).toBe('?. Special');
-          });
+    it('uses placeholder when episode is missing', () => {
+      expect(formatEpisodeListTitle({ title: 'Special' }, mockT as any)).toBe('?. Special');
+    });
 
-          it('uses placeholder when title/name is missing', () => {
-            expect(formatEpisodeListTitle({ episode: 1 }, mockT as any)).toBe('1. Unknown');
-          });
+    it('uses placeholder when title/name is missing', () => {
+      expect(formatEpisodeListTitle({ episode: 1 }, mockT as any)).toBe('1. Unknown');
+    });
 
-          it('handles null/undefined video', () => {
-            expect(formatEpisodeListTitle(undefined, mockT as any)).toBe('?. Unknown');
-            expect(formatEpisodeListTitle(null, mockT as any)).toBe('?. Unknown');
+    it('handles null/undefined video', () => {
+      expect(formatEpisodeListTitle(undefined, mockT as any)).toBe('?. Unknown');
+      expect(formatEpisodeListTitle(null, mockT as any)).toBe('?. Unknown');
     });
   });
 

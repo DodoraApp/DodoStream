@@ -8,17 +8,19 @@
  * - getStaleMetaIds: batch check for multiple metas
  */
 
-import { initializeDatabase, db } from '../client';
+import { eq } from 'drizzle-orm';
+
+import type { MetaDetail } from '@/types/stremio';
+
+import { db, initializeDatabase } from '../client';
 import {
-  upsertMetaCache,
-  isMetaCacheStale,
   getStaleMetaIds,
   getVideoForEntry,
+  isMetaCacheStale,
+  upsertMetaCache,
   upsertMinimalMetaCache,
 } from '../queries/metaCache';
 import { metaCache, videos } from '../schema';
-import { eq } from 'drizzle-orm';
-import type { MetaDetail } from '@/types/stremio';
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 

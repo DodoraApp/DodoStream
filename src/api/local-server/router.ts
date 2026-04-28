@@ -73,7 +73,13 @@ const ROUTES: Route[] = [
     toResponse(deleteAddon(decodeURIComponent(addonId)))
   ),
   route('PATCH', '/api/v1/profiles/:profileId/addons/:addonId', ({ profileId, addonId }, req) =>
-    toResponse(patchProfileAddon(decodeURIComponent(profileId), decodeURIComponent(addonId), parseBody(req.body)))
+    toResponse(
+      patchProfileAddon(
+        decodeURIComponent(profileId),
+        decodeURIComponent(addonId),
+        parseBody(req.body)
+      )
+    )
   ),
   route('PUT', '/api/v1/profiles/:profileId/addons/order', ({ profileId }, req) =>
     toResponse(reorderProfileAddons(decodeURIComponent(profileId), parseBody(req.body)))

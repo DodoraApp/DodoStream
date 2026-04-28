@@ -1,7 +1,10 @@
-import { renderHook, act } from '@testing-library/react-native';
 import { Platform } from 'react-native';
-import { usePlayerSeek, UsePlayerSeekOptions } from '../usePlayerSeek';
+
+import { act, renderHook } from '@testing-library/react-native';
+
 import { PLAYER_SEEK_DEBOUNCE_MS, PLAYER_SEEK_UI_SYNC_TIMEOUT_MS } from '@/constants/playback';
+
+import { usePlayerSeek, UsePlayerSeekOptions } from '../usePlayerSeek';
 
 // Mock debug logger to prevent console spam
 jest.mock('@/utils/debug', () => ({

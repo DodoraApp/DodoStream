@@ -1,22 +1,22 @@
-import React, { FC, memo, useMemo, useState, useCallback } from 'react';
+import React, { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
+import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
 import { PickerInput } from '@/components/basic/PickerInput';
 import { SubtitleSyncPanel } from '@/components/video/SubtitleSyncPanel';
-
-import type { TextTrack } from '@/types/player';
 import { useGroupOptions } from '@/hooks/useGroupOptions';
+import { Box, Text, Theme } from '@/theme/theme';
+import type { TextTrack } from '@/types/player';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 import {
-  normalizeLanguageCode,
-  getPreferredLanguageCodes,
   getLanguageDisplayName,
+  getPreferredLanguageCodes,
+  normalizeLanguageCode,
 } from '@/utils/languages';
 import { buildSubtitleLabel } from '@/utils/subtitles';
 
@@ -120,7 +120,9 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
 
   // Convert tracks to picker items
   const items = useMemo<SubtitlePickerItem[]>(() => {
-    const result: SubtitlePickerItem[] = [{ label: t('none'), value: -1, groupId: null, track: null }];
+    const result: SubtitlePickerItem[] = [
+      { label: t('none'), value: -1, groupId: null, track: null },
+    ];
 
     for (const track of tracks) {
       result.push({

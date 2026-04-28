@@ -1,8 +1,10 @@
 import { memo, useState } from 'react';
-import { MotiView } from 'moti';
-import FastImage from '@d11/react-native-fast-image';
-import type { FastImageProps, ResizeMode } from '@d11/react-native-fast-image';
 import { StyleSheet } from 'react-native';
+
+import type { FastImageProps, ResizeMode } from '@d11/react-native-fast-image';
+import FastImage from '@d11/react-native-fast-image';
+import { MotiView } from 'moti';
+
 import { ANIMATION_FADE_IN_MS } from '@/constants/ui';
 
 type ContentFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';

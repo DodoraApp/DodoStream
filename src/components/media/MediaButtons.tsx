@@ -1,27 +1,28 @@
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TVFocusGuideView } from 'react-native';
-import { Box } from '@/theme/theme';
+
 import { Button } from '@/components/basic/Button';
-import { ProgressButton } from '@/components/basic/ProgressButton';
 import { PickerModal } from '@/components/basic/PickerModal';
+import { ProgressButton } from '@/components/basic/ProgressButton';
 import { MyListHeaderButton } from '@/components/media/MyListHeaderButton';
-import type { ContentType, MetaDetail } from '@/types/stremio';
+import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
+import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { useIsInMyList, useMyListActions } from '@/hooks/useMyListDb';
 import {
   useWatchHistoryActions,
   useWatchHistoryItem,
   useWatchProgress,
   useWatchState,
 } from '@/hooks/useWatchHistoryDb';
-import { useIsInMyList, useMyListActions } from '@/hooks/useMyListDb';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
-import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
-import { formatSeasonEpisodeLabel } from '@/utils/format';
-import { createDebugLogger } from '@/utils/debug'
-import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { showToast } from '@/store/toast.store';
+import { Box } from '@/theme/theme';
+import type { ContentType, MetaDetail } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { resetProgressToStart } from '@/utils/playback';
 
 const debug = createDebugLogger('MediaButtons');
@@ -47,7 +48,6 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const progressRatio = useWatchProgress(metaId, videoId);
   const { data: historyItem } = useWatchHistoryItem(metaId, videoId);
   const { upsert } = useWatchHistoryActions();
-
 
   // Media actions context menu (three-dots button)
   const mediaActions = useMediaDetailsActions({

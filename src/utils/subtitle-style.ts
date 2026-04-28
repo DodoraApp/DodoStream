@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+
 import {
   SUBTITLE_LINE_HEIGHT_MULTIPLIER,
   SUBTITLE_PADDING_RATIO,

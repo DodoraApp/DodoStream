@@ -1,15 +1,16 @@
 import { memo } from 'react';
-import { Box, Text } from '@/theme/theme';
-import { MetaPreview } from '@/types/stremio';
+import { Pressable } from 'react-native';
+
 import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 
 import { Badge } from '@/components/basic/Badge';
+import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
-import { Focusable } from '@/components/basic/Focusable';
-import { Pressable } from 'react-native';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import { MetaPreview } from '@/types/stremio';
 
 interface MediaCardProps {
   media: MetaPreview;

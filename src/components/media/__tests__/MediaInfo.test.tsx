@@ -1,7 +1,9 @@
 import React from 'react';
-import { renderWithProviders } from '@/utils/test-utils';
-import { MediaInfo } from '../MediaInfo';
+
 import * as watchStatus from '@/hooks/useMediaWatchStatus';
+import { renderWithProviders } from '@/utils/test-utils';
+
+import { MediaInfo } from '../MediaInfo';
 
 jest.mock('@/hooks/useMediaWatchStatus', () => ({
   useMediaWatchStatus: jest.fn(),

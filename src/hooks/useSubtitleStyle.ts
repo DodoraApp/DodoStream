@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import { Dimensions } from 'react-native';
-import { useProfileStore } from '@/store/profile.store';
-import { usePlaybackStore } from '@/store/playback.store';
+
 import {
   DEFAULT_SUBTITLE_STYLE,
   SUBTITLE_PADDING_RATIO,
   SUBTITLE_REFERENCE_HEIGHT,
 } from '@/constants/subtitles';
+import { usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
 import type { SubtitleStyle } from '@/types/subtitles';
-import { computeSubtitleStyle, type ComputedSubtitleStyle } from '@/utils/subtitle-style';
+import { type ComputedSubtitleStyle, computeSubtitleStyle } from '@/utils/subtitle-style';
 
 /**
  * Computed subtitle style values scaled to a container height.

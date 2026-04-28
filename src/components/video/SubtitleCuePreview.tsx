@@ -1,10 +1,11 @@
-import React, { FC, memo, useMemo, useRef, useEffect } from 'react';
-import { Box, Text } from '@/theme/theme';
-import type { SubtitleCue } from '@/types/player';
+import React, { FC, memo, useEffect, useMemo, useRef } from 'react';
+
 import {
   SUBTITLE_CUE_PREVIEW_COUNT,
   SUBTITLE_CUE_PREVIEW_FADE_LEVELS,
 } from '@/constants/subtitles';
+import { Box, Text } from '@/theme/theme';
+import type { SubtitleCue } from '@/types/player';
 
 interface SubtitleCuePreviewProps {
   /** All parsed subtitle cues */

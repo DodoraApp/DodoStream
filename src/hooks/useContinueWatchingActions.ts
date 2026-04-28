@@ -1,21 +1,23 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
+import { Platform } from 'react-native';
+
 import { useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+
 import type { PickerItem } from '@/components/basic/PickerModal';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import type { ContinueWatchingEntry } from '@/hooks/useContinueWatching';
-import type { ContinueWatchingAction } from '@/types/continue-watching';
-import { resetProgressToStart } from '@/utils/playback';
-import { useProfileStore } from '@/store/profile.store';
 import {
   dismissFromContinueWatching,
   getWatchHistoryItem,
   removeWatchHistoryMeta,
   upsertWatchProgress,
 } from '@/db';
+import type { ContinueWatchingEntry } from '@/hooks/useContinueWatching';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
+import { useProfileStore } from '@/store/profile.store';
+import type { ContinueWatchingAction } from '@/types/continue-watching';
+import { resetProgressToStart } from '@/utils/playback';
 
 export const useContinueWatchingActions = () => {
   const { t } = useTranslation('media');

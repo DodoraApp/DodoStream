@@ -1,12 +1,14 @@
-import { Redirect, Stack, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/theme/theme';
-import { useProfileStore } from '@/store/profile.store';
-import { useAppSettingsStore } from '@/store/app-settings.store';
-import { ProfileSelector } from '@/components/profile/ProfileSelector';
-import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
+
 import { useTheme } from '@shopify/restyle';
+import { Redirect, Stack, useRouter } from 'expo-router';
+
+import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
+import { ProfileSelector } from '@/components/profile/ProfileSelector';
+import { useAppSettingsStore } from '@/store/app-settings.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Theme } from '@/theme/theme';
 
 /**
  * App layout that requires profiles to exist

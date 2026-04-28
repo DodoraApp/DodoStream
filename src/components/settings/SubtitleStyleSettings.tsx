@@ -1,13 +1,13 @@
 import React, { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWindowDimensions } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
+
 import { ColorPicker } from '@/components/basic/ColorPicker';
-import { SliderInput } from '@/components/basic/SliderInput';
+import { PickerInput } from '@/components/basic/PickerInput';
 import { PickerItem } from '@/components/basic/PickerModal';
-import { useProfileStore } from '@/store/profile.store';
-import { usePlaybackStore } from '@/store/playback.store';
+import { SliderInput } from '@/components/basic/SliderInput';
 import {
   DEFAULT_SUBTITLE_STYLE,
   SUBTITLE_COMMON_COLORS,
@@ -15,15 +15,17 @@ import {
   SUBTITLE_FONT_SIZE_MAX,
   SUBTITLE_FONT_SIZE_MIN,
   SUBTITLE_FONT_SIZE_STEP,
-  SUBTITLE_POSITION_MIN,
-  SUBTITLE_POSITION_MAX,
-  SUBTITLE_POSITION_STEP,
   SUBTITLE_MAX_LINES,
+  SUBTITLE_POSITION_MAX,
+  SUBTITLE_POSITION_MIN,
+  SUBTITLE_POSITION_STEP,
 } from '@/constants/subtitles';
-import type { SubtitleStyle, SubtitleFontFamily } from '@/types/subtitles';
-import { computeSubtitleStyle } from '@/utils/subtitle-style';
-import { PickerInput } from '@/components/basic/PickerInput';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Box, Text, type Theme } from '@/theme/theme';
+import type { SubtitleFontFamily, SubtitleStyle } from '@/types/subtitles';
+import { computeSubtitleStyle } from '@/utils/subtitle-style';
 
 const PREVIEW_ASPECT_RATIO = 16 / 9;
 const PREVIEW_SAMPLE_TEXT = 'Sample subtitle text\nSecond line of dialogue';

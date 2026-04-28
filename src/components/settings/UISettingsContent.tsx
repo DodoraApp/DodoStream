@@ -1,22 +1,23 @@
 import { FC, memo, useCallback, useMemo } from 'react';
-import { ScrollView } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
-import { Box, Text } from '@/theme/theme';
+import { ScrollView } from 'react-native-gesture-handler';
+
+import { PickerInput } from '@/components/basic/PickerInput';
+import type { PickerItem } from '@/components/basic/PickerModal';
+import { SliderInput } from '@/components/basic/SliderInput';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
-import { PickerInput } from '@/components/basic/PickerInput';
-import { SliderInput } from '@/components/basic/SliderInput';
-import { useUIStore } from '@/store/ui.store';
 import { AVAILABLE_LANGUAGES } from '@/i18n';
-import { getLanguageDisplayName } from '@/utils/languages';
+import { useUIStore } from '@/store/ui.store';
+import { Box, Text } from '@/theme/theme';
 import {
-  THEME_PRESETS,
-  SCALING_FACTOR_MIN,
   SCALING_FACTOR_MAX,
+  SCALING_FACTOR_MIN,
   SCALING_FACTOR_STEP,
+  THEME_PRESETS,
 } from '@/theme/theme-presets';
 import { useAppTheme } from '@/theme/ThemeContext';
-import type { PickerItem } from '@/components/basic/PickerModal';
+import { getLanguageDisplayName } from '@/utils/languages';
 
 /**
  * UI settings content component for theme and scaling preferences.

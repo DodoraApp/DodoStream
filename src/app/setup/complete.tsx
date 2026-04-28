@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Box, Text } from '@/theme/theme';
+
+import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { WizardContainer } from '@/components/setup/WizardContainer';
+
 import { Button } from '@/components/basic/Button';
+import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
+import { Box, Text } from '@/theme/theme';
 
 /**
  * Completion step - shows summary and launches the app

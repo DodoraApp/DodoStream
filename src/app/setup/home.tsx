@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import { Box } from '@/theme/theme';
+
+import { useRouter } from 'expo-router';
+
+import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
-import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
+import { Box } from '@/theme/theme';
 
 /**
  * Home settings step - customize home screen appearance

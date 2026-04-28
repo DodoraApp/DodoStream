@@ -1,7 +1,9 @@
-import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+
 import { useTheme } from '@shopify/restyle';
+import { Stack } from 'expo-router';
+
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { Theme } from '@/theme/theme';
 
 export default function SettingsLayout() {

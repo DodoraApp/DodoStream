@@ -1,12 +1,14 @@
 import { useCallback } from 'react';
 import { Linking } from 'react-native';
+
 import { useRouter } from 'expo-router';
-import { showToast } from '@/store/toast.store';
+
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { getLastStreamTarget, setLastStreamTarget } from '@/db';
 import type { StreamTargetType } from '@/db/schema';
-import type { ContentType, Stream } from '@/types/stremio';
 import { useProfileStore } from '@/store/profile.store';
+import { showToast } from '@/store/toast.store';
+import type { ContentType, Stream } from '@/types/stremio';
 
 type StreamsBaseParams = {
   metaId: string;

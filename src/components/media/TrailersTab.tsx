@@ -1,15 +1,16 @@
 import { FC, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking } from 'react-native';
-import { LegendList } from '@legendapp/list/react-native';
-import { Box, Text } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 
-import { TrailerCard } from '@/components/media/TrailerCard';
-import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
-import { HorizontalSpacer } from '@/components/basic/Spacer';
+import { LegendList } from '@legendapp/list/react-native';
+import { useTheme } from '@shopify/restyle';
+
 import FadeIn from '@/components/basic/FadeIn';
+import { HorizontalSpacer } from '@/components/basic/Spacer';
+import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
+import { TrailerCard } from '@/components/media/TrailerCard';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 
 interface TrailerStream {
   title: string;

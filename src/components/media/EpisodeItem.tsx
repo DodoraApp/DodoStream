@@ -1,17 +1,18 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
-import { Box, Text } from '@/theme/theme';
+
 import FastImage from '@d11/react-native-fast-image';
+import { useTheme } from '@shopify/restyle';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import type { MetaVideo } from '@/types/stremio';
-import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
-import { ProgressBar } from '@/components/basic/ProgressBar';
-import { Focusable } from '@/components/basic/Focusable';
 import { CompletedBadge } from '@/components/basic/CompletedBadge';
-import { useWatchHistoryItem, getWatchProgressRatio } from '@/hooks/useWatchHistoryDb';
+import { Focusable } from '@/components/basic/Focusable';
+import { ProgressBar } from '@/components/basic/ProgressBar';
+import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
+import { getWatchProgressRatio, useWatchHistoryItem } from '@/hooks/useWatchHistoryDb';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import type { MetaVideo } from '@/types/stremio';
 import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
 
 export interface EpisodeItemProps {
@@ -22,90 +23,92 @@ export interface EpisodeItemProps {
   onLongPress?: () => void;
 }
 
-export const EpisodeItem = memo(({ video, metaId, horizontal, onPress, onLongPress }: EpisodeItemProps) => {
-  const { t } = useTranslation('media');
-  const theme = useTheme<Theme>();
+export const EpisodeItem = memo(
+  ({ video, metaId, horizontal, onPress, onLongPress }: EpisodeItemProps) => {
+    const { t } = useTranslation('media');
+    const theme = useTheme<Theme>();
 
-  const { data: historyItem } = useWatchHistoryItem(metaId, video.id);
-  const progressRatio = useMemo(() => getWatchProgressRatio(historyItem), [historyItem]);
+    const { data: historyItem } = useWatchHistoryItem(metaId, video.id);
+    const progressRatio = useMemo(() => getWatchProgressRatio(historyItem), [historyItem]);
 
-  const clampedProgressRatio = Math.min(1, Math.max(0, progressRatio));
-  const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;
+    const clampedProgressRatio = Math.min(1, Math.max(0, progressRatio));
+    const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;
 
-  const releaseLabel = useMemo(() => formatReleaseDate(video.released), [video.released]);
-  const titleText = useMemo(() => formatEpisodeListTitle(video, t), [video, t]);
-  const imageSource = video.thumbnail ? { uri: video.thumbnail } : undefined;
+    const releaseLabel = useMemo(() => formatReleaseDate(video.released), [video.released]);
+    const titleText = useMemo(() => formatEpisodeListTitle(video, t), [video, t]);
+    const imageSource = video.thumbnail ? { uri: video.thumbnail } : undefined;
 
-  return (
-    <Focusable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      recyclingKey={video.id}
-      variant="background"
-      style={{ backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadii.m }}>
-      <Box
-        borderRadius="m"
-        overflow="hidden"
-        width={horizontal ? theme.cardSizes.episode.width : '100%'}
-        flexGrow={1}>
+    return (
+      <Focusable
+        onPress={onPress}
+        onLongPress={onLongPress}
+        recyclingKey={video.id}
+        variant="background"
+        style={{ backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadii.m }}>
         <Box
-          height={theme.cardSizes.episode.imageHeight}
-          width="100%"
-          backgroundColor="cardBorder"
-          position="relative">
-          {imageSource ? (
-            <FastImage
-              source={imageSource}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode={FastImage.resizeMode.cover}
+          borderRadius="m"
+          overflow="hidden"
+          width={horizontal ? theme.cardSizes.episode.width : '100%'}
+          flexGrow={1}>
+          <Box
+            height={theme.cardSizes.episode.imageHeight}
+            width="100%"
+            backgroundColor="cardBorder"
+            position="relative">
+            {imageSource ? (
+              <FastImage
+                source={imageSource}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode={FastImage.resizeMode.cover}
+              />
+            ) : null}
+            <LinearGradient
+              colors={['transparent', theme.colors.cardBackground]}
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: theme.sizes.episodeThumbnailGradientHeight,
+              }}
             />
-          ) : null}
-          <LinearGradient
-            colors={['transparent', theme.colors.cardBackground]}
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: theme.sizes.episodeThumbnailGradientHeight,
-            }}
-          />
 
-          {!!isFinished && (
-            <CompletedBadge
-              mode="overlay"
-              showSimklLogo={historyItem?.source === 'simkl'}
-            />
-          )}
+            {!!isFinished && (
+              <CompletedBadge mode="overlay" showSimklLogo={historyItem?.source === 'simkl'} />
+            )}
 
-          {!isFinished && clampedProgressRatio > 0 && (
-            <Box position="absolute" left={0} right={0} bottom={0}>
-              <ProgressBar progress={clampedProgressRatio} height={theme.sizes.progressBarHeight} />
+            {!isFinished && clampedProgressRatio > 0 && (
+              <Box position="absolute" left={0} right={0} bottom={0}>
+                <ProgressBar
+                  progress={clampedProgressRatio}
+                  height={theme.sizes.progressBarHeight}
+                />
+              </Box>
+            )}
+          </Box>
+
+          <Box padding="m" gap="xs">
+            <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start" gap="s">
+              <Text variant="cardTitle" style={{ flex: 1, flexShrink: 1 }}>
+                {titleText}
+              </Text>
+              {releaseLabel ? (
+                <Text variant="caption" color="textSecondary" style={{ flexShrink: 0 }}>
+                  {releaseLabel}
+                </Text>
+              ) : null}
             </Box>
-          )}
-        </Box>
 
-        <Box padding="m" gap="xs">
-          <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start" gap="s">
-            <Text variant="cardTitle" style={{ flex: 1, flexShrink: 1 }}>
-              {titleText}
-            </Text>
-            {releaseLabel ? (
-              <Text variant="caption" color="textSecondary" style={{ flexShrink: 0 }}>
-                {releaseLabel}
+            {video.overview ? (
+              <Text variant="caption" color="textSecondary" numberOfLines={3}>
+                {video.overview}
               </Text>
             ) : null}
           </Box>
-
-          {video.overview ? (
-            <Text variant="caption" color="textSecondary" numberOfLines={3}>
-              {video.overview}
-            </Text>
-          ) : null}
         </Box>
-      </Box>
-    </Focusable>
-  );
-});
+      </Focusable>
+    );
+  }
+);
 
 EpisodeItem.displayName = 'EpisodeItem';

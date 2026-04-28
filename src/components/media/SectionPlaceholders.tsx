@@ -1,10 +1,12 @@
 import { memo, PropsWithChildren, useCallback } from 'react';
-import { useTheme } from '@shopify/restyle';
+
 import { Ionicons } from '@expo/vector-icons';
-import { Box, Text, Theme } from '@/theme/theme';
+import { useTheme } from '@shopify/restyle';
+
 import { Focusable } from '@/components/basic/Focusable';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
-import { getMediaSectionHeight, getContinueWatchingSectionHeight } from '@/utils/layout';
+import { Box, Text, Theme } from '@/theme/theme';
+import { getContinueWatchingSectionHeight, getMediaSectionHeight } from '@/utils/layout';
 
 export type SectionType = 'media' | 'continue-watching';
 

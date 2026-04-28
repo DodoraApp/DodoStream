@@ -1,13 +1,14 @@
 import { memo, useCallback } from 'react';
-import { Box, Text } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 
-import { MediaCard } from '@/components/media/MediaCard';
-import { formatSeasonEpisodeLabel } from '@/utils/format';
+import { useTheme } from '@shopify/restyle';
+
 import { useMeta } from '@/api/stremio/hooks';
-import type { ContentType, MetaPreview } from '@/types/stremio';
+import { MediaCard } from '@/components/media/MediaCard';
 import type { DbWatchedMetaSummary } from '@/db';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import type { ContentType, MetaPreview } from '@/types/stremio';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
 
 interface HistoryCardProps {
   /** The watch history summary for this meta */

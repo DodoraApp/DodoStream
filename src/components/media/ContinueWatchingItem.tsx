@@ -1,7 +1,8 @@
 import { memo, useCallback, useMemo } from 'react';
+
+import { useMeta } from '@/api/stremio/hooks';
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
 import { ContinueWatchingItemSkeleton } from '@/components/media/ContinueWatchingItemSkeleton';
-import { useMeta } from '@/api/stremio/hooks';
 import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useLastStreamTarget } from '@/hooks/useWatchHistoryDb';

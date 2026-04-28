@@ -1,9 +1,11 @@
 import React, { FC, memo, useCallback, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
+
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@shopify/restyle';
-import { Theme, Box, Text } from '@/theme/theme';
+
 import { Button } from '@/components/basic/Button';
+import { Box, Text, Theme } from '@/theme/theme';
 
 interface SliderInputProps {
   /** Current value */

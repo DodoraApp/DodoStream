@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { showToast } from '@/store/toast.store';
-import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
-import { createDebugLogger } from '@/utils/debug'
+import * as Linking from 'expo-linking';
+
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
+import { showToast } from '@/store/toast.store';
+import { createDebugLogger } from '@/utils/debug';
 import { findMatchingAsset } from '@/utils/github-release-asset';
 
 const debug = createDebugLogger('useGithubReleaseNotification');

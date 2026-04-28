@@ -1,12 +1,13 @@
 import { memo, useCallback } from 'react';
+
+import { useCatalog } from '@/api/stremio';
 import { MediaList } from '@/components/media/MediaList';
 import {
-  SectionErrorPlaceholder,
   SectionEmptyPlaceholder,
+  SectionErrorPlaceholder,
   SectionLoadingPlaceholder,
 } from '@/components/media/SectionPlaceholders';
 import { MetaPreview } from '@/types/stremio';
-import { useCatalog } from '@/api/stremio';
 
 export interface StaticCatalogSectionProps {
   metas: MetaPreview[];

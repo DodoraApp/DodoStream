@@ -1,14 +1,15 @@
-import { useTheme } from '@shopify/restyle';
-import { Theme, Box, Text } from '@/theme/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { Focusable } from '@/components/basic/Focusable';
 import { useState } from 'react';
-import { PickerModal, PickerModalProps } from '@/components/basic/PickerModal';
 
-interface PickerInputProps<T extends string | number | undefined = string | number | undefined> extends Omit<
-  PickerModalProps<T>,
-  'visible' | 'onClose'
-> {
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
+import { Focusable } from '@/components/basic/Focusable';
+import { PickerModal, PickerModalProps } from '@/components/basic/PickerModal';
+import { Box, Text, Theme } from '@/theme/theme';
+
+interface PickerInputProps<
+  T extends string | number | undefined = string | number | undefined,
+> extends Omit<PickerModalProps<T>, 'visible' | 'onClose'> {
   selectedLabel: string;
 }
 

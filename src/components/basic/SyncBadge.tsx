@@ -1,10 +1,11 @@
-import { Box, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
-import { SimklLogo } from './SimklLogo';
-import type { IntegrationProvider } from '@/types/integrations';
 
 import type { SyncStatus } from '@/hooks/useSyncProviderBadges';
+import { Box, type Theme } from '@/theme/theme';
+import type { IntegrationProvider } from '@/types/integrations';
+
+import { SimklLogo } from './SimklLogo';
 
 interface SyncBadgeProps {
   status: SyncStatus;
