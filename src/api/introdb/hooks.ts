@@ -3,7 +3,9 @@ import { fetchIntro } from './client';
 import type { IntroData } from '@/types/introdb';
 import type { ContentType } from '@/types/stremio';
 import { isImdbId, parseVideoId } from '@/utils/id';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
+
+const debug = createDebugLogger('useIntro');
 
 /**
  * Query keys for IntroDB data
@@ -38,7 +40,6 @@ export function useIntro(
   mediaType: ContentType,
   options: UseIntroOptions = {}
 ) {
-  const debug = useDebugLogger('useIntro');
   const { enabled = true } = options;
 
   // Only fetch for series with valid IMDb IDs and parsed video IDs

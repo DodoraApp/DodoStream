@@ -6,7 +6,6 @@ import { PLAYER_SEEK_DEBOUNCE_MS, PLAYER_SEEK_UI_SYNC_TIMEOUT_MS } from '@/const
 // Mock debug logger to prevent console spam
 jest.mock('@/utils/debug', () => ({
   createDebugLogger: () => jest.fn(),
-  useDebugLogger: () => jest.fn(),
 }));
 
 // Store original Platform.isTV value

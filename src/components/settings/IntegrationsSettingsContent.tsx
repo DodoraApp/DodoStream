@@ -1,7 +1,7 @@
 import { FC, memo, useCallback, useState, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -118,11 +118,12 @@ interface IntegrationsSettingsContentProps {
   scrollable?: boolean;
 }
 
+const debug = createDebugLogger('IntegrationsSettingsContent');
+
 // This component orchestrates provider cards/settings at a higher level.
 export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> = memo(
   ({ scrollable = true }) => {
     const { t } = useTranslation('settings');
-    const debug = useDebugLogger('IntegrationsSettingsContent');
     const activeProfileId = useProfileStore((s) => s.activeProfileId);
     const simklSettings = useIntegrationsStore((s) =>
       activeProfileId ? s.settings[activeProfileId]?.simkl : undefined
@@ -159,7 +160,7 @@ export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> =
           });
         }
       },
-      [activeProfileId, debug, t]
+      [activeProfileId, t]
     );
 
     const handleFirstConnectDone = useCallback(() => {

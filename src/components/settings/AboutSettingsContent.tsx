@@ -13,7 +13,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 import { useAppSettingsStore } from '@/store/app-settings.store';
@@ -72,6 +72,8 @@ const AboutLinkRow: FC<AboutLinkRowProps> = memo(({ item, onPress }) => {
 
 AboutLinkRow.displayName = 'AboutLinkRow';
 
+const debug = createDebugLogger('AboutSettingsContent');
+
 /**
  * About settings content component
  * Shows app metadata and useful support links
@@ -79,7 +81,6 @@ AboutLinkRow.displayName = 'AboutLinkRow';
 export const AboutSettingsContent: FC = memo(() => {
   const { t } = useTranslation('settings');
   const theme = useTheme<Theme>();
-  const debug = useDebugLogger('AboutSettingsContent');
   const info = useAppInfo();
 
   const releaseCheckOnStartup = useAppSettingsStore((state) => state.releaseCheckOnStartup);
@@ -152,7 +153,7 @@ export const AboutSettingsContent: FC = memo(() => {
         });
       }
     },
-    [debug, t]
+    [t]
   );
 
   const handleCheckForUpdates = useCallback(async () => {

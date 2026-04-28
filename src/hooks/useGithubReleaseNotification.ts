@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { showToast } from '@/store/toast.store';
 import * as Linking from 'expo-linking';
 import * as Device from 'expo-device';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useAppInfo } from '@/hooks/useAppInfo';
 import { useGithubReleaseStatus } from '@/hooks/useGithubReleaseStatus';
 import { findMatchingAsset } from '@/utils/github-release-asset';
+
+const debug = createDebugLogger('useGithubReleaseNotification');
 
 const STORAGE_KEY_LAST_DISMISSED_TAG = 'githubRelease:lastDismissedTag';
 
@@ -27,7 +29,6 @@ export interface GithubReleaseNotification {
 export function useGithubReleaseNotification(params: { enabled: boolean }) {
   const { t } = useTranslation('settings');
   const { enabled } = params;
-  const debug = useDebugLogger('useGithubReleaseNotification');
 
   const appInfo = useAppInfo();
   const releaseStatus = useGithubReleaseStatus({
@@ -59,7 +60,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, debug]);
+  }, [enabled]);
 
   const latestRelease = releaseStatus.latestRelease;
 
@@ -110,7 +111,6 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     isStorageLoaded,
     latestRelease,
     lastDismissedTag,
-    debug,
     releaseStatus.canCheck,
     releaseStatus.installedVersion,
     releaseStatus.isUpdateAvailable,
@@ -139,7 +139,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     } catch (error) {
       debug('failedToPersistDismissedTag', { error });
     }
-  }, [latestRelease, debug]);
+  }, [latestRelease]);
 
   const downloadRelease = useCallback(async () => {
     const url = directAssetUrl ?? latestRelease?.htmlUrl;
@@ -154,7 +154,7 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
         duration: TOAST_DURATION_SHORT,
       });
     }
-  }, [directAssetUrl, latestRelease, debug, t]);
+  }, [directAssetUrl, latestRelease, t]);
 
   const body = useMemo(() => {
     if (!latestRelease) return '';

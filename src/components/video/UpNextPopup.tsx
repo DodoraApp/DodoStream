@@ -10,10 +10,12 @@ import {
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
 import { useNextVideo, type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { Button } from '@/components/basic/Button';
 import { useTheme } from '@shopify/restyle';
 import type { Theme } from '@/theme/theme';
+
+const debug = createDebugLogger('UpNextPopup');
 
 export interface UpNextResolved {
   videoId: string;
@@ -55,7 +57,6 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
     onVisibilityChange,
   }) => {
     const theme = useTheme<Theme>();
-    const debug = useDebugLogger('UpNextPopup');
 
     // Determine threshold based on media type (series = 95%, movie = 90%)
     const showThreshold =
@@ -104,7 +105,6 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
 
       onUpNextResolved(resolved);
     }, [
-      debug,
       enabled,
       mediaType,
       meta,
@@ -199,7 +199,6 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
       }
     }, [
       autoplayCancelled,
-      debug,
       dismissed,
       progressRatio,
       shouldShow,

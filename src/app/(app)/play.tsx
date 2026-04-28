@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Box } from '@/theme/theme';
 import { showToast } from '@/store/toast.store';
 import type { ContentType } from '@/types/stremio';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useTVBackButton } from '@/hooks/useTVBackButton';
+
+const debug = createDebugLogger('Play');
 
 const Play = () => {
   const {
@@ -34,7 +36,6 @@ const Play = () => {
   const router = useRouter();
   const { replaceToStreams } = useMediaNavigation();
 
-  const debug = useDebugLogger('Play');
   const shouldReturnToStreams = fromAutoPlay === '1';
 
   const returnToStreams = useCallback(() => {
@@ -48,7 +49,7 @@ const Play = () => {
     // When returning from playback we want to show the stream list,
     // not immediately auto-restart the last stream.
     replaceToStreams({ metaId, videoId, type }, { bingeGroup, autoPlay: '0' });
-  }, [bingeGroup, debug, metaId, replaceToStreams, router, shouldReturnToStreams, type, videoId]);
+  }, [bingeGroup, metaId, replaceToStreams, router, shouldReturnToStreams, type, videoId]);
 
   const handleStop = useCallback(() => {
     debug('handleStop');
@@ -57,7 +58,7 @@ const Play = () => {
       return;
     }
     router.back();
-  }, [debug, returnToStreams, router, shouldReturnToStreams]);
+  }, [returnToStreams, router, shouldReturnToStreams]);
 
   useTVBackButton(() => {
     debug('backButtonPressed');
@@ -77,7 +78,7 @@ const Play = () => {
       }
       router.back();
     },
-    [debug, returnToStreams, router, shouldReturnToStreams, t]
+    [returnToStreams, router, shouldReturnToStreams, t]
   );
 
   if (!metaId || !type) {
