@@ -16,7 +16,7 @@ pnpm install                        # Install dependencies
 pnpm start                          # Start Expo dev client
 pnpm android                        # Run on Android
 pnpm ios                            # Run on iOS
-pnpm lint                           # ESLint (flat config, expo + react-compiler)
+pnpm lint                           # ESLint (expo + react-compiler + import-sort + custom rules)
 pnpm format                         # ESLint --fix + Prettier --write
 pnpm test                           # Run all Jest tests
 pnpm test -- path/to/file.test.ts   # Run a single test file
@@ -62,14 +62,20 @@ src/
 
 - Flat config (`eslint.config.js`): expo base + `eslint-plugin-react-compiler` (recommended).
 - `react/display-name` is disabled.
+- **Auto-enforced rules** (run `pnpm lint` to check, `pnpm format` to auto-fix):
+  - `simple-import-sort/imports` — import order is auto-sorted on commit.
+  - `no-restricted-imports` — legacy `Animated` from `react-native` is banned.
+  - `no-console` — only `console.error` is allowed; use debug helpers for logging.
+  - `prefer-const`, `no-var` — enforced.
+  - `max-lines-per-function` — warns at 220 lines for component files.
+
+### Pre-commit Hooks
+
+Lefthook runs `eslint --fix` and `prettier --write` on staged files at commit time.
 
 ### Import Order
 
-1. React / React Native
-2. External libraries
-3. Internal aliases (`@/components/...`, `@/store/...`)
-4. Relative imports
-
+Auto-enforced by `simple-import-sort` (React first, then external, then `@/` aliases, then relative).
 Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`).
 
 ### Naming Conventions
@@ -155,7 +161,7 @@ const theme = useTheme<Theme>();
 
 ## 8. Component Design & Hooks
 
-- Keep components under ~200 lines. Extract sub-components.
+- Keep components under ~200 lines. Extract sub-components. (Lint warns at 220 lines.)
 - Use `memo()` for list items and frequently re-rendered components.
 - Use `useCallback` for event handlers passed to children.
 - Use `useMemo` only for genuinely expensive computations (never for components).
@@ -235,7 +241,7 @@ Effects are for synchronizing with **external systems** only.
 
 - Prefer **Moti** for UI animations (fade, slide, scale, skeleton).
 - Use **Reanimated** directly only if Moti can't express the behavior.
-- **Never** use the legacy `Animated` API.
+- **Never** use the legacy `Animated` API. (Lint-enforced: `no-restricted-imports`.)
 - Keep animation timings in `src/constants/ui.ts`.
 
 ## 13. Routing (expo-router)
@@ -263,9 +269,10 @@ Effects are for synchronizing with **external systems** only.
 - Raw `useEffect` for data fetching (use React Query).
 - `renderItem` defined inline (use `useCallback` or stable reference).
 - Hardcoded colors, dimensions, or timing values (use theme/constants).
-- The legacy `Animated` API (use Moti or Reanimated).
 - `render*` methods in functional components.
 
+> **Lint-enforced:** legacy `Animated` API, `console.log`/`console.warn`, import order, `var`, non-`const` declarations.
+> See `pnpm lint` for the full rule list.
 ## 16. Development Workflow
 
 1. **Analyze:** Read related files and existing patterns.

@@ -1,0 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    eslint:
+      glob: "*.{js,jsx,ts,tsx}"
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+    prettier:
+      glob: "*.{js,jsx,ts,tsx,json}"
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
