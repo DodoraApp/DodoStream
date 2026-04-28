@@ -28,24 +28,7 @@ import { Container } from '@/components/basic/Container';
 import { Button } from '@/components/basic/Button';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
 import { ToastContainer } from '@/components/basic/Toast';
-import * as Sentry from '@sentry/react-native';
-import { isSentryEnabled, SENTRY_DSN } from '@/utils/sentry';
-import { createDebugLogger } from '@/utils/debug';
 import { sqliteDb, initializeDatabase, runSqliteDataMigration } from '@/db';
-
-const debug = createDebugLogger('layout');
-if (isSentryEnabled) {
-  debug('Initializing Sentry with DSN:', SENTRY_DSN);
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    tracesSampleRate: 0.2,
-    enableLogs: true,
-    profilesSampleRate: 0.3,
-    replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 0,
-    integrations: [Sentry.mobileReplayIntegration()],
-  });
-}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -153,5 +136,4 @@ function ThemedAppRoot() {
   );
 }
 
-const AppLayout = isSentryEnabled ? Sentry.wrap(Layout) : Layout;
-export default AppLayout;
+export default Layout;
