@@ -1,6 +1,8 @@
 import { memo } from 'react';
-import { Box, type Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+
+import { Box, type Theme } from '@/theme/theme';
 
 interface RadioButtonProps {
   selected: boolean;

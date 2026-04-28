@@ -1,10 +1,11 @@
 import React, { memo } from 'react';
-import { StyleSheet, Platform, useWindowDimensions } from 'react-native';
-import { Box, Text } from '@/theme/theme';
-import { findCurrentCue } from '@/utils/subtitles';
+import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
+
+import { SUBTITLE_MAX_LINES } from '@/constants/subtitles';
 import { useSubtitleCues } from '@/hooks/useSubtitleCues';
 import { useComputedSubtitleStyle } from '@/hooks/useSubtitleStyle';
-import { SUBTITLE_MAX_LINES } from '@/constants/subtitles';
+import { Box, Text } from '@/theme/theme';
+import { findCurrentCue } from '@/utils/subtitles';
 
 interface CustomSubtitlesProps {
   /** URL to the subtitle file */

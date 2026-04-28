@@ -34,7 +34,7 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
 
   const { addons, isLoading, error, refetch } = useProfileAddonsQuery(
     selectedProfileId,
-    onSessionEnded,
+    onSessionEnded
   );
 
   const reorderMutation = useReorderAddonsMutation(selectedProfileId, onSessionEnded);
@@ -43,7 +43,7 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const activeAddons = useMemo(() => addons.filter((a) => a.config.isActive), [addons]);
@@ -79,29 +79,27 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-      
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-zinc-100 mb-2">Profiles</h2>
-        <p className="text-zinc-400">
-          Activate, configure, and reorder addons per profile.
-        </p>
+        <p className="text-zinc-400">Activate, configure, and reorder addons per profile.</p>
       </div>
 
       {/* Profile Selector */}
       <div>
-        <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4">Select Profile</h2>
+        <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-4">
+          Select Profile
+        </h2>
         <div className="flex items-center gap-3 overflow-x-auto pb-4 hide-scrollbar">
-          {profiles.map(p => (
+          {profiles.map((p) => (
             <button
               key={p.id}
               onClick={() => setSelectedProfileId(p.id)}
               className={`shrink-0 px-4 py-2 rounded-full font-medium text-sm transition-colors flex items-center gap-3 ${
-                selectedProfileId === p.id 
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/20' 
+                selectedProfileId === p.id
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/20'
                   : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
-              }`}
-            >
+              }`}>
               <div className="h-6 w-6 rounded-full bg-black/20 flex items-center justify-center text-xs font-bold text-current opacity-90">
                 {p.name.charAt(0).toUpperCase()}
               </div>
@@ -117,10 +115,9 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
             <AlertCircle size={20} className="shrink-0" />
             <p className="text-sm">{error}</p>
           </div>
-          <button 
+          <button
             onClick={() => refetch()}
-            className="text-sm font-medium text-rose-400 hover:text-rose-300"
-          >
+            className="text-sm font-medium text-rose-400 hover:text-rose-300">
             Retry
           </button>
         </div>
@@ -138,7 +135,6 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
         </div>
       ) : (
         <div className="space-y-10">
-          
           {/* Active Addons */}
           <div>
             <h3 className="text-lg font-medium text-zinc-100 mb-4 flex items-center gap-2">
@@ -147,14 +143,19 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
                 {activeAddons.length}
               </span>
             </h3>
-            
+
             {activeAddons.length === 0 ? (
               <p className="text-zinc-500 text-sm py-4">No active addons. Enable some below.</p>
             ) : (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={activeAddons.map(a => a.id)} strategy={verticalListSortingStrategy}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}>
+                <SortableContext
+                  items={activeAddons.map((a) => a.id)}
+                  strategy={verticalListSortingStrategy}>
                   <div className="space-y-3">
-                    {activeAddons.map(addon => (
+                    {activeAddons.map((addon) => (
                       <ProfileAddonRow
                         key={addon.id}
                         addon={addon}
@@ -178,9 +179,9 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
                   {inactiveAddons.length}
                 </span>
               </h3>
-              
+
               <div className="space-y-3 opacity-75 grayscale-50 transition-all hover:grayscale-0 hover:opacity-100">
-                {inactiveAddons.map(addon => (
+                {inactiveAddons.map((addon) => (
                   <ProfileAddonRow
                     key={addon.id}
                     addon={addon}
@@ -192,7 +193,6 @@ export function ProfilesView({ profiles, onSessionEnded }: ProfilesViewProps) {
               </div>
             </div>
           )}
-
         </div>
       )}
     </div>

@@ -1,9 +1,10 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getLanguageEntry } from '@/utils/languages';
-import { uniqNormalizedStrings } from '@/utils/array';
+
 import { Modal } from '@/components/basic/Modal';
-import { OrderableListSection, OrderableItem } from '@/components/settings/OrderableListSection';
+import { OrderableItem, OrderableListSection } from '@/components/settings/OrderableListSection';
+import { uniqNormalizedStrings } from '@/utils/array';
+import { getLanguageEntry } from '@/utils/languages';
 
 interface LanguagePreferenceModalProps {
   visible: boolean;

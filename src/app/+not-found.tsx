@@ -1,6 +1,8 @@
-import { Container } from '@/components/basic/Container';
-import { Link, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+
+import { Link, Stack } from 'expo-router';
+
+import { Container } from '@/components/basic/Container';
 import { Box, Text } from '@/theme/theme';
 
 export default function NotFoundScreen() {

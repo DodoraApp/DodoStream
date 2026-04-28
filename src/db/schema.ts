@@ -25,7 +25,9 @@ export const watchHistory = sqliteTable(
     lastStreamTargetType: streamTargetTypeColumn('last_stream_target_type'),
     lastStreamTargetValue: text('last_stream_target_value'),
     status: watchStatusColumn('status').notNull().default('watching'),
-    source: text('source', { enum: ['internal', 'simkl'] as const }).notNull().default('internal'),
+    source: text('source', { enum: ['internal', 'simkl'] as const })
+      .notNull()
+      .default('internal'),
     lastWatchedAt: integer('last_watched_at').notNull(),
     dismissedAt: integer('dismissed_at'),
     createdAt: integer('created_at').notNull(),
@@ -106,10 +108,7 @@ export const syncQueue = sqliteTable(
     type: contentTypeColumn('type').notNull(),
     createdAt: integer('created_at').notNull(),
   },
-  (table) => [
-    index('profile_provider_idx').on(table.profileId, table.provider),
-  ]
+  (table) => [index('profile_provider_idx').on(table.profileId, table.provider)]
 );
 
 export type WatchHistoryStatus = 'watching' | 'dismissed' | 'completed';
-

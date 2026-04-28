@@ -1,9 +1,10 @@
-import React from 'react';
-import { act } from '@testing-library/react-native';
-import { renderWithProviders, createTestQueryClient } from '@/utils/test-utils';
-
 import * as mockReact from 'react';
+import React from 'react';
 import { View as mockView } from 'react-native';
+
+import { act } from '@testing-library/react-native';
+
+import { createTestQueryClient, renderWithProviders } from '@/utils/test-utils';
 
 import { VideoPlayerSession } from '../VideoPlayerSession';
 

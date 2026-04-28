@@ -1,12 +1,14 @@
 import { FC, memo, useCallback, useEffect, useRef } from 'react';
-import { ScrollView, View, findNodeHandle } from 'react-native';
-import { Box, Text } from '@/theme/theme';
+import { findNodeHandle, ScrollView, View } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
-import { Focusable } from '@/components/basic/Focusable';
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 import { router } from 'expo-router';
+
+import { Focusable } from '@/components/basic/Focusable';
 import { useSidebarFocusStore } from '@/store/sidebar-focus.store';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
 
 export interface SettingsMenuItem {
   id: string;

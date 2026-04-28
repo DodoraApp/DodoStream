@@ -1,6 +1,7 @@
 import { FC, memo } from 'react';
-import { Box, Text } from '@/theme/theme';
+
 import { SetupWizardStep, WIZARD_STEPS } from '@/store/setup-wizard.store';
+import { Box, Text } from '@/theme/theme';
 
 interface WizardProgressProps {
   currentStep: SetupWizardStep;

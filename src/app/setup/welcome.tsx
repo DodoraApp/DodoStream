@@ -1,13 +1,15 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Box, Text, Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
+
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
+import { WIZARD_CONTENT_FADE_MS } from '@/constants/ui';
+import { Box, Text, Theme } from '@/theme/theme';
 
 /**
  * Welcome step - introduces the setup wizard

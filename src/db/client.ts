@@ -1,8 +1,9 @@
-import * as SQLite from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
-import { createDebugLogger } from '@/utils/debug';
+import * as SQLite from 'expo-sqlite';
+
 import migrations from '@/db/drizzle/migrations';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('SQLite');
 

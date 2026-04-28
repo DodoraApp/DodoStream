@@ -1,13 +1,14 @@
-import { Box, Text } from '@/theme/theme';
-import { Tag } from '@/components/basic/Tag';
-import { ExpandableSection } from '@/components/basic/ExpandableSection';
-import { CompletedBadge } from '@/components/basic/CompletedBadge';
-import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
 import type { ReactNode } from 'react';
 import { ScrollView } from 'react-native';
+
+import { CompletedBadge } from '@/components/basic/CompletedBadge';
+import { ExpandableSection } from '@/components/basic/ExpandableSection';
 import FadeIn from '@/components/basic/FadeIn';
+import { Tag } from '@/components/basic/Tag';
 import { useMediaWatchStatus } from '@/hooks/useMediaWatchStatus';
-import { formatReleaseInfo, formatRuntime, formatDescription } from '@/utils/format';
+import { Box, Text } from '@/theme/theme';
+import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
+import { formatDescription, formatReleaseInfo, formatRuntime } from '@/utils/format';
 
 interface MediaInfoProps {
   media: MetaDetail;

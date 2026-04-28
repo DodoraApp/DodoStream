@@ -1,7 +1,9 @@
 import { TextInput, TextInputProps } from 'react-native';
-import { useTheme } from '@shopify/restyle';
-import { Theme, Box } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
+import { Box, Theme } from '@/theme/theme';
 
 interface InputProps extends TextInputProps {
   icon?: keyof typeof Ionicons.glyphMap;

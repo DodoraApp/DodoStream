@@ -1,18 +1,20 @@
-import { FC, memo, useState, useCallback, useMemo } from 'react';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { useProfileStore, Profile } from '@/store/profile.store';
+import { useRouter } from 'expo-router';
+
 import { Button } from '@/components/basic/Button';
+import { PINPrompt } from '@/components/profile/PINPrompt';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
-import { PINPrompt } from '@/components/profile/PINPrompt';
-import { showToast } from '@/store/toast.store';
-import { TOAST_DURATION_SHORT } from '@/constants/ui';
-import { useRouter } from 'expo-router';
 import { SettingsCard } from '@/components/settings/SettingsCard';
+import { TOAST_DURATION_SHORT } from '@/constants/ui';
+import { Profile, useProfileStore } from '@/store/profile.store';
+import { showToast } from '@/store/toast.store';
+import { Box, Text, type Theme } from '@/theme/theme';
 
 /**
  * Profiles settings content component

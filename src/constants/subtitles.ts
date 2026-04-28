@@ -2,10 +2,10 @@
  * Subtitle display and loading constants
  */
 import type {
+  SubtitleFontFamily,
   SubtitleStyle,
   SubtitleStylePreset,
   SubtitleStylePresetConfig,
-  SubtitleFontFamily,
 } from '@/types/subtitles';
 
 // Maximum lines for subtitle text

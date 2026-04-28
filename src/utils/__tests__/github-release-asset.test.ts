@@ -1,5 +1,6 @@
-import { findMatchingAsset, getAbiPriority, getVariantSlug } from '../github-release-asset';
 import type { GithubReleaseAsset } from '@/api/github/types';
+
+import { findMatchingAsset, getAbiPriority, getVariantSlug } from '../github-release-asset';
 
 const makeAsset = (name: string): GithubReleaseAsset => ({
   name,

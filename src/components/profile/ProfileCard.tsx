@@ -1,12 +1,15 @@
 import { FC, memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
-import { ProfileAvatar } from './ProfileAvatar';
-import { Profile } from '@/store/profile.store';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
 import { Focusable } from '@/components/basic/Focusable';
+import { Profile } from '@/store/profile.store';
+import { Box, Text, Theme } from '@/theme/theme';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
+
+import { ProfileAvatar } from './ProfileAvatar';
 
 interface ProfileCardProps {
   profile?: Profile; // undefined for "Add Profile" card

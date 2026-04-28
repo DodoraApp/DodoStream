@@ -1,22 +1,24 @@
 import React, {
   forwardRef,
-  useImperativeHandle,
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
   memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
 } from 'react';
-import { LibVlcPlayerView, LibVlcPlayerViewRef, MediaInfo } from 'expo-libvlc-player';
 import { StyleSheet, useWindowDimensions } from 'react-native';
-import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
-import type { SubtitleStyle } from '@/types/subtitles';
-import { useProfileStore } from '@/store/profile.store';
-import { usePlaybackStore } from '@/store/playback.store';
-import { DEFAULT_SUBTITLE_STYLE } from '@/constants/subtitles';
-import { createDebugLogger } from '@/utils/debug'
+
+import { LibVlcPlayerView, LibVlcPlayerViewRef, MediaInfo } from 'expo-libvlc-player';
 import { useFocusEffect } from 'expo-router';
+
+import { DEFAULT_SUBTITLE_STYLE } from '@/constants/subtitles';
+import { usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { AudioTrack, PlayerProps, PlayerRef, TextTrack } from '@/types/player';
+import type { SubtitleStyle } from '@/types/subtitles';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('VLCPlayer');
 

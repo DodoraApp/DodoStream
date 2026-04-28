@@ -1,16 +1,18 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { LegendList } from '@legendapp/list/react-native';
+
+import FadeIn from '@/components/basic/FadeIn';
+import { PickerInput } from '@/components/basic/PickerInput';
+import { PickerItem } from '@/components/basic/PickerModal';
+import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
+import { EpisodeItem } from '@/components/media/EpisodeItem';
+import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 import { Box } from '@/theme/theme';
 import { MetaVideo } from '@/types/stremio';
-import { PickerInput } from '@/components/basic/PickerInput';
-import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
-import { PickerItem } from '@/components/basic/PickerModal';
-import { EpisodeItem } from '@/components/media/EpisodeItem';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
-import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
-import FadeIn from '@/components/basic/FadeIn';
-import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 
 interface EpisodeListProps {
   metaId: string;
@@ -23,7 +25,12 @@ interface GroupedEpisodes {
   [season: number]: MetaVideo[];
 }
 
-export const EpisodeList: FC<EpisodeListProps> = ({ metaId, videos, onEpisodePress, onEpisodeLongPress }) => {
+export const EpisodeList: FC<EpisodeListProps> = ({
+  metaId,
+  videos,
+  onEpisodePress,
+  onEpisodeLongPress,
+}) => {
   const { t } = useTranslation('media');
   const { isPlatformTV } = useResponsiveLayout();
   const isHorizontal = isPlatformTV;

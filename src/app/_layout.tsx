@@ -1,34 +1,37 @@
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Slot, type ErrorBoundaryProps } from 'expo-router';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import '@/i18n';
-import { ThemeProvider, useTheme } from '@shopify/restyle';
-import { defaultTheme, Box, Text, type Theme } from '@/theme/theme';
-import { AppThemeProvider } from '@/theme/ThemeContext';
-import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import {
-  useFonts,
   Outfit_400Regular,
   Outfit_600SemiBold,
   Outfit_700Bold,
+  useFonts,
 } from '@expo-google-fonts/outfit';
 import {
   Poppins_400Regular,
   Poppins_600SemiBold,
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
-import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useRef } from 'react';
+import { ThemeProvider, useTheme } from '@shopify/restyle';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/utils/query';
+import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
+import { type ErrorBoundaryProps, Slot } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+
+import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
+import { Button } from '@/components/basic/Button';
+import { Container } from '@/components/basic/Container';
+import { ToastContainer } from '@/components/basic/Toast';
+import { initializeDatabase, runSqliteDataMigration, sqliteDb } from '@/db';
 import { initializeAddons, useAddonStore } from '@/store/addon.store';
 import { initializeProfiles, useProfileStore } from '@/store/profile.store';
 import { initializeUIStore, useUIStore } from '@/store/ui.store';
-import { Container } from '@/components/basic/Container';
-import { Button } from '@/components/basic/Button';
-import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
-import { ToastContainer } from '@/components/basic/Toast';
-import { sqliteDb, initializeDatabase, runSqliteDataMigration } from '@/db';
+import { Box, defaultTheme, Text, type Theme } from '@/theme/theme';
+import { AppThemeProvider } from '@/theme/ThemeContext';
+import { queryClient } from '@/utils/query';
+
+import '@/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -91,7 +94,7 @@ function Layout() {
         await initializeProfiles();
         await initializeAddons();
       } catch (error) {
-        console.warn('[boot] init failed', error);
+        console.error('[boot] init failed', error);
         useUIStore.getState().setInitialized(true);
         useProfileStore.getState().setInitialized(true);
         useAddonStore.getState().setInitialized(true);

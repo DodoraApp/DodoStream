@@ -75,10 +75,16 @@ export interface Addon {
 export const api = {
   getProfiles: () => request<Profile[]>('GET', '/api/v1/profiles'),
   getAddons: (profileId: string) => request<Addon[]>('GET', `/api/v1/profiles/${profileId}/addons`),
-  installAddon: (manifestUrl: string) => request<{ id: string }>('POST', '/api/v1/addons', { manifestUrl }),
-  removeAddon: (addonId: string) => request<void>('DELETE', `/api/v1/addons/${encodeURIComponent(addonId)}`),
+  installAddon: (manifestUrl: string) =>
+    request<{ id: string }>('POST', '/api/v1/addons', { manifestUrl }),
+  removeAddon: (addonId: string) =>
+    request<void>('DELETE', `/api/v1/addons/${encodeURIComponent(addonId)}`),
   updateAddonConfig: (profileId: string, addonId: string, config: Partial<AddonConfig>) =>
-    request<void>('PATCH', `/api/v1/profiles/${profileId}/addons/${encodeURIComponent(addonId)}`, config),
+    request<void>(
+      'PATCH',
+      `/api/v1/profiles/${profileId}/addons/${encodeURIComponent(addonId)}`,
+      config
+    ),
   reorderAddons: (profileId: string, orderedIds: string[]) =>
     request<void>('PUT', `/api/v1/profiles/${profileId}/addons/order`, { orderedIds }),
 };

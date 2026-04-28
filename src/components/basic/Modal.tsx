@@ -1,18 +1,20 @@
 import React, { FC, ReactNode } from 'react';
 import {
   Modal as RNModal,
+  type ModalProps as RNModalProps,
   Pressable,
   StyleSheet,
   TVFocusGuideView,
   useWindowDimensions,
-  type ModalProps as RNModalProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
 import { Button } from '@/components/basic/Button';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
-import { useTheme } from '@shopify/restyle';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export interface ModalProps {
   label?: string;

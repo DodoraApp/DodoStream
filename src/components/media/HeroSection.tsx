@@ -1,31 +1,33 @@
-import { memo, useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TVFocusGuideView } from 'react-native';
-import { MotiView } from 'moti';
-import { LinearGradient } from 'expo-linear-gradient';
-import FastImage, { Source } from '@d11/react-native-fast-image';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
+
+import FastImage, { Source } from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
-import { Skeleton } from '@/components/basic/Skeleton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MotiView } from 'moti';
+
 import { useHeroCatalogContent } from '@/api/stremio/hooks';
-import { useHomeStore } from '@/store/home.store';
-import { useAddonStore } from '@/store/addon.store';
-import { useHomeScroll } from '@/hooks/useHomeScroll';
-import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { createDebugLogger } from '@/utils/debug';
+import { Button } from '@/components/basic/Button';
+import { Skeleton } from '@/components/basic/Skeleton';
 import {
   HERO_AUTO_SCROLL_INTERVAL_MS,
-  HERO_CROSSFADE_DURATION_MS,
-  HERO_CONTENT_SLIDE_DURATION_MS,
   HERO_CONTENT_SLIDE_DELAY_MS,
+  HERO_CONTENT_SLIDE_DURATION_MS,
+  HERO_CROSSFADE_DURATION_MS,
 } from '@/constants/ui';
-import { Button } from '@/components/basic/Button';
+import { useHomeScroll } from '@/hooks/useHomeScroll';
+import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { useAddonStore } from '@/store/addon.store';
+import { useHomeStore } from '@/store/home.store';
+import { Box, Text, Theme } from '@/theme/theme';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('HeroSection');
 

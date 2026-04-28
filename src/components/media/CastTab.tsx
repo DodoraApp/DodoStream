@@ -1,16 +1,17 @@
 import { FC, useCallback, useMemo } from 'react';
-import { LegendList } from '@legendapp/list/react-native';
 import { useTranslation } from 'react-i18next';
-import { Box, Text } from '@/theme/theme';
+
+import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 import { useRouter } from 'expo-router';
 
-import type { MetaDetail, CastMember } from '@/types/stremio';
-import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
-import { CastPersonCard } from '@/components/media/CastPersonCard';
-import { HorizontalSpacer } from '@/components/basic/Spacer';
 import FadeIn from '@/components/basic/FadeIn';
+import { HorizontalSpacer } from '@/components/basic/Spacer';
+import { CastPersonCard } from '@/components/media/CastPersonCard';
+import { MediaSectionHeader } from '@/components/media/MediaSectionHeader';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import type { CastMember, MetaDetail } from '@/types/stremio';
 
 /** Extract people from app_extras or fall back to links */
 const extractCastMembers = (

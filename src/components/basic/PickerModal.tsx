@@ -1,13 +1,15 @@
-import React, { useMemo, useState, useCallback, memo } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
+import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
+
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
 import { TagFilters } from '@/components/basic/TagFilters';
 import { useGroupOptions } from '@/hooks/useGroupOptions';
+import { Box, Text, Theme } from '@/theme/theme';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 
 const getPickerListItemColors = ({
@@ -195,7 +197,11 @@ export function PickerModal<T extends string | number | undefined = string | num
 
   const renderItem = useCallback(
     ({ item }: LegendListRenderItemProps<PickerItem<T>>) => (
-      <PickerListItem item={item} isSelected={item.value === selectedValue} onPress={handleValueChange} />
+      <PickerListItem
+        item={item}
+        isSelected={item.value === selectedValue}
+        onPress={handleValueChange}
+      />
     ),
     [selectedValue, handleValueChange]
   );

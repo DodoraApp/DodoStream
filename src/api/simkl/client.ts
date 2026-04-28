@@ -1,15 +1,16 @@
+import { getInstalledAppVersion } from '@/hooks/useAppInfo';
+import { SimklMediaType } from '@/types/integrations';
 import type {
+  SimklActivities,
   SimklAllItemsResponse,
+  SimklMediaItem,
   SimklPinResponse,
   SimklPinStatusResponse,
   SimklUserSettings,
-  SimklActivities,
-  SimklMediaItem,
 } from '@/types/simkl';
-import { SIMKL_APP_NAME, SIMKL_CLIENT_ID } from './config';
 import { createDebugLogger } from '@/utils/debug';
-import { getInstalledAppVersion } from '@/hooks/useAppInfo';
-import { SimklMediaType } from '@/types/integrations';
+
+import { SIMKL_APP_NAME, SIMKL_CLIENT_ID } from './config';
 
 const debug = createDebugLogger('SimklClient');
 

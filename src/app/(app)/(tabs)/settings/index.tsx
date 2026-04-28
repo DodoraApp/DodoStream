@@ -1,24 +1,25 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
-import { ScrollView, TVFocusGuideView, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Text } from '@/theme/theme';
+import { ScrollView, TVFocusGuideView, View } from 'react-native';
+
 import { Container } from '@/components/basic/Container';
-import { SettingsShell } from '@/components/settings/SettingsShell';
-import { SettingsMenu } from '@/components/settings/SettingsMenu';
 import { PageHeader } from '@/components/basic/PageHeader';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
-import { SETTINGS_GLOBAL_MENU_ITEMS, SETTINGS_PROFILE_MENU_ITEMS } from '@/constants/settings';
+import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
+import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
+import { DataSettingsContent } from '@/components/settings/DataSettingsContent';
+import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
+import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
 import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
 import { ProfilesSettingsContent } from '@/components/settings/ProfilesSettingsContent';
-import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
-import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
-import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSettingsContent';
-import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
-import { UISettingsContent } from '@/components/settings/UISettingsContent';
-import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
-import { DataSettingsContent } from '@/components/settings/DataSettingsContent';
 import { ProfileSwitcherCard } from '@/components/settings/ProfileSwitcherCard';
 import { SettingsLink } from '@/components/settings/SettingsLink';
+import { SettingsMenu } from '@/components/settings/SettingsMenu';
+import { SettingsShell } from '@/components/settings/SettingsShell';
+import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSettingsContent';
+import { UISettingsContent } from '@/components/settings/UISettingsContent';
+import { SETTINGS_GLOBAL_MENU_ITEMS, SETTINGS_PROFILE_MENU_ITEMS } from '@/constants/settings';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { Box, Text } from '@/theme/theme';
 
 export default function Settings() {
   const { t } = useTranslation('settings');

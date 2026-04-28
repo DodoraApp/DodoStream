@@ -1,9 +1,11 @@
 import React, { FC, memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Text, Theme } from '@/theme/theme';
+
+import { useTheme } from '@shopify/restyle';
+
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
-import { useTheme } from '@shopify/restyle';
+import { Box, Text, Theme } from '@/theme/theme';
 
 /** Default color palette for general use */
 const DEFAULT_COLORS = [

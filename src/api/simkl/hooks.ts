@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState } from 'react-native';
+
 import { useQueryClient } from '@tanstack/react-query';
+
 import {
   SIMKL_AUTO_SYNC_INTERVAL_MS,
   SIMKL_PIN_POLL_INTERVAL_MS,
@@ -11,10 +13,11 @@ import {
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import { showToast } from '@/store/toast.store';
-import { getPinCode, pollPin, getUserSettings } from './client';
-import { runImport, runExport } from './sync-service';
 import type { SimklConnection } from '@/types/integrations';
 import { createDebugLogger } from '@/utils/debug';
+
+import { getPinCode, getUserSettings, pollPin } from './client';
+import { runExport, runImport } from './sync-service';
 
 const debug = createDebugLogger('SimklHooks');
 
@@ -200,7 +203,7 @@ export function useSimklSync(profileId?: string): SimklSyncState {
  */
 export async function completeSimklConnection(
   profileId: string,
-  accessToken: string,
+  accessToken: string
 ): Promise<SimklConnection> {
   debug('completeSimklConnection:start', { profileId });
   try {
@@ -210,7 +213,10 @@ export async function completeSimklConnection(
       userId: String(userSettings.account.id),
       username: userSettings.user.name,
     };
-    debug('completeSimklConnection:success', { userId: connection.userId, username: connection.username });
+    debug('completeSimklConnection:success', {
+      userId: connection.userId,
+      username: connection.username,
+    });
     return connection;
   } catch (error) {
     debug('completeSimklConnection:error', { error });

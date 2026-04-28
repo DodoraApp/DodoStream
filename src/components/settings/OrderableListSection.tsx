@@ -1,11 +1,13 @@
 import React, { memo, useCallback } from 'react';
-import { useTheme } from '@shopify/restyle';
+import { ScrollView } from 'react-native-gesture-handler';
+
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+
+import { Button } from '@/components/basic/Button';
+import { Focusable } from '@/components/basic/Focusable';
 import { Box, Text, Theme } from '@/theme/theme';
 import { moveItem } from '@/utils/array';
-import { Focusable } from '@/components/basic/Focusable';
-import { Button } from '@/components/basic/Button';
-import { ScrollView } from 'react-native-gesture-handler';
 
 export interface OrderableItem {
   /** Unique identifier for the item */

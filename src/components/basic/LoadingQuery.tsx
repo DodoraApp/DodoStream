@@ -1,8 +1,10 @@
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { Box, Text } from '@/theme/theme';
-import { LoadingIndicator } from './LoadingIndicator';
+
 import { Button } from './Button';
+import { LoadingIndicator } from './LoadingIndicator';
 
 interface LoadingQueryProps<T> {
   isLoading: boolean;

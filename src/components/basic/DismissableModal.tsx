@@ -1,8 +1,9 @@
 import React from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
-import { Box, Text } from '@/theme/theme';
+
 import { Button } from '@/components/basic/Button';
 import { Modal } from '@/components/basic/Modal';
+import { Box, Text } from '@/theme/theme';
 
 export interface DismissableModalProps {
   visible: boolean;
@@ -52,7 +53,12 @@ export function DismissableModal({
           </Text>
         </ScrollView>
 
-        <Box flexDirection="row" gap="s" justifyContent="flex-end" flexWrap="wrap" style={{ flexShrink: 0 }}>
+        <Box
+          flexDirection="row"
+          gap="s"
+          justifyContent="flex-end"
+          flexWrap="wrap"
+          style={{ flexShrink: 0 }}>
           <Button
             variant="primary"
             title={primaryActionText}

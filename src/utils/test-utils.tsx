@@ -1,8 +1,10 @@
 import React from 'react';
-import { render, renderHook } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import { ThemeProvider } from '@shopify/restyle';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { render, renderHook } from '@testing-library/react-native';
+
 import { defaultTheme } from '@/theme/theme';
 
 const SAFE_AREA_INITIAL_METRICS = {

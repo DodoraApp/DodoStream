@@ -1,8 +1,10 @@
 import React, { memo, useCallback, useState } from 'react';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
-import { Button, ButtonProps, IconComponentType } from '@/components/basic/Button';
+
 import { Badge } from '@/components/basic/Badge';
+import { Button, ButtonProps, IconComponentType } from '@/components/basic/Button';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export interface ControlButtonProps extends Pick<
   ButtonProps<IconComponentType>,

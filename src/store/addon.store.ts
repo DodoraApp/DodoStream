@@ -1,9 +1,10 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { InstalledAddon, Manifest } from '@/types/stremio';
-import { type AddonConfig } from '@/types/addon-config';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
 import { useProfileStore } from '@/store/profile.store';
+import { type AddonConfig } from '@/types/addon-config';
+import { InstalledAddon, Manifest } from '@/types/stremio';
 import { moveItem } from '@/utils/array';
 import { createDebugLogger } from '@/utils/debug';
 
@@ -40,14 +41,13 @@ interface AddonState {
   setError: (error: string | null) => void;
 }
 
-
 export const useAddonStore = create<AddonState>()(
   persist(
     (set, get) => {
       const toggleConfigField = (
         id: string,
         field: keyof Omit<AddonConfig, 'isActive'>,
-        profileId?: string,
+        profileId?: string
       ) => {
         const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
         debug('toggleConfigField', { id, field, targetProfileId, profileIdArg: profileId });
@@ -59,7 +59,9 @@ export const useAddonStore = create<AddonState>()(
           const profileConfigs = state.configsByProfile[targetProfileId];
           if (!profileConfigs || !profileConfigs[id]) {
             debug('toggleConfigField: no config entry for addon', {
-              targetProfileId, id, hasProfileConfigs: !!profileConfigs,
+              targetProfileId,
+              id,
+              hasProfileConfigs: !!profileConfigs,
             });
             return state;
           }
@@ -114,7 +116,12 @@ export const useAddonStore = create<AddonState>()(
             }
             newConfigs[activeProfileId] = {
               ...newConfigs[activeProfileId],
-              [id]: { isActive: true, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true },
+              [id]: {
+                isActive: true,
+                useCatalogsOnHome: true,
+                useCatalogsInSearch: true,
+                useForSubtitles: true,
+              },
             };
             // Append to end of order for this profile
             newOrder[activeProfileId] = [...(newOrder[activeProfileId] ?? []), id];
@@ -168,7 +175,8 @@ export const useAddonStore = create<AddonState>()(
             const profileConfigs = state.configsByProfile[targetProfileId] || {};
             const existingConfig = profileConfigs[id];
             debug('activateAddon: existing config', {
-              id, hasExistingConfig: !!existingConfig,
+              id,
+              hasExistingConfig: !!existingConfig,
               previousIsActive: existingConfig?.isActive,
             });
 
@@ -207,14 +215,17 @@ export const useAddonStore = create<AddonState>()(
             const profileConfigs = state.configsByProfile[targetProfileId];
             if (!profileConfigs || !profileConfigs[id]) {
               debug('deactivateAddon: no config entry, silently aborting', {
-                targetProfileId, id, hasProfileConfigs: !!profileConfigs,
+                targetProfileId,
+                id,
+                hasProfileConfigs: !!profileConfigs,
                 profileAddonIds: profileConfigs ? Object.keys(profileConfigs) : [],
               });
               return state;
             }
 
             debug('deactivateAddon: deactivating', {
-              id, previousIsActive: profileConfigs[id].isActive,
+              id,
+              previousIsActive: profileConfigs[id].isActive,
             });
             return {
               configsByProfile: {
@@ -261,7 +272,6 @@ export const useAddonStore = create<AddonState>()(
         toggleUseForSubtitles: (id: string, profileId?: string) =>
           toggleConfigField(id, 'useForSubtitles', profileId),
 
-
         setAddonConfig: (id: string, config: Partial<AddonConfig>, profileId?: string) => {
           const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
           if (!targetProfileId) {
@@ -271,16 +281,20 @@ export const useAddonStore = create<AddonState>()(
 
           set((state) => {
             const profileConfigs = state.configsByProfile[targetProfileId] ?? {};
-            const existing = profileConfigs[id] ?? { isActive: false, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true };
+            const existing = profileConfigs[id] ?? {
+              isActive: false,
+              useCatalogsOnHome: true,
+              useCatalogsInSearch: true,
+              useForSubtitles: true,
+            };
             const next: AddonConfig = { ...existing, ...config };
 
             debug('setAddonConfig', { id, targetProfileId, keys: Object.keys(config) });
 
             // Ensure the addon is in the profile's order list when activating.
             const currentOrder = state.addonOrderByProfile[targetProfileId] ?? [];
-            const newOrder = next.isActive && !currentOrder.includes(id)
-              ? [...currentOrder, id]
-              : currentOrder;
+            const newOrder =
+              next.isActive && !currentOrder.includes(id) ? [...currentOrder, id] : currentOrder;
 
             return {
               configsByProfile: {
@@ -288,7 +302,12 @@ export const useAddonStore = create<AddonState>()(
                 [targetProfileId]: { ...profileConfigs, [id]: next },
               },
               ...(newOrder !== currentOrder
-                ? { addonOrderByProfile: { ...state.addonOrderByProfile, [targetProfileId]: newOrder } }
+                ? {
+                    addonOrderByProfile: {
+                      ...state.addonOrderByProfile,
+                      [targetProfileId]: newOrder,
+                    },
+                  }
                 : {}),
             };
           });
@@ -352,7 +371,10 @@ export const useAddonStore = create<AddonState>()(
             const allIds = Object.keys(addons);
             const currentOrder = addonOrderByProfile[targetProfileId] ?? allIds;
             // Ensure all addon IDs are represented (handles addons added before order tracking)
-            const fullOrder = [...currentOrder, ...allIds.filter((id) => !currentOrder.includes(id))];
+            const fullOrder = [
+              ...currentOrder,
+              ...allIds.filter((id) => !currentOrder.includes(id)),
+            ];
             const newOrder = moveItem(fullOrder, fromIndex, toIndex);
             return {
               addonOrderByProfile: {
@@ -386,7 +408,7 @@ export const useAddonStore = create<AddonState>()(
       }),
       version: 3,
       migrate: (persistedState: any, version) => {
-        let state = persistedState as AddonState;
+        const state = persistedState as AddonState;
 
         // v0 -> v1: Add useForSubtitles=true to all existing addons (flat structure)
         // v1 -> v2: Attempted migration to per-profile configs — the async migrate

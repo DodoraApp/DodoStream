@@ -1,24 +1,22 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { showToast } from '@/store/toast.store';
-import { useProfileStore } from '@/store/profile.store';
-import {
-  watchHistoryKeys,
-  useWatchHistoryItem,
-  useWatchState,
-} from '@/hooks/useWatchHistoryDb';
+
+import type { PickerItem } from '@/components/basic/PickerModal';
+import { TOAST_DURATION_SHORT } from '@/constants/ui';
+import type { DbWatchHistoryItem } from '@/db';
 import {
   listWatchHistoryForMeta,
   removeWatchHistoryItem,
   removeWatchHistoryMeta,
   upsertWatchProgress,
 } from '@/db';
-import type { DbWatchHistoryItem } from '@/db';
-import type { ContentType, MetaVideo } from '@/types/stremio';
-import type { PickerItem } from '@/components/basic/PickerModal';
-import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
+import { useWatchHistoryItem, useWatchState, watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
+import { useProfileStore } from '@/store/profile.store';
+import { showToast } from '@/store/toast.store';
+import type { ContentType, MetaVideo } from '@/types/stremio';
 
 export type MediaDetailsAction = 'mark-as-watched' | 'remove-from-history';
 
@@ -62,14 +60,11 @@ export function useMediaDetailsActions({
   // Continue watching entry (meaningful for multi-video; returns undefined for single)
   const { entry: continueWatching } = useContinueWatchingForMeta(
     metaId,
-    isMultiVideo ? { videos } : undefined,
+    isMultiVideo ? { videos } : undefined
   );
 
   // Resolve the videoId to query for single-video / episode-level state
-  const effectiveVideoId = targetVideoId
-    ?? continueWatching?.videoId
-    ?? videos?.[0]?.id
-    ?? metaId;
+  const effectiveVideoId = targetVideoId ?? continueWatching?.videoId ?? videos?.[0]?.id ?? metaId;
 
   // Watch state & history for the resolved video
   const watchState = useWatchState(metaId, effectiveVideoId);
@@ -77,9 +72,7 @@ export function useMediaDetailsActions({
 
   // For multi-video: check whether ANY history exists for the entire meta
   const { data: metaHistoryItems } = useQuery<DbWatchHistoryItem[]>({
-    queryKey: profileId
-      ? watchHistoryKeys.itemsForMeta(profileId, metaId)
-      : watchHistoryKeys.all,
+    queryKey: profileId ? watchHistoryKeys.itemsForMeta(profileId, metaId) : watchHistoryKeys.all,
     queryFn: async () => {
       if (!profileId) return [];
       return listWatchHistoryForMeta(profileId, metaId);
@@ -97,11 +90,13 @@ export function useMediaDetailsActions({
     ? true // always available for series; fallback duration handles never-watched episodes
     : watchState !== 'watched';
 
-  const videoIdToMark = targetVideoId
-    ?? (isMultiVideo ? continueWatching?.videoId : (historyItem?.videoId ?? effectiveVideoId));
+  const videoIdToMark =
+    targetVideoId ??
+    (isMultiVideo ? continueWatching?.videoId : (historyItem?.videoId ?? effectiveVideoId));
 
-  const durationSeconds = targetDurationSeconds
-    ?? (isMultiVideo ? continueWatching?.durationSeconds : historyItem?.durationSeconds);
+  const durationSeconds =
+    targetDurationSeconds ??
+    (isMultiVideo ? continueWatching?.durationSeconds : historyItem?.durationSeconds);
 
   const videosToMark = isMultiVideo
     ? videos?.map((v) => ({ videoId: v.id, durationSeconds: undefined as number | undefined }))
@@ -147,9 +142,7 @@ export function useMediaDetailsActions({
 
       switch (action) {
         case 'mark-as-watched': {
-          const targets = videosToMark ?? [
-            { videoId: videoIdToMark ?? metaId, durationSeconds },
-          ];
+          const targets = videosToMark ?? [{ videoId: videoIdToMark ?? metaId, durationSeconds }];
 
           const upserts = targets.map((v) => {
             const effectiveDuration =
@@ -206,7 +199,7 @@ export function useMediaDetailsActions({
       removalScope,
       invalidateWatchHistory,
       t,
-    ],
+    ]
   );
 
   return {

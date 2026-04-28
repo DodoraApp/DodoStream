@@ -1,9 +1,10 @@
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Text } from '@/theme/theme';
+
 import { Button } from '@/components/basic/Button';
-import { Modal } from '@/components/basic/Modal';
 import { Input } from '@/components/basic/Input';
+import { Modal } from '@/components/basic/Modal';
+import { Box, Text } from '@/theme/theme';
 
 interface PINPromptProps {
   visible: boolean;
@@ -25,12 +26,7 @@ export const PINPrompt: FC<PINPromptProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Modal
-      visible={visible}
-      onClose={onCancel}
-      label={t('profiles:enter_pin')}
-      icon="lock-closed"
-    >
+    <Modal visible={visible} onClose={onCancel} label={t('profiles:enter_pin')} icon="lock-closed">
       <Box gap="l" paddingHorizontal="s">
         {/* Title */}
         {title ? (

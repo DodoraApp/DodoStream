@@ -1,16 +1,18 @@
 import { memo, PropsWithChildren, useMemo } from 'react';
 import { Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AnimatedImage } from '@/components/basic/AnimatedImage';
-import { Box, Text } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
-import type { MetaDetail, MetaVideo } from '@/types/stremio';
-import { MediaInfo } from '@/components/media/MediaInfo';
-import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
-import { formatSeasonEpisodeLabel } from '@/utils/format';
-import { Tag } from '@/components/basic/Tag';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { AnimatedImage } from '@/components/basic/AnimatedImage';
 import FadeIn from '@/components/basic/FadeIn';
+import { Tag } from '@/components/basic/Tag';
+import { MediaInfo } from '@/components/media/MediaInfo';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import type { MetaDetail, MetaVideo } from '@/types/stremio';
+import { formatSeasonEpisodeLabel } from '@/utils/format';
+import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
 
 const { width } = Dimensions.get('window');
 

@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { getMetaWatchStatus } from '@/db';
+import type { WatchHistorySource } from '@/db/schema';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 import { useProfileStore } from '@/store/profile.store';
-import type { WatchHistorySource } from '@/db/schema';
 
 interface UseMediaWatchStatusResult {
   state: 'not-watched' | 'watching' | 'completed';

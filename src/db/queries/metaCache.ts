@@ -1,7 +1,8 @@
 import { and, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
-import type { MetaDetail, MetaVideo } from '@/types/stremio';
+
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, videos } from '@/db/schema';
+import type { MetaDetail, MetaVideo } from '@/types/stremio';
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const SQLITE_MAX_BIND_PARAMS = 999;
@@ -221,7 +222,9 @@ export async function getVideosForEntries(
   for (let i = 0; i < entries.length; i += chunkSize) {
     const chunk = entries.slice(i, i + chunkSize);
     // Build OR conditions for each (metaId, videoId) pair
-    const conditions = chunk.map((e) => and(eq(videos.metaId, e.metaId), eq(videos.videoId, e.videoId)));
+    const conditions = chunk.map((e) =>
+      and(eq(videos.metaId, e.metaId), eq(videos.videoId, e.videoId))
+    );
     const rows = await db
       .select()
       .from(videos)

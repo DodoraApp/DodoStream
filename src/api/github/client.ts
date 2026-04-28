@@ -1,4 +1,5 @@
 import { createDebugLogger } from '@/utils/debug';
+
 import { GithubApiError } from './errors';
 import { GithubLatestReleaseResponse, GithubRelease } from './types';
 

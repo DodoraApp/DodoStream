@@ -1,6 +1,8 @@
-import { FC, PropsWithChildren, memo } from 'react';
+import { FC, memo, PropsWithChildren } from 'react';
 import { ViewStyle } from 'react-native';
+
 import { MotiView } from 'moti';
+
 import { ANIMATION_FADE_IN_MS } from '@/constants/ui';
 
 interface FadeInProps {

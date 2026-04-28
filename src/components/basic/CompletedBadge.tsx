@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
-import { useTranslation } from 'react-i18next';
+
 import { SimklLogo } from '@/components/basic/SimklLogo';
 import type { WatchHistorySource } from '@/db/schema';
 import type { Theme } from '@/theme/theme';
@@ -43,10 +45,17 @@ export const CompletedBadge = ({
         size={theme.sizes.iconSmall}
         color={isCompleted ? theme.colors.primaryForeground : theme.colors.tertiaryForeground}
       />
-      <Text variant="bodySmall" fontWeight="700" color={isCompleted ? 'primaryForeground' : 'tertiaryForeground'}>
+      <Text
+        variant="bodySmall"
+        fontWeight="700"
+        color={isCompleted ? 'primaryForeground' : 'tertiaryForeground'}>
         {isCompleted ? t('completed') : t('watching')}
       </Text>
-      {showProviderIcon && <Box testID="status-provider-simkl"><SimklLogo size="iconSmall" /></Box>}
+      {showProviderIcon && (
+        <Box testID="status-provider-simkl">
+          <SimklLogo size="iconSmall" />
+        </Box>
+      )}
     </Box>
   );
 };

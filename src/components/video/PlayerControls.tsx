@@ -1,31 +1,32 @@
-import React, { FC, useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
-import { StyleSheet, Pressable, Platform, useTVEventHandler, HWEvent } from 'react-native';
+import React, { FC, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Text, Theme } from '@/theme/theme';
-import Slider from '@react-native-community/slider';
-import { useTheme } from '@shopify/restyle';
-import { useShallow } from 'zustand/react/shallow';
+import { HWEvent, Platform, Pressable, StyleSheet, useTVEventHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
-import { Modal } from '@/components/basic/Modal';
-import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
-import { PickerModal } from '@/components/basic/PickerModal';
-import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
+import Slider from '@react-native-community/slider';
+import { useTheme } from '@shopify/restyle';
+import { useShallow } from 'zustand/react/shallow';
+
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
-import { useProfileStore } from '@/store/profile.store';
-import { usePlaybackStore } from '@/store/playback.store';
-import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
-import { getPreferredLanguageCodes, getLanguageDisplayName } from '@/utils/languages';
-import { formatFitModeLabel, formatPlaybackTime, formatWallClock } from '@/utils/format';
-import { sortAudioTracksByPreference, getTrackBadge } from '@/utils/tracks';
+import { Modal } from '@/components/basic/Modal';
+import { PickerModal } from '@/components/basic/PickerModal';
+import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
 import { ControlButton } from '@/components/video/controls/ControlButton';
-import { TVSeekBar } from '@/components/video/TVSeekBar';
 import { SkipIntroButton } from '@/components/video/SkipIntroButton';
-import { usePlayerSeek } from '@/hooks/usePlayerSeek';
+import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
+import { TVSeekBar } from '@/components/video/TVSeekBar';
+import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
 import { useControlsVisibility } from '@/hooks/useControlsVisibility';
+import { usePlayerSeek } from '@/hooks/usePlayerSeek';
+import { usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { Box, Text, Theme } from '@/theme/theme';
 import type { IntroData } from '@/types/introdb';
+import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
+import { formatFitModeLabel, formatPlaybackTime, formatWallClock } from '@/utils/format';
+import { getLanguageDisplayName, getPreferredLanguageCodes } from '@/utils/languages';
+import { getTrackBadge, sortAudioTracksByPreference } from '@/utils/tracks';
 
 // ============================================================================
 // Types
@@ -277,28 +278,28 @@ const LeftControls = memo<LeftControlsProps>(
   }) => {
     const { t } = useTranslation('player');
     return (
-    <Box flexDirection="row" alignItems="center" gap="s">
-      {showSkipEpisode && (
+      <Box flexDirection="row" alignItems="center" gap="s">
+        {showSkipEpisode && (
+          <ControlButton
+            onPress={onSkipEpisode}
+            icon="skip-next"
+            iconComponent={MaterialCommunityIcons}
+            disabled={showLoadingIndicator}
+            label={t('skip')}
+            onFocusChange={onFocusChange}
+            badge={skipEpisodeLabel}
+            badgeVariant="tertiary"
+          />
+        )}
         <ControlButton
-          onPress={onSkipEpisode}
-          icon="skip-next"
+          onPress={onToggleFitMode}
+          icon={getFitModeIcon(fitMode)}
           iconComponent={MaterialCommunityIcons}
           disabled={showLoadingIndicator}
-          label={t('skip')}
+          label={formatFitModeLabel(fitMode, t)}
           onFocusChange={onFocusChange}
-          badge={skipEpisodeLabel}
-          badgeVariant="tertiary"
         />
-      )}
-      <ControlButton
-        onPress={onToggleFitMode}
-        icon={getFitModeIcon(fitMode)}
-        iconComponent={MaterialCommunityIcons}
-        disabled={showLoadingIndicator}
-        label={formatFitModeLabel(fitMode, t)}
-        onFocusChange={onFocusChange}
-      />
-    </Box>
+      </Box>
     );
   }
 );
@@ -326,34 +327,34 @@ const PlaybackControls = memo<PlaybackControlsProps>(
   }) => {
     const { t } = useTranslation('player');
     return (
-    <Box flexDirection="row" alignItems="center" gap="s">
-      <ControlButton
-        onPress={onSkipBackward}
-        icon="rotate-left"
-        iconComponent={MaterialCommunityIcons}
-        disabled={showLoadingIndicator}
-        label={`-${SKIP_BACKWARD_SECONDS}s`}
-        onFocusChange={onFocusChange}
-      />
-      <ControlButton
-        onPress={onPlayPause}
-        icon={paused ? 'play' : 'pause'}
-        iconComponent={Ionicons}
-        disabled={showLoadingIndicator}
-        hasTVPreferredFocus={hasTVPreferredFocus}
-        onFocusChange={onFocusChange}
-        variant="primary"
-        label={paused ? t('play') : t('pause')}
-      />
-      <ControlButton
-        onPress={onSkipForward}
-        icon="rotate-right"
-        iconComponent={MaterialCommunityIcons}
-        disabled={showLoadingIndicator}
-        label={`+${SKIP_FORWARD_SECONDS}s`}
-        onFocusChange={onFocusChange}
-      />
-    </Box>
+      <Box flexDirection="row" alignItems="center" gap="s">
+        <ControlButton
+          onPress={onSkipBackward}
+          icon="rotate-left"
+          iconComponent={MaterialCommunityIcons}
+          disabled={showLoadingIndicator}
+          label={`-${SKIP_BACKWARD_SECONDS}s`}
+          onFocusChange={onFocusChange}
+        />
+        <ControlButton
+          onPress={onPlayPause}
+          icon={paused ? 'play' : 'pause'}
+          iconComponent={Ionicons}
+          disabled={showLoadingIndicator}
+          hasTVPreferredFocus={hasTVPreferredFocus}
+          onFocusChange={onFocusChange}
+          variant="primary"
+          label={paused ? t('play') : t('pause')}
+        />
+        <ControlButton
+          onPress={onSkipForward}
+          icon="rotate-right"
+          iconComponent={MaterialCommunityIcons}
+          disabled={showLoadingIndicator}
+          label={`+${SKIP_FORWARD_SECONDS}s`}
+          onFocusChange={onFocusChange}
+        />
+      </Box>
     );
   }
 );
@@ -381,30 +382,30 @@ const RightControls = memo<RightControlsProps>(
   }) => {
     const { t } = useTranslation('player');
     return (
-    <Box flexDirection="row" alignItems="center" gap="s">
-      {hasTextTracks && (
+      <Box flexDirection="row" alignItems="center" gap="s">
+        {hasTextTracks && (
+          <ControlButton
+            onPress={onToggleTextTracks}
+            icon="subtitles"
+            iconComponent={MaterialCommunityIcons}
+            disabled={showLoadingIndicator}
+            onFocusChange={onFocusChange}
+            label={t('subtitles')}
+            badge={getTrackBadge(selectedTextLanguage)}
+            badgeVariant="tertiary"
+          />
+        )}
         <ControlButton
-          onPress={onToggleTextTracks}
-          icon="subtitles"
-          iconComponent={MaterialCommunityIcons}
+          onPress={onToggleAudioTracks}
+          icon="globe"
+          iconComponent={Ionicons}
           disabled={showLoadingIndicator}
           onFocusChange={onFocusChange}
-          label={t('subtitles')}
-          badge={getTrackBadge(selectedTextLanguage)}
+          label={t('audio')}
+          badge={getTrackBadge(selectedAudioLanguage)}
           badgeVariant="tertiary"
         />
-      )}
-      <ControlButton
-        onPress={onToggleAudioTracks}
-        icon="globe"
-        iconComponent={Ionicons}
-        disabled={showLoadingIndicator}
-        onFocusChange={onFocusChange}
-        label={t('audio')}
-        badge={getTrackBadge(selectedAudioLanguage)}
-        badgeVariant="tertiary"
-      />
-    </Box>
+      </Box>
     );
   }
 );

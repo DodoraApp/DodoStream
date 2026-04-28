@@ -1,9 +1,11 @@
 import { and, asc, desc, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
+
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
-import type { ContentType } from '@/types/stremio';
 import { db, initializeDatabase } from '@/db/client';
-import { metaCache, videos, watchHistory } from '@/db/schema';
 import type { StreamTargetType, WatchHistorySource, WatchHistoryStatus } from '@/db/schema';
+import { metaCache, videos, watchHistory } from '@/db/schema';
+import type { ContentType } from '@/types/stremio';
+
 import { addToSyncQueue, cancelPendingSyncRemovals, type SyncProvider } from './syncQueue';
 
 export type DbWatchHistoryItem = {
@@ -221,7 +223,10 @@ export async function upsertWatchProgress(params: {
       set: updateSet,
     });
 
-  await cancelPendingSyncRemovals(params.profileId, params.metaId, ['remove_history', 'remove_watchlist']);
+  await cancelPendingSyncRemovals(params.profileId, params.metaId, [
+    'remove_history',
+    'remove_watchlist',
+  ]);
 }
 
 export async function setLastStreamTarget(params: {
@@ -324,7 +329,14 @@ export async function removeWatchHistoryItem(
       )
     );
 
-  await addToSyncQueue(profileId, 'remove_history', metaId, items[0].type, items[0].videoId, ignoreProvider);
+  await addToSyncQueue(
+    profileId,
+    'remove_history',
+    metaId,
+    items[0].type,
+    items[0].videoId,
+    ignoreProvider
+  );
 }
 
 export async function removeWatchHistoryMeta(
@@ -346,7 +358,14 @@ export async function removeWatchHistoryMeta(
     .delete(watchHistory)
     .where(and(eq(watchHistory.profileId, profileId), eq(watchHistory.metaId, metaId)));
 
-  await addToSyncQueue(profileId, 'remove_history', metaId, items[0].type, undefined, ignoreProvider);
+  await addToSyncQueue(
+    profileId,
+    'remove_history',
+    metaId,
+    items[0].type,
+    undefined,
+    ignoreProvider
+  );
 }
 
 export async function removeProfileWatchHistory(profileId: string): Promise<void> {
@@ -756,7 +775,10 @@ export async function getContinueWatchingWithUpNext(
       metaBackground: metaCache.background,
       currentVideoSeason: videos.season,
       currentVideoEpisode: videos.episode,
-      videoCount: sql<number>`(SELECT count(*) FROM ${videos} WHERE ${videos.metaId} = ${ranked.metaId})`.as('video_count'),
+      videoCount:
+        sql<number>`(SELECT count(*) FROM ${videos} WHERE ${videos.metaId} = ${ranked.metaId})`.as(
+          'video_count'
+        ),
     })
     .from(ranked)
     .leftJoin(metaCache, eq(ranked.metaId, metaCache.metaId))
@@ -792,7 +814,10 @@ export async function getContinueWatchingWithUpNext(
           Number(item.currentVideoEpisode)
         );
         if (next?.videoId) {
-          nextEpisodesMap.set(item.metaId, next as { videoId: string; season: number; episode: number });
+          nextEpisodesMap.set(
+            item.metaId,
+            next as { videoId: string; season: number; episode: number }
+          );
         }
       })
     );
@@ -848,7 +873,7 @@ export async function getContinueWatchingWithUpNext(
       resolved.push(base);
     } catch (error) {
       if (__DEV__) {
-        console.warn('[ContinueWatching] Failed to resolve item', item.metaId, error);
+        console.error('[ContinueWatching] Failed to resolve item', item.metaId, error);
       }
     }
   }

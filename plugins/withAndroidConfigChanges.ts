@@ -1,4 +1,4 @@
-import { ConfigPlugin, AndroidConfig, withAndroidManifest } from 'expo/config-plugins';
+import { AndroidConfig, ConfigPlugin, withAndroidManifest } from 'expo/config-plugins';
 
 /**
  * Expo config plugin to add additional configChanges to the MainActivity

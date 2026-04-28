@@ -1,13 +1,16 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { type ReactNode } from 'react';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react-native';
+
+import * as db from '@/db';
+import { useProfileStore } from '@/store/profile.store';
+
 import {
   useContinueWatching,
   useContinueWatchingForMeta,
   useNextVideo,
 } from '../useContinueWatching';
-import { useProfileStore } from '@/store/profile.store';
-import * as db from '@/db';
 
 jest.mock('@/db', () => ({
   getContinueWatchingWithUpNext: jest.fn(),

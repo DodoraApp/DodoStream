@@ -1,5 +1,6 @@
-import type { Theme } from '@/theme/theme';
 import { ViewStyle } from 'react-native';
+
+import type { Theme } from '@/theme/theme';
 
 type ColorName = keyof Theme['colors'];
 

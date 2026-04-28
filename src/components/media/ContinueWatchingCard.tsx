@@ -1,17 +1,18 @@
 import { memo } from 'react';
-import FastImage from '@d11/react-native-fast-image';
 import { useTranslation } from 'react-i18next';
-import { Box, Text } from '@/theme/theme';
+import { Pressable } from 'react-native';
+
+import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
 
 import { Badge } from '@/components/basic/Badge';
-import { NO_POSTER_LANDSCAPE } from '@/constants/images';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
+import { NO_POSTER_LANDSCAPE } from '@/constants/images';
 import { type ContinueWatchingEntry } from '@/hooks/useContinueWatching';
-import { formatSeasonEpisodeLabel, formatEpisodeCardTitle } from '@/utils/format';
-import { Pressable } from 'react-native';
+import type { Theme } from '@/theme/theme';
+import { Box, Text } from '@/theme/theme';
+import { formatEpisodeCardTitle, formatSeasonEpisodeLabel } from '@/utils/format';
 
 interface ContinueWatchingCardProps {
   /** The continue watching entry to display */

@@ -1,2 +1,2 @@
 export { fetchIntro, IntroDbApiError } from './client';
-export { useIntro, introDbKeys } from './hooks';
+export { introDbKeys, useIntro } from './hooks';

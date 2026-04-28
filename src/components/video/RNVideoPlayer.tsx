@@ -1,21 +1,23 @@
-import React, { forwardRef, useImperativeHandle, useRef, useCallback, memo } from 'react';
+import React, { forwardRef, memo, useCallback, useImperativeHandle, useRef } from 'react';
 import { Platform } from 'react-native';
 import Video, {
-  VideoRef,
+  OnAudioTracksData,
   OnLoadData,
   OnProgressData,
-  OnAudioTracksData,
   OnTextTracksData,
-  SelectedTrack,
-  SelectedTrackType,
   OnVideoErrorData,
   OnVideoStatisticsData,
+  SelectedTrack,
+  SelectedTrackType,
+  VideoRef,
 } from 'react-native-video';
-import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
-import { createDebugLogger } from '@/utils/debug'
-import { useProfileStore } from '@/store/profile.store';
-import { usePlaybackStore, DEFAULT_PROFILE_PLAYBACK_SETTINGS } from '@/store/playback.store';
+
 import { useShallow } from 'zustand/react/shallow';
+
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { AudioTrack, PlayerProps, PlayerRef, TextTrack } from '@/types/player';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('RNVideoPlayer');
 

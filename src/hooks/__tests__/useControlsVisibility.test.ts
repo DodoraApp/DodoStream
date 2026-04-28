@@ -1,6 +1,8 @@
-import { renderHook, act } from '@testing-library/react-native';
-import { useControlsVisibility, UseControlsVisibilityOptions } from '../useControlsVisibility';
+import { act, renderHook } from '@testing-library/react-native';
+
 import { PLAYER_CONTROLS_AUTO_HIDE_MS } from '@/constants/playback';
+
+import { useControlsVisibility, UseControlsVisibilityOptions } from '../useControlsVisibility';
 
 describe('useControlsVisibility', () => {
   beforeEach(() => {

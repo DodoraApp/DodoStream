@@ -1,14 +1,16 @@
 import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, ScrollView } from 'react-native';
-import * as Network from 'expo-network';
 import QRCode from 'react-native-qrcode-svg';
+
+import * as Network from 'expo-network';
+
 import { Button } from '@/components/basic/Button';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useLocalServerStore } from '@/store/local-server.store';
 import { showToast } from '@/store/toast.store';
-import { createDebugLogger } from '@/utils/debug';
 import { Box, Text } from '@/theme/theme';
-import { useTranslation } from 'react-i18next';
+import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('RemoteControl');
 

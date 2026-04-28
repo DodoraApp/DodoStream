@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import { Box } from '@/theme/theme';
+
+import { useRouter } from 'expo-router';
+
+import { UISettingsContent } from '@/components/settings/UISettingsContent';
 import { WizardContainer } from '@/components/setup/WizardContainer';
 import { WizardStep } from '@/components/setup/WizardStep';
-import { UISettingsContent } from '@/components/settings/UISettingsContent';
+import { Box } from '@/theme/theme';
 
 /**
  * UI settings step - customize theme and scaling

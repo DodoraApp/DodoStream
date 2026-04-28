@@ -1,8 +1,9 @@
 import { act, waitFor } from '@testing-library/react-native';
-import { createTestQueryClient, renderHookWithProviders } from '@/utils/test-utils';
-import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 
-import { useInstallAddon, useMeta, stremioKeys } from '../hooks';
+import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
+import { createTestQueryClient, renderHookWithProviders } from '@/utils/test-utils';
+
+import { stremioKeys, useInstallAddon, useMeta } from '../hooks';
 
 const mockFetchManifest = jest.fn();
 const mockFetchMeta = jest.fn();
@@ -20,7 +21,16 @@ jest.mock('@/store/addon.store', () => ({
   useAddonStore: jest.fn((selector: any) =>
     selector({
       addAddon: mockAddAddon,
-      configsByProfile: { 'profile-1': { 'addon.id': { isActive: true, useCatalogsOnHome: true, useCatalogsInSearch: true, useForSubtitles: true } } },
+      configsByProfile: {
+        'profile-1': {
+          'addon.id': {
+            isActive: true,
+            useCatalogsOnHome: true,
+            useCatalogsInSearch: true,
+            useForSubtitles: true,
+          },
+        },
+      },
       getAddonsList: mockGetAddonsList,
     })
   ),

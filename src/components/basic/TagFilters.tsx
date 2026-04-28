@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
-import { Box } from '@/theme/theme';
-import { Tag } from '@/components/basic/Tag';
+
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { Tag } from '@/components/basic/Tag';
+import { Box } from '@/theme/theme';
 
 export interface TagOption {
   id: string;

@@ -1,19 +1,21 @@
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView } from 'react-native-gesture-handler';
+
 import { useTheme } from '@shopify/restyle';
+import { Stack, useLocalSearchParams } from 'expo-router';
+
+import { useMeta } from '@/api/stremio';
+import { Container } from '@/components/basic/Container';
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { LoadingQuery } from '@/components/basic/LoadingQuery';
+import { MediaDetailsHeader } from '@/components/media/MediaDetailsHeader';
+import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
+import { StreamList } from '@/components/media/StreamList';
+import { useAutoPlay } from '@/hooks/useAutoPlay';
 import { Box, type Theme } from '@/theme/theme';
 import { ContentType } from '@/types/stremio';
-import { Container } from '@/components/basic/Container';
-import { StreamList } from '@/components/media/StreamList';
-import { MediaDetailsHeader } from '@/components/media/MediaDetailsHeader';
-import { useMeta } from '@/api/stremio';
-import { useMemo } from 'react';
-import { LoadingQuery } from '@/components/basic/LoadingQuery';
-import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
-import { ScrollView } from 'react-native-gesture-handler';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { formatPlayerTitle } from '@/utils/format';
-import { useAutoPlay } from '@/hooks/useAutoPlay';
 
 export default function StreamsPage() {
   const { t } = useTranslation('media');

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { TagOption } from '@/components/basic/TagFilters';
+
 import { PickerItem } from '@/components/basic/PickerModal';
+import { TagOption } from '@/components/basic/TagFilters';
 
 export interface UseGroupOptionsParams<T extends string | number | undefined> {
   items: PickerItem<T>[];

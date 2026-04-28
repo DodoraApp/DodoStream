@@ -1,7 +1,10 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
-import { useMediaNavigation } from '../useMediaNavigation';
 import { Linking } from 'react-native';
+
+import { renderHook, waitFor } from '@testing-library/react-native';
+
 import * as db from '@/db';
+
+import { useMediaNavigation } from '../useMediaNavigation';
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();

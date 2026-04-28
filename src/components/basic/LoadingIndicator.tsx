@@ -1,11 +1,13 @@
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { AppLogo } from '@/components/basic/AppLogo';
-import { LOADING_LOGO_ANIMATION_DURATION_MS } from '@/constants/ui';
 // import { useEffect } from 'react';
 import { ActivityIndicator } from 'react-native';
-import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
+
+import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+
+import { AppLogo } from '@/components/basic/AppLogo';
+import { LOADING_LOGO_ANIMATION_DURATION_MS } from '@/constants/ui';
+import { Box, Text, type Theme } from '@/theme/theme';
 
 interface LoadingIndicatorProps {
   type?: 'default' | 'simple';

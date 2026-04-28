@@ -1,13 +1,13 @@
 import type {
-  MetaPreview as SDKMetaPreview,
-  MetaDetail as SDKMetaDetail,
-  MetaLink,
-  MetaVideo as SDKMetaVideo,
+  ContentType,
   Manifest,
   ManifestCatalog,
+  MetaDetail as SDKMetaDetail,
+  MetaLink,
+  MetaPreview as SDKMetaPreview,
+  MetaVideo as SDKMetaVideo,
   Stream as SDKStream,
   Subtitle,
-  ContentType,
 } from '@types/stremio-addon-sdk';
 
 export interface MetaPreview extends SDKMetaPreview {
@@ -81,4 +81,4 @@ export interface InstalledAddon {
   installedAt: number;
 }
 
-export { MetaLink, Manifest, ManifestCatalog, Subtitle, ContentType };
+export { ContentType, Manifest, ManifestCatalog, MetaLink, Subtitle };

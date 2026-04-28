@@ -1,13 +1,14 @@
 import { memo, useCallback } from 'react';
-import { Box, Text, Theme } from '@/theme/theme';
-import { Focusable } from '@/components/basic/Focusable';
-import { useTheme } from '@shopify/restyle';
 import { TVFocusGuideView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
-import type { SyncProviderBadge } from '@/hooks/useSyncProviderBadges';
 
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
+import { type Href, useRouter } from 'expo-router';
+
+import { Focusable } from '@/components/basic/Focusable';
 import { SyncBadge } from '@/components/basic/SyncBadge';
+import type { SyncProviderBadge } from '@/hooks/useSyncProviderBadges';
+import { Box, Text, Theme } from '@/theme/theme';
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   movie: 'film-outline',
@@ -33,7 +34,15 @@ export interface CatalogSectionHeaderProps {
 }
 
 export const CatalogSectionHeader = memo(
-  ({ title, type, icon, onFocused, linkTo, catalogData, syncBadges }: CatalogSectionHeaderProps) => {
+  ({
+    title,
+    type,
+    icon,
+    onFocused,
+    linkTo,
+    catalogData,
+    syncBadges,
+  }: CatalogSectionHeaderProps) => {
     const theme = useTheme<Theme>();
     const router = useRouter();
 
@@ -106,7 +115,9 @@ export const CatalogSectionHeader = memo(
                     <Ionicons
                       name="chevron-forward"
                       size={theme.sizes.iconMedium}
-                      color={isFocused ? theme.colors.primaryBackground : theme.colors.textSecondary}
+                      color={
+                        isFocused ? theme.colors.primaryBackground : theme.colors.textSecondary
+                      }
                     />
                   )}
                 </Box>

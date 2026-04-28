@@ -1,8 +1,10 @@
-import React from 'react';
-import { fireEvent } from '@testing-library/react-native';
-import { renderWithProviders } from '@/utils/test-utils';
 import * as mockReact from 'react';
+import React from 'react';
 import { View as mockView } from 'react-native';
+
+import { fireEvent } from '@testing-library/react-native';
+
+import { renderWithProviders } from '@/utils/test-utils';
 
 import { PlayerControls } from '../PlayerControls';
 

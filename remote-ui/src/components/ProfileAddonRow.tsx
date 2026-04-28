@@ -21,14 +21,10 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
   const [isExpanded, setIsExpanded] = useState(false);
   const { config } = addon;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: addon.id, disabled: !isSortable });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: addon.id,
+    disabled: !isSortable,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -44,8 +40,7 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
       style={style}
       className={`bg-zinc-900 border border-zinc-800 rounded-xl mb-3 overflow-hidden transition-colors ${
         isDragging ? 'shadow-xl shadow-black/50 border-indigo-500/50 opacity-90' : 'shadow-sm'
-      }`}
-    >
+      }`}>
       <div className="flex items-center justify-between p-3 sm:p-4">
         <div className="flex items-center gap-2 sm:gap-3 overflow-hidden pr-2 sm:pr-4 flex-1 min-w-0">
           {isSortable ? (
@@ -53,8 +48,7 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
               {...attributes}
               {...listeners}
               style={{ touchAction: 'none' }}
-              className="cursor-grab active:cursor-grabbing p-1 sm:p-1.5 text-zinc-500 hover:text-zinc-300 rounded hover:bg-zinc-800 transition-colors"
-            >
+              className="cursor-grab active:cursor-grabbing p-1 sm:p-1.5 text-zinc-500 hover:text-zinc-300 rounded hover:bg-zinc-800 transition-colors">
               <GripVertical size={18} />
             </div>
           ) : (
@@ -68,7 +62,8 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
 
           <div className="min-w-0 flex-1 cursor-default">
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-              <h3 className={`font-medium truncate ${config.isActive ? 'text-zinc-100' : 'text-zinc-500'}`}>
+              <h3
+                className={`font-medium truncate ${config.isActive ? 'text-zinc-100' : 'text-zinc-500'}`}>
                 {addon.name}
               </h3>
               <span className="text-xs text-zinc-500 sm:shrink-0">v{addon.version}</span>
@@ -84,8 +79,7 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
               target="_blank"
               rel="noreferrer"
               className="p-1.5 sm:p-2 text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
-              title="Configure Addon"
-            >
+              title="Configure Addon">
               <Settings size={18} className="sm:hidden" />
               <Settings size={20} className="hidden sm:block" />
             </a>
@@ -94,8 +88,7 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
           {hasSubConfigs && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 sm:p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors"
-            >
+              className="p-1.5 sm:p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">
               {isExpanded ? (
                 <>
                   <ChevronUp size={18} className="sm:hidden" />
@@ -115,8 +108,7 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
             onChange={(checked) => onToggleActive(addon, checked)}
             className={`${
               config.isActive ? 'bg-indigo-500' : 'bg-zinc-700'
-            } relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 sm:ml-2`}
-          >
+            } relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 sm:ml-2`}>
             <span
               className={`${
                 config.isActive ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1'
@@ -135,12 +127,13 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
               onChange={(checked) => onUpdateConfig(addon, { useCatalogsOnHome: checked })}
               className={`${
                 config.useCatalogsOnHome !== false ? 'bg-indigo-500' : 'bg-zinc-700'
-              } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none`}
-            >
-              <span className={`${config.useCatalogsOnHome !== false ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`} />
+              } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none`}>
+              <span
+                className={`${config.useCatalogsOnHome !== false ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
+              />
             </Switch>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <span className="text-sm text-zinc-400">Use in Search</span>
             <Switch
@@ -148,9 +141,10 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
               onChange={(checked) => onUpdateConfig(addon, { useCatalogsInSearch: checked })}
               className={`${
                 config.useCatalogsInSearch !== false ? 'bg-indigo-500' : 'bg-zinc-700'
-              } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none`}
-            >
-              <span className={`${config.useCatalogsInSearch !== false ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`} />
+              } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none`}>
+              <span
+                className={`${config.useCatalogsInSearch !== false ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
+              />
             </Switch>
           </div>
 
@@ -161,9 +155,10 @@ const ProfileAddonRow = React.memo(function ProfileAddonRow({
               onChange={(checked) => onUpdateConfig(addon, { useForSubtitles: checked })}
               className={`${
                 config.useForSubtitles ? 'bg-indigo-500' : 'bg-zinc-700'
-              } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none`}
-            >
-              <span className={`${config.useForSubtitles ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`} />
+              } relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none`}>
+              <span
+                className={`${config.useForSubtitles ? 'translate-x-5' : 'translate-x-1'} inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
+              />
             </Switch>
           </div>
         </div>

@@ -1,6 +1,6 @@
-import { useProfileStore } from '@/store/profile.store';
 import { useSimklConnection } from '@/api/simkl/hooks';
 import { useIntegrationsStore } from '@/store/integrations.store';
+import { useProfileStore } from '@/store/profile.store';
 import type { IntegrationProvider, IntegrationSyncStatus } from '@/types/integrations';
 
 export type SyncStatus = 'synced' | 'waiting' | 'error';

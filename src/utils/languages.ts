@@ -1,5 +1,7 @@
 import * as Localization from 'expo-localization';
+
 import { uniqNormalizedStrings } from '@/utils/array';
+
 import iso639Data from '../../assets/data/iso639.json';
 
 /**

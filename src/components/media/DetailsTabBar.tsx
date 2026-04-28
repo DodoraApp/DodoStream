@@ -1,7 +1,8 @@
 import { memo, useCallback } from 'react';
 import { ScrollView } from 'react-native';
-import { Box } from '@/theme/theme';
+
 import { Tag } from '@/components/basic/Tag';
+import { Box } from '@/theme/theme';
 
 export interface DetailsTab {
   key: string;

@@ -1,51 +1,52 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+import { useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
-import { showToast } from '@/store/toast.store';
 
-import { RNVideoPlayer } from './RNVideoPlayer';
-import { VLCPlayer } from './VLCPlayer';
-import { PlayerControls } from './PlayerControls';
-import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
-import { CustomSubtitles } from './CustomSubtitles';
-import { PlayerLoadingScreen } from './PlayerLoadingScreen';
-
-import { AudioTrack, PlayerRef, PlayerType, TextTrack, VideoFitMode } from '@/types/player';
-import type { ContentType } from '@/types/stremio';
-import { useProfileStore } from '@/store/profile.store';
-import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
+import { useIntro } from '@/api/introdb';
+import { useSubtitles } from '@/api/stremio';
 import {
-  findBestTrackByLanguage,
-  getPreferredLanguageCodes,
-  normalizeLanguageCode,
-} from '@/utils/languages';
-import { combineSubtitles } from '@/utils/subtitles';
-import {
-  SKIP_FORWARD_SECONDS,
-  SKIP_BACKWARD_SECONDS,
   PLAYBACK_RATIO_PERSIST_INTERVAL,
-  UPNEXT_POPUP_SERIES_RATIO,
+  SKIP_BACKWARD_SECONDS,
+  SKIP_FORWARD_SECONDS,
   UPNEXT_POPUP_MOVIE_RATIO,
+  UPNEXT_POPUP_SERIES_RATIO,
 } from '@/constants/playback';
 import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM, TOAST_DURATION_SHORT } from '@/constants/ui';
-import { createDebugLogger } from '@/utils/debug'
+import { setLastStreamTarget } from '@/db';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { getVideoSessionId } from '@/utils/stream';
-import { useSubtitles } from '@/api/stremio';
-import { useIntro } from '@/api/introdb';
 import { useNativeSubtitleStyle } from '@/hooks/useSubtitleStyle';
-import { classifyPlayerError } from '@/utils/player-errors';
 import {
   useWatchHistoryActions,
   useWatchHistoryItem,
   watchHistoryKeys,
 } from '@/hooks/useWatchHistoryDb';
-import { setLastStreamTarget } from '@/db';
-import { useQueryClient } from '@tanstack/react-query';
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { showToast } from '@/store/toast.store';
+import { Box, Text, Theme } from '@/theme/theme';
+import { AudioTrack, PlayerRef, PlayerType, TextTrack, VideoFitMode } from '@/types/player';
+import type { ContentType } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
 import { formatFitModeLabel } from '@/utils/format';
+import {
+  findBestTrackByLanguage,
+  getPreferredLanguageCodes,
+  normalizeLanguageCode,
+} from '@/utils/languages';
+import { classifyPlayerError } from '@/utils/player-errors';
+import { getVideoSessionId } from '@/utils/stream';
+import { combineSubtitles } from '@/utils/subtitles';
+
+import { CustomSubtitles } from './CustomSubtitles';
+import { PlayerControls } from './PlayerControls';
+import { PlayerLoadingScreen } from './PlayerLoadingScreen';
+import { RNVideoPlayer } from './RNVideoPlayer';
+import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
+import { VLCPlayer } from './VLCPlayer';
 
 const debug = createDebugLogger('VideoPlayer');
 
@@ -385,13 +386,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     [persistProgress]
   );
 
-  const handleBuffering = useCallback(
-    (buffering: boolean) => {
-      debug('buffering', { buffering });
-      setIsBuffering(buffering);
-    },
-    []
-  );
+  const handleBuffering = useCallback((buffering: boolean) => {
+    debug('buffering', { buffering });
+    setIsBuffering(buffering);
+  }, []);
 
   const handleStatistics = useCallback(
     (statistics: Record<string, string | number | object | undefined>) => {
@@ -785,7 +783,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         fitMode={fitMode}
         onToggleFitMode={handleCycleFitMode}
         onVisibilityChange={setControlsVisible}
-        introData={skipIntroEnabled && introData && !showCustomLoadingScreen ? introData : undefined}
+        introData={
+          skipIntroEnabled && introData && !showCustomLoadingScreen ? introData : undefined
+        }
         introSkipped={introSkipped}
         onSkipIntro={handleSkipIntro}
         suppressPreferredFocus={upNextVisible}

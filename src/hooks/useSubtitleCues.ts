@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { SubtitleCue } from '@/types/player';
+import { createDebugLogger } from '@/utils/debug';
 import { loadSubtitles } from '@/utils/subtitles';
-import { createDebugLogger } from '@/utils/debug'
 
 const debug = createDebugLogger('useSubtitleCues');
 
@@ -10,7 +11,6 @@ const debug = createDebugLogger('useSubtitleCues');
  * Uses staleTime: Infinity to prevent refetching once loaded.
  */
 export function useSubtitleCues(url: string | undefined) {
-
   return useQuery<SubtitleCue[], Error>({
     queryKey: ['subtitle-cues', url],
     queryFn: async () => {

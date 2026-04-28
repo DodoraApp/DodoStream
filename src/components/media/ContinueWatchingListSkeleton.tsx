@@ -1,8 +1,10 @@
 import { memo, useMemo } from 'react';
 import { ScrollView } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
-import type { Theme } from '@/theme/theme';
+
 import { ContinueWatchingItemSkeleton } from '@/components/media/ContinueWatchingItemSkeleton';
+import type { Theme } from '@/theme/theme';
 import { getContinueWatchingSectionHeight } from '@/utils/layout';
 
 export interface ContinueWatchingListSkeletonProps {

@@ -1,8 +1,10 @@
 import { memo, RefObject } from 'react';
 import { Platform, Switch, View } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { Focusable } from '@/components/basic/Focusable';
+import { Box, Text, Theme } from '@/theme/theme';
 
 interface SettingsSwitchProps {
   /** Label text for the switch */

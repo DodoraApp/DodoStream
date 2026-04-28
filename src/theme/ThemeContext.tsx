@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
+import React, { createContext, type ReactNode, useContext, useMemo } from 'react';
+
 import { ThemeProvider as RestyleThemeProvider } from '@shopify/restyle';
-import { createAppTheme, type Theme } from './theme';
+
 import { useUIStore } from '@/store/ui.store';
+
+import { createAppTheme, type Theme } from './theme';
 import { getThemePreset, type ThemePreset } from './theme-presets';
 
 interface ThemeContextValue {

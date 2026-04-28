@@ -1,8 +1,16 @@
-import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import type { ContentType } from '@/types/stremio';
+
+import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import {
+  addToMyList,
+  type DbMyListItem,
+  listMyListForProfile,
+  removeFromMyList,
+  removeProfileMyList,
+} from '@/db';
 import { useProfileStore } from '@/store/profile.store';
-import { addToMyList, listMyListForProfile, removeFromMyList, removeProfileMyList, type DbMyListItem } from '@/db';
+import type { ContentType } from '@/types/stremio';
 
 const myListKeys = {
   all: ['my-list-db'] as const,

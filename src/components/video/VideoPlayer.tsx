@@ -1,12 +1,15 @@
 import { FC, useEffect, useState } from 'react';
-import { useProfileStore } from '@/store/profile.store';
-import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
-import { useShallow } from 'zustand/react/shallow';
-import { VideoPlayerSession, type VideoPlayerProps } from './VideoPlayerSession';
-import { getVideoSessionId } from '@/utils/stream';
-import { useKeepAwake } from 'expo-keep-awake';
-import ImmersiveMode from 'react-native-immersive-mode';
 import { Platform, StatusBar } from 'react-native';
+import ImmersiveMode from 'react-native-immersive-mode';
+
+import { useKeepAwake } from 'expo-keep-awake';
+import { useShallow } from 'zustand/react/shallow';
+
+import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
+import { useProfileStore } from '@/store/profile.store';
+import { getVideoSessionId } from '@/utils/stream';
+
+import { type VideoPlayerProps, VideoPlayerSession } from './VideoPlayerSession';
 
 export const VideoPlayer: FC<VideoPlayerProps> = (props) => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);

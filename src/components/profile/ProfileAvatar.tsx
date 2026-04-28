@@ -1,7 +1,9 @@
 import { FC } from 'react';
-import { Box, Theme } from '@/theme/theme';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
+
+import { Box, Theme } from '@/theme/theme';
 
 interface ProfileAvatarProps {
   icon: string;

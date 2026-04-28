@@ -1,23 +1,25 @@
-import { FC, memo, useCallback, useState, useMemo } from 'react';
-import { ScrollView } from 'react-native';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createDebugLogger } from '@/utils/debug'
+import { ScrollView } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
+
+import { completeSimklConnection, useSimklSync } from '@/api/simkl/hooks';
 import { Focusable } from '@/components/basic/Focusable';
+import { RadioButton } from '@/components/settings/RadioButton';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
-import { SimklPinAuthModal } from '@/components/settings/SimklPinAuthModal';
-import { SimklFirstConnectModal } from '@/components/settings/SimklFirstConnectModal';
 import { SimklConnectionCard } from '@/components/settings/SimklConnectionCard';
-import { RadioButton } from '@/components/settings/RadioButton';
+import { SimklFirstConnectModal } from '@/components/settings/SimklFirstConnectModal';
+import { SimklPinAuthModal } from '@/components/settings/SimklPinAuthModal';
+import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import { useProfileStore } from '@/store/profile.store';
-import { useSimklSync, completeSimklConnection } from '@/api/simkl/hooks';
-import type { ProfileIntegrationSettings, SyncMode, SimklConnection } from '@/types/integrations';
 import { showToast } from '@/store/toast.store';
-import { TOAST_DURATION_SHORT } from '@/constants/ui';
+import { Box, Text, type Theme } from '@/theme/theme';
+import type { ProfileIntegrationSettings, SimklConnection, SyncMode } from '@/types/integrations';
+import { createDebugLogger } from '@/utils/debug';
 
 interface SimklSyncSettingsProps {
   isConnected: boolean;
@@ -210,7 +212,11 @@ export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> =
 
     return (
       <>
-        {scrollable ? <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView> : content}
+        {scrollable ? (
+          <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>
+        ) : (
+          content
+        )}
 
         <SimklPinAuthModal
           visible={showPinModal}

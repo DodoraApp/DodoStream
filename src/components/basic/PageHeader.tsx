@@ -1,5 +1,6 @@
-import { Box, Text } from '@/theme/theme';
 import { ReactNode } from 'react';
+
+import { Box, Text } from '@/theme/theme';
 
 interface PageHeaderProps {
   title: string;

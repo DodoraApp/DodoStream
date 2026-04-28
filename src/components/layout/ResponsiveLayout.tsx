@@ -1,8 +1,10 @@
 import { FC, ReactNode } from 'react';
-import { Box } from '@/theme/theme';
+import { useWindowDimensions, View } from 'react-native';
+
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { Box } from '@/theme/theme';
+
 import { TVSidebar } from './TVSidebar';
-import { View, useWindowDimensions } from 'react-native';
 
 interface ResponsiveLayoutProps {
   children: ReactNode;

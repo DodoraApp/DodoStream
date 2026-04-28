@@ -1,6 +1,8 @@
-import { Breakpoint } from '@/hooks/useBreakpoint';
-import { createTheme, createBox, createText } from '@shopify/restyle';
 import { DimensionValue } from 'react-native';
+
+import { createBox, createText, createTheme } from '@shopify/restyle';
+
+import { Breakpoint } from '@/hooks/useBreakpoint';
 
 const withScale = (value: number, scalingFactor: number) => value * scalingFactor;
 const palette = {

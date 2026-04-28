@@ -1,10 +1,12 @@
 import { memo } from 'react';
-import { Skeleton } from '@/components/basic/Skeleton';
+
+import { useTheme } from '@shopify/restyle';
+
 import { CardListSkeleton } from '@/components/basic/CardListSkeleton';
+import { Skeleton } from '@/components/basic/Skeleton';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import type { Theme } from '@/theme/theme';
 import { Box } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 
 export interface MediaDetailsSkeletonProps {
   variant?: 'minimal' | 'full';

@@ -1,23 +1,25 @@
-import { FC, memo, useState, useCallback } from 'react';
-import { Alert, Linking, TVFocusGuideView } from 'react-native';
+import { FC, memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert, Linking, TVFocusGuideView } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
 import { useShallow } from 'zustand/react/shallow';
-import { Box, Text, type Theme } from '@/theme/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { Input } from '@/components/basic/Input';
+
+import { useInstallAddon } from '@/api/stremio';
 import { Button } from '@/components/basic/Button';
+import { Focusable } from '@/components/basic/Focusable';
+import { Input } from '@/components/basic/Input';
+import { RemoteControlModal } from '@/components/settings/RemoteControlModal';
 import { SettingsCard } from '@/components/settings/SettingsCard';
+import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { useAddonStore } from '@/store/addon.store';
 import { useProfileStore } from '@/store/profile.store';
-import { useInstallAddon } from '@/api/stremio';
-import { InstalledAddon } from '@/types/stremio';
 import { showToast } from '@/store/toast.store';
-import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
-import { Focusable } from '@/components/basic/Focusable';
-import { RemoteControlModal } from '@/components/settings/RemoteControlModal';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import { Box, Text, type Theme } from '@/theme/theme';
+import { InstalledAddon } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('AddonsSettings');
@@ -159,9 +161,7 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
 
     const content = (
       <Box padding="m" gap="l" flex={1}>
-        {(isWide || __DEV__) && (
-          <RemoteControlShortcut onPress={handleOpenRemoteControl} />
-        )}
+        {(isWide || __DEV__) && <RemoteControlShortcut onPress={handleOpenRemoteControl} />}
 
         {/* Install Addon Section */}
         {showInstall && (
@@ -252,10 +252,7 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
       return (
         <>
           <ScrollView showsVerticalScrollIndicator={false}>{content}</ScrollView>
-          <RemoteControlModal
-            visible={isRemoteControlVisible}
-            onClose={handleCloseRemoteControl}
-          />
+          <RemoteControlModal visible={isRemoteControlVisible} onClose={handleCloseRemoteControl} />
         </>
       );
     }
@@ -374,7 +371,15 @@ const AddonCard: FC<AddonCardProps> = memo(
       } else {
         activateAddon(addon.id);
       }
-    }, [isActive, addon.id, activateAddon, deactivateAddon, activeProfileId, config, addon.manifest.name]);
+    }, [
+      isActive,
+      addon.id,
+      activateAddon,
+      deactivateAddon,
+      activeProfileId,
+      config,
+      addon.manifest.name,
+    ]);
 
     const handleToggleHome = useCallback(() => {
       toggleUseCatalogsOnHome(addon.id);

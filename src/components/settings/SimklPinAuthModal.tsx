@@ -1,11 +1,13 @@
 import { FC, memo, useCallback, useEffect, useState } from 'react';
-import { Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Modal } from 'react-native';
+
 import { useTheme } from '@shopify/restyle';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { useSimklPinAuth } from '@/api/simkl/hooks';
-import { SIMKL_PIN_TIMEOUT_S } from '@/constants/ui';
 import { Button } from '@/components/basic/Button';
+import { SIMKL_PIN_TIMEOUT_S } from '@/constants/ui';
+import { Box, Text, Theme } from '@/theme/theme';
 
 interface SimklPinAuthModalProps {
   visible: boolean;

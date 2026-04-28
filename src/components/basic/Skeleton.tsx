@@ -1,9 +1,11 @@
-import type { Theme } from '@/theme/theme';
-import { useTheme } from '@shopify/restyle';
-import { MotiView } from 'moti';
 import { memo } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
+
+import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+
 import { ANIMATION_SKELETON_PULSE_DURATION_MS } from '@/constants/ui';
+import type { Theme } from '@/theme/theme';
 
 export interface SkeletonProps {
   width: number | `${number}%`;

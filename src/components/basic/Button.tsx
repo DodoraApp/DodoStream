@@ -1,21 +1,23 @@
 import React, { forwardRef } from 'react';
+
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
+  backgroundColor,
+  BackgroundColorProps,
+  border,
+  BorderProps,
   createRestyleComponent,
   createVariant,
-  VariantProps,
-  SpacingProps,
-  BorderProps,
-  BackgroundColorProps,
+  layout,
   LayoutProps,
   spacing,
-  border,
-  backgroundColor,
-  layout,
+  SpacingProps,
   useTheme,
+  VariantProps,
 } from '@shopify/restyle';
-import { Theme, Text, Box } from '@/theme/theme';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { Focusable } from '@/components/basic/Focusable';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export type IconComponentType = typeof Ionicons | typeof MaterialCommunityIcons;
 

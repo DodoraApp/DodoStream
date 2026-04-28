@@ -1,5 +1,7 @@
 import { memo } from 'react';
+
 import { useTheme } from '@shopify/restyle';
+
 import type { Theme } from '@/theme/theme';
 import { Box } from '@/theme/theme';
 

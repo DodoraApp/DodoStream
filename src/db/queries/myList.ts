@@ -1,7 +1,9 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { ContentType } from '@/types/stremio';
+
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, myList } from '@/db/schema';
+import type { ContentType } from '@/types/stremio';
+
 import { addToSyncQueue, cancelPendingSyncRemovals, type SyncProvider } from './syncQueue';
 
 export type DbMyListItem = {
@@ -124,7 +126,14 @@ export async function removeFromMyList(
   if (item.length === 0) return;
 
   await db.delete(myList).where(and(eq(myList.profileId, profileId), eq(myList.metaId, metaId)));
-  await addToSyncQueue(profileId, 'remove_watchlist', metaId, item[0].type, undefined, ignoreProvider);
+  await addToSyncQueue(
+    profileId,
+    'remove_watchlist',
+    metaId,
+    item[0].type,
+    undefined,
+    ignoreProvider
+  );
 }
 
 export async function removeProfileMyList(profileId: string): Promise<void> {

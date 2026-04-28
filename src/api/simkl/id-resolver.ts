@@ -1,7 +1,8 @@
-import type { ContentType } from '@/types/stremio';
 import type { SimklIds } from '@/types/simkl';
-import { searchById } from './client';
+import type { ContentType } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
+
+import { searchById } from './client';
 
 const debug = createDebugLogger('SimklIdResolver');
 

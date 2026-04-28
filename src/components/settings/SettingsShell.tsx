@@ -1,8 +1,9 @@
-import React, { FC, ReactNode, memo, useEffect, useState } from 'react';
-import { Box } from '@/theme/theme';
-import { useResponsiveLayout } from '@/hooks/useBreakpoint';
+import React, { FC, memo, ReactNode, useEffect, useState } from 'react';
 import { findNodeHandle, TVFocusGuideView } from 'react-native';
+
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { useSidebarFocusStore } from '@/store/sidebar-focus.store';
+import { Box } from '@/theme/theme';
 
 interface SettingsShellProps {
   /** Left panel content (menu, headings, profile switcher, etc.) */

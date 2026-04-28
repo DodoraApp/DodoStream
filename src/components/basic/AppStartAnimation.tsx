@@ -1,14 +1,16 @@
 import { FC } from 'react';
-import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
-import { Box, Text, Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+import { MotiView } from 'moti';
+
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import {
   APP_START_LOGO_FADE_IN_MS,
   APP_START_TEXT_EXPAND_DELAY_MS,
   APP_START_TEXT_EXPAND_MS,
 } from '@/constants/ui';
-import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
+import { Box, Text, Theme } from '@/theme/theme';
 
 export const AppStartAnimation: FC = () => {
   const theme = useTheme<Theme>();

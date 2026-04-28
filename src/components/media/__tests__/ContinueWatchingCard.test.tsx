@@ -1,9 +1,11 @@
 import React from 'react';
+
 import { fireEvent } from '@testing-library/react-native';
+
+import type { ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 import { renderWithProviders } from '@/utils/test-utils';
 
 import { ContinueWatchingCard } from '../ContinueWatchingCard';
-import type { ContinueWatchingEntry } from '@/hooks/useContinueWatching';
 
 const createMockEntry = (
   overrides: Partial<ContinueWatchingEntry> = {}

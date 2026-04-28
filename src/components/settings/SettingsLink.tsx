@@ -1,8 +1,9 @@
-import { useTheme } from '@shopify/restyle';
-import { Box, Text, type Theme } from '@/theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@shopify/restyle';
 import { useRouter } from 'expo-router';
+
 import { Focusable } from '@/components/basic/Focusable';
+import { Box, Text, type Theme } from '@/theme/theme';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 
 interface SettingsLinkProps {

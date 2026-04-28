@@ -9,27 +9,29 @@
  * - findNextUnwatchedEpisode: season transitions, excludes season 0
  */
 
+import { and, eq } from 'drizzle-orm';
+
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
+import type { MetaDetail } from '@/types/stremio';
+
+import { db, initializeDatabase } from '../client';
+import { upsertMetaCache } from '../queries/metaCache';
 import {
-  upsertWatchProgress,
+  type DbWatchHistoryItem,
   dismissFromContinueWatching,
-  undismissFromContinueWatching,
-  listWatchHistoryForProfile,
-  listWatchHistoryForMeta,
+  getLastStreamTarget,
+  getWatchHistoryItem,
   listWatchedMetaSummaries,
+  listWatchHistoryForMeta,
+  listWatchHistoryForProfile,
   removeProfileWatchHistory,
   removeWatchHistoryItem,
   removeWatchHistoryMeta,
-  getWatchHistoryItem,
   setLastStreamTarget,
-  getLastStreamTarget,
-  type DbWatchHistoryItem,
+  undismissFromContinueWatching,
+  upsertWatchProgress,
 } from '../queries/watchHistory';
-import { upsertMetaCache } from '../queries/metaCache';
-import { initializeDatabase, db } from '../client';
-import { watchHistory, metaCache, videos, syncQueue } from '../schema';
-import { eq, and } from 'drizzle-orm';
-import type { MetaDetail } from '@/types/stremio';
+import { metaCache, syncQueue, videos, watchHistory } from '../schema';
 
 jest.mock('@/store/integrations.store', () => ({
   useIntegrationsStore: {
@@ -394,11 +396,8 @@ describe('watchHistory queries (integration)', () => {
         durationSeconds: 1000,
       });
 
-      const queue = await db
-        .select()
-        .from(syncQueue)
-        .where(eq(syncQueue.metaId, 'tt-cancel-hist'));
-      
+      const queue = await db.select().from(syncQueue).where(eq(syncQueue.metaId, 'tt-cancel-hist'));
+
       expect(queue).toHaveLength(0);
     });
   });

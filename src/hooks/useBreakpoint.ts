@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import { Theme } from '@/theme/theme';
+
 import { useTheme } from '@shopify/restyle';
+
+import { Theme } from '@/theme/theme';
 
 export type Breakpoint = 'mobile' | 'tablet' | 'tv';
 

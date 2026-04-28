@@ -1,5 +1,6 @@
-import { useTheme } from '@shopify/restyle';
 import FastImage from '@d11/react-native-fast-image';
+import { useTheme } from '@shopify/restyle';
+
 import { Theme } from '@/theme/theme';
 
 interface SimklLogoProps {

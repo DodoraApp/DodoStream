@@ -1,3 +1,7 @@
+import { useAddonStore } from '@/store/addon.store';
+import { useProfileStore } from '@/store/profile.store';
+import { type AddonConfig } from '@/types/addon-config';
+
 import {
   deleteAddon,
   getProfileAddons,
@@ -6,10 +10,6 @@ import {
   patchProfileAddon,
   reorderProfileAddons,
 } from '../handlers';
-
-import { useAddonStore } from '@/store/addon.store';
-import { type AddonConfig } from '@/types/addon-config';
-import { useProfileStore } from '@/store/profile.store';
 
 jest.mock('@/store/addon.store', () => ({
   useAddonStore: {
@@ -22,7 +22,6 @@ jest.mock('@/store/profile.store', () => ({
     getState: jest.fn(),
   },
 }));
-
 
 interface MockProfile {
   id: string;
@@ -223,7 +222,7 @@ describe('local server handlers', () => {
               useCatalogsInSearch: true,
               useForSubtitles: true,
             },
-            configurable: false
+            configurable: false,
           },
         ],
       });
@@ -262,7 +261,9 @@ describe('local server handlers', () => {
 
     it('returns 400 when fetch fails with network error', async () => {
       // Arrange
-      const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('network failed'));
+      const fetchSpy = jest
+        .spyOn(global, 'fetch')
+        .mockRejectedValueOnce(new Error('network failed'));
 
       // Act
       const result = await installAddon({ manifestUrl: 'https://example.com/manifest.json' });
@@ -398,11 +399,7 @@ describe('local server handlers', () => {
       const result = patchProfileAddon('p1', 'addon.one', { isActive: true });
 
       // Assert
-      expect(addonStore.setAddonConfig).toHaveBeenCalledWith(
-        'addon.one',
-        { isActive: true },
-        'p1',
-      );
+      expect(addonStore.setAddonConfig).toHaveBeenCalledWith('addon.one', { isActive: true }, 'p1');
       expect(result).toEqual({ status: 200, body: { ok: true } });
     });
 
@@ -423,7 +420,7 @@ describe('local server handlers', () => {
       expect(addonStore.setAddonConfig).toHaveBeenCalledWith(
         'addon.one',
         { isActive: false },
-        'p1',
+        'p1'
       );
       expect(result).toEqual({ status: 200, body: { ok: true } });
     });
@@ -461,7 +458,7 @@ describe('local server handlers', () => {
       expect(addonStore.setAddonConfig).toHaveBeenCalledWith(
         'addon.one',
         { useCatalogsOnHome: false },
-        'p1',
+        'p1'
       );
     });
 
@@ -482,7 +479,7 @@ describe('local server handlers', () => {
       expect(addonStore.setAddonConfig).toHaveBeenCalledWith(
         'addon.one',
         { useCatalogsInSearch: true },
-        'p1',
+        'p1'
       );
     });
 
@@ -503,7 +500,7 @@ describe('local server handlers', () => {
       expect(addonStore.setAddonConfig).toHaveBeenCalledWith(
         'addon.one',
         { useForSubtitles: true },
-        'p1',
+        'p1'
       );
       expect(result).toEqual({ status: 200, body: { ok: true } });
     });
@@ -533,7 +530,7 @@ describe('local server handlers', () => {
           useCatalogsOnHome: false,
           useForSubtitles: false,
         },
-        'p1',
+        'p1'
       );
     });
   });
@@ -558,7 +555,10 @@ describe('local server handlers', () => {
       const result = reorderProfileAddons('p1', { orderedIds: 'not-an-array' });
 
       // Assert
-      expect(result).toEqual({ status: 400, body: { error: 'orderedIds must be an array of strings' } });
+      expect(result).toEqual({
+        status: 400,
+        body: { error: 'orderedIds must be an array of strings' },
+      });
     });
 
     it('calls reorderAddon with correct fromIndex/toIndex for moved items and returns 200', () => {
