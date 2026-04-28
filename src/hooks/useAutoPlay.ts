@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { showToast } from '@/store/toast.store';
 import { TOAST_DURATION_MEDIUM } from '@/constants/ui';
 import { Stream as StreamType, ContentType } from '@/types/stremio';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { useMediaNavigation, type StreamTarget } from '@/hooks/useMediaNavigation';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
 import { useStreams } from '@/api/stremio';
 import { usePlaybackStore } from '@/store/playback.store';
 import { parseBooleanParam } from '@/utils/params';
 import { getLastStreamTarget } from '@/db';
+
+const debug = createDebugLogger('useAutoPlay');
 
 const isStreamAvailable = (stream: StreamType) =>
   Boolean(stream.url || stream.externalUrl || stream.ytId);
@@ -38,7 +40,6 @@ export const useAutoPlay = ({
   logoImage,
 }: UseAutoPlayParams) => {
   const { t } = useTranslation('media');
-  const debug = useDebugLogger('useAutoPlay');
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
   const { autoPlayFirstStream } = usePlaybackStore((state) => ({
     autoPlayFirstStream: state.activeProfileId
@@ -152,7 +153,6 @@ export const useAutoPlay = ({
     openStreamFromStream,
     openStreamTarget,
     playerTitle,
-    debug,
     isLoading,
     backgroundImage,
     logoImage,

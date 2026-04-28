@@ -17,12 +17,15 @@ import {
 import { useAddonStore } from '@/store/addon.store';
 import { useProfileStore } from '@/store/profile.store';
 import { AddonSubtitle, ContentType, InstalledAddon, MetaPreview, Stream } from '@/types/stremio';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { sortVideosBySeason } from '@/utils/video';
 import { StremioApiError } from '@/api/errors';
 import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 import { upsertMetaCache } from '@/db';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
+
+const debugInstallAddon = createDebugLogger('useInstallAddon');
+const debugUpdateAddon = createDebugLogger('useUpdateAddon');
 
 /** Exponential backoff: 1s, 2s, 4s … capped at 10s */
 const retryDelay = (attempt: number) => Math.min(1000 * 2 ** attempt, 10_000);
@@ -96,7 +99,6 @@ export const stremioKeys = {
 export function useInstallAddon() {
   const queryClient = useQueryClient();
   const addAddon = useAddonStore((state) => state.addAddon);
-  const debug = useDebugLogger('useInstallAddon');
 
   return useMutation({
     mutationFn: async (manifestUrl: string) => {
@@ -110,7 +112,7 @@ export function useInstallAddon() {
       queryClient.invalidateQueries({ queryKey: stremioKeys.manifests() });
     },
     onError: (error) => {
-      debug('failedToInstallAddon', { error });
+      debugInstallAddon('failedToInstallAddon', { error });
     },
   });
 }
@@ -120,7 +122,6 @@ export function useInstallAddon() {
  */
 export function useUpdateAddon() {
   const updateAddon = useAddonStore((state) => state.updateAddon);
-  const debug = useDebugLogger('useUpdateAddon');
 
   return useMutation({
     mutationFn: async ({ id, manifestUrl }: { id: string; manifestUrl: string }) => {
@@ -131,7 +132,7 @@ export function useUpdateAddon() {
       updateAddon(id, manifest);
     },
     onError: (error) => {
-      debug('failedToUpdateAddon', { error });
+      debugUpdateAddon('failedToUpdateAddon', { error });
     },
   });
 }

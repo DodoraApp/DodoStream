@@ -31,7 +31,7 @@ import {
   UPNEXT_POPUP_MOVIE_RATIO,
 } from '@/constants/playback';
 import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM, TOAST_DURATION_SHORT } from '@/constants/ui';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { getVideoSessionId } from '@/utils/stream';
 import { useSubtitles } from '@/api/stremio';
@@ -46,6 +46,8 @@ import {
 import { setLastStreamTarget } from '@/db';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatFitModeLabel } from '@/utils/format';
+
+const debug = createDebugLogger('VideoPlayer');
 
 export interface VideoPlayerProps {
   source: string;
@@ -130,7 +132,6 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   automaticFallback,
 }) => {
   const { t } = useTranslation('player');
-  const debug = useDebugLogger('VideoPlayer');
   const theme = useTheme<Theme>();
   const queryClient = useQueryClient();
 
@@ -296,7 +297,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('autoApplySubtitlePreference:noMatch');
       subtitlePreferenceAppliedRef.current = true;
     }
-  }, [activeProfileId, areSubtitlesLoading, combinedSubtitles, debug, selectedTextTrack]);
+  }, [activeProfileId, areSubtitlesLoading, combinedSubtitles, selectedTextTrack]);
 
   const didStartNextRef = useRef(false);
   const [autoplayCancelled, setAutoplayCancelled] = useState(false);
@@ -320,7 +321,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       upNextVideoIdRef.current = next?.videoId;
       setUpNextResolved(next);
     },
-    [bingeGroup, debug, metaId, videoId]
+    [bingeGroup, metaId, videoId]
   );
 
   const persistProgress = useCallback(
@@ -364,7 +365,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       { metaId, videoId: nextVideoId, type: mediaType },
       { autoPlay: '1', bingeGroup }
     );
-  }, [bingeGroup, debug, mediaType, metaId, persistProgress, replaceToStreams, videoId]);
+  }, [bingeGroup, mediaType, metaId, persistProgress, replaceToStreams, videoId]);
 
   const handleProgress = useCallback(
     (data: { currentTime: number; duration?: number }) => {
@@ -389,7 +390,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('buffering', { buffering });
       setIsBuffering(buffering);
     },
-    [debug]
+    []
   );
 
   const handleStatistics = useCallback(
@@ -397,7 +398,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('videoStatistics', statistics);
       setVideoStatistics(statistics);
     },
-    [debug]
+    []
   );
 
   useEffect(() => {
@@ -414,7 +415,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       title: t('video_fit', { mode: formatFitModeLabel(nextMode, t) }),
       duration: TOAST_DURATION_SHORT,
     });
-  }, [allowCoverFit, debug, fitMode, t]);
+  }, [allowCoverFit, fitMode, t]);
 
   const handleLoad = useCallback(
     (data: { duration: number }) => {
@@ -475,7 +476,6 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     [
       automaticFallback,
       activeProfileId,
-      debug,
       metaId,
       mediaType,
       persistProgress,
@@ -502,7 +502,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       return;
     }
     onStop?.();
-  }, [autoplayCancelled, debug, metaId, onStop, persistProgress, startNextEpisode, videoId]);
+  }, [autoplayCancelled, metaId, onStop, persistProgress, startNextEpisode, videoId]);
 
   const handleError = useCallback(
     (message: string) => {
@@ -557,13 +557,13 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       });
       onError?.(message);
     },
-    [automaticFallback, debug, playerType, usedPlayerType, setUsedPlayerType, onError, t]
+    [automaticFallback, playerType, usedPlayerType, setUsedPlayerType, onError, t]
   );
 
   const handlePlayPause = useCallback(() => {
     debug('togglePlayPause');
     setPaused((prev) => !prev);
-  }, [debug]);
+  }, []);
 
   const handleSeek = useCallback(
     (time: number) => {
@@ -574,14 +574,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       persistProgress(time, dur, true);
       lastKnownTimeRef.current = time;
     },
-    [debug, persistProgress]
+    [persistProgress]
   );
 
   const handleSkipBackward = useCallback(() => {
     debug('skipBackward');
     const newTime = Math.max(0, lastKnownTimeRef.current - SKIP_BACKWARD_SECONDS);
     handleSeek(newTime);
-  }, [debug, handleSeek]);
+  }, [handleSeek]);
 
   const handleSkipForward = useCallback(() => {
     debug('skipForward');
@@ -590,7 +590,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       lastKnownTimeRef.current + SKIP_FORWARD_SECONDS
     );
     handleSeek(newTime);
-  }, [debug, handleSeek]);
+  }, [handleSeek]);
 
   const handleSkipIntro = useCallback(() => {
     if (!introData) return;
@@ -598,7 +598,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     debug('skipIntro', { from: lastKnownTimeRef.current, to: introEndSec });
     setIntroSkipped(true);
     handleSeek(introEndSec);
-  }, [debug, handleSeek, introData]);
+  }, [handleSeek, introData]);
 
   const handleAudioTracksLoaded = useCallback(
     (tracks: AudioTrack[]) => {
@@ -611,7 +611,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       const bestAudio = findBestTrackByLanguage(tracks, preferredAudioLanguageCodes) ?? tracks[0];
       setSelectedAudioTrack(bestAudio);
     },
-    [debug, preferredAudioLanguages, selectedAudioTrack]
+    [preferredAudioLanguages, selectedAudioTrack]
   );
 
   const handleTextTracksLoaded = useCallback(
@@ -619,7 +619,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('textTracksLoaded', { count: tracks.length });
       setVideoSubtitles(tracks);
     },
-    [debug, setVideoSubtitles]
+    [setVideoSubtitles]
   );
 
   const handleSelectAudioTrack = useCallback(
@@ -630,7 +630,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         setSelectedAudioTrack(chosenAudioTrack);
       }
     },
-    [audioTracks, debug, selectedAudioTrack]
+    [audioTracks, selectedAudioTrack]
   );
 
   const handleSelectTextTrack = useCallback(
@@ -679,7 +679,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         });
       }
     },
-    [activeProfileId, combinedSubtitles, debug, selectedTextTrack]
+    [activeProfileId, combinedSubtitles, selectedTextTrack]
   );
 
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;

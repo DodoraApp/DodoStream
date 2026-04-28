@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { SubtitleCue } from '@/types/player';
 import { loadSubtitles } from '@/utils/subtitles';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
+
+const debug = createDebugLogger('useSubtitleCues');
 
 /**
  * React Query hook to fetch and parse subtitle cues from a URL.
  * Uses staleTime: Infinity to prevent refetching once loaded.
  */
 export function useSubtitleCues(url: string | undefined) {
-  const debug = useDebugLogger('useSubtitleCues');
 
   return useQuery<SubtitleCue[], Error>({
     queryKey: ['subtitle-cues', url],

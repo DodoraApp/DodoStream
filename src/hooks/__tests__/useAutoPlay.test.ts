@@ -24,7 +24,6 @@ jest.mock('@/db', () => ({
 }));
 jest.mock('@/utils/debug', () => ({
   __esModule: true,
-  useDebugLogger: () => jest.fn(),
   createDebugLogger: () => jest.fn(),
 }));
 

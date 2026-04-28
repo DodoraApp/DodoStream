@@ -12,10 +12,12 @@ import Video, {
   OnVideoStatisticsData,
 } from 'react-native-video';
 import { PlayerRef, AudioTrack, TextTrack, PlayerProps } from '@/types/player';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { useProfileStore } from '@/store/profile.store';
 import { usePlaybackStore, DEFAULT_PROFILE_PLAYBACK_SETTINGS } from '@/store/playback.store';
 import { useShallow } from 'zustand/react/shallow';
+
+const debug = createDebugLogger('RNVideoPlayer');
 
 const composeErrorString = (error: OnVideoErrorData['error']): string => {
   const errorParts: string[] = [
@@ -30,7 +32,6 @@ const composeErrorString = (error: OnVideoErrorData['error']): string => {
 
 export const RNVideoPlayer = memo(
   forwardRef<PlayerRef, PlayerProps>((props, ref) => {
-    const debug = useDebugLogger('RNVideoPlayer');
     const {
       source,
       paused,
@@ -100,7 +101,7 @@ export const RNVideoPlayer = memo(
         debug('load', { duration: data.duration, naturalSize: data.naturalSize });
         onLoad?.({ duration: data.duration });
       },
-      [debug, onLoad]
+      [onLoad]
     );
 
     const handleError = useCallback(
@@ -108,7 +109,7 @@ export const RNVideoPlayer = memo(
         debug('error', { error: data.error });
         onError?.(composeErrorString(data.error));
       },
-      [debug, onError]
+      [onError]
     );
 
     const handleAudioTracks = useCallback(
@@ -122,7 +123,7 @@ export const RNVideoPlayer = memo(
         }));
         onAudioTracks?.(tracks);
       },
-      [debug, onAudioTracks]
+      [onAudioTracks]
     );
 
     const handleTextTracks = useCallback(
@@ -137,7 +138,7 @@ export const RNVideoPlayer = memo(
         }));
         onTextTracks?.(tracks);
       },
-      [debug, onTextTracks]
+      [onTextTracks]
     );
 
     const handleVideoStatistics = useCallback(

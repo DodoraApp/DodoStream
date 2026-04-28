@@ -15,8 +15,10 @@ import type { SubtitleStyle } from '@/types/subtitles';
 import { useProfileStore } from '@/store/profile.store';
 import { usePlaybackStore } from '@/store/playback.store';
 import { DEFAULT_SUBTITLE_STYLE } from '@/constants/subtitles';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { useFocusEffect } from 'expo-router';
+
+const debug = createDebugLogger('VLCPlayer');
 
 /**
  * Convert a hex color to VLC integer format.
@@ -121,7 +123,6 @@ export const VLCPlayer = memo(
       },
       ref
     ) => {
-      const debug = useDebugLogger('VLCPlayer');
       const playerRef = useRef<LibVlcPlayerViewRef>(null);
       const [forceRemount, setForceRemount] = useState(false);
       const [vlcKey, setVlcKey] = useState('vlc-initial');
@@ -179,7 +180,7 @@ export const VLCPlayer = memo(
             }
           }, 100);
           return () => {};
-        }, [debug])
+        }, [])
       );
 
       // Process URL for VLC compatibility
@@ -211,7 +212,7 @@ export const VLCPlayer = memo(
           debug('sourceProcessingFailed', { source, error });
           return source;
         }
-      }, [debug, source]);
+      }, [source]);
 
       // Track component mount/unmount
       useEffect(() => {
@@ -220,7 +221,7 @@ export const VLCPlayer = memo(
           isMountedRef.current = false;
           debug('unmount');
         };
-      }, [debug]);
+      }, []);
 
       useImperativeHandle(ref, () => ({
         seekTo: async (time: number, durationParam: number) => {
@@ -272,7 +273,7 @@ export const VLCPlayer = memo(
         };
 
         applyPlayPause();
-      }, [debug, paused, isReady]);
+      }, [paused, isReady]);
 
       const handleBuffering = useCallback(() => {
         debug('buffering', { isPlaying: isPlayingRef.current });
@@ -280,13 +281,13 @@ export const VLCPlayer = memo(
         if (!isPlayingRef.current) {
           onBuffer?.(true);
         }
-      }, [debug, onBuffer]);
+      }, [onBuffer]);
 
       const handlePlaying = useCallback(() => {
         debug('playing');
         isPlayingRef.current = true;
         onBuffer?.(false);
-      }, [debug, onBuffer]);
+      }, [onBuffer]);
 
       const handleTimeChanged = useCallback(
         (event: { time: number }) => {
@@ -336,20 +337,20 @@ export const VLCPlayer = memo(
             onTextTracks?.(textTracks);
           }
         },
-        [debug, onLoad, onAudioTracks, onTextTracks]
+        [onLoad, onAudioTracks, onTextTracks]
       );
 
       const handleEndReached = useCallback(() => {
         debug('endReached');
         onEnd?.();
-      }, [debug, onEnd]);
+      }, [onEnd]);
 
       const handleError = useCallback(
         (event: { error: string }) => {
           debug('error', { event });
           onError?.(event.error || 'VLC playback error');
         },
-        [debug, onError]
+        [onError]
       );
 
       // Don't render during forced remount

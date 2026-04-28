@@ -16,10 +16,12 @@ import { useIsInMyList, useMyListActions } from '@/hooks/useMyListDb';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
-import { useDebugLogger } from '@/utils/debug';
+import { createDebugLogger } from '@/utils/debug'
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { showToast } from '@/store/toast.store';
 import { resetProgressToStart } from '@/utils/playback';
+
+const debug = createDebugLogger('MediaButtons');
 
 interface MediaButtonsProps {
   metaId: string;
@@ -29,7 +31,6 @@ interface MediaButtonsProps {
 
 export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) => {
   const { t } = useTranslation('media');
-  const debug = useDebugLogger('MediaButtons');
   const { isPlatformTV } = useResponsiveLayout();
   const { pushToStreams } = useMediaNavigation();
 
@@ -66,7 +67,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const handlePlay = useCallback(() => {
     debug('navigateSingle', { metaId, videoId, type, mode: 'play' });
     pushToStreams({ metaId, videoId, type });
-  }, [debug, metaId, pushToStreams, videoId, type]);
+  }, [metaId, pushToStreams, videoId, type]);
 
   const handleStartOver = useCallback(() => {
     resetProgressToStart({
@@ -85,7 +86,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
     });
     debug('navigateSingle', { metaId, videoId, type, mode: 'start-over' });
     pushToStreams({ metaId, videoId, type });
-  }, [debug, historyItem?.durationSeconds, metaId, pushToStreams, type, upsert, videoId]);
+  }, [historyItem?.durationSeconds, metaId, pushToStreams, type, upsert, videoId]);
 
   // Handler for multi-video content
   const handleContinue = useCallback(() => {
@@ -93,7 +94,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
     if (!targetVideoId) return;
     debug('navigateContinue', { metaId, type, videoId: targetVideoId });
     pushToStreams({ metaId, videoId: targetVideoId, type });
-  }, [continueWatching?.videoId, debug, metaId, pushToStreams, type, videos]);
+  }, [continueWatching?.videoId, metaId, pushToStreams, type, videos]);
 
   // Multi-video button labels and state
   const multiVideoIsInProgress =
