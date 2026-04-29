@@ -1,35 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AppState } from 'react-native';
-
-import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 import {
-  SIMKL_AUTO_SYNC_INTERVAL_MS,
-  SIMKL_PIN_POLL_INTERVAL_MS,
-  SIMKL_PIN_TIMEOUT_MS,
-  TOAST_DURATION_SHORT,
-} from '@/constants/ui';
-import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
+  type IntegrationSyncProvider,
+  useIntegrationSync,
+} from '@/api/integrations/use-integration-sync';
+import { type PinAuthProvider, usePinAuth } from '@/api/integrations/use-pin-auth';
+import { SIMKL_PIN_POLL_INTERVAL_MS, SIMKL_PIN_TIMEOUT_MS } from '@/constants/ui';
 import { useIntegrationsStore } from '@/store/integrations.store';
-import { showToast } from '@/store/toast.store';
-import type { SimklConnection } from '@/types/integrations';
+import type { SimklConnection, SimklSyncCursors } from '@/types/integrations';
+import type { SimklActivities } from '@/types/simkl';
 import { createDebugLogger } from '@/utils/debug';
 
-import { getPinCode, getUserSettings, pollPin } from './client';
+import { getActivities, getPinCode, getUserSettings, pollPin } from './client';
 import { runExport, runImport } from './sync-service';
 
 const debug = createDebugLogger('SimklHooks');
 
-export type PinAuthStatus = 'idle' | 'pending' | 'success' | 'expired';
-
-export interface SimklPinAuthState {
-  userCode: string | null;
-  verificationUrl: string | null;
-  status: PinAuthStatus;
-  start: () => void;
-  cancel: () => void;
-}
+// Re-export shared types for backward compatibility
+export type { PinAuthStatus, PinAuthState as SimklPinAuthState } from '@/types/integrations';
 
 export function useSimklConnection(profileId: string | undefined) {
   return useIntegrationsStore((state) =>
@@ -37,165 +25,70 @@ export function useSimklConnection(profileId: string | undefined) {
   );
 }
 
-export function useSimklPinAuth(onSuccess: (accessToken: string) => void): SimklPinAuthState {
-  const [status, setStatus] = useState<PinAuthStatus>('idle');
-  const [userCode, setUserCode] = useState<string | null>(null);
-  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+export function useSimklPinAuth(onSuccess: (accessToken: string) => void) {
+  const handleSuccess = useCallback(
+    (result: Record<string, unknown>) => {
+      onSuccess(result.access_token as string);
+    },
+    [onSuccess]
+  );
 
-  const clearTimers = useCallback(() => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
-  const cancel = useCallback(() => {
-    clearTimers();
-    setStatus('idle');
-    setUserCode(null);
-    setVerificationUrl(null);
-  }, [clearTimers]);
-
-  const start = useCallback(async () => {
-    try {
-      cancel();
-      setStatus('pending');
-
-      const pinData = await getPinCode();
-      setUserCode(pinData.user_code);
-      setVerificationUrl(pinData.verification_url);
-
-      // Start polling
-      pollIntervalRef.current = setInterval(async () => {
+  const provider: PinAuthProvider = useMemo(
+    () => ({
+      requestCode: async () => {
+        const pinData = await getPinCode();
+        return {
+          userCode: pinData.user_code,
+          deviceCode: pinData.device_code,
+          verificationUrl: pinData.verification_url,
+          pollConfig: {
+            intervalMs: SIMKL_PIN_POLL_INTERVAL_MS,
+            expiresMs: SIMKL_PIN_TIMEOUT_MS,
+          },
+        };
+      },
+      pollToken: async (codes: { userCode: string; deviceCode: string }) => {
         try {
-          const result = await pollPin(pinData.user_code);
-          if (result.result === 'OK' && result.access_token) {
-            clearTimers();
-            setStatus('success');
-            onSuccess(result.access_token);
+          const result = await pollPin(codes.userCode);
+          if (result.result === 'OK') {
+            return result as unknown as Record<string, unknown>;
           }
+          return null;
         } catch (error) {
           debug('pollError', { error });
+          return null;
         }
-      }, SIMKL_PIN_POLL_INTERVAL_MS);
+      },
+      isSuccess: (result: Record<string, unknown>) => !!result.access_token,
+    }),
+    []
+  );
 
-      // Expire after 15 minutes
-      timeoutRef.current = setTimeout(() => {
-        clearTimers();
-        setStatus('expired');
-      }, SIMKL_PIN_TIMEOUT_MS);
-    } catch (error) {
-      debug('startPinAuthError', { error });
-      setStatus('idle');
-    }
-  }, [cancel, clearTimers, onSuccess]);
-
-  useEffect(() => {
-    return () => clearTimers();
-  }, [clearTimers]);
-
-  return { userCode, verificationUrl, status, start, cancel };
+  return usePinAuth(provider, handleSuccess);
 }
 
-export interface SimklSyncState {
-  sync: () => Promise<void>;
-  isSyncing: boolean;
-  lastSyncAt?: number;
-}
-
-export function useSimklSync(profileId?: string): SimklSyncState {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [isSyncing, setIsSyncing] = useState(false);
-  const isSyncingRef = useRef(false);
+export function useSimklSync(profileId?: string) {
   const simklSettings = useIntegrationsStore((state) =>
     profileId ? state.settings[profileId]?.simkl : undefined
   );
-  const lastSyncAt = useIntegrationsStore((state) =>
-    profileId ? (state.lastSyncAt[profileId] ?? undefined) : undefined
+
+  const syncProvider: IntegrationSyncProvider<SimklActivities, SimklSyncCursors> = useMemo(
+    () => ({
+      provider: 'simkl',
+      profileId,
+      getConnection: () => simklSettings?.connection,
+      getSyncMode: () => simklSettings?.syncMode,
+      runImport: (pid, token, cursors, snapshot) =>
+        runImport(pid, token, cursors, { activities: snapshot }),
+      preSync: (token) => getActivities(token),
+      runExport: (pid, token) => runExport(pid, token),
+      errorTitleKey: 'settings:simkl.sync_failed',
+      errorMessageKey: 'settings:simkl.sync_failed_desc',
+    }),
+    [profileId, simklSettings]
   );
-  const { setLastSyncAt, setSyncStatus } = useIntegrationsStore();
 
-  const sync = useCallback(async () => {
-    if (!profileId || !simklSettings?.connection || isSyncingRef.current) return;
-
-    const { accessToken, syncCursors } = simklSettings.connection;
-    const { syncMode } = simklSettings;
-
-    isSyncingRef.current = true;
-    setIsSyncing(true);
-    setSyncStatus(profileId, 'simkl', 'syncing');
-    try {
-      let importOk = true;
-      let exportOk = true;
-
-      if (syncMode === 'pull' || syncMode === 'full') {
-        importOk = await runImport(profileId, accessToken, syncCursors);
-      }
-      if (syncMode === 'push' || syncMode === 'full') {
-        exportOk = await runExport(profileId, accessToken);
-      }
-
-      if (importOk && exportOk) {
-        setLastSyncAt(profileId, Date.now());
-        setSyncStatus(profileId, 'simkl', 'success');
-        await Promise.all([
-          // Invalidate items for this profile
-          queryClient.invalidateQueries({ queryKey: ['my-list-db'] }),
-          queryClient.invalidateQueries({ queryKey: [...watchHistoryKeys.all, 'item', profileId] }),
-          queryClient.invalidateQueries({
-            queryKey: [...watchHistoryKeys.all, 'items-for-meta', profileId],
-          }),
-          queryClient.invalidateQueries({ queryKey: watchHistoryKeys.continueWatching(profileId) }),
-          queryClient.invalidateQueries({ queryKey: watchHistoryKeys.metaSummaries(profileId) }),
-        ]);
-      } else {
-        setSyncStatus(profileId, 'simkl', 'error');
-        showToast({
-          title: t('settings:simkl.sync_failed'),
-          message: t('settings:simkl.sync_failed_desc'),
-          preset: 'error',
-          duration: TOAST_DURATION_SHORT,
-        });
-      }
-    } finally {
-      isSyncingRef.current = false;
-      setIsSyncing(false);
-    }
-  }, [profileId, queryClient, setLastSyncAt, setSyncStatus, simklSettings, t]);
-
-  // Sync on mount and when returning from background (throttled to SIMKL_AUTO_SYNC_INTERVAL_MS)
-  const shouldSync = useCallback(() => {
-    const now = Date.now();
-    return !lastSyncAt || now - lastSyncAt > SIMKL_AUTO_SYNC_INTERVAL_MS;
-  }, [lastSyncAt]);
-
-  // Sync on mount if connected
-  useEffect(() => {
-    if (!profileId || !simklSettings?.connection) return;
-    if (shouldSync()) sync();
-  }, [profileId, simklSettings?.connection, shouldSync, sync]);
-
-  // Sync when app returns to foreground
-  useEffect(() => {
-    if (!profileId || !simklSettings?.connection) return;
-
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active' && shouldSync()) {
-        sync();
-      }
-    });
-
-    return () => subscription.remove();
-  }, [profileId, simklSettings, shouldSync, sync]);
-
-  return { sync, isSyncing, lastSyncAt };
+  return useIntegrationSync(syncProvider);
 }
 
 /**

@@ -22,6 +22,13 @@
       "when": 1777123204029,
       "tag": "0002_purple_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1777497631567,
+      "tag": "0003_panoramic_carnage",
+      "breakpoints": true
     }
   ]
 }

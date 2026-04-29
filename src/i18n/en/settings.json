@@ -209,7 +209,8 @@
     "clear_local_desc": "Removes all local watch history before pulling from Simkl",
     "confirm": "Confirm",
     "sync": "Sync",
-    "last_synced": "Last synced"
+    "last_synced": "Last synced",
+    "other_connected": "Disconnect Trakt.tv first to connect with Simkl"
   },
   "home": {
     "catalogs": "Catalogs",
@@ -251,7 +252,7 @@
   "remoteControl": {
     "title": "Remote Control",
     "description": "The remote control server starts automatically so you can manage addons from your phone or computer.",
-    "starting": "Starting\u2026",
+    "starting": "Starting…",
     "url": "URL",
     "loading_address": "Loading address...",
     "ip_fallback": "The server is running on port {{port}}. Open the web UI on http://<your-device-ip>:{{port}}",
@@ -274,5 +275,48 @@
       "server_failed_title": "Server failed to start",
       "server_failed_msg": "Please try again."
     }
+  },
+  "trakt": {
+    "connect_title": "Connect Trakt.tv",
+    "instructions": "Visit the URL below and enter the code to authorize DodoStream.",
+    "desc": "Track your watch history. Powered by Trakt.tv.",
+    "go_to": "Go to",
+    "enter_code": "and enter code",
+    "expires_in": "Expires in {{time}}",
+    "code_expired": "The code has expired. Please try again.",
+    "connected_success": "Successfully connected!",
+    "connect": "Connect with Trakt.tv",
+    "disconnect": "Disconnect",
+    "connected_as": "Connected as",
+    "sync_mode": "Sync Mode",
+    "sync_mode_import": "Import only",
+    "sync_mode_import_desc": "Pull watch history and watchlist from Trakt.tv into DodoStream",
+    "sync_mode_export": "Export only",
+    "sync_mode_export_desc": "Export DodoStream history and watchlist to Trakt.tv",
+    "sync_mode_full": "Full sync",
+    "sync_mode_full_desc": "Sync history and watchlist in both directions",
+    "never": "Never",
+    "sync_now": "Sync Now",
+    "syncing": "Syncing...",
+    "connection_failed": "Connection failed",
+    "connection_failed_desc": "Could not fetch Trakt.tv user info.",
+    "connected": "Trakt.tv connected",
+    "disconnected": "Trakt.tv disconnected",
+    "sync_failed": "Sync failed",
+    "sync_failed_desc": "Could not sync with Trakt.tv. Check your connection.",
+    "welcome": "Welcome to Trakt.tv Sync",
+    "connected_prompt": "Connected as {{username}}. How would you like to start?",
+    "sync_from": "Sync from Trakt.tv",
+    "sync_from_desc": "Pull your Trakt.tv watch history and watchlist into DodoStream",
+    "sync_to": "Sync to Trakt.tv",
+    "sync_to_desc": "Export your DodoStream history and watchlist to Trakt.tv",
+    "sync_full": "Full sync (both)",
+    "sync_full_desc": "Full synchronization of history and watchlist in both directions",
+    "clear_local": "Clear DodoStream history before importing",
+    "clear_local_desc": "Removes all local watch history before pulling from Trakt.tv",
+    "confirm": "Confirm",
+    "sync": "Sync",
+    "last_synced": "Last synced",
+    "other_connected": "Disconnect Simkl first to connect with Trakt.tv"
   }
 }

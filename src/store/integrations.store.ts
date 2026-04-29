@@ -9,6 +9,8 @@ import type {
   SimklConnection,
   SimklSyncCursors,
   SyncMode,
+  TraktConnection,
+  TraktSyncCursors,
 } from '@/types/integrations';
 import { createDebugLogger } from '@/utils/debug';
 
@@ -21,8 +23,17 @@ interface IntegrationsState {
 
   connectSimkl: (profileId: string, connection: SimklConnection, syncMode: SyncMode) => void;
   disconnectSimkl: (profileId: string) => void;
-  setSyncMode: (profileId: string, mode: SyncMode) => void;
+  connectTrakt: (profileId: string, connection: TraktConnection, syncMode: SyncMode) => void;
+  disconnectTrakt: (profileId: string) => void;
+  setSyncMode: (profileId: string, provider: IntegrationProvider, mode: SyncMode) => void;
   updateSimklCursors: (profileId: string, cursors: SimklSyncCursors) => void;
+  updateTraktCursors: (profileId: string, cursors: TraktSyncCursors) => void;
+  updateTraktToken: (
+    profileId: string,
+    accessToken: string,
+    refreshToken: string,
+    expiresAt: number
+  ) => void;
   setLastSyncAt: (profileId: string, timestamp: number) => void;
   setSyncStatus: (
     profileId: string,
@@ -41,15 +52,23 @@ export const useIntegrationsStore = create<IntegrationsState>()(
 
       connectSimkl: (profileId, connection, syncMode) => {
         debug('connectSimkl', { profileId, connection: JSON.stringify(connection), syncMode });
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            [profileId]: {
-              ...state.settings[profileId],
-              simkl: { connection, syncMode },
+        set((state) => {
+          const existing = state.settings[profileId];
+          // Mutual exclusion: auto-disconnect Trakt when connecting Simkl
+          const { trakt: _traktRemoved, ...rest } = existing ?? {};
+          if (existing?.trakt?.connection) {
+            debug('connectSimkl: auto-disconnecting Trakt', { profileId });
+          }
+          return {
+            settings: {
+              ...state.settings,
+              [profileId]: {
+                ...rest,
+                simkl: { connection, syncMode },
+              },
             },
-          },
-        }));
+          };
+        });
       },
 
       disconnectSimkl: (profileId) => {
@@ -69,17 +88,55 @@ export const useIntegrationsStore = create<IntegrationsState>()(
         });
       },
 
-      setSyncMode: (profileId, mode) => {
-        debug('setSyncMode', { profileId, mode });
+      connectTrakt: (profileId, connection, syncMode) => {
+        debug('connectTrakt', { profileId, connection: JSON.stringify(connection), syncMode });
+        set((state) => {
+          const existing = state.settings[profileId];
+          // Mutual exclusion: auto-disconnect Simkl when connecting Trakt
+          const { simkl: _simklRemoved, ...rest } = existing ?? {};
+          if (existing?.simkl?.connection) {
+            debug('connectTrakt: auto-disconnecting Simkl', { profileId });
+          }
+          return {
+            settings: {
+              ...state.settings,
+              [profileId]: {
+                ...rest,
+                trakt: { connection, syncMode },
+              },
+            },
+          };
+        });
+      },
+
+      disconnectTrakt: (profileId) => {
+        debug('disconnectTrakt', { profileId });
         set((state) => {
           const profile = state.settings[profileId];
-          if (!profile?.simkl) return state;
+          if (!profile) return state;
           return {
             settings: {
               ...state.settings,
               [profileId]: {
                 ...profile,
-                simkl: { ...profile.simkl, syncMode: mode },
+                trakt: profile.trakt ? { ...profile.trakt, connection: undefined } : undefined,
+              },
+            },
+          };
+        });
+      },
+
+      setSyncMode: (profileId, provider, mode) => {
+        debug('setSyncMode', { profileId, provider, mode });
+        set((state) => {
+          const profile = state.settings[profileId];
+          if (!profile || !profile[provider]) return state;
+          return {
+            settings: {
+              ...state.settings,
+              [profileId]: {
+                ...profile,
+                [provider]: { ...profile[provider], syncMode: mode },
               },
             },
           };
@@ -104,6 +161,57 @@ export const useIntegrationsStore = create<IntegrationsState>()(
                       ...profile.simkl.connection.syncCursors,
                       ...cursors,
                     },
+                  },
+                },
+              },
+            },
+          };
+        });
+      },
+
+      updateTraktCursors: (profileId, cursors) => {
+        debug('updateTraktCursors', { profileId, cursors: JSON.stringify(cursors) });
+        set((state) => {
+          const profile = state.settings[profileId];
+          if (!profile?.trakt?.connection) return state;
+          return {
+            settings: {
+              ...state.settings,
+              [profileId]: {
+                ...profile,
+                trakt: {
+                  ...profile.trakt,
+                  connection: {
+                    ...profile.trakt.connection,
+                    syncCursors: {
+                      ...profile.trakt.connection.syncCursors,
+                      ...cursors,
+                    },
+                  },
+                },
+              },
+            },
+          };
+        });
+      },
+
+      updateTraktToken: (profileId, accessToken, refreshToken, expiresAt) => {
+        debug('updateTraktToken', { profileId });
+        set((state) => {
+          const profile = state.settings[profileId];
+          if (!profile?.trakt?.connection) return state;
+          return {
+            settings: {
+              ...state.settings,
+              [profileId]: {
+                ...profile,
+                trakt: {
+                  ...profile.trakt,
+                  connection: {
+                    ...profile.trakt.connection,
+                    accessToken,
+                    refreshToken,
+                    expiresAt,
                   },
                 },
               },

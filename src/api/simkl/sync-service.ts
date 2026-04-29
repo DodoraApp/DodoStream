@@ -1,15 +1,10 @@
+import { batchProcess, guardedImport } from '@/api/integrations/sync-guard';
 import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
-import {
-  addToMyList,
-  listExportableMyListForProfile,
-  removeFromMyList,
-  removeProfileMyList,
-} from '@/db/queries/myList';
+import { addToMyList, listExportableMyListForProfile, removeFromMyList } from '@/db/queries/myList';
 import { deleteFromSyncQueue, listSyncQueueForProvider } from '@/db/queries/syncQueue';
 import {
   listExportableWatchHistoryForProfile,
   listWatchHistoryForProfile,
-  removeProfileWatchHistory,
   removeWatchHistoryMeta,
   upsertWatchProgress,
 } from '@/db/queries/watchHistory';
@@ -37,17 +32,12 @@ import { resolveSimklIds } from './id-resolver';
 
 const debug = createDebugLogger('SimklSyncService');
 
-const BATCH_SIZE = 50;
-
-// Simple mutex to prevent concurrent imports for the same profile
-const activeImports = new Set<string>();
-
 interface HistoryIdsPayload {
   ids: Record<string, string | number>;
 }
 
 interface HistoryShowPayload extends HistoryIdsPayload {
-  seasons: {
+  seasons?: {
     number: number;
     episodes: { number: number }[];
   }[];
@@ -78,28 +68,59 @@ function needsSync(activityCursor: string | object | undefined, storedCursor?: s
   return activityCursor > storedCursor;
 }
 
+type SimklShowMapEntry = {
+  ids: Record<string, string | number>;
+  seasons: Map<number, Set<number>>;
+};
+
+function ensureMapShow(
+  showsMap: Map<string, SimklShowMapEntry>,
+  key: string,
+  ids: Record<string, string | number>
+): SimklShowMapEntry {
+  let show = showsMap.get(key);
+  if (!show) {
+    show = { ids, seasons: new Map() };
+    showsMap.set(key, show);
+  }
+  return show;
+}
+
+function ensureMapSeason(seasons: Map<number, Set<number>>, seasonNumber: number): Set<number> {
+  let season = seasons.get(seasonNumber);
+  if (!season) {
+    season = new Set();
+    seasons.set(seasonNumber, season);
+  }
+  return season;
+}
+
+function showsMapToPayload(showsMap: Map<string, SimklShowMapEntry>): HistoryShowPayload[] {
+  return Array.from(showsMap.values()).map((show) => {
+    if (show.seasons.size === 0) {
+      return { ids: show.ids };
+    }
+    return {
+      ids: show.ids,
+      seasons: Array.from(show.seasons.entries()).map(([seasonNum, episodes]) => ({
+        number: seasonNum,
+        episodes: Array.from(episodes).map((episodeNumber) => ({ number: episodeNumber })),
+      })),
+    };
+  });
+}
+
 export async function runImport(
   profileId: string,
   token: string,
   cursors?: SimklSyncCursors,
-  opts?: { clearLocalFirst?: boolean }
+  opts?: { clearLocalFirst?: boolean; activities?: SimklActivities }
 ): Promise<boolean> {
-  if (activeImports.has(profileId)) {
-    debug('importSkipped:Concurrent', { profileId });
-    return true;
-  }
-  activeImports.add(profileId);
-
-  try {
+  return guardedImport('simkl', profileId, opts, async () => {
     debug('importStart', { profileId, hasCursors: !!cursors });
 
-    const activities = await getActivities(token);
+    const activities = opts?.activities ?? (await getActivities(token));
     const newCursors: SimklSyncCursors = { ...cursors };
-
-    if (opts?.clearLocalFirst) {
-      await removeProfileWatchHistory(profileId);
-      await removeProfileMyList(profileId);
-    }
 
     // Mapping Simkl internal keys to our display and response keys
     const typesToSync: {
@@ -272,19 +293,15 @@ export async function runImport(
         }
 
         // Apply changes in batches for performance
-        for (let i = 0; i < myListAdditions.length; i += BATCH_SIZE) {
-          const batch = myListAdditions.slice(i, i + BATCH_SIZE);
-          await Promise.all(batch.map((p) => addToMyList(profileId, p.metaId, p.type, p.addedAt)));
-        }
+        await batchProcess(myListAdditions, (p) =>
+          addToMyList(profileId, p.metaId, p.type, p.addedAt, 'simkl')
+        );
 
-        for (let i = 0; i < historyUpserts.length; i += BATCH_SIZE) {
-          const batch = historyUpserts.slice(i, i + BATCH_SIZE);
-          await Promise.all(batch.map((p) => upsertImportedProgress(p)));
-        }
+        await batchProcess(historyUpserts, (p) => upsertImportedProgress(p));
 
         for (const removal of removals) {
-          await removeWatchHistoryMeta(profileId, removal.metaId);
-          await removeFromMyList(profileId, removal.metaId);
+          await removeWatchHistoryMeta(profileId, removal.metaId, 'simkl');
+          await removeFromMyList(profileId, removal.metaId, 'simkl');
         }
 
         // Success! Now update the cursors locally.
@@ -295,12 +312,7 @@ export async function runImport(
     useIntegrationsStore.getState().updateSimklCursors(profileId, newCursors);
     debug('importComplete', { profileId, newCursors });
     return true;
-  } catch (error) {
-    debug('importError', { profileId, error });
-    return false;
-  } finally {
-    activeImports.delete(profileId);
-  }
+  });
 }
 
 function getMetaIdFromWatchedItem(item: SimklWatchedItem): string | undefined {
@@ -319,22 +331,38 @@ async function cleanupRemovedItems(
 ): Promise<void> {
   try {
     const localHistory = await listWatchHistoryForProfile(profileId);
+    const localWatchlist = await listExportableMyListForProfile(profileId);
 
-    const itemsToRemove = new Set<string>();
+    const historyItemsToRemove = new Set<string>();
     for (const item of localHistory) {
       if (
         item.source === 'simkl' &&
         item.type === contentType &&
         !currentlyImportedMetaIds.has(item.id)
       ) {
-        itemsToRemove.add(item.id);
+        historyItemsToRemove.add(item.id);
       }
     }
 
-    for (const metaId of itemsToRemove) {
-      debug('cleanupRemovingItem', { metaId, type: contentType });
-      await removeWatchHistoryMeta(profileId, metaId);
-      await removeFromMyList(profileId, metaId);
+    const watchlistItemsToRemove = new Set<string>();
+    for (const item of localWatchlist) {
+      if (
+        item.source === 'simkl' &&
+        item.type === contentType &&
+        !currentlyImportedMetaIds.has(item.id)
+      ) {
+        watchlistItemsToRemove.add(item.id);
+      }
+    }
+
+    for (const metaId of historyItemsToRemove) {
+      debug('cleanupRemovingHistoryItem', { metaId, type: contentType });
+      await removeWatchHistoryMeta(profileId, metaId, 'simkl');
+    }
+
+    for (const metaId of watchlistItemsToRemove) {
+      debug('cleanupRemovingWatchlistItem', { metaId, type: contentType });
+      await removeFromMyList(profileId, metaId, 'simkl');
     }
   } catch (error) {
     debug('cleanupError', { error });
@@ -366,6 +394,7 @@ async function upsertImportedProgress(params: {
     progressSeconds,
     durationSeconds,
     lastWatchedAt: params.watchedAt ? new Date(params.watchedAt).getTime() : undefined,
+    onlyIfNewer: true,
   });
 }
 
@@ -605,10 +634,7 @@ async function buildRemovalPayload(
   removals: { metaId: string; type: ContentType; videoId: string | null }[]
 ): Promise<HistoryPayload> {
   const movies: HistoryIdsPayload[] = [];
-  const showsMap = new Map<
-    string,
-    { ids: Record<string, string | number>; seasons: Map<number, Set<number>> }
-  >();
+  const showsMap = new Map<string, SimklShowMapEntry>();
 
   for (const item of removals) {
     const ids = await resolveSimklIds(item.metaId, item.type);
@@ -628,55 +654,25 @@ async function buildRemovalPayload(
       continue;
     }
 
-    if (!item.videoId) {
-      // Remove whole show
-      if (!showsMap.has(item.metaId)) {
-        showsMap.set(item.metaId, { ids: payloadIds, seasons: new Map() });
-      }
-      continue;
-    }
+    const show = ensureMapShow(showsMap, item.metaId, payloadIds);
+
+    if (!item.videoId) continue;
 
     const episodeRef = parseVideoId(item.videoId);
     if (!episodeRef) continue;
 
-    if (!showsMap.has(item.metaId)) {
-      showsMap.set(item.metaId, {
-        ids: payloadIds,
-        seasons: new Map(),
-      });
-    }
-    const show = showsMap.get(item.metaId);
-    if (!show) continue;
-    if (!show.seasons.has(episodeRef.season)) {
-      show.seasons.set(episodeRef.season, new Set());
-    }
-    show.seasons.get(episodeRef.season)?.add(episodeRef.episode);
+    const season = ensureMapSeason(show.seasons, episodeRef.season);
+    season.add(episodeRef.episode);
   }
 
-  const shows: HistoryShowPayload[] = Array.from(showsMap.values()).map((show) => {
-    if (show.seasons.size === 0) {
-      return { ids: show.ids } as unknown as HistoryShowPayload; // Valid for whole show removal
-    }
-    return {
-      ids: show.ids,
-      seasons: Array.from(show.seasons.entries()).map(([seasonNum, episodes]) => ({
-        number: seasonNum,
-        episodes: Array.from(episodes).map((episodeNumber) => ({ number: episodeNumber })),
-      })),
-    };
-  });
-
-  return { movies, shows };
+  return { movies, shows: showsMapToPayload(showsMap) };
 }
 
 async function buildExportPayload(
   completed: Awaited<ReturnType<typeof listWatchHistoryForProfile>>
 ): Promise<HistoryPayload> {
   const movies: HistoryIdsPayload[] = [];
-  const showsMap = new Map<
-    string,
-    { ids: Record<string, string | number>; seasons: Map<number, Set<number>> }
-  >();
+  const showsMap = new Map<string, SimklShowMapEntry>();
 
   for (const item of completed) {
     const ids = await resolveSimklIds(item.id, item.type);
@@ -702,30 +698,12 @@ async function buildExportPayload(
       continue;
     }
 
-    if (!showsMap.has(item.id)) {
-      showsMap.set(item.id, {
-        ids: payloadIds,
-        seasons: new Map(),
-      });
-    }
-
-    const show = showsMap.get(item.id);
-    if (!show) continue;
-    if (!show.seasons.has(episodeRef.season)) {
-      show.seasons.set(episodeRef.season, new Set());
-    }
-    show.seasons.get(episodeRef.season)?.add(episodeRef.episode);
+    const show = ensureMapShow(showsMap, item.id, payloadIds);
+    const season = ensureMapSeason(show.seasons, episodeRef.season);
+    season.add(episodeRef.episode);
   }
 
-  const shows: HistoryShowPayload[] = Array.from(showsMap.values()).map((show) => ({
-    ids: show.ids,
-    seasons: Array.from(show.seasons.entries()).map(([seasonNum, episodes]) => ({
-      number: seasonNum,
-      episodes: Array.from(episodes).map((episodeNumber) => ({ number: episodeNumber })),
-    })),
-  }));
-
-  return { movies, shows };
+  return { movies, shows: showsMapToPayload(showsMap) };
 }
 
 function toHistoryIdsPayload(ids: SimklIds): Record<string, string | number> | null {

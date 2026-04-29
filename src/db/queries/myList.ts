@@ -6,10 +6,13 @@ import type { ContentType } from '@/types/stremio';
 
 import { addToSyncQueue, cancelPendingSyncRemovals, type SyncProvider } from './syncQueue';
 
+export type MyListSource = 'internal' | 'simkl' | 'trakt';
+
 export type DbMyListItem = {
   id: string;
   type: ContentType;
   addedAt: number;
+  source?: MyListSource;
   metaName?: string;
   imageUrl?: string;
 };
@@ -25,6 +28,7 @@ export async function listMyListForProfile(
       metaId: myList.metaId,
       type: myList.type,
       addedAt: myList.addedAt,
+      source: myList.source,
       metaName: metaCache.name,
       metaPoster: metaCache.poster,
       metaBackground: metaCache.background,
@@ -40,6 +44,7 @@ export async function listMyListForProfile(
     id: row.metaId,
     type: row.type,
     addedAt: Number(row.addedAt),
+    source: (row.source ?? 'internal') as MyListSource,
     metaName: row.metaName ?? undefined,
     imageUrl: row.metaPoster ?? row.metaBackground ?? undefined,
   }));
@@ -49,7 +54,8 @@ export async function addToMyList(
   profileId: string,
   metaId: string,
   type: ContentType,
-  addedAt?: number
+  addedAt?: number,
+  source?: MyListSource
 ): Promise<void> {
   await initializeDatabase();
 
@@ -61,12 +67,14 @@ export async function addToMyList(
       metaId,
       type,
       addedAt: now,
+      source: source ?? 'internal',
     })
     .onConflictDoUpdate({
       target: [myList.profileId, myList.metaId],
       set: {
         type,
         addedAt: now,
+        ...(source ? { source } : {}),
       },
     });
 
@@ -99,6 +107,7 @@ export async function listExportableMyListForProfile(
       metaId: myList.metaId,
       type: myList.type,
       addedAt: myList.addedAt,
+      source: myList.source,
     })
     .from(myList)
     .where(and(...conditions));
@@ -107,6 +116,7 @@ export async function listExportableMyListForProfile(
     id: row.metaId,
     type: row.type,
     addedAt: Number(row.addedAt),
+    source: (row.source ?? 'internal') as MyListSource,
   }));
 }
 
