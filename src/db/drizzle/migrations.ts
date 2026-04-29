@@ -30,6 +30,13 @@ const journal = {
       tag: '0003_add_is_partial',
       breakpoints: true,
     },
+    {
+      idx: 4,
+      version: '6',
+      when: 1777497631567,
+      tag: '0003_panoramic_carnage',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -116,6 +123,8 @@ CREATE INDEX \`profile_provider_idx\` ON \`sync_queue\` (\`profile_id\`,\`provid
 
 const m0003 = `ALTER TABLE \`meta_cache\` ADD \`is_partial\` integer DEFAULT false NOT NULL;`;
 
+const m0004 = `ALTER TABLE \`my_list\` ADD \`source\` text DEFAULT 'internal' NOT NULL;`;
+
 export default {
   journal,
   migrations: {
@@ -123,5 +132,6 @@ export default {
     m0001,
     m0002,
     m0003,
+    m0004,
   },
 };

@@ -1,0 +1,1 @@
+ALTER TABLE `my_list` ADD `source` text DEFAULT 'internal' NOT NULL;

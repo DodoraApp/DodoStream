@@ -20,8 +20,8 @@ export function parseVideoId(videoId: string): { season: number; episode: number
   const parts = videoId.split(':');
   if (parts.length < 3) return undefined;
 
-  const season = parseInt(parts[1], 10);
-  const episode = parseInt(parts[2], 10);
+  const season = parseInt(parts[parts.length - 2], 10);
+  const episode = parseInt(parts[parts.length - 1], 10);
 
   if (isNaN(season) || isNaN(episode)) return undefined;
   if (season < 1 || episode < 1) return undefined;

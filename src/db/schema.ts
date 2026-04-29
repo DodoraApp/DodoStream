@@ -1,7 +1,7 @@
 import { index, integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 export type StreamTargetType = 'url' | 'external' | 'yt';
-export type WatchHistorySource = 'internal' | 'simkl';
+export type WatchHistorySource = 'internal' | 'simkl' | 'trakt';
 
 const contentTypeColumn = (name: string) =>
   text(name, { enum: ['movie', 'series', 'channel', 'tv'] as const });
@@ -25,7 +25,7 @@ export const watchHistory = sqliteTable(
     lastStreamTargetType: streamTargetTypeColumn('last_stream_target_type'),
     lastStreamTargetValue: text('last_stream_target_value'),
     status: watchStatusColumn('status').notNull().default('watching'),
-    source: text('source', { enum: ['internal', 'simkl'] as const })
+    source: text('source', { enum: ['internal', 'simkl', 'trakt'] as const })
       .notNull()
       .default('internal'),
     lastWatchedAt: integer('last_watched_at').notNull(),
@@ -48,6 +48,9 @@ export const myList = sqliteTable(
     metaId: text('meta_id').notNull(),
     type: contentTypeColumn('type').notNull(),
     addedAt: integer('added_at').notNull(),
+    source: text('source', { enum: ['internal', 'simkl', 'trakt'] as const })
+      .notNull()
+      .default('internal'),
   },
   (table) => [
     unique().on(table.profileId, table.metaId),
@@ -101,7 +104,7 @@ export const syncQueue = sqliteTable(
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
     profileId: text('profile_id').notNull(),
-    provider: text('provider', { enum: ['simkl'] }).notNull(), // expandable for trakt, mal, etc.
+    provider: text('provider', { enum: ['simkl', 'trakt'] }).notNull(), // expandable for trakt, mal, etc.
     action: text('action', { enum: ['remove_history', 'remove_watchlist'] }).notNull(),
     metaId: text('meta_id').notNull(),
     videoId: text('video_id'), // Optional: for episode-specific removals

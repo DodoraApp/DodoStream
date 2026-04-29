@@ -3,23 +3,23 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-native';
 
 import { useTheme } from '@shopify/restyle';
-import { useQueryClient } from '@tanstack/react-query';
 
-import { runExport, runImport } from '@/api/simkl/sync-service';
 import { Button } from '@/components/basic/Button';
 import { Focusable } from '@/components/basic/Focusable';
-import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
-import { useIntegrationsStore } from '@/store/integrations.store';
-import { Box, Text, Theme } from '@/theme/theme';
-import type { SimklConnection, SyncMode } from '@/types/integrations';
+import { Box, Text, type Theme } from '@/theme/theme';
+import type { SyncMode } from '@/types/integrations';
 
 import { RadioButton } from './RadioButton';
 import { SettingsSwitch } from './SettingsSwitch';
 
-interface SimklFirstConnectModalProps {
+interface IntegrationFirstConnectModalProps {
   visible: boolean;
-  profileId: string;
-  connection: SimklConnection;
+  /** i18n namespace ('trakt' | 'simkl') */
+  i18nNs: string;
+  /** Username to display in the connected prompt */
+  username: string;
+  /** Called when user confirms with their chosen sync mode and clearLocal flag */
+  onConfirm: (syncMode: SyncMode, clearLocal: boolean) => Promise<void>;
   onDone: () => void;
 }
 
@@ -30,34 +30,33 @@ interface SyncChoice {
   syncMode: SyncMode;
 }
 
-export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
-  ({ visible, profileId, connection, onDone }) => {
+export const IntegrationFirstConnectModal: FC<IntegrationFirstConnectModalProps> = memo(
+  ({ visible, i18nNs, username, onConfirm, onDone }) => {
     const { t } = useTranslation('settings');
     const theme = useTheme<Theme>();
-    const queryClient = useQueryClient();
 
     const SYNC_CHOICES: SyncChoice[] = useMemo(
       () => [
         {
           id: 'import',
-          label: t('simkl.sync_from'),
-          description: t('simkl.sync_from_desc'),
+          label: t(`${i18nNs}.sync_from`),
+          description: t(`${i18nNs}.sync_from_desc`),
           syncMode: 'pull',
         },
         {
           id: 'export',
-          label: t('simkl.sync_to'),
-          description: t('simkl.sync_to_desc'),
+          label: t(`${i18nNs}.sync_to`),
+          description: t(`${i18nNs}.sync_to_desc`),
           syncMode: 'push',
         },
         {
           id: 'full',
-          label: t('simkl.sync_full'),
-          description: t('simkl.sync_full_desc'),
+          label: t(`${i18nNs}.sync_full`),
+          description: t(`${i18nNs}.sync_full_desc`),
           syncMode: 'full',
         },
       ],
-      [t]
+      [t, i18nNs]
     );
 
     const [selectedChoice, setSelectedChoice] = useState<SyncChoice['id']>('full');
@@ -67,33 +66,13 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
     const handleConfirm = useCallback(async () => {
       const choice = SYNC_CHOICES.find((c) => c.id === selectedChoice)!;
       setIsSyncing(true);
-
       try {
-        // Save connection with chosen sync mode
-        useIntegrationsStore.getState().connectSimkl(profileId, connection, choice.syncMode);
-
-        if (choice.id === 'import' || choice.id === 'full') {
-          await runImport(profileId, connection.accessToken, undefined, {
-            clearLocalFirst,
-          });
-        }
-        if (choice.id === 'export' || choice.id === 'full') {
-          await runExport(profileId, connection.accessToken);
-        }
-
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: watchHistoryKeys.continueWatching(profileId),
-          }),
-          queryClient.invalidateQueries({
-            queryKey: watchHistoryKeys.metaSummaries(profileId),
-          }),
-        ]);
+        await onConfirm(choice.syncMode, clearLocalFirst);
       } finally {
         setIsSyncing(false);
         onDone();
       }
-    }, [selectedChoice, profileId, connection, clearLocalFirst, onDone, queryClient, SYNC_CHOICES]);
+    }, [selectedChoice, clearLocalFirst, onDone, onConfirm, SYNC_CHOICES]);
 
     const showClearOption = selectedChoice === 'import' || selectedChoice === 'full';
 
@@ -111,10 +90,10 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
             }}>
             <Box gap="xs">
               <Text variant="header" textAlign="center">
-                {t('simkl.welcome')}
+                {t(`${i18nNs}.welcome`)}
               </Text>
               <Text variant="body" color="textSecondary" textAlign="center">
-                {t('simkl.connected_prompt', { username: connection.username })}
+                {t(`${i18nNs}.connected_prompt`, { username })}
               </Text>
             </Box>
 
@@ -150,15 +129,15 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
               <SettingsSwitch
                 value={clearLocalFirst}
                 onValueChange={() => setClearLocalFirst((v) => !v)}
-                label={t('simkl.clear_local')}
-                description={t('simkl.clear_local_desc')}
+                label={t(`${i18nNs}.clear_local`)}
+                description={t(`${i18nNs}.clear_local_desc`)}
               />
             )}
 
             <Button
               onPress={handleConfirm}
               variant="primary"
-              title={isSyncing ? t('simkl.syncing') : t('simkl.confirm')}
+              title={isSyncing ? t(`${i18nNs}.syncing`) : t(`${i18nNs}.confirm`)}
               disabled={isSyncing}
             />
           </Box>
@@ -168,4 +147,4 @@ export const SimklFirstConnectModal: FC<SimklFirstConnectModalProps> = memo(
   }
 );
 
-SimklFirstConnectModal.displayName = 'SimklFirstConnectModal';
+IntegrationFirstConnectModal.displayName = 'IntegrationFirstConnectModal';

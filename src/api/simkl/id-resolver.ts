@@ -35,11 +35,15 @@ export async function resolveSimklIds(metaId: string, type: ContentType): Promis
     return ids as SimklIds;
   }
 
-  // Skip lookup for TMDB IDs.
+  // Skip lookup for TMDB IDs (format: tmdb:type:id, e.g. tmdb:movie:12345).
   if (metaId.startsWith('tmdb:')) {
-    const ids = { tmdb: Number(metaId.replace('tmdb:', '')) };
-    cache.set(cacheKey, ids);
-    return ids as SimklIds;
+    const parts = metaId.split(':');
+    const tmdbId = Number(parts[2]);
+    if (!isNaN(tmdbId)) {
+      const ids = { tmdb: tmdbId };
+      cache.set(cacheKey, ids);
+      return ids as SimklIds;
+    }
   }
 
   try {
