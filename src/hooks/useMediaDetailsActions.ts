@@ -64,7 +64,7 @@ export function useMediaDetailsActions({
   );
 
   // Resolve the videoId to query for single-video / episode-level state
-  const effectiveVideoId = targetVideoId ?? continueWatching?.videoId ?? videos?.[0]?.id ?? metaId;
+  const effectiveVideoId = targetVideoId ?? continueWatching?.videoId ?? videos?.[0]?.id;
 
   // Watch state & history for the resolved video
   const watchState = useWatchState(metaId, effectiveVideoId);
@@ -91,8 +91,7 @@ export function useMediaDetailsActions({
     : watchState !== 'watched';
 
   const videoIdToMark =
-    targetVideoId ??
-    (isMultiVideo ? continueWatching?.videoId : (historyItem?.videoId ?? effectiveVideoId));
+    targetVideoId ?? (isMultiVideo ? continueWatching?.videoId : historyItem?.videoId);
 
   const durationSeconds =
     targetDurationSeconds ??
@@ -142,7 +141,7 @@ export function useMediaDetailsActions({
 
       switch (action) {
         case 'mark-as-watched': {
-          const targets = videosToMark ?? [{ videoId: videoIdToMark ?? metaId, durationSeconds }];
+          const targets = videosToMark ?? [{ videoId: videoIdToMark, durationSeconds }];
 
           const upserts = targets.map((v) => {
             const effectiveDuration =

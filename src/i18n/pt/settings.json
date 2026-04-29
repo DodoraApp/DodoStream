@@ -209,7 +209,8 @@
     "clear_local_desc": "Remove todo o histórico local antes de importar do Simkl",
     "confirm": "Confirmar",
     "sync": "Sincronizar",
-    "last_synced": "Última sincronização"
+    "last_synced": "Última sincronização",
+    "other_connected": "Desliga primeiro o Trakt.tv para ligar ao Simkl"
   },
   "home": {
     "catalogs": "Catálogos",
@@ -274,5 +275,48 @@
       "server_failed_title": "Falha ao iniciar o servidor",
       "server_failed_msg": "Tenta novamente."
     }
+  },
+  "trakt": {
+    "connect_title": "Ligar Trakt.tv",
+    "instructions": "Acede ao URL abaixo e insere o código para autorizar o DodoStream.",
+    "desc": "Acompanha o teu histórico de visualizações. Desenvolvido pelo Trakt.tv.",
+    "go_to": "Acede a",
+    "enter_code": "e insere o código",
+    "expires_in": "Expira em {{time}}",
+    "code_expired": "O código expirou. Tenta novamente.",
+    "connected_success": "Ligado com sucesso!",
+    "connect": "Ligar com o Trakt.tv",
+    "disconnect": "Desligar",
+    "connected_as": "Ligado como",
+    "sync_mode": "Modo de Sincronização",
+    "sync_mode_import": "Apenas importar",
+    "sync_mode_import_desc": "Importa o histórico e lista do Trakt.tv para o DodoStream",
+    "sync_mode_export": "Apenas exportar",
+    "sync_mode_export_desc": "Exporta o histórico e lista do DodoStream para o Trakt.tv",
+    "sync_mode_full": "Sincronização completa",
+    "sync_mode_full_desc": "Sincroniza o histórico e lista em ambas as direções",
+    "never": "Nunca",
+    "sync_now": "Sincronizar Agora",
+    "syncing": "A sincronizar...",
+    "connection_failed": "Ligação falhada",
+    "connection_failed_desc": "Não foi possível obter informações do utilizador Trakt.tv. Tenta novamente.",
+    "connected": "Trakt.tv ligado",
+    "disconnected": "Trakt.tv desligado",
+    "sync_failed": "Sincronização falhada",
+    "sync_failed_desc": "Não foi possível sincronizar com o Trakt.tv. Verifica a tua ligação.",
+    "welcome": "Bem-vindo à Sincronização Trakt.tv",
+    "connected_prompt": "Ligado como {{username}}. Como queres começar?",
+    "sync_from": "Sincronizar do Trakt.tv",
+    "sync_from_desc": "Importa o teu histórico e lista do Trakt.tv para o DodoStream",
+    "sync_to": "Sincronizar para o Trakt.tv",
+    "sync_to_desc": "Exporta o teu histórico e lista do DodoStream para o Trakt.tv",
+    "sync_full": "Sincronização completa (ambos)",
+    "sync_full_desc": "Sincronização completa do histórico e lista em ambas as direções",
+    "clear_local": "Limpar histórico do DodoStream antes de importar",
+    "clear_local_desc": "Remove todo o histórico local antes de importar do Trakt.tv",
+    "confirm": "Confirmar",
+    "sync": "Sincronizar",
+    "last_synced": "Última sincronização",
+    "other_connected": "Desliga primeiro o Simkl para ligar ao Trakt.tv"
   }
 }

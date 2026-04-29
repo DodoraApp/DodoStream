@@ -2,156 +2,72 @@ import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@shopify/restyle';
-
-import { completeSimklConnection, useSimklSync } from '@/api/simkl/hooks';
-import { Focusable } from '@/components/basic/Focusable';
-import { RadioButton } from '@/components/settings/RadioButton';
-import { SettingsCard } from '@/components/settings/SettingsCard';
-import { SettingsRow } from '@/components/settings/SettingsRow';
-import { SimklConnectionCard } from '@/components/settings/SimklConnectionCard';
-import { SimklFirstConnectModal } from '@/components/settings/SimklFirstConnectModal';
-import { SimklPinAuthModal } from '@/components/settings/SimklPinAuthModal';
-import { TOAST_DURATION_SHORT } from '@/constants/ui';
+import { SIMKL_PIN_DOMAIN, SIMKL_PIN_URL } from '@/api/simkl/config';
+import { completeSimklConnection, useSimklPinAuth, useSimklSync } from '@/api/simkl/hooks';
+import { TRAKT_ACTIVATE_DOMAIN, TRAKT_ACTIVATE_URL } from '@/api/trakt/config';
+import { completeTraktConnection, useTraktPinAuth, useTraktSync } from '@/api/trakt/hooks';
+import { SimklLogo } from '@/components/basic/SimklLogo';
+import { TraktLogo } from '@/components/basic/TraktLogo';
+import { IntegrationFirstConnectModal } from '@/components/settings/IntegrationFirstConnectModal';
+import { IntegrationPinAuthModal } from '@/components/settings/IntegrationPinAuthModal';
+import { IntegrationSettingsCard } from '@/components/settings/IntegrationSettingsCard';
+import { SIMKL_PIN_TIMEOUT_S, TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
-import { Box, Text, type Theme } from '@/theme/theme';
-import type { ProfileIntegrationSettings, SimklConnection, SyncMode } from '@/types/integrations';
+import { Box } from '@/theme/theme';
+import type { SimklConnection, SyncMode, TraktConnection } from '@/types/integrations';
 import { createDebugLogger } from '@/utils/debug';
 
-interface SimklSyncSettingsProps {
-  isConnected: boolean;
-  settings?: ProfileIntegrationSettings['simkl'];
-  isSyncing: boolean;
-  lastSyncAt?: number;
-  onSyncModeChange: (mode: SyncMode) => void;
-  onSyncNow: () => void;
-}
-
-const SimklSyncSettings = memo(
-  ({
-    isConnected,
-    settings,
-    isSyncing,
-    lastSyncAt,
-    onSyncModeChange,
-    onSyncNow,
-  }: SimklSyncSettingsProps) => {
-    const { t } = useTranslation('settings');
-    const theme = useTheme<Theme>();
-    const lastSyncLabel = lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : t('simkl.never');
-
-    const SYNC_MODE_OPTIONS: { value: SyncMode; label: string; description: string }[] = useMemo(
-      () => [
-        {
-          value: 'pull',
-          label: t('simkl.sync_mode_import'),
-          description: t('simkl.sync_mode_import_desc'),
-        },
-        {
-          value: 'push',
-          label: t('simkl.sync_mode_export'),
-          description: t('simkl.sync_mode_export_desc'),
-        },
-        {
-          value: 'full',
-          label: t('simkl.sync_mode_full'),
-          description: t('simkl.sync_mode_full_desc'),
-        },
-      ],
-      [t]
-    );
-
-    if (!isConnected || !settings) {
-      return null;
-    }
-
-    return (
-      <>
-        <SettingsCard title={t('simkl.sync_mode')}>
-          <Box gap="s">
-            {SYNC_MODE_OPTIONS.map((option) => (
-              <Focusable
-                key={option.value}
-                onPress={() => onSyncModeChange(option.value)}
-                variant="background">
-                <Box borderRadius="m" padding="m" flexDirection="row" alignItems="center" gap="m">
-                  <RadioButton selected={settings.syncMode === option.value} />
-                  <Box flex={1} gap="xs">
-                    <Text variant="body">{option.label}</Text>
-                    <Text variant="caption" color="textSecondary">
-                      {option.description}
-                    </Text>
-                  </Box>
-                </Box>
-              </Focusable>
-            ))}
-          </Box>
-        </SettingsCard>
-
-        <SettingsCard title={t('simkl.sync')}>
-          <SettingsRow label={t('simkl.last_synced')}>
-            <Text variant="body" color="textSecondary">
-              {lastSyncLabel}
-            </Text>
-          </SettingsRow>
-
-          <Focusable onPress={onSyncNow} variant="background" disabled={isSyncing}>
-            <Box borderRadius="m" padding="m" flexDirection="row" alignItems="center" gap="m">
-              <Ionicons
-                name={isSyncing ? 'hourglass-outline' : 'sync-outline'}
-                size={theme.sizes.iconMedium}
-                color={theme.colors.textSecondary}
-              />
-              <Text variant="body">{isSyncing ? t('simkl.syncing') : t('simkl.sync_now')}</Text>
-            </Box>
-          </Focusable>
-        </SettingsCard>
-      </>
-    );
-  }
-);
-
-SimklSyncSettings.displayName = 'SimklSyncSettings';
+const debug = createDebugLogger('IntegrationsSettingsContent');
 
 interface IntegrationsSettingsContentProps {
   scrollable?: boolean;
 }
 
-const debug = createDebugLogger('IntegrationsSettingsContent');
-
-// This component orchestrates provider cards/settings at a higher level.
 export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> = memo(
   ({ scrollable = true }) => {
     const { t } = useTranslation('settings');
     const activeProfileId = useProfileStore((s) => s.activeProfileId);
+
     const simklSettings = useIntegrationsStore((s) =>
       activeProfileId ? s.settings[activeProfileId]?.simkl : undefined
     );
-    const { disconnectSimkl, setSyncMode } = useIntegrationsStore();
+    const traktSettings = useIntegrationsStore((s) =>
+      activeProfileId ? s.settings[activeProfileId]?.trakt : undefined
+    );
 
-    const [showPinModal, setShowPinModal] = useState(false);
-    const [pendingConnection, setPendingConnection] = useState<SimklConnection | null>(null);
-    const [showFirstConnectModal, setShowFirstConnectModal] = useState(false);
+    const simklConnected = !!simklSettings?.connection;
+    const traktConnected = !!traktSettings?.connection;
 
-    const { sync, isSyncing, lastSyncAt } = useSimklSync(activeProfileId);
+    const { disconnectSimkl, disconnectTrakt, setSyncMode } = useIntegrationsStore();
 
-    const handleConnectPress = useCallback(() => {
-      setShowPinModal(true);
-    }, []);
+    const {
+      sync: syncSimkl,
+      isSyncing: isSimklSyncing,
+      lastSyncAt: simklLastSyncAt,
+    } = useSimklSync(activeProfileId);
 
-    const handlePinSuccess = useCallback(
+    const {
+      sync: syncTrakt,
+      isSyncing: isTraktSyncing,
+      lastSyncAt: traktLastSyncAt,
+    } = useTraktSync(activeProfileId);
+
+    const [showSimklPinModal, setShowSimklPinModal] = useState(false);
+    const [pendingSimklConnection, setPendingSimklConnection] = useState<SimklConnection | null>(
+      null
+    );
+    const [showSimklFirstConnectModal, setShowSimklFirstConnectModal] = useState(false);
+
+    const handleSimklPinSuccess = useCallback(
       async (accessToken: string) => {
-        setShowPinModal(false);
+        setShowSimklPinModal(false);
         if (!activeProfileId) return;
         try {
           const connection = await completeSimklConnection(activeProfileId, accessToken);
-          // Temporarily store connection for first-connect modal
-          // (connectSimkl will be called again inside the modal with the chosen syncMode)
-          setPendingConnection(connection);
-          setShowFirstConnectModal(true);
+          setPendingSimklConnection(connection);
+          setShowSimklFirstConnectModal(true);
         } catch (error) {
           debug('completeSimklConnectionError', { error });
           showToast({
@@ -164,48 +80,155 @@ export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> =
       },
       [activeProfileId, t]
     );
+    const simklPinAuth = useSimklPinAuth(handleSimklPinSuccess);
 
-    const handleFirstConnectDone = useCallback(() => {
-      setShowFirstConnectModal(false);
-      setPendingConnection(null);
-      showToast({
-        title: t('simkl.connected'),
-        duration: TOAST_DURATION_SHORT,
-      });
+    const handleSimklFirstConnectConfirm = useCallback(
+      async (syncMode: SyncMode, clearLocal: boolean) => {
+        if (!activeProfileId || !pendingSimklConnection) return;
+        useIntegrationsStore
+          .getState()
+          .connectSimkl(activeProfileId, pendingSimklConnection, syncMode);
+
+        const { runImport, runExport } = await import('@/api/simkl/sync-service');
+        if (syncMode === 'pull' || syncMode === 'full') {
+          await runImport(activeProfileId, pendingSimklConnection.accessToken, undefined, {
+            clearLocalFirst: clearLocal,
+          });
+        }
+        if (syncMode === 'push' || syncMode === 'full') {
+          await runExport(activeProfileId, pendingSimklConnection.accessToken);
+        }
+      },
+      [activeProfileId, pendingSimklConnection]
+    );
+    const handleSimklFirstConnectDone = useCallback(() => {
+      setShowSimklFirstConnectModal(false);
+      setPendingSimklConnection(null);
+      showToast({ title: t('simkl.connected'), duration: TOAST_DURATION_SHORT });
     }, [t]);
+    const [showTraktAuthModal, setShowTraktAuthModal] = useState(false);
+    const [pendingTraktConnection, setPendingTraktConnection] = useState<TraktConnection | null>(
+      null
+    );
+    const [showTraktFirstConnectModal, setShowTraktFirstConnectModal] = useState(false);
 
-    const handleDisconnect = useCallback(() => {
+    const handleTraktAuthSuccess = useCallback(
+      async (accessToken: string, refreshToken: string, expiresAt: number) => {
+        setShowTraktAuthModal(false);
+        if (!activeProfileId) return;
+        try {
+          const connection = await completeTraktConnection(
+            activeProfileId,
+            accessToken,
+            refreshToken,
+            expiresAt
+          );
+          setPendingTraktConnection(connection);
+          setShowTraktFirstConnectModal(true);
+        } catch (error) {
+          debug('completeTraktConnectionError', { error });
+          showToast({
+            title: t('trakt.connection_failed'),
+            message: t('trakt.connection_failed_desc'),
+            preset: 'error',
+            duration: TOAST_DURATION_SHORT,
+          });
+        }
+      },
+      [activeProfileId, t]
+    );
+    const traktPinAuth = useTraktPinAuth(handleTraktAuthSuccess);
+
+    const handleTraktFirstConnectConfirm = useCallback(
+      async (syncMode: SyncMode, clearLocal: boolean) => {
+        if (!activeProfileId || !pendingTraktConnection) return;
+        useIntegrationsStore
+          .getState()
+          .connectTrakt(activeProfileId, pendingTraktConnection, syncMode);
+
+        const { runImport, runExport } = await import('@/api/trakt/sync-service');
+        if (syncMode === 'pull' || syncMode === 'full') {
+          await runImport(activeProfileId, pendingTraktConnection.accessToken, undefined, {
+            clearLocalFirst: clearLocal,
+          });
+        }
+        if (syncMode === 'push' || syncMode === 'full') {
+          await runExport(activeProfileId, pendingTraktConnection.accessToken);
+        }
+      },
+      [activeProfileId, pendingTraktConnection]
+    );
+
+    const handleTraktFirstConnectDone = useCallback(() => {
+      setShowTraktFirstConnectModal(false);
+      setPendingTraktConnection(null);
+      showToast({ title: t('trakt.connected'), duration: TOAST_DURATION_SHORT });
+    }, [t]);
+    const handleSimklDisconnect = useCallback(() => {
       if (!activeProfileId) return;
       disconnectSimkl(activeProfileId);
       showToast({ title: t('simkl.disconnected'), duration: TOAST_DURATION_SHORT });
     }, [activeProfileId, disconnectSimkl, t]);
 
-    const handleSyncModeChange = useCallback(
+    const handleSimklSyncModeChange = useCallback(
       (mode: SyncMode) => {
         if (!activeProfileId) return;
-        setSyncMode(activeProfileId, mode);
+        setSyncMode(activeProfileId, 'simkl', mode);
       },
       [activeProfileId, setSyncMode]
     );
 
-    const isConnected = !!simklSettings?.connection;
+    const handleTraktDisconnect = useCallback(() => {
+      if (!activeProfileId) return;
+      disconnectTrakt(activeProfileId);
+      showToast({ title: t('trakt.disconnected'), duration: TOAST_DURATION_SHORT });
+    }, [activeProfileId, disconnectTrakt, t]);
 
+    const handleTraktSyncModeChange = useCallback(
+      (mode: SyncMode) => {
+        if (!activeProfileId) return;
+        setSyncMode(activeProfileId, 'trakt', mode);
+      },
+      [activeProfileId, setSyncMode]
+    );
+    const simklLogo = useMemo(() => <SimklLogo size="iconLarge" />, []);
+    const traktLogo = useMemo(() => <TraktLogo size="iconLarge" />, []);
     const content = (
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
-        {/* Simkl connection card */}
-        <SimklConnectionCard
+        <IntegrationSettingsCard
+          title="Simkl"
+          logo={simklLogo}
+          websiteUrl="https://simkl.com/"
+          i18nNs="simkl"
           settings={simklSettings}
-          onConnect={handleConnectPress}
-          onDisconnect={handleDisconnect}
+          isSyncing={isSimklSyncing}
+          lastSyncAt={simklLastSyncAt}
+          onConnect={() => setShowSimklPinModal(true)}
+          onDisconnect={handleSimklDisconnect}
+          onSyncModeChange={handleSimklSyncModeChange}
+          onSyncNow={syncSimkl}
+          disabled={traktConnected && !simklConnected}
+          disabledReason={
+            traktConnected && !simklConnected ? t('simkl.other_connected') : undefined
+          }
         />
 
-        <SimklSyncSettings
-          isConnected={isConnected}
-          settings={simklSettings}
-          isSyncing={isSyncing}
-          lastSyncAt={lastSyncAt}
-          onSyncModeChange={handleSyncModeChange}
-          onSyncNow={sync}
+        <IntegrationSettingsCard
+          title="Trakt.tv"
+          logo={traktLogo}
+          websiteUrl="https://trakt.tv/"
+          i18nNs="trakt"
+          settings={traktSettings}
+          isSyncing={isTraktSyncing}
+          lastSyncAt={traktLastSyncAt}
+          onConnect={() => setShowTraktAuthModal(true)}
+          onDisconnect={handleTraktDisconnect}
+          onSyncModeChange={handleTraktSyncModeChange}
+          onSyncNow={syncTrakt}
+          disabled={simklConnected && !traktConnected}
+          disabledReason={
+            simklConnected && !traktConnected ? t('trakt.other_connected') : undefined
+          }
         />
       </Box>
     );
@@ -217,19 +240,41 @@ export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> =
         ) : (
           content
         )}
-
-        <SimklPinAuthModal
-          visible={showPinModal}
-          onSuccess={handlePinSuccess}
-          onCancel={() => setShowPinModal(false)}
+        {/* Modals */}
+        <IntegrationPinAuthModal
+          visible={showSimklPinModal}
+          i18nNs="simkl"
+          activateUrl={SIMKL_PIN_URL}
+          activateDomain={SIMKL_PIN_DOMAIN}
+          pinAuth={simklPinAuth}
+          showCountdown
+          countdownSeconds={SIMKL_PIN_TIMEOUT_S}
+          onCancel={() => setShowSimklPinModal(false)}
         />
-
-        {pendingConnection && activeProfileId && (
-          <SimklFirstConnectModal
-            visible={showFirstConnectModal}
-            profileId={activeProfileId}
-            connection={pendingConnection}
-            onDone={handleFirstConnectDone}
+        {pendingSimklConnection && activeProfileId && (
+          <IntegrationFirstConnectModal
+            visible={showSimklFirstConnectModal}
+            i18nNs="simkl"
+            username={pendingSimklConnection.username}
+            onConfirm={handleSimklFirstConnectConfirm}
+            onDone={handleSimklFirstConnectDone}
+          />
+        )}
+        <IntegrationPinAuthModal
+          visible={showTraktAuthModal}
+          i18nNs="trakt"
+          activateUrl={TRAKT_ACTIVATE_URL}
+          activateDomain={TRAKT_ACTIVATE_DOMAIN}
+          pinAuth={traktPinAuth}
+          onCancel={() => setShowTraktAuthModal(false)}
+        />
+        {pendingTraktConnection && activeProfileId && (
+          <IntegrationFirstConnectModal
+            visible={showTraktFirstConnectModal}
+            i18nNs="trakt"
+            username={pendingTraktConnection.username}
+            onConfirm={handleTraktFirstConnectConfirm}
+            onDone={handleTraktFirstConnectDone}
           />
         )}
       </>

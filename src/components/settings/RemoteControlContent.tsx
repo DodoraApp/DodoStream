@@ -1,11 +1,11 @@
 import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, ScrollView } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
 
 import * as Network from 'expo-network';
 
 import { Button } from '@/components/basic/Button';
+import { QrCode } from '@/components/basic/QrCode';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { useLocalServerStore } from '@/store/local-server.store';
 import { showToast } from '@/store/toast.store';
@@ -160,7 +160,7 @@ export const RemoteControlContent: FC<{ onStop?: () => void }> = memo(({ onStop 
 
             {!!qrUrl && (
               <Box alignItems="center" paddingVertical="s">
-                <QRCode value={qrUrl} size={160} />
+                <QrCode value={qrUrl} />
               </Box>
             )}
 

@@ -117,6 +117,25 @@ describe('simkl sync service', () => {
       expect(mockGetAllItems).not.toHaveBeenCalled();
     });
 
+    it('uses provided activities snapshot instead of calling getActivities', async () => {
+      const snapshot = {
+        movies: { all: '2026-06-01T00:00:00.000Z' },
+      };
+
+      await runImport(
+        'profile-1',
+        'token',
+        {
+          movies: { all: '2026-01-01T00:00:00.000Z' },
+        },
+        {
+          activities: snapshot,
+        }
+      );
+
+      expect(mockGetActivities).not.toHaveBeenCalled();
+    });
+
     it('fetches category when no cursor exists', async () => {
       // Arrange / Act
       await runImport('profile-1', 'token');
@@ -305,10 +324,10 @@ describe('simkl sync service', () => {
 
       // Assert
       // Plan to watch -> My List
-      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', '111', 'movie', undefined);
+      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', '111', 'movie', undefined, 'simkl');
 
       // Watching -> My List AND History
-      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', '333', 'movie', undefined);
+      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', '333', 'movie', undefined, 'simkl');
       expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
         expect.objectContaining({
           profileId: 'profile-1',
@@ -317,8 +336,8 @@ describe('simkl sync service', () => {
       );
 
       // Dropped -> Removals
-      expect(mockRemoveFromMyList).toHaveBeenCalledWith('profile-1', '222');
-      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', '222');
+      expect(mockRemoveFromMyList).toHaveBeenCalledWith('profile-1', '222', 'simkl');
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', '222', 'simkl');
     });
 
     it('imports anime items correctly using the anime property', async () => {
@@ -380,7 +399,7 @@ describe('simkl sync service', () => {
 
       // Assert
       expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledTimes(1);
-      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', 'movie-1');
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', 'movie-1', 'simkl');
     });
 
     it('imports items with hold status correctly', async () => {
@@ -413,7 +432,13 @@ describe('simkl sync service', () => {
         })
       );
       // Hold should also be in My List
-      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', 'tt123', 'series', undefined);
+      expect(mockAddToMyList).toHaveBeenCalledWith(
+        'profile-1',
+        'tt123',
+        'series',
+        undefined,
+        'simkl'
+      );
     });
 
     it('parses last_watched string into videoId when episode arrays are missing', async () => {

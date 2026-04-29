@@ -69,8 +69,10 @@ export const HOME_PRIORITY_BUFFER_ROWS = 1;
 // which can move the focused item off-screen and cause focus jumps.
 export const TV_SCROLL_DEBOUNCE_MS = 150;
 
+// Integration auto-sync
+export const INTEGRATION_AUTO_SYNC_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
+
 // Simkl PIN auth
 export const SIMKL_PIN_TIMEOUT_S = 15 * 60; // 15 minutes in seconds
 export const SIMKL_PIN_TIMEOUT_MS = SIMKL_PIN_TIMEOUT_S * 1000;
 export const SIMKL_PIN_POLL_INTERVAL_MS = 3000;
-export const SIMKL_AUTO_SYNC_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes (Simkl recommends 15-30 min)

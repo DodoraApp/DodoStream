@@ -6,6 +6,7 @@ import { Box, type Theme } from '@/theme/theme';
 import type { IntegrationProvider } from '@/types/integrations';
 
 import { SimklLogo } from './SimklLogo';
+import { TraktLogo } from './TraktLogo';
 
 interface SyncBadgeProps {
   status: SyncStatus;
@@ -44,6 +45,7 @@ export const SyncBadge = ({ status, provider }: SyncBadgeProps) => {
       alignItems="center"
       position="relative">
       {provider === 'simkl' && <SimklLogo size="iconLarge" />}
+      {provider === 'trakt' && <TraktLogo size="iconLarge" />}
       <Box
         position="absolute"
         justifyContent="center"
