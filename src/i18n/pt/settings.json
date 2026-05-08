@@ -125,7 +125,8 @@
     "discord_title": "Entrar no Discord",
     "discord_desc": "Ideias, sugestões e decisões",
     "license_title": "Licença (GPL-3.0)",
-    "license_desc": "Ver o texto da licença"
+    "license_desc": "Ver o texto da licença",
+    "legal_disclaimer": "O DodoStream não hospeda nem fornece qualquer conteúdo. Todos os media são obtidos através de addons de terceiros. É responsável por cumprir as leis locais."
   },
   "subtitles": {
     "title": "Legendas",

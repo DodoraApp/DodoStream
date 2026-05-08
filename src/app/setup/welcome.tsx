@@ -41,6 +41,13 @@ export default function WelcomeStep() {
             <FeatureItem icon="extension-puzzle" title={t('welcome.feature_addons')} delay={500} />
             <FeatureItem icon="settings" title={t('welcome.feature_customize')} delay={600} />
           </Box>
+
+          {/* Legal Disclaimer */}
+          <Box paddingHorizontal="l" paddingTop="m">
+            <Text variant="caption" color="textSecondary" textAlign="center">
+              {t('welcome.legal_disclaimer')}
+            </Text>
+          </Box>
         </Box>
       </WizardStep>
     </WizardContainer>

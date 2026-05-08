@@ -6,7 +6,8 @@
     "feature_profile": "Cria o Teu Primeiro Perfil",
     "feature_integrations": "Liga Integrações",
     "feature_addons": "Instala Addons",
-    "feature_customize": "Personaliza as Definições"
+    "feature_customize": "Personaliza as Definições",
+    "legal_disclaimer": "O DodoStream não hospeda nem fornece qualquer conteúdo. Todos os media são obtidos através de addons de terceiros. É responsável por cumprir as leis locais."
   },
   "language": {
     "title": "Idioma",
