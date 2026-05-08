@@ -268,6 +268,13 @@ export const AboutSettingsContent: FC = memo(() => {
             ))}
           </Box>
         </SettingsCard>
+
+        {/* Legal Disclaimer */}
+        <Box padding="m">
+          <Text variant="caption" color="textSecondary" textAlign="center">
+            {t('about.legal_disclaimer')}
+          </Text>
+        </Box>
       </Box>
     </ScrollView>
   );

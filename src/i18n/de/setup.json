@@ -6,7 +6,8 @@
     "feature_profile": "Erstes Profil erstellen",
     "feature_integrations": "Integrationen verbinden",
     "feature_addons": "Addons installieren",
-    "feature_customize": "Einstellungen anpassen"
+    "feature_customize": "Einstellungen anpassen",
+    "legal_disclaimer": "DodoStream hostet oder stellt keine Inhalte bereit. Alle Medien stammen von Addons von Drittanbietern. Sie sind für die Einhaltung der lokalen Gesetze verantwortlich."
   },
   "language": {
     "title": "Sprache",

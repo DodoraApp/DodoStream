@@ -125,7 +125,8 @@
     "discord_title": "Join Discord",
     "discord_desc": "Ideas, suggestions, and decisions",
     "license_title": "License (GPL-3.0)",
-    "license_desc": "View the license text"
+    "license_desc": "View the license text",
+    "legal_disclaimer": "DodoStream does not host or provide any content. All media is sourced from third-party addons. You are responsible for complying with local laws."
   },
   "subtitles": {
     "title": "Subtitles",
