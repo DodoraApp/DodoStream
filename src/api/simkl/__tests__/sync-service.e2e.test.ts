@@ -235,13 +235,26 @@ describe('Simkl Sync Service - Comprehensive E2E', () => {
       await runImport('profile-1', 'token');
 
       // My List additions: watching, hold, plantowatch
-      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', 'tt_watching', 'movie', undefined);
-      expect(mockAddToMyList).toHaveBeenCalledWith('profile-1', 'tt_hold', 'movie', undefined);
+      expect(mockAddToMyList).toHaveBeenCalledWith(
+        'profile-1',
+        'tt_watching',
+        'movie',
+        undefined,
+        'simkl'
+      );
+      expect(mockAddToMyList).toHaveBeenCalledWith(
+        'profile-1',
+        'tt_hold',
+        'movie',
+        undefined,
+        'simkl'
+      );
       expect(mockAddToMyList).toHaveBeenCalledWith(
         'profile-1',
         'tt_plantowatch',
         'movie',
-        undefined
+        undefined,
+        'simkl'
       );
       expect(mockAddToMyList).not.toHaveBeenCalledWith(
         'profile-1',
@@ -265,8 +278,8 @@ describe('Simkl Sync Service - Comprehensive E2E', () => {
       );
 
       // Dropped: removals
-      expect(mockRemoveFromMyList).toHaveBeenCalledWith('profile-1', 'tt_dropped');
-      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', 'tt_dropped');
+      expect(mockRemoveFromMyList).toHaveBeenCalledWith('profile-1', 'tt_dropped', 'simkl');
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', 'tt_dropped', 'simkl');
     });
 
     it('handles missing IMDB IDs by falling back to kitsu or simkl ID', async () => {

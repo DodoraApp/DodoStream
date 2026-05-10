@@ -107,6 +107,7 @@
     "lefthook": "^2.1.6",
     "prettier": "^3.2.5",
     "react-test-renderer": "19.1.0",
+    "trakt-api": "github:trakt/trakt-api",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"

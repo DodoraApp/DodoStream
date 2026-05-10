@@ -27,3 +27,13 @@ export const getSimklPosterUrl = (poster: string | undefined | null) => {
   if (poster.startsWith('http')) return poster;
   return `https://simkl.in/posters/${poster}_ca.jpg`;
 };
+
+/**
+ * Maps a Trakt images object to a poster URL.
+ */
+export const getTraktPosterUrl = (images: { poster?: string[] } | undefined | null) => {
+  const poster = images?.poster?.[0];
+  if (!poster) return undefined;
+  if (poster.startsWith('http')) return poster;
+  return `https://${poster}`;
+};

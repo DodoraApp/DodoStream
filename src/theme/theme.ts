@@ -146,6 +146,7 @@ const createAppTheme = (scalingFactor: number) =>
       stickyLogoHeight: withScale(44, scalingFactor),
       loadingIndicatorSizeSmall: withScale(44, scalingFactor),
       loadingIndicatorSizeLarge: withScale(72, scalingFactor),
+      qrCodeSize: withScale(160, scalingFactor),
       loadingIndicatorLogoSizeSmall: withScale(35, scalingFactor),
       loadingIndicatorLogoSizeLarge: withScale(65, scalingFactor),
       progressBarHeight: withScale(6, scalingFactor),

@@ -242,6 +242,9 @@ importers:
       react-test-renderer:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      trakt-api:
+        specifier: github:trakt/trakt-api
+        version: https://codeload.github.com/trakt/trakt-api/tar.gz/0bbedd89114a98cb600f203aa79dee78e4990ef9
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@25.0.9)(typescript@5.9.3)
@@ -6238,6 +6241,10 @@ packages:
   tr46@3.0.0:
     resolution: {integrity: sha512-l7FvfAHlcmulp8kr+flpQZmVwtu7nfRV7NZujtN0OqES8EL4O4e0qqzL0DC5gAvx/ZC/9lk6rhcUwYvkBnBnYA==}
     engines: {node: '>=12'}
+
+  trakt-api@https://codeload.github.com/trakt/trakt-api/tar.gz/0bbedd89114a98cb600f203aa79dee78e4990ef9:
+    resolution: {tarball: https://codeload.github.com/trakt/trakt-api/tar.gz/0bbedd89114a98cb600f203aa79dee78e4990ef9}
+    version: 0.0.0
 
   ts-api-utils@2.1.0:
     resolution: {integrity: sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ==}
@@ -13582,6 +13589,8 @@ snapshots:
   tr46@3.0.0:
     dependencies:
       punycode: 2.3.1
+
+  trakt-api@https://codeload.github.com/trakt/trakt-api/tar.gz/0bbedd89114a98cb600f203aa79dee78e4990ef9: {}
 
   ts-api-utils@2.1.0(typescript@5.9.3):
     dependencies:

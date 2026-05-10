@@ -175,6 +175,7 @@ export async function upsertWatchProgress(params: {
   lastStreamTargetValue?: string;
   source?: WatchHistorySource;
   lastWatchedAt?: number;
+  onlyIfNewer?: boolean;
 }): Promise<void> {
   await initializeDatabase();
 
@@ -221,6 +222,7 @@ export async function upsertWatchProgress(params: {
     .onConflictDoUpdate({
       target: [watchHistory.profileId, watchHistory.metaId, watchHistory.videoId],
       set: updateSet,
+      where: params.onlyIfNewer ? sql`${watchHistory.lastWatchedAt} < ${now}` : undefined,
     });
 
   await cancelPendingSyncRemovals(params.profileId, params.metaId, [

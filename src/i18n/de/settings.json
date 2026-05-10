@@ -209,7 +209,8 @@
     "clear_local_desc": "Entfernt den gesamten lokalen Verlauf vor dem Import von Simkl",
     "confirm": "Bestätigen",
     "sync": "Sync",
-    "last_synced": "Zuletzt synchronisiert"
+    "last_synced": "Zuletzt synchronisiert",
+    "other_connected": "Trenne zuerst Trakt.tv, um dich mit Simkl zu verbinden"
   },
   "home": {
     "catalogs": "Kataloge",
@@ -251,7 +252,7 @@
   "remoteControl": {
     "title": "Fernsteuerung",
     "description": "Der Fernsteuerungsserver startet automatisch, damit du Addons von deinem Telefon oder Computer aus verwalten kannst.",
-    "starting": "Startet\u2026",
+    "starting": "Startet…",
     "url": "URL",
     "loading_address": "Adresse wird geladen...",
     "ip_fallback": "Der Server läuft auf Port {{port}}. Öffne die Web-UI unter http://<deine-geräte-ip>:{{port}}",
@@ -274,5 +275,48 @@
       "server_failed_title": "Server konnte nicht gestartet werden",
       "server_failed_msg": "Bitte versuche es erneut."
     }
+  },
+  "trakt": {
+    "connect_title": "Trakt.tv verbinden",
+    "instructions": "Besuche die unten stehende URL und gib den Code ein, um DodoStream zu autorisieren.",
+    "desc": "Verfolge deinen Verlauf. Unterstützt von Trakt.tv.",
+    "go_to": "Gehe zu",
+    "enter_code": "und gib den Code ein",
+    "expires_in": "Läuft ab in {{time}}",
+    "code_expired": "Der Code ist abgelaufen. Bitte versuche es erneut.",
+    "connected_success": "Erfolgreich verbunden!",
+    "connect": "Mit Trakt.tv verbinden",
+    "disconnect": "Trennen",
+    "connected_as": "Verbunden als",
+    "sync_mode": "Synchronisationsmodus",
+    "sync_mode_import": "Nur Import",
+    "sync_mode_import_desc": "Verlauf und Merkliste von Trakt.tv nach DodoStream importieren",
+    "sync_mode_export": "Nur Export",
+    "sync_mode_export_desc": "Verlauf und Merkliste von DodoStream nach Trakt.tv exportieren",
+    "sync_mode_full": "Vollständige Synchronisation",
+    "sync_mode_full_desc": "Verlauf und Merkliste in beide Richtungen synchronisieren",
+    "never": "Nie",
+    "sync_now": "Jetzt synchronisieren",
+    "syncing": "Synchronisierung läuft...",
+    "connection_failed": "Verbindung fehlgeschlagen",
+    "connection_failed_desc": "Trakt.tv-Benutzerinformationen konnten nicht abgerufen werden. Bitte versuche es erneut.",
+    "connected": "Trakt.tv verbunden",
+    "disconnected": "Trakt.tv getrennt",
+    "sync_failed": "Synchronisierung fehlgeschlagen",
+    "sync_failed_desc": "Synchronisierung mit Trakt.tv fehlgeschlagen. Überprüfe deine Verbindung.",
+    "welcome": "Willkommen bei Trakt.tv Sync",
+    "connected_prompt": "Verbunden als {{username}}. Wie möchtest du starten?",
+    "sync_from": "Von Trakt.tv synchronisieren",
+    "sync_from_desc": "Trakt.tv-Verlauf und Merkliste nach DodoStream importieren",
+    "sync_to": "Zu Trakt.tv synchronisieren",
+    "sync_to_desc": "DodoStream-Verlauf und Merkliste nach Trakt.tv exportieren",
+    "sync_full": "Vollständige Synchronisation (beide)",
+    "sync_full_desc": "Vollständige Synchronisation von Verlauf und Merkliste in beide Richtungen",
+    "clear_local": "DodoStream-Verlauf vor dem Import löschen",
+    "clear_local_desc": "Entfernt den gesamten lokalen Verlauf vor dem Import von Trakt.tv",
+    "confirm": "Bestätigen",
+    "sync": "Sync",
+    "last_synced": "Zuletzt synchronisiert",
+    "other_connected": "Trenne zuerst Simkl, um dich mit Trakt.tv zu verbinden"
   }
 }

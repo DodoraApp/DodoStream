@@ -6,7 +6,7 @@ import { useIntegrationsStore } from '@/store/integrations.store';
 import type { ContentType } from '@/types/stremio';
 
 export type SyncAction = 'remove_history' | 'remove_watchlist';
-export type SyncProvider = 'simkl';
+export type SyncProvider = 'simkl' | 'trakt';
 
 export async function addToSyncQueue(
   profileId: string,
@@ -24,6 +24,9 @@ export async function addToSyncQueue(
 
   if (state.settings[profileId]?.simkl?.connection && ignoreProvider !== 'simkl') {
     activeProviders.push('simkl');
+  }
+  if (state.settings[profileId]?.trakt?.connection && ignoreProvider !== 'trakt') {
+    activeProviders.push('trakt');
   }
 
   if (activeProviders.length === 0) return;
