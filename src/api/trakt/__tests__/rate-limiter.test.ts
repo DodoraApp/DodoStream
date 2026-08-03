@@ -3,9 +3,13 @@ import { traktRateLimiter } from '../rate-limiter';
 describe('Trakt Rate Limiter', () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    // Reset rate limiter state for tests (we access private members via any)
-    (traktRateLimiter as any).lastPostTime = 0;
-    (traktRateLimiter as any).retryAfter = 0;
+    // Unchecked cast: reset private limiter state between tests.
+    const limiterInternals = traktRateLimiter as unknown as {
+      lastPostTime: number;
+      retryAfter: number;
+    };
+    limiterInternals.lastPostTime = 0;
+    limiterInternals.retryAfter = 0;
   });
 
   afterEach(() => {

@@ -1,73 +1,90 @@
+import { getExternalIdsForMetaId } from '@/db/queries/idMapping';
 import type { SimklIds } from '@/types/simkl';
 import type { ContentType } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 
-import { searchById } from './client';
-
 const debug = createDebugLogger('SimklIdResolver');
 
-// In-memory session cache to avoid repeated ID lookups.
-const cache = new Map<string, SimklIds | null>();
-
 /**
- * Resolves a metaId to Simkl IDs.
- * - metaId starting with "tt" → treated as IMDB ID
- * - Otherwise → passed as-is to /search/id
- * Results are cached in memory for the app session.
+ * Resolves a metaId to Simkl-compatible external IDs.
+ *
+ * Simkl's write endpoints (POST /sync/history, /sync/add-to-list, …) accept
+ * any combination of external IDs (`imdb`, `tmdb`, `tvdb`, `mal`, `kitsu`, …)
+ * and resolve them server-side — so no `/search/id` round-trips are needed
+ * (the docs explicitly discourage looping `/search/id` for export resolution).
+ *
+ * Resolution order:
+ * - Embedded provider IDs in the metaId are returned directly:
+ *   numeric → `{ simkl }`, `tt…` → `{ imdb }`, `tmdb:…` → `{ tmdb }`,
+ *   `kitsu:…` → `{ kitsu }`, `mal:…` → `{ mal }`, `tvdb:…` → `{ tvdb }`
+ * - Otherwise, check the meta_ids DB cache for previously resolved IDs.
  */
 export async function resolveSimklIds(metaId: string, type: ContentType): Promise<SimklIds | null> {
-  const cacheKey = `${type}:${metaId}`;
-  if (cache.has(cacheKey)) {
-    return cache.get(cacheKey) ?? null;
-  }
-
-  // If the ID is already a numeric Simkl ID, skip lookup.
+  // Numeric Simkl ID — no lookup needed
   if (/^\d+$/.test(metaId)) {
-    const ids = { simkl: Number(metaId) };
-    cache.set(cacheKey, ids);
-    return ids;
+    const num = Number(metaId);
+    if (!isNaN(num)) {
+      return { simkl: num };
+    }
   }
 
-  // Skip lookup for IMDB IDs.
+  // IMDB ID — return directly (Simkl API expects this format)
   if (metaId.startsWith('tt')) {
-    const ids = { imdb: metaId };
-    cache.set(cacheKey, ids);
-    return ids as SimklIds;
+    return { imdb: metaId };
   }
 
-  // Skip lookup for TMDB IDs (format: tmdb:type:id, e.g. tmdb:movie:12345).
+  // TMDB ID — extract the numeric part
   if (metaId.startsWith('tmdb:')) {
     const parts = metaId.split(':');
     const tmdbId = Number(parts[2]);
     if (!isNaN(tmdbId)) {
-      const ids = { tmdb: tmdbId };
-      cache.set(cacheKey, ids);
-      return ids as SimklIds;
+      return { tmdb: tmdbId };
     }
   }
 
-  try {
-    const results = await searchById(metaId);
-
-    if (!results || results.length === 0) {
-      debug('notFound', { metaId });
-      cache.set(cacheKey, null);
-      return null;
-    }
-
-    const filteredResults =
-      type === 'movie'
-        ? results.filter((item) => item.type === 'movie')
-        : results.filter((item) => item.type === 'tv' || item.type === 'anime');
-
-    // Prefer type-matching result, fallback to first result
-    const ids = (filteredResults[0] ?? results[0]).ids;
-    debug('resolved', { metaId, ids });
-    cache.set(cacheKey, ids);
-    return ids;
-  } catch (error) {
-    debug('error', { metaId, error });
-    cache.set(cacheKey, null);
-    return null;
+  // Anime catalog IDs — Simkl resolves these server-side on write endpoints
+  const kitsuMatch = metaId.match(/^kitsu:(\d+)$/);
+  if (kitsuMatch) {
+    return { kitsu: Number(kitsuMatch[1]) };
   }
+  const malMatch = metaId.match(/^mal:(\d+)$/);
+  if (malMatch) {
+    return { mal: Number(malMatch[1]) };
+  }
+  const tvdbMatch = metaId.match(/^tvdb:(\d+)$/);
+  if (tvdbMatch) {
+    return { tvdb: Number(tvdbMatch[1]) };
+  }
+
+  // Check DB for existing resolved IDs
+  const existing = await getExternalIdsForMetaId(metaId);
+  if (existing) {
+    const ids = buildSimklIds(existing);
+    if (ids && Object.keys(ids).length > 0) {
+      debug('resolvedFromDb', { metaId, ids });
+      return ids;
+    }
+  }
+
+  debug('notFound', { metaId, type });
+  return null;
+}
+
+function buildSimklIds(external: {
+  simklId: string | null;
+  imdbId: string | null;
+  tmdbId: string | null;
+  tvdbId: string | null;
+  kitsuId: string | null;
+  anilistId: string | null;
+  malId: string | null;
+}): SimklIds | null {
+  const ids: SimklIds = {};
+  if (external.simklId) ids.simkl = Number(external.simklId);
+  if (external.imdbId) ids.imdb = external.imdbId;
+  if (external.tmdbId) ids.tmdb = Number(external.tmdbId);
+  if (external.tvdbId) ids.tvdb = Number(external.tvdbId);
+  if (external.kitsuId) ids.kitsu = Number(external.kitsuId);
+  if (external.malId) ids.mal = Number(external.malId);
+  return Object.keys(ids).length > 0 ? ids : null;
 }

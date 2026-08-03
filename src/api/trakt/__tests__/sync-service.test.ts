@@ -311,7 +311,6 @@ describe('Trakt Sync Service', () => {
         movies: [
           { ids: { imdb: 'tt123', tmdb: undefined }, watched_at: '2023-01-01T00:00:00.000Z' },
         ],
-        episodes: [],
         shows: [
           {
             ids: { imdb: undefined, tmdb: 456 },

@@ -3,7 +3,6 @@ import { SimklMediaType } from '@/types/integrations';
 import type {
   SimklActivities,
   SimklAllItemsResponse,
-  SimklMediaItem,
   SimklPinResponse,
   SimklPinStatusResponse,
   SimklUserSettings,
@@ -91,7 +90,8 @@ export function pollPin(userCode: string): Promise<SimklPinStatusResponse> {
 }
 
 export function getUserSettings(token: string): Promise<SimklUserSettings> {
-  return simklFetch<SimklUserSettings>('/users/settings', { token });
+  // POST for historical reasons per Simkl docs — no body required.
+  return simklFetch<SimklUserSettings>('/users/settings', { method: 'POST', token });
 }
 
 export function getActivities(token: string): Promise<SimklActivities> {
@@ -111,6 +111,10 @@ export function getAllItems(
   const params = new URLSearchParams({ extended });
   if (extended === 'full' || extended === 'full_anime_seasons') {
     params.set('episode_watched_at', 'yes');
+    // Docs: completed/dropped items skip episode loading by default; include_all_episodes
+    // loads them too (synthesizing virtual rows stamped with last-watched time where
+    // per-episode data is missing). Requires extended=full.
+    params.set('include_all_episodes', 'yes');
   }
   if (dateFrom) params.set('date_from', dateFrom);
   return simklFetch<SimklAllItemsResponse>(`${path}?${params.toString()}`, {
@@ -140,8 +144,4 @@ export function removeFromHistory(token: string, payload: object): Promise<unkno
     token,
     body: JSON.stringify(payload),
   });
-}
-
-export function searchById(imdbId: string): Promise<SimklMediaItem[]> {
-  return simklFetch<SimklMediaItem[]>(`/search/id?imdb=${encodeURIComponent(imdbId)}`);
 }

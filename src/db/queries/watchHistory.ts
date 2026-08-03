@@ -176,6 +176,7 @@ export async function upsertWatchProgress(params: {
   source?: WatchHistorySource;
   lastWatchedAt?: number;
   onlyIfNewer?: boolean;
+  keepDismissed?: boolean;
 }): Promise<void> {
   await initializeDatabase();
 
@@ -192,7 +193,7 @@ export async function upsertWatchProgress(params: {
     durationSeconds: params.durationSeconds,
     status,
     source: params.source ?? 'internal',
-    dismissedAt: null,
+    ...(params.keepDismissed ? {} : { dismissedAt: null }),
     lastWatchedAt: now,
     updatedAt: now,
     ...(hasStreamTarget && {

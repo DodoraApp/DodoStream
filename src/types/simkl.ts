@@ -52,16 +52,6 @@ export interface SimklIds {
   kitsu?: number;
 }
 
-export interface SimklMediaItem {
-  type: 'movie' | 'tv' | 'anime';
-  title: string;
-  year?: number;
-  poster?: string;
-  status?: string;
-  ids: SimklIds;
-  total_episodes?: number;
-}
-
 export type SimklStatus = 'watching' | 'plantowatch' | 'hold' | 'dropped' | 'completed';
 
 export interface SimklWatchedItem {

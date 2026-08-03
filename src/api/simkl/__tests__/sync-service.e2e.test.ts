@@ -8,16 +8,16 @@ const mockPostWatchlist = jest.fn();
 const mockRemoveFromHistory = jest.fn();
 
 jest.mock('../client', () => ({
-  getActivities: (...args: any[]) => mockGetActivities(...args),
-  getAllItems: (...args: any[]) => mockGetAllItems(...args),
-  postHistory: (...args: any[]) => mockPostHistory(...args),
-  postWatchlist: (...args: any[]) => mockPostWatchlist(...args),
-  removeFromHistory: (...args: any[]) => mockRemoveFromHistory(...args),
+  getActivities: (...args: unknown[]) => mockGetActivities(...args),
+  getAllItems: (...args: unknown[]) => mockGetAllItems(...args),
+  postHistory: (...args: unknown[]) => mockPostHistory(...args),
+  postWatchlist: (...args: unknown[]) => mockPostWatchlist(...args),
+  removeFromHistory: (...args: unknown[]) => mockRemoveFromHistory(...args),
 }));
 
 const mockResolveSimklIds = jest.fn();
 jest.mock('../id-resolver', () => ({
-  resolveSimklIds: (...args: any[]) => mockResolveSimklIds(...args),
+  resolveSimklIds: (...args: unknown[]) => mockResolveSimklIds(...args),
 }));
 
 const mockUpsertWatchProgress = jest.fn();
@@ -26,11 +26,12 @@ const mockListExportableWatchHistory = jest.fn();
 const mockRemoveProfileWatchHistory = jest.fn();
 const mockRemoveWatchHistoryMeta = jest.fn();
 jest.mock('@/db/queries/watchHistory', () => ({
-  upsertWatchProgress: (...args: any[]) => mockUpsertWatchProgress(...args),
-  listWatchHistoryForProfile: (...args: any[]) => mockListWatchHistory(...args),
-  listExportableWatchHistoryForProfile: (...args: any[]) => mockListExportableWatchHistory(...args),
-  removeProfileWatchHistory: (...args: any[]) => mockRemoveProfileWatchHistory(...args),
-  removeWatchHistoryMeta: (...args: any[]) => mockRemoveWatchHistoryMeta(...args),
+  upsertWatchProgress: (...args: unknown[]) => mockUpsertWatchProgress(...args),
+  listWatchHistoryForProfile: (...args: unknown[]) => mockListWatchHistory(...args),
+  listExportableWatchHistoryForProfile: (...args: unknown[]) =>
+    mockListExportableWatchHistory(...args),
+  removeProfileWatchHistory: (...args: unknown[]) => mockRemoveProfileWatchHistory(...args),
+  removeWatchHistoryMeta: (...args: unknown[]) => mockRemoveWatchHistoryMeta(...args),
 }));
 
 const mockAddToSyncQueue = jest.fn();
@@ -38,10 +39,10 @@ const mockCancelPendingSyncRemovals = jest.fn();
 const mockListSyncQueueForProvider = jest.fn();
 const mockDeleteFromSyncQueue = jest.fn();
 jest.mock('@/db/queries/syncQueue', () => ({
-  addToSyncQueue: (...args: any[]) => mockAddToSyncQueue(...args),
-  cancelPendingSyncRemovals: (...args: any[]) => mockCancelPendingSyncRemovals(...args),
-  listSyncQueueForProvider: (...args: any[]) => mockListSyncQueueForProvider(...args),
-  deleteFromSyncQueue: (...args: any[]) => mockDeleteFromSyncQueue(...args),
+  addToSyncQueue: (...args: unknown[]) => mockAddToSyncQueue(...args),
+  cancelPendingSyncRemovals: (...args: unknown[]) => mockCancelPendingSyncRemovals(...args),
+  listSyncQueueForProvider: (...args: unknown[]) => mockListSyncQueueForProvider(...args),
+  deleteFromSyncQueue: (...args: unknown[]) => mockDeleteFromSyncQueue(...args),
 }));
 
 const mockAddToMyList = jest.fn();
@@ -49,10 +50,10 @@ const mockListExportableMyList = jest.fn();
 const mockRemoveFromMyList = jest.fn();
 const mockRemoveProfileMyList = jest.fn();
 jest.mock('@/db/queries/myList', () => ({
-  addToMyList: (...args: any[]) => mockAddToMyList(...args),
-  listExportableMyListForProfile: (...args: any[]) => mockListExportableMyList(...args),
-  removeFromMyList: (...args: any[]) => mockRemoveFromMyList(...args),
-  removeProfileMyList: (...args: any[]) => mockRemoveProfileMyList(...args),
+  addToMyList: (...args: unknown[]) => mockAddToMyList(...args),
+  listExportableMyListForProfile: (...args: unknown[]) => mockListExportableMyList(...args),
+  removeFromMyList: (...args: unknown[]) => mockRemoveFromMyList(...args),
+  removeProfileMyList: (...args: unknown[]) => mockRemoveProfileMyList(...args),
 }));
 
 jest.mock('@/db/queries/metaCache', () => ({
@@ -302,22 +303,24 @@ describe('Simkl Sync Service - Comprehensive E2E', () => {
       );
     });
 
-    it('aborts removal sync if any getAllItems call fails (Empty Response Safety)', async () => {
+    it('treats null getAllItems response as empty list during removal sync (not a failure)', async () => {
       mockListWatchHistory.mockResolvedValue([{ id: 'tt_item_1', type: 'movie', source: 'simkl' }]);
 
       mockGetActivities.mockResolvedValue({
         movies: { removed_from_list: '2026-04-25T15:00:00Z' },
       });
 
-      // Simulate API error (returning null)
+      // Simkl returns a JSON `null` body (2xx) when a category list is empty.
       mockGetAllItems.mockResolvedValue(null);
 
       await runImport('profile-1', 'token', {
         movies: { removed_from_list: '2026-04-25T14:00:00Z' },
       });
 
-      // Cleanup should NOT have been called because one of the ID fetches failed
-      expect(mockRemoveWatchHistoryMeta).not.toHaveBeenCalled();
+      // Empty list -> nothing to keep -> the stale local item is removed. A real API
+      // failure throws in the client and is caught by guardedImport (import -> false),
+      // so cleanup can never run on partial data.
+      expect(mockRemoveWatchHistoryMeta).toHaveBeenCalledWith('profile-1', 'tt_item_1', 'simkl');
     });
 
     it('prevents concurrent imports for the same profile', async () => {

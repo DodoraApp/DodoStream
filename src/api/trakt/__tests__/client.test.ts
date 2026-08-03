@@ -20,6 +20,10 @@ import { traktRateLimiter } from '../rate-limiter';
 // Mock the native fetch
 global.fetch = jest.fn();
 
+jest.mock('@/hooks/useAppInfo', () => ({
+  getInstalledAppVersion: jest.fn(() => '1.0.0'),
+}));
+
 // Mock the rate limiter so we don't actually wait in tests
 jest.mock('../rate-limiter', () => ({
   traktRateLimiter: {
@@ -33,8 +37,27 @@ describe('Trakt Client', () => {
     jest.clearAllMocks();
   });
 
-  const mockResponse = (status: number, data: any = {}, headers: Record<string, string> = {}) => {
+  const mockResponse = (
+    status: number,
+    data: unknown = {},
+    headers: Record<string, string> = {}
+  ) => {
     (global.fetch as jest.Mock).mockResolvedValue({
+      ok: status >= 200 && status < 300,
+      status,
+      headers: {
+        get: (key: string) => headers[key] || null,
+      },
+      json: async () => data,
+    });
+  };
+
+  const mockResponseOnce = (
+    status: number,
+    data: unknown = {},
+    headers: Record<string, string> = {}
+  ) => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: status >= 200 && status < 300,
       status,
       headers: {
@@ -108,13 +131,15 @@ describe('Trakt Client', () => {
     });
 
     it('getWatchedMovies', async () => {
-      mockResponse(200, [{ plays: 1 }]);
+      mockResponse(200, []); // empty page 2 stops the pagination loop
+      mockResponseOnce(200, [{ plays: 1 }]);
       const result = await getWatchedMovies('token');
       expect(result).toHaveLength(1);
     });
 
     it('getWatchedShows', async () => {
-      mockResponse(200, [{ plays: 1 }]);
+      mockResponse(200, []);
+      mockResponseOnce(200, [{ plays: 1 }]);
       await getWatchedShows('token');
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/sync/watched/shows?extended=noseasons'),
@@ -123,7 +148,8 @@ describe('Trakt Client', () => {
     });
 
     it('getWatchedShowsWithSeasons', async () => {
-      mockResponse(200, [{ plays: 1 }]);
+      mockResponse(200, []);
+      mockResponseOnce(200, [{ plays: 1 }]);
       await getWatchedShowsWithSeasons('token');
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/sync/watched/shows'),
@@ -132,21 +158,23 @@ describe('Trakt Client', () => {
     });
 
     it('getWatchlistMovies', async () => {
-      mockResponse(200, [{ rank: 1 }]);
+      mockResponse(200, []);
+      mockResponseOnce(200, [{ rank: 1 }]);
       const result = await getWatchlistMovies('token');
       expect(result).toHaveLength(1);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/sync/watchlist/movies'),
+        expect.stringContaining('/sync/watchlist/movies/rank/asc?extended=images'),
         expect.any(Object)
       );
     });
 
     it('getWatchlistShows', async () => {
-      mockResponse(200, [{ rank: 1 }]);
+      mockResponse(200, []);
+      mockResponseOnce(200, [{ rank: 1 }]);
       const result = await getWatchlistShows('token');
       expect(result).toHaveLength(1);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/sync/watchlist/shows'),
+        expect.stringContaining('/sync/watchlist/shows/rank/asc?extended=images'),
         expect.any(Object)
       );
     });

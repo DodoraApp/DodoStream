@@ -48,6 +48,17 @@ interface HistoryPayload {
   shows: HistoryShowPayload[];
 }
 
+/** Per-item shape for POST /sync/add-to-list (watchlist writes). */
+interface WatchlistItemPayload {
+  ids: SimklIds;
+  to: string;
+}
+
+interface WatchlistPayload {
+  movies: WatchlistItemPayload[];
+  shows: WatchlistItemPayload[];
+}
+
 const SYNC_STATUSES: (keyof SimklSyncCursor)[] = [
   'all',
   'playback',
@@ -150,15 +161,14 @@ export async function runImport(
       if (typesNeedingSync.length > 0) {
         debug('syncRemovals', { profileId, contentType: cat.contentType });
         const currentMetaIds = new Set<string>();
-        let anyFailed = false;
 
-        // Fetch IDs for ALL Simkl types in this category to build a complete set of "what should stay"
+        // Fetch IDs for ALL Simkl types in this category to build a complete set of "what should stay".
+        // Simkl returns a JSON `null` body (2xx) when a category list is empty — that means "nothing
+        // to keep" for this type, NOT a failure. Real API failures throw in the client and abort the
+        // whole import via guardedImport, so cleanup never runs on partial data.
         for (const t of cat.types) {
           const idsResponse = await getAllItems(token, t.type, undefined, 'ids_only');
-          if (!idsResponse) {
-            anyFailed = true; // Safety: abort cleanup if API fails to prevent DB wipe
-            break;
-          }
+          if (!idsResponse) continue;
           const items =
             idsResponse?.[t.responseKey] ||
             idsResponse?.shows ||
@@ -176,15 +186,13 @@ export async function runImport(
           }
         }
 
-        if (!anyFailed) {
-          await cleanupRemovedItems(profileId, cat.contentType, currentMetaIds);
-          // Update cursors for all Simkl types that were checked
-          for (const t of typesNeedingSync) {
-            const timestamp = activities[t.key]?.removed_from_list;
-            if (typeof timestamp === 'string') {
-              if (!newCursors[t.key]) newCursors[t.key] = { ...cursors?.[t.key] };
-              newCursors[t.key]!.removed_from_list = timestamp;
-            }
+        await cleanupRemovedItems(profileId, cat.contentType, currentMetaIds);
+        // Update cursors for all Simkl types that were checked
+        for (const t of typesNeedingSync) {
+          const timestamp = activities[t.key]?.removed_from_list;
+          if (typeof timestamp === 'string') {
+            if (!newCursors[t.key]) newCursors[t.key] = { ...cursors?.[t.key] };
+            newCursors[t.key]!.removed_from_list = timestamp;
           }
         }
       }
@@ -609,9 +617,9 @@ export async function runExport(profileId: string, token: string): Promise<boole
 
 async function buildWatchlistPayload(
   items: Awaited<ReturnType<typeof listExportableMyListForProfile>>
-): Promise<HistoryPayload> {
-  const movies: any[] = [];
-  const shows: any[] = [];
+): Promise<WatchlistPayload> {
+  const movies: WatchlistItemPayload[] = [];
+  const shows: WatchlistItemPayload[] = [];
 
   for (const item of items) {
     const ids = await resolveSimklIds(item.id, item.type);
@@ -627,7 +635,7 @@ async function buildWatchlistPayload(
     }
   }
 
-  return { movies, shows } as any;
+  return { movies, shows };
 }
 
 async function buildRemovalPayload(
@@ -708,9 +716,14 @@ async function buildExportPayload(
 
 function toHistoryIdsPayload(ids: SimklIds): Record<string, string | number> | null {
   const payload: Record<string, string | number> = {};
+  // Docs: ids.simkl is an integer; all external IDs (imdb/tmdb/tvdb/mal/kitsu/…) are strings.
+  // Send every ID we have — Simkl picks the first that resolves.
   if (ids.simkl) payload.simkl = ids.simkl;
   if (ids.imdb) payload.imdb = ids.imdb;
-  if (ids.tmdb) payload.tmdb = ids.tmdb;
+  if (ids.tmdb) payload.tmdb = String(ids.tmdb);
+  if (ids.tvdb) payload.tvdb = String(ids.tvdb);
+  if (ids.mal) payload.mal = String(ids.mal);
+  if (ids.kitsu) payload.kitsu = String(ids.kitsu);
 
   return Object.keys(payload).length > 0 ? payload : null;
 }

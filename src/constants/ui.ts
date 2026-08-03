@@ -74,5 +74,3 @@ export const INTEGRATION_AUTO_SYNC_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
 // Simkl PIN auth
 export const SIMKL_PIN_TIMEOUT_S = 15 * 60; // 15 minutes in seconds
-export const SIMKL_PIN_TIMEOUT_MS = SIMKL_PIN_TIMEOUT_S * 1000;
-export const SIMKL_PIN_POLL_INTERVAL_MS = 3000;
