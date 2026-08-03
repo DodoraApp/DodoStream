@@ -29,6 +29,13 @@
       "when": 1777497631567,
       "tag": "0003_panoramic_carnage",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1777814782026,
+      "tag": "0005_white_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

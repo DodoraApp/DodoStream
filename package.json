@@ -27,7 +27,10 @@
     "web": "expo start --web",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "postinstall": "lefthook install"
+    "postinstall": "lefthook install",
+    "test:e2e:sync": "jest --config ./scripts/sync-e2e/jest-e2e.config.js",
+    "test:e2e:sync:trakt": "jest --config ./scripts/sync-e2e/jest-e2e.config.js --testNamePattern=Trakt",
+    "test:e2e:sync:simkl": "jest --config ./scripts/sync-e2e/jest-e2e.config.js --testNamePattern=Simkl"
   },
   "dependencies": {
     "@d11/react-native-fast-image": "^8.13.0",
@@ -95,6 +98,7 @@
     "@types/stremio-addon-sdk": "^1.6.12",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "babel-preset-expo": "~54.0.10",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.9",
     "eslint": "^9.25.1",
     "eslint-config-expo": "~10.0.0",

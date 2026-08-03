@@ -3,6 +3,8 @@ import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import { addToMyList, listExportableMyListForProfile, removeFromMyList } from '@/db/queries/myList';
 import { deleteFromSyncQueue, listSyncQueueForProvider } from '@/db/queries/syncQueue';
 import {
+  dismissFromContinueWatching,
+  getWatchHistoryItem,
   listExportableWatchHistoryForProfile,
   listWatchHistoryForProfile,
   removeWatchHistoryItem,
@@ -17,6 +19,7 @@ import { parseVideoId } from '@/utils/id';
 import { getTraktPosterUrl } from '@/utils/media-artwork';
 
 import {
+  getHiddenShows,
   getLastActivities,
   getWatchedMovies,
   getWatchedShowsWithSeasons,
@@ -240,6 +243,26 @@ export async function runImport(
       newCursors.watchlist.updated_at = activities.watchlist?.updated_at;
     }
 
+    // 4. Check if we need to sync hidden shows (SHOWS ONLY)
+    if (needsSync(activities.shows?.hidden_at, cursors?.shows?.hidden_at)) {
+      debug('syncUpdates', { profileId, type: 'hidden_shows' });
+      const hidden = await getHiddenShows(token);
+
+      for (const item of hidden) {
+        const metaId = resolveTraktIds(item.show.ids, 'series');
+        if (!metaId) continue;
+
+        // Skip if already dismissed (idempotent)
+        const existing = await getWatchHistoryItem(profileId, metaId);
+        if (existing?.status === 'dismissed') continue;
+
+        await dismissFromContinueWatching(profileId, metaId);
+      }
+
+      if (!newCursors.shows) newCursors.shows = {};
+      newCursors.shows.hidden_at = activities.shows?.hidden_at;
+    }
+
     useIntegrationsStore.getState().updateTraktCursors(profileId, newCursors);
     debug('importComplete', { profileId, newCursors });
     return true;
@@ -338,12 +361,13 @@ export async function runExport(profileId: string, token: string): Promise<boole
 
     if (
       (historyPayload.movies && historyPayload.movies.length > 0) ||
-      (historyPayload.episodes && historyPayload.episodes.length > 0)
+      (historyPayload.episodes && historyPayload.episodes.length > 0) ||
+      (historyPayload.shows && historyPayload.shows.length > 0)
     ) {
       await postHistory(token, historyPayload);
       debug('exportHistoryComplete', {
         movies: historyPayload.movies?.length,
-        episodes: historyPayload.episodes?.length,
+        shows: historyPayload.shows?.length,
       });
     }
 
@@ -384,7 +408,7 @@ export async function runExport(profileId: string, token: string): Promise<boole
 function buildExportPayload(
   items: Awaited<ReturnType<typeof listExportableWatchHistoryForProfile>>
 ): TraktSyncItem {
-  const payload: TraktSyncItem = { movies: [], episodes: [] };
+  const payload: TraktSyncItem = { movies: [] };
 
   for (const item of items) {
     const ids = buildTraktIdsFromMetaId(item.id);

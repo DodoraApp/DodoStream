@@ -61,9 +61,14 @@ export function useTraktPinAuth(
         try {
           const result = await pollDeviceToken(codes.deviceCode);
           return result as unknown as Record<string, unknown>;
-        } catch (error: any) {
+        } catch (error: unknown) {
           // 400 is expected (Pending), we just continue polling
-          if (error?.status !== 400) {
+          const isUnexpected =
+            typeof error === 'object' &&
+            error !== null &&
+            'status' in error &&
+            error.status !== 400;
+          if (isUnexpected) {
             debug('pollError', { error });
           }
           return null;

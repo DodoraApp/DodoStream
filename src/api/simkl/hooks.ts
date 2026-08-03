@@ -5,7 +5,7 @@ import {
   useIntegrationSync,
 } from '@/api/integrations/use-integration-sync';
 import { type PinAuthProvider, usePinAuth } from '@/api/integrations/use-pin-auth';
-import { SIMKL_PIN_POLL_INTERVAL_MS, SIMKL_PIN_TIMEOUT_MS } from '@/constants/ui';
+import { SIMKL_PIN_TIMEOUT_S } from '@/constants/ui';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import type { SimklConnection, SimklSyncCursors } from '@/types/integrations';
 import type { SimklActivities } from '@/types/simkl';
@@ -42,8 +42,9 @@ export function useSimklPinAuth(onSuccess: (accessToken: string) => void) {
           deviceCode: pinData.device_code,
           verificationUrl: pinData.verification_url,
           pollConfig: {
-            intervalMs: SIMKL_PIN_POLL_INTERVAL_MS,
-            expiresMs: SIMKL_PIN_TIMEOUT_MS,
+            // Docs: respect the returned interval (5s) and expires_in (15 min).
+            intervalMs: (pinData.interval ?? 5) * 1000,
+            expiresMs: (pinData.expires_in ?? SIMKL_PIN_TIMEOUT_S) * 1000,
           },
         };
       },

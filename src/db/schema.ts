@@ -12,6 +12,30 @@ const streamTargetTypeColumn = (name: string) =>
 const watchStatusColumn = (name: string) =>
   text(name, { enum: ['watching', 'dismissed', 'completed'] as const });
 
+export const metaIds = sqliteTable(
+  'meta_ids',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    metaId: text('meta_id').notNull().unique(),
+    imdbId: text('imdb_id'),
+    tmdbId: text('tmdb_id'),
+    traktId: text('trakt_id'),
+    simklId: text('simkl_id'),
+    tvdbId: text('tvdb_id'),
+    kitsuId: text('kitsu_id'),
+    anilistId: text('anilist_id'),
+    malId: text('mal_id'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => [
+    index('meta_ids_imdb_idx').on(table.imdbId),
+    index('meta_ids_tmdb_idx').on(table.tmdbId),
+    index('meta_ids_trakt_idx').on(table.traktId),
+    index('meta_ids_simkl_idx').on(table.simklId),
+  ]
+);
+
 export const watchHistory = sqliteTable(
   'watch_history',
   {
@@ -105,7 +129,9 @@ export const syncQueue = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     profileId: text('profile_id').notNull(),
     provider: text('provider', { enum: ['simkl', 'trakt'] }).notNull(), // expandable for trakt, mal, etc.
-    action: text('action', { enum: ['remove_history', 'remove_watchlist'] }).notNull(),
+    action: text('action', {
+      enum: ['remove_history', 'remove_watchlist', 'hide_history', 'unhide_history'],
+    }).notNull(),
     metaId: text('meta_id').notNull(),
     videoId: text('video_id'), // Optional: for episode-specific removals
     type: contentTypeColumn('type').notNull(),

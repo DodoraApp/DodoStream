@@ -64,9 +64,9 @@ module.exports = [
       'max-lines-per-function': ['warn', { max: 220, skipComments: true, skipBlankLines: true }],
     },
   },
-  // Allow console in build scripts and the debug logger itself
+  // Allow console in build scripts, debug logger, and E2E tests
   {
-    files: ['plugins/**', 'src/utils/debug.ts'],
+    files: ['plugins/**', 'src/utils/debug.ts', 'scripts/sync-e2e/**'],
     rules: {
       'no-console': 'off',
     },

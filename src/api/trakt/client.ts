@@ -1,8 +1,10 @@
+import { getInstalledAppVersion } from '@/hooks/useAppInfo';
 import { TraktSyncCursors } from '@/types/integrations';
 import type {
   ListedMovieResponse,
   ListedShowResponse,
   TraktDeviceCodeResponse,
+  TraktHiddenShow,
   TraktHistoryRemoveResponse,
   TraktListRemoveResponse,
   TraktSyncItem,
@@ -14,12 +16,31 @@ import type {
 } from '@/types/trakt';
 import { createDebugLogger } from '@/utils/debug';
 
-import { TRAKT_CLIENT_ID, TRAKT_CLIENT_SECRET } from './config';
+import { TRAKT_APP_NAME, TRAKT_CLIENT_ID, TRAKT_CLIENT_SECRET } from './config';
 import { traktRateLimiter } from './rate-limiter';
 
 const debug = createDebugLogger('TraktClient');
 
 const BASE_URL = 'https://api.trakt.tv';
+const PAGE_LIMIT = 250;
+const MAX_PAGES = 500; // safety cap (~125k items)
+
+async function traktGetAll<T>(
+  path: string,
+  options: RequestInit & { token?: string } = {}
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const separator = path.includes('?') ? '&' : '?';
+    const batch = await traktFetch<T[]>(
+      `${path}${separator}page=${page}&limit=${PAGE_LIMIT}`,
+      options
+    );
+    all.push(...batch);
+    if (batch.length === 0) break;
+  }
+  return all;
+}
 
 export class TraktAPIError extends Error {
   status: number;
@@ -41,6 +62,7 @@ async function traktFetch<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'User-Agent': `${TRAKT_APP_NAME}/${getInstalledAppVersion()}`,
     'trakt-api-version': '2',
     'trakt-api-key': TRAKT_CLIENT_ID,
     ...(fetchOptions.headers as Record<string, string>),
@@ -118,15 +140,18 @@ export function getLastActivities(token: string): Promise<TraktSyncCursors> {
 }
 
 export function getWatchedMovies(token: string): Promise<TraktWatchedMovie[]> {
-  return traktFetch<TraktWatchedMovie[]>('/sync/watched/movies?extended=images', { token });
+  return traktGetAll<TraktWatchedMovie>('/sync/watched/movies?extended=images', { token });
 }
 
 export function getWatchedShows(token: string): Promise<TraktWatchedShow[]> {
-  return traktFetch<TraktWatchedShow[]>('/sync/watched/shows?extended=noseasons,images', { token });
+  return traktGetAll<TraktWatchedShow>('/sync/watched/shows?extended=noseasons,images', { token });
 }
 
 export function getWatchedShowsWithSeasons(token: string): Promise<TraktWatchedShow[]> {
-  return traktFetch<TraktWatchedShow[]>('/sync/watched/shows?extended=images', { token });
+  // Season progress now requires extended=progress (default/other extended
+  // values return no seasons since 2026-06-30). Images don't combine with
+  // progress, so poster enrichment is skipped for imported shows.
+  return traktGetAll<TraktWatchedShow>('/sync/watched/shows?extended=progress', { token });
 }
 
 export function postHistory(token: string, payload: TraktSyncItem): Promise<TraktSyncResponse> {
@@ -149,11 +174,15 @@ export function removeFromHistory(
 }
 
 export function getWatchlistMovies(token: string): Promise<ListedMovieResponse[]> {
-  return traktFetch<ListedMovieResponse[]>('/sync/watchlist/movies?extended=images', { token });
+  return traktGetAll<ListedMovieResponse>('/sync/watchlist/movies/rank/asc?extended=images', {
+    token,
+  });
 }
 
 export function getWatchlistShows(token: string): Promise<ListedShowResponse[]> {
-  return traktFetch<ListedShowResponse[]>('/sync/watchlist/shows?extended=images', { token });
+  return traktGetAll<ListedShowResponse>('/sync/watchlist/shows/rank/asc?extended=images', {
+    token,
+  });
 }
 
 export function postWatchlist(token: string, payload: TraktSyncItem): Promise<TraktSyncResponse> {
@@ -173,4 +202,8 @@ export function removeFromWatchlist(
     token,
     body: JSON.stringify(payload),
   });
+}
+
+export function getHiddenShows(token: string): Promise<TraktHiddenShow[]> {
+  return traktGetAll<TraktHiddenShow>('/users/hidden/progress_watched?type=show', { token });
 }

@@ -1,6 +1,7 @@
 import { imagesResponseSchema } from 'trakt-api/projects/api/src/contracts/_internal/response/imagesResponseSchema.ts';
 import type { z } from 'trakt-api/projects/api/src/contracts/_internal/z.ts';
 import type {
+  HiddenShowItemResponse,
   HistoryAddRequest,
   HistoryRemoveResponse,
   HistoryResponse,
@@ -48,3 +49,6 @@ export type TraktSyncShow = NonNullable<TraktSyncItem['shows']>[number];
 export type TraktSyncSeason = NonNullable<
   TraktSyncShow extends { seasons?: any } ? TraktSyncShow['seasons'] : never
 >[number];
+
+export type TraktShow = ShowResponse;
+export type TraktHiddenShow = HiddenShowItemResponse;
