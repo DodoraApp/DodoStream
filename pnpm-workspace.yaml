@@ -6,6 +6,7 @@ patchedDependencies:
   '@legendapp/list@3.0.0-beta.44': patches/@legendapp__list@3.0.0-beta.44.patch
 
 onlyBuiltDependencies:
-  - 'react-native-video'
   - 'better-sqlite3'
+  - 'react-native-video'
+
   - 'lefthook'
