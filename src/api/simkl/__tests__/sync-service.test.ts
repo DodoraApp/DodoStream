@@ -86,6 +86,7 @@ describe('simkl sync service', () => {
     mockCancelPendingSyncRemovals.mockReset();
     mockListSyncQueueForProvider.mockReset();
     mockDeleteFromSyncQueue.mockReset();
+    mockRemoveFromHistory.mockReset();
 
     mockGetActivities.mockResolvedValue({
       all: '2026-01-01T00:00:00.000Z',
@@ -669,6 +670,136 @@ describe('simkl sync service', () => {
         movies: [{ ids: { simkl: 991 }, to: 'plantowatch' }],
         shows: [{ ids: { simkl: 992 }, to: 'plantowatch' }],
       });
+    });
+
+    it('removes episode-level history entries from Simkl history', async () => {
+      // Arrange
+      mockListSyncQueueForProvider.mockResolvedValueOnce([
+        {
+          id: 'q-1',
+          action: 'remove_history',
+          metaId: 'show-10',
+          type: 'series',
+          videoId: 'show-10:1:2',
+          createdAt: Date.now(),
+        },
+      ]);
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert
+      expect(mockRemoveFromHistory).toHaveBeenCalledTimes(1);
+      expect(mockRemoveFromHistory).toHaveBeenCalledWith('token', {
+        movies: [],
+        shows: [
+          {
+            ids: { simkl: 10, imdb: 'tt10' },
+            seasons: [{ number: 1, episodes: [{ number: 2 }] }],
+          },
+        ],
+      });
+      expect(mockDeleteFromSyncQueue).toHaveBeenCalledWith(['q-1']);
+    });
+
+    it('removes meta-level history entries as bare shows', async () => {
+      // Arrange
+      mockListSyncQueueForProvider.mockResolvedValueOnce([
+        {
+          id: 'q-2',
+          action: 'remove_history',
+          metaId: 'show-10',
+          type: 'series',
+          videoId: null,
+          createdAt: Date.now(),
+        },
+      ]);
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert
+      expect(mockRemoveFromHistory).toHaveBeenCalledTimes(1);
+      expect(mockRemoveFromHistory).toHaveBeenCalledWith('token', {
+        movies: [],
+        shows: [{ ids: { simkl: 10, imdb: 'tt10' } }],
+      });
+      expect(mockDeleteFromSyncQueue).toHaveBeenCalledWith(['q-2']);
+    });
+
+    it('removes watchlist entries as bare library removals', async () => {
+      // Arrange
+      mockListSyncQueueForProvider.mockResolvedValueOnce([
+        {
+          id: 'q-3',
+          action: 'remove_watchlist',
+          metaId: 'movie-10',
+          type: 'movie',
+          videoId: null,
+          createdAt: Date.now(),
+        },
+        {
+          id: 'q-4',
+          action: 'remove_watchlist',
+          metaId: 'show-10',
+          type: 'series',
+          videoId: null,
+          createdAt: Date.now(),
+        },
+      ]);
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert
+      expect(mockRemoveFromHistory).toHaveBeenCalledTimes(1);
+      expect(mockRemoveFromHistory).toHaveBeenCalledWith('token', {
+        movies: [{ ids: { simkl: 10, imdb: 'tt10' } }],
+        shows: [{ ids: { simkl: 10, imdb: 'tt10' } }],
+      });
+      expect(mockDeleteFromSyncQueue).toHaveBeenCalledWith(['q-3', 'q-4']);
+    });
+
+    it('splits mixed removal queue by action', async () => {
+      // Arrange
+      mockListSyncQueueForProvider.mockResolvedValueOnce([
+        {
+          id: 'q-5',
+          action: 'remove_history',
+          metaId: 'show-10',
+          type: 'series',
+          videoId: 'show-10:1:2',
+          createdAt: Date.now(),
+        },
+        {
+          id: 'q-6',
+          action: 'remove_watchlist',
+          metaId: 'movie-10',
+          type: 'movie',
+          videoId: null,
+          createdAt: Date.now(),
+        },
+      ]);
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert
+      expect(mockRemoveFromHistory).toHaveBeenCalledTimes(2);
+      expect(mockRemoveFromHistory).toHaveBeenNthCalledWith(1, 'token', {
+        movies: [],
+        shows: [
+          {
+            ids: { simkl: 10, imdb: 'tt10' },
+            seasons: [{ number: 1, episodes: [{ number: 2 }] }],
+          },
+        ],
+      });
+      expect(mockRemoveFromHistory).toHaveBeenNthCalledWith(2, 'token', {
+        movies: [{ ids: { simkl: 10, imdb: 'tt10' } }],
+        shows: [],
+      });
+      expect(mockDeleteFromSyncQueue).toHaveBeenCalledWith(['q-5', 'q-6']);
     });
   });
 });

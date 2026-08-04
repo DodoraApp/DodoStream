@@ -247,6 +247,11 @@
     "reset_simkl_confirm_title": "Simkl-Synchronisation zurücksetzen",
     "reset_simkl_confirm_msg": "Bist du sicher, dass du deine Simkl-Verbindung und Synchronisations-Cursor für dieses Profil zurücksetzen möchtest? Du musst dein Simkl-Konto erneut verbinden.",
     "simkl_reset": "Simkl-Synchronisation zurückgesetzt",
+    "reset_trakt": "Trakt.tv-Synchronisation zurücksetzen",
+    "reset_trakt_desc": "Trakt.tv-Verbindung und Synchronisationsstatus für dieses Profil löschen",
+    "reset_trakt_confirm_title": "Trakt.tv-Synchronisation zurücksetzen",
+    "reset_trakt_confirm_msg": "Bist du sicher, dass du deine Trakt.tv-Verbindung und Synchronisations-Cursor für dieses Profil zurücksetzen möchtest? Du musst dein Trakt.tv-Konto erneut verbinden.",
+    "trakt_reset": "Trakt.tv-Synchronisation zurückgesetzt",
     "profile_data_notice": "Diese Aktionen betreffen nur das aktuell aktive Profil. Lokale Einstellungen und andere Profile bleiben unverändert."
   },
   "remoteControl": {
