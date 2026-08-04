@@ -49,6 +49,9 @@ importers:
       '@react-navigation/native':
         specifier: ^7.1.6
         version: 7.1.25(react-native-tvos@0.81.5-1)(react@19.1.0)
+      '@ronradtke/react-native-markdown-display':
+        specifier: ^9.0.3
+        version: 9.0.3(@expo/config-plugins@54.0.5)(@react-native/assets-registry@0.81.5)(expo-font@14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)
       '@shopify/restyle':
         specifier: ^2.4.5
         version: 2.4.5(react-native-tvos@0.81.5-1)(react@19.1.0)
@@ -148,9 +151,6 @@ importers:
       react-native-immersive-mode:
         specifier: ^2.0.2
         version: 2.0.2(react-native-tvos@0.81.5-1)
-      react-native-markdown-display:
-        specifier: ^7.0.2
-        version: 7.0.2(react-native-tvos@0.81.5-1)(react@19.1.0)
       react-native-nitro-http-server:
         specifier: ^1.8.1
         version: 1.8.1(react-native-nitro-modules@0.35.5(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)
@@ -2115,12 +2115,41 @@ packages:
       '@react-native-vector-icons/get-image':
         optional: true
 
+  '@react-native-vector-icons/common@13.0.1':
+    resolution: {integrity: sha512-UPC6L3tW5rXCjBn4kgw9RPURUILIg8tFpEY2uaYwU8aCjEHkywNCMcAO8+PvMCDkR6aICPeHYA0OXvMgrjsF4g==}
+    engines: {node: '>=20.19.0 <21.0.0 || >=22.0.0'}
+    hasBin: true
+    peerDependencies:
+      '@react-native-vector-icons/get-image': ^13.0.0
+      '@react-native/assets-registry': '*'
+      expo-font: '*'
+      react: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      '@react-native-vector-icons/get-image':
+        optional: true
+      '@react-native/assets-registry':
+        optional: true
+      expo-font:
+        optional: true
+
   '@react-native-vector-icons/lucide@12.4.0':
     resolution: {integrity: sha512-HaP3yV6uunDPTI01RDvxGTx7t1ihrJ5W+oWUvRd0cwQMyvT9BvUSrOctVfMzjQHlCF8XYMmJDtB1dBb1w0QW4Q==}
     engines: {node: '>= 18.0.0'}
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  '@react-native-vector-icons/material-design-icons@13.1.2':
+    resolution: {integrity: sha512-Qc8IQCxbnHOk8CvTAb+dLzYgRMbJOLiZ8Up7TRsNixY6EqwPx9/W3DeK5niKtNQ4dIfbALeYz41yyvDM7w7mag==}
+    engines: {node: '>= 18.0.0'}
+    peerDependencies:
+      '@expo/config-plugins': '>=10.0.0'
+      react: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      '@expo/config-plugins':
+        optional: true
 
   '@react-native/assets-registry@0.81.5':
     resolution: {integrity: sha512-705B6x/5Kxm1RKRvSv0ADYWm5JOnoiQ1ufW7h8uu2E6G9Of/eE6hP/Ivw3U5jI16ERqZxiKQwk34VJbB0niX9w==}
@@ -2364,6 +2393,12 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@ronradtke/react-native-markdown-display@9.0.3':
+    resolution: {integrity: sha512-JsuQku5NQ8kFt1Il7DJzbdQXfDmkGzsyYCFFuo9FpB3EkQ+Wt4ll9VbI4y9jicFBq0g0GR2RYd5EWr8ne26sXw==}
+    peerDependencies:
+      react: '>=16.2.0'
+      react-native: '>=0.50.4'
+
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
@@ -2584,6 +2619,9 @@ packages:
 
   '@types/parse-json@4.0.2':
     resolution: {integrity: sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw==}
+
+  '@types/prismjs@1.26.6':
+    resolution: {integrity: sha512-vqlvI7qlMvcCBbVe0AKAb4f97//Hy0EBTaiW8AalRnG/xAN5zOiWWyrNqNXeq8+KAuvRewjCVY1+IPxk4RdNYw==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -3618,9 +3656,6 @@ packages:
     resolution: {integrity: sha512-otxSQPw4lkOZWkHpB3zaEQs6gWYEsmX4xQF68ElXC/TWvGxGMSGOvoNbaLXm6/cS/fSfHtsEdw90y20PCd+sCA==}
     engines: {node: '>=10.13.0'}
 
-  entities@2.0.3:
-    resolution: {integrity: sha512-MyoZ0jgnLvB2X3Lg5HqpFmn1kybDiIfEQmKzTb5apr51Rb+T3KdmMiqa70T+bhGnyv7bQ6WMj2QMHpGMmlrUYQ==}
-
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
@@ -4192,6 +4227,10 @@ packages:
   find-up@7.0.0:
     resolution: {integrity: sha512-YyZM99iHrqLKjmt4LJDj58KI+fYyufRLBSYcqycxf//KpBk9FoewoGX0450m9nB44qrZnovzC2oeP5hUibxc/g==}
     engines: {node: '>=18'}
+
+  find-up@8.0.0:
+    resolution: {integrity: sha512-JGG8pvDi2C+JxidYdIwQDyS/CgcrIdh18cvgxcBge3wSHRQOrooMD3GlFBcmMJAN9M42SAZjDp5zv1dglJjwww==}
+    engines: {node: '>=20'}
 
   flat-cache@4.0.1:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
@@ -5051,8 +5090,8 @@ packages:
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
-  linkify-it@2.2.0:
-    resolution: {integrity: sha512-GnAl/knGn+i1U/wjBz3akz2stz+HrHLsxMwHQGofCDfPvlf+gDKN58UtfmUquTY4/MXeE2x7k19KQmeoZi94Iw==}
+  linkify-it@5.0.2:
+    resolution: {integrity: sha512-ONTm2jCMAVZjgQa/Fy1kScXsuOoF5NPTsoFBdE1KVIZ2vAh/r9+Bqo+0jINCBYnavTPQZz38QzFTme79ENoN3Q==}
 
   locate-path@5.0.0:
     resolution: {integrity: sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==}
@@ -5065,6 +5104,10 @@ packages:
   locate-path@7.2.0:
     resolution: {integrity: sha512-gvVijfZvn7R+2qyPX8mAuKcFGDf6Nc61GdvGafQsHL0sBIxfKzA+usWn4GFC/bk+QdwPUD4kWFJLhElipq+0VA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  locate-path@8.0.0:
+    resolution: {integrity: sha512-XT9ewWAC43tiAV7xDAPflMkG0qOPn2QjHqlgX8FOqmWa/rxnyYDulF9T0F7tRy1u+TVTmK/M//6VIOye+2zDXg==}
+    engines: {node: '>=20'}
 
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
@@ -5114,8 +5157,11 @@ packages:
   makeerror@1.0.12:
     resolution: {integrity: sha512-JmqCvUhmt43madlpFzG4BQzG2Z3m6tvQDNKdClZnO3VbIudJYmxsT0FNJMeiB2+JTSlTQTSbU8QdesVmwJcmLg==}
 
-  markdown-it@10.0.0:
-    resolution: {integrity: sha512-YWOP1j7UbDNz+TumYP1kpwnP0aEa711cJjrAQrzd0UXlbJfc5aAq0F/PZHjiioqDC1NKgvIMX+o+9Bk7yuM2dg==}
+  markdown-it-ins@4.0.0:
+    resolution: {integrity: sha512-sWbjK2DprrkINE4oYDhHdCijGT+MIDhEupjSHLXe5UXeVr5qmVxs/nTUVtgi0Oh/qtF+QKV0tNWDhQBEPxiMew==}
+
+  markdown-it@14.3.0:
+    resolution: {integrity: sha512-RCEsPjR+sr0x+AuYp601tKTkgFG4YEPLCzHST3cQ/fhlJkqAkz1L2/Qbp1j9qw5SBwQHFBoW8+hoN5xssOF0Tw==}
     hasBin: true
 
   marky@1.3.0:
@@ -5128,8 +5174,8 @@ packages:
   mdn-data@2.0.14:
     resolution: {integrity: sha512-dn6wd0uw5GsdswPFfsgMp5NSB0/aDe6fK94YJV/AJDYXL6HVLWBsxeq7js7Ad+mU2K9LAlwpk6kN2D5mwCPVow==}
 
-  mdurl@1.0.1:
-    resolution: {integrity: sha512-/sKlQJCBYVY9Ers9hqzKou4H6V5UWc/M59TH2dvkt+84itfnq7uFOMLpOiOS4ujvHP4etln18fmIxA5R5fll0g==}
+  mdurl@2.1.0:
+    resolution: {integrity: sha512-1+HBaOx0zi/dQWht8rNv9MYf9qqpqL/kxI0hXImU6Y547zM6Sni8BQibt7ifgMcYtQg41ao3Ivd6cnSM86inpg==}
 
   memoize-one@5.2.1:
     resolution: {integrity: sha512-zYiwtZUcYyXKo/np96AGZAckk+FWWsUdJ3cHGGmld7+AhvcWmQyGCYUh1hc4Q/pkOhb65dQR/pqCyK0cOaHz4Q==}
@@ -5590,6 +5636,11 @@ packages:
     resolution: {integrity: sha512-9uBdv/B4EefsuAL+pWqueZyZS2Ba+LxfFeQ9DN14HU4bN8bhaxKdkpjpB6fs9+pSjIBu+FXQHImEg8j/Lw0+vA==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
 
+  prism-react-renderer@2.4.1:
+    resolution: {integrity: sha512-ey8Ls/+Di31eqzUxC46h8MksNuGx/n0AAC8uKpwFau4RPDYLuE3EXTp8N8G2vX2N7UC/+IXeNUnlWBGGcAG+Ig==}
+    peerDependencies:
+      react: '>=16.0.0'
+
   proc-log@4.2.0:
     resolution: {integrity: sha512-g8+OnU/L2v+wyiVK+D5fA34J7EH8jZ8DDlvwhRCMxmMj7UCBvxiO1mGeN+36JXIKF4zevU4kRBd8lVgG9vLelA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
@@ -5616,6 +5667,10 @@ packages:
 
   pump@3.0.4:
     resolution: {integrity: sha512-VS7sjc6KR7e1ukRFhQSY5LM2uBWAUPiOPa/A3mkKmiMwSmRFUITt0xuj+/lesgnCv+dPIEYlkzrcyXgquIHMcA==}
+
+  punycode.js@2.3.1:
+    resolution: {integrity: sha512-uxFIHU0YlHYhDQtV4R9J6a52SLx28BCjT+4ieh7IGbgwVJWO+km431c4yRlREUAsAmt/uMjQUyQHNEPf0M39CA==}
+    engines: {node: '>=6'}
 
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -5729,12 +5784,6 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
-
-  react-native-markdown-display@7.0.2:
-    resolution: {integrity: sha512-Mn4wotMvMfLAwbX/huMLt202W5DsdpMO/kblk+6eUs55S57VVNni1gzZCh5qpznYLjIQELNh50VIozEfY6fvaQ==}
-    peerDependencies:
-      react: '>=16.2.0'
-      react-native: '>=0.50.4'
 
   react-native-nitro-buffer@0.2.2:
     resolution: {integrity: sha512-mE8jD03ol2u7mAa4qcD9mRy1G6jcweI5B0JQbqcCl8U+FvTdbMW9s7tNlg1AWZkxdJLm4rBX9zl8yTlXdSNMbA==}
@@ -6490,8 +6539,8 @@ packages:
     resolution: {integrity: sha512-LbBDqdIC5s8iROCUjMbW1f5dJQTEFB1+KO9ogbvlb3nm9n4YHa5p4KTvFPWvh2Hs8gZMBuiB1/8+pdfe/tDPug==}
     hasBin: true
 
-  uc.micro@1.0.6:
-    resolution: {integrity: sha512-8Y75pvTYkLJW2hWQHXxoqRgV7qb9B+9vFEtidML+7koHUFapnVJAZ6cKs+Qjz5Aw3aZWHMC6u0wJE3At+nSGwA==}
+  uc.micro@2.1.0:
+    resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
 
   unbox-primitive@1.1.0:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
@@ -6522,6 +6571,10 @@ packages:
 
   unicorn-magic@0.1.0:
     resolution: {integrity: sha512-lRfVq8fE8gz6QMBuDM6a+LO3IAzTi05H6gCVaUpir2E1Rwpo4ZUog45KpNXKC/Mn3Yb9UDuHumeFTo9iV/D9FQ==}
+    engines: {node: '>=18'}
+
+  unicorn-magic@0.3.0:
+    resolution: {integrity: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==}
     engines: {node: '>=18'}
 
   unique-string@2.0.0:
@@ -8929,6 +8982,17 @@ snapshots:
       react: 19.1.0
       react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
 
+  '@react-native-vector-icons/common@13.0.1(@react-native/assets-registry@0.81.5)(expo-font@14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)':
+    dependencies:
+      find-up: 8.0.0
+      picocolors: 1.1.1
+      plist: 3.1.0
+      react: 19.1.0
+      react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
+    optionalDependencies:
+      '@react-native/assets-registry': 0.81.5
+      expo-font: 14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0)
+
   '@react-native-vector-icons/lucide@12.4.0(react-native-tvos@0.81.5-1)(react@19.1.0)':
     dependencies:
       '@react-native-vector-icons/common': 12.4.0(react-native-tvos@0.81.5-1)(react@19.1.0)
@@ -8936,6 +9000,18 @@ snapshots:
       react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
     transitivePeerDependencies:
       - '@react-native-vector-icons/get-image'
+
+  '@react-native-vector-icons/material-design-icons@13.1.2(@expo/config-plugins@54.0.5)(@react-native/assets-registry@0.81.5)(expo-font@14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)':
+    dependencies:
+      '@react-native-vector-icons/common': 13.0.1(@react-native/assets-registry@0.81.5)(expo-font@14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)
+      react: 19.1.0
+      react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
+    optionalDependencies:
+      '@expo/config-plugins': 54.0.5
+    transitivePeerDependencies:
+      - '@react-native-vector-icons/get-image'
+      - '@react-native/assets-registry'
+      - expo-font
 
   '@react-native/assets-registry@0.81.5': {}
 
@@ -9209,6 +9285,22 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.60.2':
     optional: true
 
+  '@ronradtke/react-native-markdown-display@9.0.3(@expo/config-plugins@54.0.5)(@react-native/assets-registry@0.81.5)(expo-font@14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)':
+    dependencies:
+      '@react-native-vector-icons/material-design-icons': 13.1.2(@expo/config-plugins@54.0.5)(@react-native/assets-registry@0.81.5)(expo-font@14.0.12(expo@54.0.36)(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0)
+      css-to-react-native: 3.2.0
+      markdown-it: 14.3.0
+      markdown-it-ins: 4.0.0
+      prism-react-renderer: 2.4.1(react@19.1.0)
+      react: 19.1.0
+      react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
+      react-native-fit-image: 1.5.5
+    transitivePeerDependencies:
+      - '@expo/config-plugins'
+      - '@react-native-vector-icons/get-image'
+      - '@react-native/assets-registry'
+      - expo-font
+
   '@rtsao/scc@1.1.0': {}
 
   '@shopify/restyle@2.4.5(react-native-tvos@0.81.5-1)(react@19.1.0)':
@@ -9407,6 +9499,8 @@ snapshots:
 
   '@types/parse-json@4.0.2':
     optional: true
+
+  '@types/prismjs@1.26.6': {}
 
   '@types/react-dom@19.2.3(@types/react@19.1.17)':
     dependencies:
@@ -10454,8 +10548,6 @@ snapshots:
       graceful-fs: 4.2.11
       tapable: 2.3.3
 
-  entities@2.0.3: {}
-
   entities@4.5.0: {}
 
   entities@6.0.1: {}
@@ -11296,6 +11388,11 @@ snapshots:
       locate-path: 7.2.0
       path-exists: 5.0.0
       unicorn-magic: 0.1.0
+
+  find-up@8.0.0:
+    dependencies:
+      locate-path: 8.0.0
+      unicorn-magic: 0.3.0
 
   flat-cache@4.0.1:
     dependencies:
@@ -12361,9 +12458,9 @@ snapshots:
 
   lines-and-columns@1.2.4: {}
 
-  linkify-it@2.2.0:
+  linkify-it@5.0.2:
     dependencies:
-      uc.micro: 1.0.6
+      uc.micro: 2.1.0
 
   locate-path@5.0.0:
     dependencies:
@@ -12374,6 +12471,10 @@ snapshots:
       p-locate: 5.0.0
 
   locate-path@7.2.0:
+    dependencies:
+      p-locate: 6.0.0
+
+  locate-path@8.0.0:
     dependencies:
       p-locate: 6.0.0
 
@@ -12419,13 +12520,16 @@ snapshots:
     dependencies:
       tmpl: 1.0.5
 
-  markdown-it@10.0.0:
+  markdown-it-ins@4.0.0: {}
+
+  markdown-it@14.3.0:
     dependencies:
-      argparse: 1.0.10
-      entities: 2.0.3
-      linkify-it: 2.2.0
-      mdurl: 1.0.1
-      uc.micro: 1.0.6
+      argparse: 2.0.1
+      entities: 4.5.0
+      linkify-it: 5.0.2
+      mdurl: 2.1.0
+      punycode.js: 2.3.1
+      uc.micro: 2.1.0
 
   marky@1.3.0: {}
 
@@ -12433,7 +12537,7 @@ snapshots:
 
   mdn-data@2.0.14: {}
 
-  mdurl@1.0.1: {}
+  mdurl@2.1.0: {}
 
   memoize-one@5.2.1: {}
 
@@ -12988,6 +13092,12 @@ snapshots:
       ansi-styles: 5.2.0
       react-is: 18.3.1
 
+  prism-react-renderer@2.4.1(react@19.1.0):
+    dependencies:
+      '@types/prismjs': 1.26.6
+      clsx: 2.1.1
+      react: 19.1.0
+
   proc-log@4.2.0: {}
 
   progress@2.0.3: {}
@@ -13019,6 +13129,8 @@ snapshots:
     dependencies:
       end-of-stream: 1.4.5
       once: 1.4.0
+
+  punycode.js@2.3.1: {}
 
   punycode@2.3.1: {}
 
@@ -13136,15 +13248,6 @@ snapshots:
     dependencies:
       react: 19.1.0
       react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
-
-  react-native-markdown-display@7.0.2(react-native-tvos@0.81.5-1)(react@19.1.0):
-    dependencies:
-      css-to-react-native: 3.2.0
-      markdown-it: 10.0.0
-      prop-types: 15.8.1
-      react: 19.1.0
-      react-native: react-native-tvos@0.81.5-1(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.28.5)(@types/react@19.1.17)(react-native-tvos@0.81.5-1)(react@19.1.0)
-      react-native-fit-image: 1.5.5
 
   react-native-nitro-buffer@0.2.2(react-native-nitro-modules@0.35.5(react-native-tvos@0.81.5-1)(react@19.1.0))(react-native-tvos@0.81.5-1)(react@19.1.0):
     dependencies:
@@ -14054,7 +14157,7 @@ snapshots:
 
   ua-parser-js@1.0.41: {}
 
-  uc.micro@1.0.6: {}
+  uc.micro@2.1.0: {}
 
   unbox-primitive@1.1.0:
     dependencies:
@@ -14079,6 +14182,8 @@ snapshots:
   unicode-property-aliases-ecmascript@2.2.0: {}
 
   unicorn-magic@0.1.0: {}
+
+  unicorn-magic@0.3.0: {}
 
   unique-string@2.0.0:
     dependencies:

@@ -1,6 +1,6 @@
 import React, { FC, useMemo } from 'react';
-import Markdown from 'react-native-markdown-display';
 
+import Markdown from '@ronradtke/react-native-markdown-display';
 import { useTheme } from '@shopify/restyle';
 
 import { Theme } from '@/theme/theme';
