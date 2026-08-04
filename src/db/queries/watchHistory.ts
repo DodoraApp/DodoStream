@@ -192,7 +192,12 @@ export async function upsertWatchProgress(params: {
     progressSeconds: params.progressSeconds,
     durationSeconds: params.durationSeconds,
     status,
-    source: params.source ?? 'internal',
+    // Local playback claims the row as 'internal'. Provider imports
+    // (source: 'trakt' | 'simkl') must never re-own an existing row, or
+    // provider cleanup could delete locally-watched history.
+    ...(params.source === undefined || params.source === 'internal'
+      ? { source: 'internal' as const }
+      : {}),
     ...(params.keepDismissed ? {} : { dismissedAt: null }),
     lastWatchedAt: now,
     updatedAt: now,

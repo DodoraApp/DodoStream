@@ -33,6 +33,7 @@
     "test:e2e:sync:simkl": "jest --config ./scripts/sync-e2e/jest-e2e.config.js --testNamePattern=Simkl"
   },
   "dependencies": {
+    "@anatine/zod-openapi": "2.2.8",
     "@d11/react-native-fast-image": "^8.13.0",
     "@expo-google-fonts/outfit": "^0.4.3",
     "@expo-google-fonts/poppins": "^0.4.1",
@@ -92,6 +93,7 @@
     "@eslint/js": "^9.39.1",
     "@react-native-tvos/config-tv": "^0.1.4",
     "@testing-library/react-native": "^13.3.3",
+    "@ts-rest/core": "3.52.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^25.0.9",
     "@types/react": "~19.1.10",
@@ -114,7 +116,8 @@
     "trakt-api": "github:trakt/trakt-api",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "zod": "3.25.76"
   },
   "expo": {
     "install": {

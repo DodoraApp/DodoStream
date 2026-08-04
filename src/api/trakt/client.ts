@@ -37,7 +37,9 @@ async function traktGetAll<T>(
       options
     );
     all.push(...batch);
-    if (batch.length === 0) break;
+    // Trakt returns `limit` items per page except the last one, so a short
+    // batch means we're done; avoids one extra empty-page request.
+    if (batch.length < PAGE_LIMIT) break;
   }
   return all;
 }

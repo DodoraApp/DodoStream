@@ -74,7 +74,9 @@ export async function addToMyList(
       set: {
         type,
         addedAt: now,
-        ...(source ? { source } : {}),
+        // Keep the row's original source. Provider imports must never re-own
+        // an existing row (e.g. 'internal' added by the user), otherwise the
+        // provider's cleanup would delete locally-added items.
       },
     });
 

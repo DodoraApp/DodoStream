@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm';
-import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
 
 import { db, initializeDatabase } from '@/db/client';
 import { metaIds } from '@/db/schema';
@@ -32,16 +32,12 @@ export async function upsertMetaIds(params: UpsertMetaIdsParams): Promise<void> 
     updatedAt: now,
   };
 
+  const columns = getTableColumns(metaIds);
   for (const [key, value] of Object.entries(externalIds)) {
-    if (value !== undefined) {
+    if (value !== undefined && key in columns) {
       // Preserve existing non-null value; only update if the column is null OR the new value is non-null.
-      const col = (metaIds as Record<string, { name: string }>)[key] as
-        | { name: string }
-        | undefined;
-      if (col) {
-        set[key] =
-          sql`COALESCE(excluded.${sql.identifier(col.name)}, ${metaIds[key as keyof typeof metaIds]})`;
-      }
+      const col = columns[key as keyof typeof columns];
+      set[key] = sql`COALESCE(excluded.${sql.identifier(col.name)}, ${col})`;
     }
   }
 

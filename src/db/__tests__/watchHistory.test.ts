@@ -400,6 +400,106 @@ describe('watchHistory queries (integration)', () => {
 
       expect(queue).toHaveLength(0);
     });
+
+    describe('source ownership', () => {
+      it('preserves an internal row when a provider re-imports it', async () => {
+        await upsertWatchProgress({
+          profileId: testProfileId,
+          metaId: 'tt-src-internal',
+          videoId: undefined,
+          type: 'movie',
+          progressSeconds: 500,
+          durationSeconds: 1000,
+        });
+
+        // Trakt import re-imports the same item; must not re-own the row
+        await upsertWatchProgress({
+          profileId: testProfileId,
+          metaId: 'tt-src-internal',
+          videoId: undefined,
+          type: 'movie',
+          progressSeconds: 100,
+          durationSeconds: 100,
+          source: 'trakt',
+        });
+
+        const [result] = await db
+          .select()
+          .from(watchHistory)
+          .where(
+            and(
+              eq(watchHistory.profileId, testProfileId),
+              eq(watchHistory.metaId, 'tt-src-internal')
+            )
+          );
+
+        expect(result.source).toBe('internal');
+      });
+
+      it('does not let a provider re-own a row claimed by another provider', async () => {
+        await upsertWatchProgress({
+          profileId: testProfileId,
+          metaId: 'tt-src-simkl',
+          videoId: undefined,
+          type: 'movie',
+          progressSeconds: 100,
+          durationSeconds: 100,
+          source: 'simkl',
+        });
+
+        await upsertWatchProgress({
+          profileId: testProfileId,
+          metaId: 'tt-src-simkl',
+          videoId: undefined,
+          type: 'movie',
+          progressSeconds: 100,
+          durationSeconds: 100,
+          source: 'trakt',
+        });
+
+        const [result] = await db
+          .select()
+          .from(watchHistory)
+          .where(
+            and(eq(watchHistory.profileId, testProfileId), eq(watchHistory.metaId, 'tt-src-simkl'))
+          );
+
+        expect(result.source).toBe('simkl');
+      });
+
+      it('claims a provider-owned row as internal on local playback', async () => {
+        await upsertWatchProgress({
+          profileId: testProfileId,
+          metaId: 'tt-src-localclaim',
+          videoId: undefined,
+          type: 'movie',
+          progressSeconds: 100,
+          durationSeconds: 100,
+          source: 'trakt',
+        });
+
+        await upsertWatchProgress({
+          profileId: testProfileId,
+          metaId: 'tt-src-localclaim',
+          videoId: undefined,
+          type: 'movie',
+          progressSeconds: 600,
+          durationSeconds: 1000,
+        });
+
+        const [result] = await db
+          .select()
+          .from(watchHistory)
+          .where(
+            and(
+              eq(watchHistory.profileId, testProfileId),
+              eq(watchHistory.metaId, 'tt-src-localclaim')
+            )
+          );
+
+        expect(result.source).toBe('internal');
+      });
+    });
   });
 
   describe('dismissFromContinueWatching', () => {
