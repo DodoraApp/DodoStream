@@ -27,4 +27,6 @@ expo-env.d.ts
 
 # Generated web UI embed
 src/api/local-server/web-ui.ts
+src/constants/whats-new/_registry.ts
+
 .e2e-tokens.json

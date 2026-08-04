@@ -50,7 +50,13 @@
     "ui_scale": "UI-Skalierung",
     "language": "Sprache",
     "select_language": "Sprache auswählen",
-    "system_default": "Systemstandard"
+    "system_default": "Systemstandard",
+    "whats_new_heading": "Neuigkeiten",
+    "whats_new_on_startup": "Beim Start anzeigen",
+    "whats_new_on_startup_desc": "Neue Funktionen beim App-Start anzeigen",
+    "whats_new_dismiss": "Schließen",
+    "whats_new_next": "Weiter",
+    "whats_new_page": "{{current}} / {{total}}"
   },
   "playback": {
     "title": "Wiedergabe",

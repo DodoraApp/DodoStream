@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 
 import { Button } from '@/components/basic/Button';
+import { MarkdownText } from '@/components/basic/MarkdownText';
 import { Modal } from '@/components/basic/Modal';
 import { Box, Text } from '@/theme/theme';
 
@@ -48,9 +49,7 @@ export function DismissableModal({
               </Text>
             ) : null}
           </Box>
-          <Text variant="body" color="mainForeground">
-            {body}
-          </Text>
+          <MarkdownText content={body} />
         </ScrollView>
 
         <Box
