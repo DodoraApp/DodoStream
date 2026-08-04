@@ -57,7 +57,9 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
 
   const { setLastSyncAt, setSyncStatus } = useIntegrationsStore();
   const lastSyncAt = useIntegrationsStore((state) =>
-    config.profileId ? (state.lastSyncAt[config.profileId] ?? undefined) : undefined
+    config.profileId
+      ? (state.lastSyncAt[config.profileId]?.[config.provider] ?? undefined)
+      : undefined
   );
 
   // Always-accurate config reference to avoid stale closures
@@ -102,7 +104,7 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
       }
 
       if (importOk && exportOk) {
-        setLastSyncAt(cfg.profileId, Date.now());
+        setLastSyncAt(cfg.profileId, cfg.provider, Date.now());
         setSyncStatus(cfg.profileId, cfg.provider, 'success');
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['my-list-db'] }),

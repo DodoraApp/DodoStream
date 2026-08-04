@@ -549,7 +549,7 @@ export async function runExport(profileId: string, token: string): Promise<boole
   try {
     debug('exportStart', { profileId });
 
-    const lastSyncAt = useIntegrationsStore.getState().lastSyncAt[profileId] || 0;
+    const lastSyncAt = useIntegrationsStore.getState().lastSyncAt[profileId]?.simkl || 0;
 
     // 0. Export Removals (Sync Queue)
     const queueItems = await listSyncQueueForProvider(profileId, 'simkl');
