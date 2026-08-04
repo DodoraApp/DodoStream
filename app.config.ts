@@ -82,6 +82,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       'expo-libvlc-player',
       './plugins/withRemoteUIBuild',
+      './plugins/withWhatsNewBuild',
       './plugins/withReactNativeTVOSPnpmFix',
       './plugins/withAndroidBuildOptimizations',
       './plugins/withAndroidConfigChanges',

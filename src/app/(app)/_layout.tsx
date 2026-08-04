@@ -5,6 +5,7 @@ import { useTheme } from '@shopify/restyle';
 import { Redirect, Stack, useRouter } from 'expo-router';
 
 import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
+import { WhatsNewModal } from '@/components/layout/WhatsNewModal';
 import { ProfileSelector } from '@/components/profile/ProfileSelector';
 import { useAppSettingsStore } from '@/store/app-settings.store';
 import { useProfileStore } from '@/store/profile.store';
@@ -41,6 +42,7 @@ export default function AppLayout() {
   return (
     <>
       <GithubReleaseModal enabled={releaseCheckOnStartup} />
+      <WhatsNewModal />
       <Stack
         screenOptions={{
           headerStyle: {

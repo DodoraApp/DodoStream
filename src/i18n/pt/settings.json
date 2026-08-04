@@ -50,7 +50,13 @@
     "ui_scale": "Escala da Interface",
     "language": "Idioma",
     "select_language": "Selecionar Idioma",
-    "system_default": "Predefinição do Sistema"
+    "system_default": "Predefinição do Sistema",
+    "whats_new_heading": "Novidades",
+    "whats_new_on_startup": "Mostrar ao iniciar",
+    "whats_new_on_startup_desc": "Mostrar novas funcionalidades ao iniciar a aplicação",
+    "whats_new_dismiss": "Fechar",
+    "whats_new_next": "Próximo",
+    "whats_new_page": "{{current}} / {{total}}"
   },
   "playback": {
     "title": "Reprodução",

@@ -7,7 +7,9 @@ import type { PickerItem } from '@/components/basic/PickerModal';
 import { SliderInput } from '@/components/basic/SliderInput';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
+import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { AVAILABLE_LANGUAGES } from '@/i18n';
+import { useAppSettingsStore } from '@/store/app-settings.store';
 import { useUIStore } from '@/store/ui.store';
 import { Box, Text } from '@/theme/theme';
 import {
@@ -31,7 +33,8 @@ export const UISettingsContent: FC = memo(() => {
   const setThemePresetId = useUIStore((state) => state.setThemePresetId);
   const setScalingFactor = useUIStore((state) => state.setScalingFactor);
   const setLanguage = useUIStore((state) => state.setLanguage);
-
+  const showWhatsNewOnStartup = useAppSettingsStore((state) => state.showWhatsNewOnStartup);
+  const setShowWhatsNewOnStartup = useAppSettingsStore((state) => state.setShowWhatsNewOnStartup);
   const { preset } = useAppTheme();
 
   /** Picker items for theme selection */
@@ -86,6 +89,12 @@ export const UISettingsContent: FC = memo(() => {
     return `${Math.round(value * 100)}%`;
   }, []);
 
+  const handleWhatsNewToggle = useCallback(
+    (value: boolean) => {
+      setShowWhatsNewOnStartup(value);
+    },
+    [setShowWhatsNewOnStartup]
+  );
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <Box paddingVertical="m" paddingHorizontal="m" gap="l">
@@ -130,6 +139,18 @@ export const UISettingsContent: FC = memo(() => {
             maximumValue={SCALING_FACTOR_MAX}
             step={SCALING_FACTOR_STEP}
             formatValue={formatScalingValue}
+          />
+        </SettingsCard>
+
+        <SettingsCard title={t('ui.whats_new_heading')}>
+          <Text variant="caption" color="textSecondary">
+            {t('ui.whats_new_on_startup_desc')}
+          </Text>
+
+          <SettingsSwitch
+            label={t('ui.whats_new_on_startup')}
+            value={showWhatsNewOnStartup}
+            onValueChange={handleWhatsNewToggle}
           />
         </SettingsCard>
       </Box>

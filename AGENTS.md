@@ -34,6 +34,11 @@ APP_VARIANT=prod pnpm start         # Production build
 EXPO_TV=1 pnpm start                # Enable TV mode
 ```
 
+### Simulators & Emulators
+
+- **NEVER boot, launch, build for, or drive iOS simulators / Android emulators on your own** (this includes `pnpm ios`, `pnpm android`, `xcrun simctl`, `adb`, etc.).
+- If a simulator/emulator run is needed, stop and ask the user first — they will run it or explicitly approve.
+
 > CI order: `expo install --check` → `pnpm tsc` → `pnpm lint` → `pnpm test`
 
 ## 3. Directory Structure
@@ -278,4 +283,21 @@ Effects are for synchronizing with **external systems** only.
 1. **Analyze:** Read related files and existing patterns.
 2. **Plan:** Check for existing components/utilities before creating new ones.
 3. **Implement:** Follow strict typing, theme usage, and conventions above.
-4. **Verify:** Run `pnpm lint` and `pnpm test` before finishing.
+4. **Changelog:** If the change is a noteworthy user-facing feature, create a What's New entry (see §17).
+5. **Verify:** Run `pnpm lint` and `pnpm test` before finishing.
+
+## 17. What's New Entries
+
+Create a What's New entry when a change ships a **noteworthy user-facing feature**: a major new **setting**, a new **integration** or **option**, or **heavy improvements** to an existing flow. Skip minor bug fixes, internal refactors, and cosmetic tweaks.
+
+Scaffold the entry (do not create the file by hand):
+
+```bash
+pnpm new-whats-new "vX.Y.Z" "Feature Name"
+```
+
+This creates `src/constants/whats-new/NNNN-vX.Y.Z-slug.md` with a template (see `scripts/new-whats-new.mjs`). Then:
+
+1. **Write the content:** Replace the template with a short markdown description — what changed, how to use it, any notes or limitations.
+2. **Ask the user for a picture:** If the feature is noteworthy, ask the user to provide a nice image (screenshot or illustration) and save it next to the markdown as `NNNN-vX.Y.Z-slug.png` (`.webp` and `.jpg` are also supported; see `scripts/generate-whats-new-registry.mjs`). The modal picks it up automatically.
+3. **Rebuild the registry:** Run `pnpm generate-whats-new` so `src/constants/whats-new/_registry.ts` stays in sync.

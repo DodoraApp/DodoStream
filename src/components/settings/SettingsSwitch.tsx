@@ -23,6 +23,7 @@ interface SettingsSwitchProps {
   blockUp?: boolean;
   /** Block focus from going down */
   blockDown?: boolean;
+  flex?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export const SettingsSwitch = memo(function SettingsSwitch({
   onValueChange,
   disabled = false,
   viewRef,
+  flex = true,
 }: SettingsSwitchProps) {
   const theme = useTheme<Theme>();
   return (
@@ -51,7 +53,7 @@ export const SettingsSwitch = memo(function SettingsSwitch({
         gap="m"
         borderRadius="m"
         padding="s">
-        <Box flex={1} gap="xs">
+        <Box flex={flex ? 1 : undefined} gap="xs">
           <Text variant="body">{label}</Text>
           {description && (
             <Text variant="caption" color="textSecondary">

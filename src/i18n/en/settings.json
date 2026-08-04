@@ -50,7 +50,13 @@
     "ui_scale": "UI Scale",
     "language": "Language",
     "select_language": "Select Language",
-    "system_default": "System Default"
+    "system_default": "System Default",
+    "whats_new_heading": "What's New",
+    "whats_new_on_startup": "Show at startup",
+    "whats_new_on_startup_desc": "Display new features when the app launches",
+    "whats_new_dismiss": "Dismiss",
+    "whats_new_next": "Next",
+    "whats_new_page": "{{current}} / {{total}}"
   },
   "playback": {
     "title": "Playback",

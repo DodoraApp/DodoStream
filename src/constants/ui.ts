@@ -74,3 +74,7 @@ export const INTEGRATION_AUTO_SYNC_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
 // Simkl PIN auth
 export const SIMKL_PIN_TIMEOUT_S = 15 * 60; // 15 minutes in seconds
+
+// What's New modal proportions (fractions of window, applied in WhatsNewModal)
+export const WHATS_NEW_MODAL_HEIGHT_FACTOR = 0.7;
+export const WHATS_NEW_IMAGE_HEIGHT_FACTOR = 0.7;
