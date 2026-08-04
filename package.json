@@ -79,7 +79,7 @@
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
-    "react-native-video": "DodoraApp/react-native-video#e9017e60e07474ec22e78819c1e29ab23d7b348a",
+    "react-native-video": "DodoraApp/react-native-video#80f6b874182a0abf0bd386d7a1d22d5183af5fca",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "0.5.1",
     "zustand": "^4.5.1"
@@ -117,17 +117,6 @@
         "react-native"
       ]
     }
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "react-native-tvos@0.81.5-1": "patches/react-native-tvos.patch",
-      "@legendapp/list@3.0.0-beta.44": "patches/@legendapp__list@3.0.0-beta.44.patch"
-    },
-    "onlyBuiltDependencies": [
-      "better-sqlite3",
-      "react-native-video",
-      "lefthook"
-    ]
   },
   "packageManager": "pnpm@10.28.0",
   "private": true
