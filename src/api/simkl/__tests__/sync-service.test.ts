@@ -784,6 +784,29 @@ describe('simkl sync service', () => {
       expect(mockDeleteFromSyncQueue).toHaveBeenCalledWith(['q-2']);
     });
 
+    it('skips malformed episode videoIds instead of removing the whole show', async () => {
+      // Arrange
+      mockListSyncQueueForProvider.mockResolvedValueOnce([
+        {
+          id: 'q-bad',
+          action: 'remove_history',
+          metaId: 'show-10',
+          type: 'series',
+          videoId: 'show-10', // unparseable — not 'imdbId:season:episode'
+          createdAt: Date.now(),
+        },
+      ]);
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert
+      // A malformed videoId must not degrade into a bare-show removal (which
+      // deletes the entire show from Simkl's library).
+      expect(mockRemoveFromHistory).not.toHaveBeenCalled();
+      expect(mockDeleteFromSyncQueue).toHaveBeenCalledWith(['q-bad']);
+    });
+
     it('removes watchlist entries as bare library removals', async () => {
       // Arrange
       mockListSyncQueueForProvider.mockResolvedValueOnce([

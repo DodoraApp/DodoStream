@@ -73,9 +73,7 @@ export const EpisodeItem = memo(
               }}
             />
 
-            {!!isFinished && (
-              <CompletedBadge mode="overlay" showSimklLogo={historyItem?.source === 'simkl'} />
-            )}
+            {!!isFinished && <CompletedBadge mode="overlay" source={historyItem?.source} />}
 
             {!isFinished && clampedProgressRatio > 0 && (
               <Box position="absolute" left={0} right={0} bottom={0}>
