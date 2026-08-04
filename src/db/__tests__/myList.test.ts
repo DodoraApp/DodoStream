@@ -18,6 +18,7 @@ import { upsertMetaCache } from '../queries/metaCache';
 import {
   addToMyList,
   type DbMyListItem,
+  listExportableMyListForProfile,
   listMyListForProfile,
   removeFromMyList,
   removeProfileMyList,
@@ -346,6 +347,68 @@ describe('myList queries (integration)', () => {
 
       expect(item?.metaName).toBeUndefined();
       expect(item?.imageUrl).toBeUndefined();
+    });
+  });
+
+  describe('listExportableMyListForProfile', () => {
+    it('returns all sources when no excludeSource is given', async () => {
+      await addToMyList(testProfileId, 'tt-exp-internal', 'movie');
+      await addToMyList(testProfileId, 'tt-exp-simkl', 'movie', undefined, 'simkl');
+      await addToMyList(testProfileId, 'tt-exp-trakt', 'movie', undefined, 'trakt');
+
+      const results = await listExportableMyListForProfile(testProfileId);
+
+      expect(results.map((r: DbMyListItem) => r.id).sort()).toEqual([
+        'tt-exp-internal',
+        'tt-exp-simkl',
+        'tt-exp-trakt',
+      ]);
+    });
+
+    it('excludes a provider source when excludeSource is given', async () => {
+      await addToMyList(testProfileId, 'tt-exp-internal', 'movie');
+      await addToMyList(testProfileId, 'tt-exp-simkl', 'movie', undefined, 'simkl');
+      await addToMyList(testProfileId, 'tt-exp-trakt', 'movie', undefined, 'trakt');
+
+      const results = await listExportableMyListForProfile(testProfileId, {
+        excludeSource: 'simkl',
+      });
+
+      const ids = results.map((r: DbMyListItem) => r.id);
+      expect(ids).toContain('tt-exp-internal');
+      expect(ids).toContain('tt-exp-trakt');
+      expect(ids).not.toContain('tt-exp-simkl');
+    });
+
+    it('combines excludeSource with minAddedAt', async () => {
+      const cutoff = Date.now() - 1000;
+      await addToMyList(testProfileId, 'tt-exp-old-simkl', 'movie', cutoff - 5000, 'simkl');
+      await addToMyList(testProfileId, 'tt-exp-new-simkl', 'movie', cutoff + 5000, 'simkl');
+      await addToMyList(testProfileId, 'tt-exp-new-internal', 'movie', cutoff + 5000);
+
+      const results = await listExportableMyListForProfile(testProfileId, {
+        minAddedAt: cutoff,
+        excludeSource: 'simkl',
+      });
+
+      const ids = results.map((r: DbMyListItem) => r.id);
+      expect(ids).toEqual(['tt-exp-new-internal']);
+    });
+
+    it('keeps the other provider source for cross-provider export', async () => {
+      await addToMyList(testProfileId, 'tt-exp-trakt', 'movie', undefined, 'trakt');
+
+      // Simkl export must still see Trakt-imported items (they are not on Simkl).
+      const simklExport = await listExportableMyListForProfile(testProfileId, {
+        excludeSource: 'simkl',
+      });
+      expect(simklExport.map((r: DbMyListItem) => r.id)).toEqual(['tt-exp-trakt']);
+
+      // Trakt export must NOT see them.
+      const traktExport = await listExportableMyListForProfile(testProfileId, {
+        excludeSource: 'trakt',
+      });
+      expect(traktExport).toEqual([]);
     });
   });
 

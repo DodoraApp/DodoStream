@@ -351,7 +351,7 @@ describe('Trakt Sync Service', () => {
       );
       expect(mockListExportableMyList).toHaveBeenCalledWith(
         'profile1',
-        expect.objectContaining({ minAddedAt: 0 })
+        expect.objectContaining({ minAddedAt: 0, excludeSource: 'trakt' })
       );
     });
 
@@ -369,8 +369,43 @@ describe('Trakt Sync Service', () => {
       );
       expect(mockListExportableMyList).toHaveBeenCalledWith(
         'profile1',
-        expect.objectContaining({ minAddedAt: 5000 })
+        expect.objectContaining({ minAddedAt: 5000, excludeSource: 'trakt' })
       );
+    });
+
+    it('never re-exports Trakt-imported watchlist items', async () => {
+      mockListSyncQueue.mockResolvedValue([]);
+      mockListExportableWatchHistory.mockResolvedValue([]);
+      mockListExportableMyList.mockResolvedValue([
+        { id: 'tt123', type: 'movie', source: 'trakt' },
+        { id: 'tmdb:series:456', type: 'series', source: 'trakt' },
+      ]);
+
+      await runExport('profile1', 'token');
+
+      // Trakt-imported items are already on Trakt's watchlist; re-posting them
+      // every sync is a pointless round-trip that burns Trakt rate limits.
+      expect(mockPostWatchlist).not.toHaveBeenCalled();
+    });
+
+    it('still exports internal and other-provider watchlist items', async () => {
+      mockListSyncQueue.mockResolvedValue([]);
+      mockListExportableWatchHistory.mockResolvedValue([]);
+      mockListExportableMyList.mockResolvedValue([
+        { id: 'tt_user', type: 'movie', source: 'internal' },
+        { id: 'tt_simkl', type: 'movie', source: 'simkl' },
+        { id: 'tt_trakt', type: 'movie', source: 'trakt' },
+      ]);
+
+      await runExport('profile1', 'token');
+
+      expect(mockPostWatchlist).toHaveBeenCalledWith('token', {
+        movies: [
+          { ids: { imdb: 'tt_user', tmdb: undefined } },
+          { ids: { imdb: 'tt_simkl', tmdb: undefined } },
+        ],
+        shows: [],
+      });
     });
   });
 });

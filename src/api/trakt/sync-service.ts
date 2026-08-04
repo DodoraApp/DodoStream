@@ -384,14 +384,26 @@ export async function runExport(profileId: string, token: string): Promise<boole
     }
 
     // 2. Export Watchlist
+    // Items imported FROM Trakt (source 'trakt') are already on Trakt's
+    // watchlist; re-posting them on every sync is a pointless round-trip that
+    // burns Trakt rate limits. The query filters them out; the loop below
+    // guards the same invariant.
     const watchlistItems = await listExportableMyListForProfile(profileId, {
       minAddedAt: lastSyncAt,
+      excludeSource: 'trakt',
     });
 
     debug('exportWatchlistItems', { count: watchlistItems.length });
 
     const watchlistPayload: TraktSyncItem = { movies: [], shows: [] };
     for (const item of watchlistItems) {
+      // Invariant: never re-push items that came from Trakt — they already
+      // exist in Trakt's watchlist. See runExport's excludeSource comment.
+      if (item.source === 'trakt') {
+        debug('exportWatchlistItemSkippedRoundTrip', { metaId: item.id });
+        continue;
+      }
+
       const ids = buildTraktIdsFromMetaId(item.id);
       if (!ids.imdb && !ids.tmdb) continue;
       const requestIds = toRequestIds(ids);

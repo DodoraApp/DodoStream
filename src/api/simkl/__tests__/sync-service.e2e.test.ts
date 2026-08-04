@@ -399,6 +399,44 @@ describe('Simkl Sync Service - Comprehensive E2E', () => {
       );
     });
 
+    it('does not push Simkl-imported watchlist items back to Simkl', async () => {
+      // Full-sync scenario from the bug report: import pulls the user's Simkl
+      // library into My List (source 'simkl'), then the export must NOT re-post
+      // them as plantowatch (that demotes watching/hold statuses on Simkl).
+      mockListExportableWatchHistory.mockResolvedValue([
+        { id: 'tt_local_done', type: 'movie', status: 'completed', source: 'internal' },
+      ]);
+      mockListExportableMyList.mockResolvedValue([
+        { id: 'tt_imported_watching', type: 'series', source: 'simkl' },
+        { id: 'tt_imported_hold', type: 'series', source: 'simkl' },
+        { id: 'tt_imported_ptw', type: 'movie', source: 'simkl' },
+        { id: 'tt_user_added', type: 'movie', source: 'internal' },
+      ]);
+      mockResolveSimklIds.mockImplementation((id) => {
+        if (id === 'tt_local_done') return Promise.resolve({ imdb: 'tt_local_done' });
+        if (id === 'tt_user_added') return Promise.resolve({ imdb: 'tt_user_added' });
+        return Promise.resolve(null);
+      });
+
+      await runExport('profile-1', 'token');
+
+      // History: only the locally-completed movie is pushed.
+      expect(mockPostHistory).toHaveBeenCalledWith(
+        'token',
+        expect.objectContaining({
+          movies: [expect.objectContaining({ ids: { imdb: 'tt_local_done' } })],
+        })
+      );
+      // Watchlist: only the user-added item is pushed; imported ones stay put.
+      expect(mockPostWatchlist).toHaveBeenCalledWith(
+        'token',
+        expect.objectContaining({
+          movies: [expect.objectContaining({ ids: { imdb: 'tt_user_added' } })],
+          shows: [],
+        })
+      );
+    });
+
     it('exports removals from sync queue', async () => {
       mockListSyncQueueForProvider.mockResolvedValue([
         {

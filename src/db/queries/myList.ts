@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
 import { db, initializeDatabase } from '@/db/client';
 import { metaCache, myList } from '@/db/schema';
@@ -94,7 +94,7 @@ export async function countMyListForProfile(profileId: string): Promise<number> 
 
 export async function listExportableMyListForProfile(
   profileId: string,
-  options?: { minAddedAt?: number }
+  options?: { minAddedAt?: number; excludeSource?: MyListSource }
 ): Promise<DbMyListItem[]> {
   await initializeDatabase();
 
@@ -102,6 +102,10 @@ export async function listExportableMyListForProfile(
 
   if (options?.minAddedAt) {
     conditions.push(sql`${myList.addedAt} > ${options.minAddedAt}`);
+  }
+
+  if (options?.excludeSource) {
+    conditions.push(ne(myList.source, options.excludeSource));
   }
 
   const rows = await db

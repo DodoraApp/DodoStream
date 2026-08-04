@@ -602,8 +602,12 @@ export async function runExport(profileId: string, token: string): Promise<boole
     }
 
     // 2. Export Watchlist (My List)
+    // Items imported FROM Simkl (source 'simkl') are already on Simkl; re-posting
+    // them as 'plantowatch' would demote their real status (watching/hold). The
+    // query filters them out; buildWatchlistPayload guards the same invariant.
     const myListItems = await listExportableMyListForProfile(profileId, {
       minAddedAt: lastSyncAt,
+      excludeSource: 'simkl',
     });
 
     debug('exportWatchlistItems', { count: myListItems.length });
@@ -632,6 +636,14 @@ async function buildWatchlistPayload(
   const shows: WatchlistItemPayload[] = [];
 
   for (const item of items) {
+    // Invariant: never re-push items that came from Simkl — they already exist
+    // there, and unconditionally sending them to 'plantowatch' demotes
+    // watching/hold statuses. See runExport's excludeSource comment.
+    if (item.source === 'simkl') {
+      debug('exportWatchlistItemSkippedRoundTrip', { metaId: item.id });
+      continue;
+    }
+
     const ids = await resolveSimklIds(item.id, item.type);
     if (!ids || Object.keys(ids).length === 0) {
       debug('exportWatchlistItemNotFound', { metaId: item.id });

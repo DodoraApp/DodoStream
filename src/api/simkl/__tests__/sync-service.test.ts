@@ -672,6 +672,63 @@ describe('simkl sync service', () => {
       });
     });
 
+    it('requests the My List query without Simkl-imported items', async () => {
+      // Arrange
+      mockListExportableMyList.mockResolvedValueOnce([]);
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert — the query must exclude items that already live on Simkl.
+      expect(mockListExportableMyList).toHaveBeenCalledWith(
+        'profile-1',
+        expect.objectContaining({ excludeSource: 'simkl' })
+      );
+    });
+
+    it('never re-exports Simkl-imported watchlist items (no round-trip demotion)', async () => {
+      // Arrange — what a query bug/regression would return: imported items
+      // with source 'simkl' (e.g. watching/hold on Simkl).
+      mockListExportableMyList.mockResolvedValueOnce([
+        { id: 'movie-simkl', type: 'movie', addedAt: Date.now(), source: 'simkl' },
+        { id: 'show-simkl', type: 'series', addedAt: Date.now(), source: 'simkl' },
+      ]);
+      mockResolveSimklIds.mockResolvedValue({ simkl: 1, imdb: 'tt1' });
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert — posting them as 'plantowatch' would demote watching/hold.
+      expect(mockPostWatchlist).not.toHaveBeenCalled();
+    });
+
+    it('still exports internal and other-provider watchlist items', async () => {
+      // Arrange — a Trakt-imported item is not on Simkl yet, so it must be pushed.
+      mockListExportableMyList.mockResolvedValueOnce([
+        { id: 'movie-internal', type: 'movie', addedAt: Date.now(), source: 'internal' },
+        { id: 'movie-trakt', type: 'movie', addedAt: Date.now(), source: 'trakt' },
+        { id: 'movie-simkl', type: 'movie', addedAt: Date.now(), source: 'simkl' },
+      ]);
+      mockResolveSimklIds.mockImplementation((id) => {
+        if (id === 'movie-internal') return Promise.resolve({ simkl: 1 });
+        if (id === 'movie-trakt') return Promise.resolve({ simkl: 2 });
+        if (id === 'movie-simkl') return Promise.resolve({ simkl: 3 });
+        return Promise.resolve(null);
+      });
+
+      // Act
+      await runExport('profile-1', 'token');
+
+      // Assert
+      expect(mockPostWatchlist).toHaveBeenCalledWith('token', {
+        movies: [
+          { ids: { simkl: 1 }, to: 'plantowatch' },
+          { ids: { simkl: 2 }, to: 'plantowatch' },
+        ],
+        shows: [],
+      });
+    });
+
     it('removes episode-level history entries from Simkl history', async () => {
       // Arrange
       mockListSyncQueueForProvider.mockResolvedValueOnce([
