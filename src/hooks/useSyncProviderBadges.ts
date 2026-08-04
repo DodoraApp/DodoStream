@@ -26,7 +26,7 @@ export function useSyncProviderBadges(): SyncProviderBadge[] {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const simkl = useSimklConnection(activeProfileId ?? undefined);
   const lastSyncAt = useIntegrationsStore((state) =>
-    activeProfileId ? state.lastSyncAt[activeProfileId] : undefined
+    activeProfileId ? state.lastSyncAt[activeProfileId]?.simkl : undefined
   );
   const simklSyncStatus = useIntegrationsStore((state) =>
     activeProfileId ? state.syncStatus[activeProfileId]?.simkl : undefined

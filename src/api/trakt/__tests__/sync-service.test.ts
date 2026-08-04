@@ -335,5 +335,42 @@ describe('Trakt Sync Service', () => {
         shows: [{ ids: { imdb: undefined, tmdb: 456 } }],
       });
     });
+
+    it("ignores another provider's watermark for the export cutoff", async () => {
+      mockListSyncQueue.mockResolvedValue([]);
+      mockListExportableWatchHistory.mockResolvedValue([]);
+      mockListExportableMyList.mockResolvedValue([]);
+      // A prior Simkl sync must not suppress Trakt's first export.
+      useIntegrationsStore.setState({ lastSyncAt: { profile1: { simkl: Date.now() } } });
+
+      await runExport('profile1', 'token');
+
+      expect(mockListExportableWatchHistory).toHaveBeenCalledWith(
+        'profile1',
+        expect.objectContaining({ minLastWatchedAt: 0 })
+      );
+      expect(mockListExportableMyList).toHaveBeenCalledWith(
+        'profile1',
+        expect.objectContaining({ minAddedAt: 0 })
+      );
+    });
+
+    it('uses the trakt-specific watermark as the export cutoff', async () => {
+      mockListSyncQueue.mockResolvedValue([]);
+      mockListExportableWatchHistory.mockResolvedValue([]);
+      mockListExportableMyList.mockResolvedValue([]);
+      useIntegrationsStore.setState({ lastSyncAt: { profile1: { trakt: 5000 } } });
+
+      await runExport('profile1', 'token');
+
+      expect(mockListExportableWatchHistory).toHaveBeenCalledWith(
+        'profile1',
+        expect.objectContaining({ minLastWatchedAt: 5000 })
+      );
+      expect(mockListExportableMyList).toHaveBeenCalledWith(
+        'profile1',
+        expect.objectContaining({ minAddedAt: 5000 })
+      );
+    });
   });
 });

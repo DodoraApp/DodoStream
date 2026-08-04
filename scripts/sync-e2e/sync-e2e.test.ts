@@ -890,7 +890,7 @@ describe('Trakt', () => {
       });
 
       expect(await traktRunExport(PROFILE_ID, traktToken)).toBe(true);
-      useIntegrationsStore.setState({ lastSyncAt: { [PROFILE_ID]: Date.now() } });
+      useIntegrationsStore.setState({ lastSyncAt: { [PROFILE_ID]: { trakt: Date.now() } } });
       expect(await traktRunExport(PROFILE_ID, traktToken)).toBe(true);
 
       const remoteMovies = await traktClient.getWatchedMovies(traktToken);
@@ -1845,7 +1845,7 @@ describe('Simkl', () => {
       });
 
       expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
-      useIntegrationsStore.setState({ lastSyncAt: { [PROFILE_ID]: Date.now() } });
+      useIntegrationsStore.setState({ lastSyncAt: { [PROFILE_ID]: { simkl: Date.now() } } });
       expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
 
       const remoteItems = await simklClient.getAllItems(simklToken, 'movies', undefined, 'full');

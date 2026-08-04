@@ -18,7 +18,7 @@ const debug = createDebugLogger('IntegrationsStore');
 
 interface IntegrationsState {
   settings: Record<string, ProfileIntegrationSettings>;
-  lastSyncAt: Record<string, number>;
+  lastSyncAt: Record<string, Partial<Record<IntegrationProvider, number>>>;
   syncStatus: Partial<Record<string, Partial<Record<IntegrationProvider, IntegrationSyncStatus>>>>;
 
   connectSimkl: (profileId: string, connection: SimklConnection, syncMode: SyncMode) => void;
@@ -34,7 +34,7 @@ interface IntegrationsState {
     refreshToken: string,
     expiresAt: number
   ) => void;
-  setLastSyncAt: (profileId: string, timestamp: number) => void;
+  setLastSyncAt: (profileId: string, provider: IntegrationProvider, timestamp: number) => void;
   setSyncStatus: (
     profileId: string,
     provider: IntegrationProvider,
@@ -230,10 +230,13 @@ export const useIntegrationsStore = create<IntegrationsState>()(
         });
       },
 
-      setLastSyncAt: (profileId, timestamp) => {
-        debug('setLastSyncAt', { profileId, timestamp });
+      setLastSyncAt: (profileId, provider, timestamp) => {
+        debug('setLastSyncAt', { profileId, provider, timestamp });
         set((state) => ({
-          lastSyncAt: { ...state.lastSyncAt, [profileId]: timestamp },
+          lastSyncAt: {
+            ...state.lastSyncAt,
+            [profileId]: { ...state.lastSyncAt[profileId], [provider]: timestamp },
+          },
         }));
       },
 
@@ -252,13 +255,14 @@ export const useIntegrationsStore = create<IntegrationsState>()(
     }),
     {
       name: 'integrations-registry',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       migrate: (persistedState: any, version: number) => {
-        if (version === 0 && persistedState && typeof persistedState === 'object') {
+        if (persistedState && typeof persistedState === 'object') {
           const state = persistedState as any;
 
-          if (state.settings) {
+          // v0 → v1: normalize Simkl sync cursor strings to object cursors
+          if (version === 0 && state.settings) {
             for (const profileId in state.settings) {
               const simkl = state.settings[profileId]?.simkl;
               const cursors = simkl?.connection?.syncCursors;
@@ -268,6 +272,24 @@ export const useIntegrationsStore = create<IntegrationsState>()(
                     cursors[key] = { all: cursors[key] };
                   }
                 }
+              }
+            }
+          }
+
+          // v1 → v2: key lastSyncAt by provider. The flat profile-level value
+          // belongs to whichever provider is currently connected (mutual
+          // exclusion guarantees at most one). If none is connected, drop it —
+          // a fresh full export is the safe default.
+          if (version <= 1 && state.lastSyncAt) {
+            for (const profileId in state.lastSyncAt) {
+              const value = state.lastSyncAt[profileId];
+              if (typeof value !== 'number') continue;
+              if (state.settings?.[profileId]?.simkl?.connection) {
+                state.lastSyncAt[profileId] = { simkl: value };
+              } else if (state.settings?.[profileId]?.trakt?.connection) {
+                state.lastSyncAt[profileId] = { trakt: value };
+              } else {
+                delete state.lastSyncAt[profileId];
               }
             }
           }
