@@ -143,6 +143,27 @@ const withAndroidBuildOptimizations: ConfigPlugin = (config) => {
         }
       }
 
+      // Step 4: Raise the Gradle daemon memory limits. The RN template default
+      // (2GiB heap / 512MiB metaspace) is too small for this project: lint workers
+      // run out of metaspace and fail `lintVitalAnalyzeRelease` (pre-existing,
+      // e.g. `:react-native-video:lintVitalAnalyzeRelease > Metaspace` in local builds).
+      const gradlePropertiesPath = path.join(androidRoot, 'gradle.properties');
+      if (fs.existsSync(gradlePropertiesPath)) {
+        let gradleProperties = fs.readFileSync(gradlePropertiesPath, 'utf8');
+        const jvmArgsLine = 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g';
+        if (!gradleProperties.includes('org.gradle.jvmargs=')) {
+          gradleProperties += `\n${jvmArgsLine}\n`;
+          fs.writeFileSync(gradlePropertiesPath, gradleProperties, 'utf8');
+          console.log('✅ Added org.gradle.jvmargs to gradle.properties');
+        } else if (!gradleProperties.includes(jvmArgsLine)) {
+          gradleProperties = gradleProperties.replace(/^org\.gradle\.jvmargs=.*$/m, jvmArgsLine);
+          fs.writeFileSync(gradlePropertiesPath, gradleProperties, 'utf8');
+          console.log('✅ Raised org.gradle.jvmargs in gradle.properties');
+        } else {
+          console.log('ℹ️  org.gradle.jvmargs already configured');
+        }
+      }
+
       return config;
     },
   ]);
