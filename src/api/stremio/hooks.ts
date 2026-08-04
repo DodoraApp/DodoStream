@@ -272,6 +272,21 @@ function getSearchableCatalogs(addon: InstalledAddon) {
 }
 
 /**
+ * One searchable catalog's search results, grouped by catalog.
+ * Each element of {@link useSearchCatalogs}'s `data` array.
+ */
+export interface SearchCatalogResult {
+  manifestUrl: string;
+  addonName: string;
+  catalogType: string;
+  catalogId: string;
+  catalogName: string;
+  metas: MetaPreview[];
+  isLoading: boolean;
+  isError: boolean;
+}
+
+/**
  * Hook to search across all addons that support search
  * Returns grouped results by catalog instead of deduplicated flat list
  * @param query - The search query string
@@ -316,7 +331,7 @@ export function useSearchCatalogs(query: string, enabled: boolean = true) {
   });
 
   // Group results by catalog
-  const catalogResults = results
+  const catalogResults: SearchCatalogResult[] = results
     .map((result, index) => {
       const catalog = searchableCatalogs[index];
       return {
