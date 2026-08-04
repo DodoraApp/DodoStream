@@ -40,7 +40,7 @@ interface IntegrationsState {
     provider: IntegrationProvider,
     status: IntegrationSyncStatus
   ) => void;
-  clearProfileIntegrations: (profileId: string) => void;
+  clearProviderIntegration: (profileId: string, provider: IntegrationProvider) => void;
 }
 
 export const useIntegrationsStore = create<IntegrationsState>()(
@@ -220,13 +220,33 @@ export const useIntegrationsStore = create<IntegrationsState>()(
         });
       },
 
-      clearProfileIntegrations: (profileId) => {
-        debug('clearProfileIntegrations', { profileId });
+      clearProviderIntegration: (profileId, provider) => {
+        debug('clearProviderIntegration', { profileId, provider });
         set((state) => {
-          const { [profileId]: _removed, ...rest } = state.settings;
-          const { [profileId]: _removedSync, ...restSync } = state.lastSyncAt;
-          const { [profileId]: _removedStatus, ...restStatus } = state.syncStatus;
-          return { settings: rest, lastSyncAt: restSync, syncStatus: restStatus };
+          const settings = { ...state.settings };
+          const profile = settings[profileId];
+          if (profile) {
+            const { [provider]: _removed, ...rest } = profile;
+            settings[profileId] = rest;
+          }
+
+          const lastSyncAt = { ...state.lastSyncAt };
+          const profileSync = lastSyncAt[profileId];
+          if (profileSync) {
+            const { [provider]: _removedSync, ...restSync } = profileSync;
+            if (Object.keys(restSync).length > 0) lastSyncAt[profileId] = restSync;
+            else delete lastSyncAt[profileId];
+          }
+
+          const syncStatus = { ...state.syncStatus };
+          const profileStatus = syncStatus[profileId];
+          if (profileStatus) {
+            const { [provider]: _removedStatus, ...restStatus } = profileStatus;
+            if (Object.keys(restStatus).length > 0) syncStatus[profileId] = restStatus;
+            else delete syncStatus[profileId];
+          }
+
+          return { settings, lastSyncAt, syncStatus };
         });
       },
 

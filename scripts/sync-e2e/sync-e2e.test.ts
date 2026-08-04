@@ -1972,6 +1972,113 @@ describe('Simkl', () => {
       expect(epNumbers).toContain(2);
     });
 
+    it('export: series watchlist removal removes bare show from remote', async () => {
+      if (!simklToken) return;
+      setupSimklProfile(simklToken);
+      // Seed a series in My List and export it to the remote watchlist.
+      await myListQueries.addToMyList(
+        PROFILE_ID,
+        BREAKING_BAD_ID,
+        'series',
+        Date.now() - 10_000,
+        'internal'
+      );
+      expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
+
+      let remoteItems = await simklClient.getAllItems(simklToken, 'shows', undefined, 'full');
+      let bb = (remoteItems?.shows ?? []).find((s) => s.show?.ids?.imdb === BREAKING_BAD_ID);
+      expect(bb).toBeDefined();
+
+      // Removing from My List queues a bare (no videoId) remove_watchlist entry;
+      // the export must remove the show from the library entirely.
+      await myListQueries.removeFromMyList(PROFILE_ID, BREAKING_BAD_ID);
+      expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
+
+      remoteItems = await simklClient.getAllItems(simklToken, 'shows', undefined, 'full');
+      bb = (remoteItems?.shows ?? []).find((s) => s.show?.ids?.imdb === BREAKING_BAD_ID);
+      expect(bb).toBeUndefined();
+
+      const queue = store.syncQueue.filter(
+        (q) => q.profileId === PROFILE_ID && q.provider === 'simkl'
+      );
+      expect(queue).toHaveLength(0);
+    });
+
+    it('export: meta-level series history removal removes whole show', async () => {
+      if (!simklToken) return;
+      setupSimklProfile(simklToken);
+      await watchHistoryQueries.upsertWatchProgress({
+        profileId: PROFILE_ID,
+        metaId: BREAKING_BAD_ID,
+        videoId: `${BREAKING_BAD_ID}:1:1`,
+        type: 'series',
+        source: 'internal',
+        progressSeconds: 100,
+        durationSeconds: 100,
+        lastWatchedAt: Date.now() - 10_000,
+      });
+      expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
+
+      let remoteItems = await simklClient.getAllItems(simklToken, 'shows', undefined, 'full');
+      let bb = (remoteItems?.shows ?? []).find((s) => s.show?.ids?.imdb === BREAKING_BAD_ID);
+      expect(bb).toBeDefined();
+
+      // Clearing the whole show from local history queues a bare remove_history
+      // entry; the export must remove the show from the library entirely.
+      await watchHistoryQueries.removeWatchHistoryMeta(PROFILE_ID, BREAKING_BAD_ID);
+      expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
+
+      remoteItems = await simklClient.getAllItems(simklToken, 'shows', undefined, 'full');
+      bb = (remoteItems?.shows ?? []).find((s) => s.show?.ids?.imdb === BREAKING_BAD_ID);
+      expect(bb).toBeUndefined();
+    });
+
+    it('export: mixed removal queue processes history and watchlist removals in one sync', async () => {
+      if (!simklToken) return;
+      setupSimklProfile(simklToken);
+      // Seed one history item and one watchlist item, both exported to remote.
+      await watchHistoryQueries.upsertWatchProgress({
+        profileId: PROFILE_ID,
+        metaId: THE_WIRE_ID,
+        videoId: `${THE_WIRE_ID}:1:1`,
+        type: 'series',
+        source: 'internal',
+        progressSeconds: 100,
+        durationSeconds: 100,
+        lastWatchedAt: Date.now() - 10_000,
+      });
+      await myListQueries.addToMyList(
+        PROFILE_ID,
+        INCEPTION_ID,
+        'movie',
+        Date.now() - 10_000,
+        'internal'
+      );
+      expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
+
+      // Remove both locally before the next sync: the queue now holds a
+      // remove_history and a remove_watchlist entry that must both be
+      // processed by the same export run.
+      await watchHistoryQueries.removeWatchHistoryMeta(PROFILE_ID, THE_WIRE_ID);
+      await myListQueries.removeFromMyList(PROFILE_ID, INCEPTION_ID);
+      expect(await simklRunExport(PROFILE_ID, simklToken)).toBe(true);
+
+      const remoteShows = await simklClient.getAllItems(simklToken, 'shows', undefined, 'full');
+      const wire = (remoteShows?.shows ?? []).find((s) => s.show?.ids?.imdb === THE_WIRE_ID);
+      expect(wire).toBeUndefined();
+
+      const remoteMovies = await simklClient.getAllItems(simklToken, 'movies', undefined, 'full');
+      const inception = (remoteMovies?.movies ?? []).find(
+        (m) => m.movie?.ids?.imdb === INCEPTION_ID
+      );
+      expect(inception).toBeUndefined();
+
+      const queue = store.syncQueue.filter(
+        (q) => q.profileId === PROFILE_ID && q.provider === 'simkl'
+      );
+      expect(queue).toHaveLength(0);
+    });
+
     it('import: myList addedAt preserved from added_to_watchlist_at', async () => {
       if (!simklToken) return;
       setupSimklProfile(simklToken);

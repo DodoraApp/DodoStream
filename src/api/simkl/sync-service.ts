@@ -556,15 +556,25 @@ export async function runExport(profileId: string, token: string): Promise<boole
     const newRemovals = queueItems.filter((q) => q.createdAt > lastSyncAt);
 
     if (newRemovals.length > 0) {
-      debug('exportRemovals', { count: newRemovals.length });
-      const removalPayload = await buildRemovalPayload(newRemovals);
+      // History removals: per-episode entries, or whole-show for meta-level ones.
+      const historyRemovals = newRemovals.filter((r) => r.action === 'remove_history');
+      if (historyRemovals.length > 0) {
+        const removalPayload = await buildRemovalPayload(historyRemovals);
+        if (removalPayload.movies.length > 0 || removalPayload.shows.length > 0) {
+          await removeFromHistory(token, removalPayload);
+          debug('exportRemovalsComplete', { count: historyRemovals.length });
+        }
+      }
 
-      if (removalPayload.movies.length > 0 || removalPayload.shows.length > 0) {
-        await removeFromHistory(token, removalPayload);
-        debug('exportRemovalsComplete', {
-          movies: removalPayload.movies.length,
-          shows: removalPayload.shows.length,
-        });
+      // Watchlist removals: bare IDs. Simkl has no watchlist-only removal
+      // endpoint; bare items are removed from the library entirely.
+      const watchlistRemovals = newRemovals.filter((r) => r.action === 'remove_watchlist');
+      if (watchlistRemovals.length > 0) {
+        const removalPayload = await buildRemovalPayload(watchlistRemovals);
+        if (removalPayload.movies.length > 0 || removalPayload.shows.length > 0) {
+          await removeFromHistory(token, removalPayload);
+          debug('exportWatchlistRemovalsComplete', { count: watchlistRemovals.length });
+        }
       }
 
       // Cleanup processed items
@@ -664,9 +674,10 @@ async function buildRemovalPayload(
 
     const show = ensureMapShow(showsMap, item.metaId, payloadIds);
 
-    if (!item.videoId) continue;
-
-    const episodeRef = parseVideoId(item.videoId);
+    // No videoId = whole-show removal (meta-level history removal or watchlist
+    // removal): the bare show (no seasons) removes the item from the Simkl
+    // library entirely — Simkl's only removal semantic.
+    const episodeRef = item.videoId ? parseVideoId(item.videoId) : null;
     if (!episodeRef) continue;
 
     const season = ensureMapSeason(show.seasons, episodeRef.season);

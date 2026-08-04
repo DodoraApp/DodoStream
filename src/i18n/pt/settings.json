@@ -247,6 +247,11 @@
     "reset_simkl_confirm_title": "Repor Sincronização Simkl",
     "reset_simkl_confirm_msg": "Tens a certeza que queres repor a tua ligação Simkl e cursores de sincronização para este perfil? Terás de reconectar a tua conta Simkl.",
     "simkl_reset": "Sincronização Simkl Reposta",
+    "reset_trakt": "Repor Sincronização Trakt.tv",
+    "reset_trakt_desc": "Limpa a ligação Trakt.tv e o estado de sincronização para este perfil",
+    "reset_trakt_confirm_title": "Repor Sincronização Trakt.tv",
+    "reset_trakt_confirm_msg": "Tens a certeza que queres repor a tua ligação Trakt.tv e cursores de sincronização para este perfil? Terás de reconectar a tua conta Trakt.tv.",
+    "trakt_reset": "Sincronização Trakt.tv Reposta",
     "profile_data_notice": "Estas ações afetam apenas o perfil atualmente ativo. As definições locais e outros perfis não serão alterados."
   },
   "remoteControl": {

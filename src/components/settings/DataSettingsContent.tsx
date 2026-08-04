@@ -11,6 +11,7 @@ import { useIntegrationsStore } from '@/store/integrations.store';
 import { useProfileStore } from '@/store/profile.store';
 import { useToastStore } from '@/store/toast.store';
 import { Box, Text } from '@/theme/theme';
+import type { IntegrationProvider } from '@/types/integrations';
 
 export interface DataSettingsContentProps {
   /** Whether to wrap content in ScrollView (default: true) */
@@ -22,7 +23,7 @@ export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrolla
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const { clearHistory } = useWatchHistoryActions();
   const { clearList } = useMyListActions();
-  const clearProfileIntegrations = useIntegrationsStore((state) => state.clearProfileIntegrations);
+  const clearProviderIntegration = useIntegrationsStore((state) => state.clearProviderIntegration);
   const addToast = useToastStore((state) => state.addToast);
 
   const handleClearHistory = useCallback(() => {
@@ -59,24 +60,31 @@ export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrolla
     ]);
   }, [clearList, addToast, t]);
 
-  const handleResetSimkl = useCallback(() => {
-    Alert.alert(t('data.reset_simkl_confirm_title'), t('data.reset_simkl_confirm_msg'), [
-      { text: t('common:cancel'), style: 'cancel' },
-      {
-        text: t('common:reset'),
-        style: 'destructive',
-        onPress: () => {
-          if (activeProfileId) {
-            clearProfileIntegrations(activeProfileId);
-            addToast({
-              title: t('data.simkl_reset'),
-              preset: 'success',
-            });
-          }
-        },
-      },
-    ]);
-  }, [activeProfileId, clearProfileIntegrations, addToast, t]);
+  const handleResetProvider = useCallback(
+    (provider: IntegrationProvider) => {
+      Alert.alert(
+        t(`data.reset_${provider}_confirm_title`),
+        t(`data.reset_${provider}_confirm_msg`),
+        [
+          { text: t('common:cancel'), style: 'cancel' },
+          {
+            text: t('common:reset'),
+            style: 'destructive',
+            onPress: () => {
+              if (activeProfileId) {
+                clearProviderIntegration(activeProfileId, provider);
+                addToast({
+                  title: t(`data.${provider}_reset`),
+                  preset: 'success',
+                });
+              }
+            },
+          },
+        ]
+      );
+    },
+    [activeProfileId, clearProviderIntegration, addToast, t]
+  );
 
   const content = (
     <Box paddingVertical="m" paddingHorizontal="m" gap="l" paddingBottom="xl">
@@ -94,7 +102,18 @@ export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrolla
 
       <SettingsCard title={t('data.integrations')}>
         <SettingsRow label={t('data.reset_simkl')} description={t('data.reset_simkl_desc')}>
-          <Button title={t('common:reset')} onPress={handleResetSimkl} variant="secondary" />
+          <Button
+            title={t('common:reset')}
+            onPress={() => handleResetProvider('simkl')}
+            variant="secondary"
+          />
+        </SettingsRow>
+        <SettingsRow label={t('data.reset_trakt')} description={t('data.reset_trakt_desc')}>
+          <Button
+            title={t('common:reset')}
+            onPress={() => handleResetProvider('trakt')}
+            variant="secondary"
+          />
         </SettingsRow>
       </SettingsCard>
 

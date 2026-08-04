@@ -247,6 +247,11 @@
     "reset_simkl_confirm_title": "Reset Simkl Sync",
     "reset_simkl_confirm_msg": "Are you sure you want to reset your Simkl connection and sync cursors for this profile? You will need to reconnect your Simkl account.",
     "simkl_reset": "Simkl Sync Reset",
+    "reset_trakt": "Reset Trakt.tv Sync",
+    "reset_trakt_desc": "Clear Trakt.tv connection and synchronization state for this profile",
+    "reset_trakt_confirm_title": "Reset Trakt.tv Sync",
+    "reset_trakt_confirm_msg": "Are you sure you want to reset your Trakt.tv connection and sync cursors for this profile? You will need to reconnect your Trakt.tv account.",
+    "trakt_reset": "Trakt.tv Sync Reset",
     "profile_data_notice": "These actions only affect the currently active profile. Local settings and other profiles will remain unchanged."
   },
   "remoteControl": {
