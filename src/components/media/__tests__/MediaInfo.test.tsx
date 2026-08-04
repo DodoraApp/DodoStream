@@ -61,16 +61,49 @@ describe('MediaInfo', () => {
     expect(queryByText('completed')).toBeNull();
   });
 
-  it('shows provider icon marker when source is simkl', () => {
+  it('shows the simkl icon when the entry came from simkl', () => {
     (watchStatus.useMediaWatchStatus as jest.Mock).mockReturnValue({
       state: 'completed',
       source: 'simkl',
       isLoading: false,
     });
 
-    const { getByText, getByTestId } = renderWithProviders(<MediaInfo media={media} />);
+    const { getByText, getByTestId, queryByTestId } = renderWithProviders(
+      <MediaInfo media={media} />
+    );
 
     expect(getByText('completed')).toBeTruthy();
     expect(getByTestId('status-provider-simkl')).toBeTruthy();
+    expect(queryByTestId('status-provider-trakt')).toBeNull();
+  });
+
+  it('shows the trakt icon when the entry came from trakt', () => {
+    (watchStatus.useMediaWatchStatus as jest.Mock).mockReturnValue({
+      state: 'completed',
+      source: 'trakt',
+      isLoading: false,
+    });
+
+    const { getByText, getByTestId, queryByTestId } = renderWithProviders(
+      <MediaInfo media={media} />
+    );
+
+    expect(getByText('completed')).toBeTruthy();
+    expect(getByTestId('status-provider-trakt')).toBeTruthy();
+    expect(queryByTestId('status-provider-simkl')).toBeNull();
+  });
+
+  it('shows no provider icon when the entry was watched locally', () => {
+    (watchStatus.useMediaWatchStatus as jest.Mock).mockReturnValue({
+      state: 'completed',
+      source: 'internal',
+      isLoading: false,
+    });
+
+    const { getByText, queryByTestId } = renderWithProviders(<MediaInfo media={media} />);
+
+    expect(getByText('completed')).toBeTruthy();
+    expect(queryByTestId('status-provider-simkl')).toBeNull();
+    expect(queryByTestId('status-provider-trakt')).toBeNull();
   });
 });

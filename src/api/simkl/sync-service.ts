@@ -684,14 +684,23 @@ async function buildRemovalPayload(
       continue;
     }
 
+    if (!item.videoId) {
+      // No videoId = whole-show removal (meta-level history removal or watchlist
+      // removal): the bare show (no seasons) removes the item from the Simkl
+      // library entirely — Simkl's only removal semantic.
+      ensureMapShow(showsMap, item.metaId, payloadIds);
+      continue;
+    }
+
+    const episodeRef = parseVideoId(item.videoId);
+    if (!episodeRef) {
+      // A non-null but unparseable videoId (data corruption) must NOT degrade
+      // into a whole-show removal: skip the item instead.
+      debug('exportRemovalItemInvalidVideoId', { metaId: item.metaId, videoId: item.videoId });
+      continue;
+    }
+
     const show = ensureMapShow(showsMap, item.metaId, payloadIds);
-
-    // No videoId = whole-show removal (meta-level history removal or watchlist
-    // removal): the bare show (no seasons) removes the item from the Simkl
-    // library entirely — Simkl's only removal semantic.
-    const episodeRef = item.videoId ? parseVideoId(item.videoId) : null;
-    if (!episodeRef) continue;
-
     const season = ensureMapSeason(show.seasons, episodeRef.season);
     season.add(episodeRef.episode);
   }
