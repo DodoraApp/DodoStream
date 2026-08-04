@@ -13,7 +13,7 @@ import {
 import { useIntegrationsStore } from '@/store/integrations.store';
 import type { TraktSyncCursors } from '@/types/integrations';
 import type { ContentType } from '@/types/stremio';
-import type { TraktSyncItem } from '@/types/trakt';
+import type { TraktIds, TraktSyncItem } from '@/types/trakt';
 import { createDebugLogger } from '@/utils/debug';
 import { parseVideoId } from '@/utils/id';
 import { getTraktPosterUrl } from '@/utils/media-artwork';
@@ -45,10 +45,22 @@ function needsSync(remoteTimestamp?: string, localTimestamp?: string): boolean {
 
 type TraktSeason = { number: number; episodes: { number: number; watched_at?: string }[] };
 
-function findOrCreateShow(
-  shows: NonNullable<TraktSyncItem['shows']>,
-  ids: { imdb?: string | null; tmdb?: number | null }
-) {
+/** Trakt sync payload ids: requires exactly one identifying field (imdb or tmdb). */
+type TraktRequestIds =
+  | { imdb: string; tmdb?: number | null }
+  | { tmdb: number; imdb?: string | null };
+
+/**
+ * Narrow a partial `TraktIds` to a request-valid ids object.
+ * Callers MUST guard with `if (!ids.imdb && !ids.tmdb) continue;` first.
+ */
+function toRequestIds(ids: TraktIds): TraktRequestIds {
+  if (ids.imdb) return { imdb: ids.imdb, tmdb: ids.tmdb ?? undefined };
+  if (ids.tmdb) return { tmdb: ids.tmdb, imdb: undefined };
+  throw new Error('Trakt sync: item has no imdb/tmdb id to send');
+}
+
+function findOrCreateShow(shows: NonNullable<TraktSyncItem['shows']>, ids: TraktRequestIds) {
   const existing = shows.find(
     (s) =>
       'ids' in s && ((ids.imdb && s.ids.imdb === ids.imdb) || (ids.tmdb && s.ids.tmdb === ids.tmdb))
@@ -382,11 +394,12 @@ export async function runExport(profileId: string, token: string): Promise<boole
     for (const item of watchlistItems) {
       const ids = buildTraktIdsFromMetaId(item.id);
       if (!ids.imdb && !ids.tmdb) continue;
+      const requestIds = toRequestIds(ids);
 
       if (item.type === 'movie') {
-        watchlistPayload.movies!.push({ ids });
+        watchlistPayload.movies!.push({ ids: requestIds });
       } else if (item.type === 'series') {
-        watchlistPayload.shows!.push({ ids });
+        watchlistPayload.shows!.push({ ids: requestIds });
       }
     }
 
@@ -413,17 +426,18 @@ function buildExportPayload(
   for (const item of items) {
     const ids = buildTraktIdsFromMetaId(item.id);
     if (!ids.imdb && !ids.tmdb) continue;
+    const requestIds = toRequestIds(ids);
 
     const watched_at = new Date(item.lastWatchedAt).toISOString();
 
     if (item.type === 'movie') {
-      payload.movies!.push({ ids, watched_at });
+      payload.movies!.push({ ids: requestIds, watched_at });
     } else if (item.type === 'series' && item.videoId) {
       const parsed = parseVideoId(item.videoId);
       if (!parsed) continue;
 
       if (!payload.shows) payload.shows = [];
-      const show = findOrCreateShow(payload.shows, ids);
+      const show = findOrCreateShow(payload.shows, requestIds);
       const season = findOrCreateSeason(show as { seasons?: TraktSeason[] | null }, parsed.season);
       season.episodes.push({ number: parsed.episode, watched_at });
     }
@@ -440,17 +454,18 @@ function buildRemovalPayload(
   for (const item of removals) {
     const ids = buildTraktIdsFromMetaId(item.metaId);
     if (!ids.imdb && !ids.tmdb) continue;
+    const requestIds = toRequestIds(ids);
 
     if (item.type === 'movie') {
-      payload.movies!.push({ ids });
+      payload.movies!.push({ ids: requestIds });
     } else if (item.type === 'series') {
       if (!item.videoId) {
-        payload.shows!.push({ ids });
+        payload.shows!.push({ ids: requestIds });
       } else {
         const parsed = parseVideoId(item.videoId);
         if (!parsed) continue;
 
-        const show = findOrCreateShow(payload.shows!, ids);
+        const show = findOrCreateShow(payload.shows!, requestIds);
         const season = findOrCreateSeason(
           show as { seasons?: TraktSeason[] | null },
           parsed.season

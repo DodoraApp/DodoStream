@@ -5,7 +5,7 @@ import { syncQueue } from '@/db/schema';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import type { ContentType } from '@/types/stremio';
 
-export type SyncAction = 'remove_history' | 'remove_watchlist';
+export type SyncAction = 'remove_history' | 'remove_watchlist' | 'hide_history' | 'unhide_history';
 export type SyncProvider = 'simkl' | 'trakt';
 
 export async function addToSyncQueue(

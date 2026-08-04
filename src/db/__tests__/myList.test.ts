@@ -159,6 +159,34 @@ describe('myList queries (integration)', () => {
 
       expect(queue).toHaveLength(0);
     });
+
+    it('preserves the existing source when a provider re-adds an item', async () => {
+      await addToMyList(testProfileId, 'tt-source-keep', 'movie'); // user add -> internal
+
+      // Trakt import re-adds the same item; must not re-own the row
+      await addToMyList(testProfileId, 'tt-source-keep', 'movie', Date.now(), 'trakt');
+
+      const [result] = await db
+        .select()
+        .from(myList)
+        .where(and(eq(myList.profileId, testProfileId), eq(myList.metaId, 'tt-source-keep')));
+
+      expect(result.source).toBe('internal');
+    });
+
+    it('keeps the first provider source on conflict', async () => {
+      await addToMyList(testProfileId, 'tt-source-first', 'movie', Date.now(), 'trakt');
+
+      // Simkl import re-adds the same item; must not re-own the row
+      await addToMyList(testProfileId, 'tt-source-first', 'movie', Date.now() + 1000, 'simkl');
+
+      const [result] = await db
+        .select()
+        .from(myList)
+        .where(and(eq(myList.profileId, testProfileId), eq(myList.metaId, 'tt-source-first')));
+
+      expect(result.source).toBe('trakt');
+    });
   });
 
   describe('removeFromMyList', () => {

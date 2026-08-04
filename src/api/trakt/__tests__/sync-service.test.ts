@@ -28,12 +28,10 @@ const mockRemoveFromWatchlist = client.removeFromWatchlist as jest.Mock;
 
 const mockUpsertWatchProgress = watchHistoryQueries.upsertWatchProgress as jest.Mock;
 const mockListWatchHistory = watchHistoryQueries.listWatchHistoryForProfile as jest.Mock;
-const mockRemoveWatchHistoryItem = watchHistoryQueries.removeWatchHistoryItem as jest.Mock;
 const mockListExportableWatchHistory =
   watchHistoryQueries.listExportableWatchHistoryForProfile as jest.Mock;
 const mockListExportableMyList = myListQueries.listExportableMyListForProfile as jest.Mock;
 const mockAddToMyList = myListQueries.addToMyList as jest.Mock;
-const mockRemoveFromMyList = myListQueries.removeFromMyList as jest.Mock;
 const mockListSyncQueue = syncQueueQueries.listSyncQueueForProvider as jest.Mock;
 const mockDeleteFromSyncQueue = syncQueueQueries.deleteFromSyncQueue as jest.Mock;
 const mockUpsertMinimalMetaCache = upsertMinimalMetaCache as jest.Mock;

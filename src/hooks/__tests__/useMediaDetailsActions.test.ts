@@ -1,6 +1,6 @@
 import { act, waitFor } from '@testing-library/react-native';
 
-import { createTestQueryClient, renderHookWithProviders } from '@/utils/test-utils';
+import { renderHookWithProviders } from '@/utils/test-utils';
 
 import { useMediaDetailsActions } from '../useMediaDetailsActions';
 

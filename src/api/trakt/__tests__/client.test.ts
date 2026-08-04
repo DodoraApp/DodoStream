@@ -10,7 +10,6 @@ import {
   pollDeviceToken,
   postHistory,
   postWatchlist,
-  refreshToken,
   removeFromHistory,
   removeFromWatchlist,
   TraktAPIError,
@@ -135,6 +134,28 @@ describe('Trakt Client', () => {
       mockResponseOnce(200, [{ plays: 1 }]);
       const result = await getWatchedMovies('token');
       expect(result).toHaveLength(1);
+    });
+
+    it('stops pagination after a short final batch without an empty-page request', async () => {
+      const fullPage = Array.from({ length: 250 }, () => ({ plays: 1 }));
+      mockResponseOnce(200, fullPage); // page 1: full page
+      mockResponseOnce(200, [{ plays: 1 }]); // page 2: short final batch
+      mockResponse(200, []); // would have been the wasted page 3 request
+
+      const result = await getWatchedMovies('token');
+
+      expect(result).toHaveLength(251);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('fetches only one page when the first batch is already short', async () => {
+      mockResponseOnce(200, [{ plays: 1 }]);
+      mockResponse(200, []);
+
+      const result = await getWatchedMovies('token');
+
+      expect(result).toHaveLength(1);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
     it('getWatchedShows', async () => {
