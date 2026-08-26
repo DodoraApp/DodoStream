@@ -9,6 +9,7 @@ import {
   formatReleaseYear,
   formatRuntime,
   formatSeasonEpisodeLabel,
+  isEpisodeUnreleased,
 } from '@/utils/format';
 
 describe('format utils', () => {
@@ -142,6 +143,24 @@ describe('format utils', () => {
     it('returns undefined for null/undefined', () => {
       expect(formatReleaseDate(null)).toBeUndefined();
       expect(formatReleaseDate(undefined)).toBeUndefined();
+    });
+  });
+
+  describe('isEpisodeUnreleased', () => {
+    it('returns true for a future date', () => {
+      const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      expect(isEpisodeUnreleased(future)).toBe(true);
+    });
+
+    it('returns false for past and current dates', () => {
+      const past = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      expect(isEpisodeUnreleased(past)).toBe(false);
+      expect(isEpisodeUnreleased(new Date().toISOString())).toBe(false);
+    });
+
+    it('treats empty and invalid dates as released', () => {
+      expect(isEpisodeUnreleased('')).toBe(false);
+      expect(isEpisodeUnreleased('not-a-date')).toBe(false);
     });
   });
 

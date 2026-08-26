@@ -19,6 +19,7 @@ import { upsertMetaCache } from '../queries/metaCache';
 import {
   type DbWatchHistoryItem,
   dismissFromContinueWatching,
+  getContinueWatchingWithUpNext,
   getLastStreamTarget,
   getWatchHistoryItem,
   listWatchedMetaSummaries,
@@ -1865,5 +1866,53 @@ describe('listWatchedMetaSummaries (integration)', () => {
 describe('PLAYBACK_FINISHED_RATIO', () => {
   it('is 0.9 (90%)', () => {
     expect(PLAYBACK_FINISHED_RATIO).toBe(0.9);
+  });
+});
+
+describe('unreleased episode up-next filtering (integration)', () => {
+  const profileId = 'unreleased-upnext-profile';
+  const metaId = 'series-unreleased';
+
+  beforeAll(async () => {
+    await initializeDatabase();
+  });
+
+  beforeEach(async () => {
+    await db.delete(watchHistory).where(eq(watchHistory.profileId, profileId));
+    await db.delete(videos).where(eq(videos.metaId, metaId));
+  });
+
+  it('does not emit an up-next entry for a future release date', async () => {
+    await db.insert(videos).values([
+      {
+        metaId,
+        videoId: 'ep-1',
+        season: 1,
+        episode: 1,
+        released: '2020-01-01',
+        fetchedAt: Date.now(),
+      },
+      {
+        metaId,
+        videoId: 'ep-2',
+        season: 1,
+        episode: 2,
+        released: '2999-01-01',
+        fetchedAt: Date.now(),
+      },
+    ]);
+
+    await upsertWatchProgress({
+      profileId,
+      metaId,
+      videoId: 'ep-1',
+      type: 'series',
+      progressSeconds: 950,
+      durationSeconds: 1000,
+    });
+
+    const result = await getContinueWatchingWithUpNext(profileId);
+
+    expect(result.find((entry) => entry.metaId === metaId)).toBeUndefined();
   });
 });

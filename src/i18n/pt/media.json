@@ -17,7 +17,7 @@
   "no_details": "Sem detalhes disponíveis para este conteúdo. Tenta instalar um addon de metadados que o suporte.",
   "failed_load_details": "Erro ao carregar detalhes",
   "auto_playing": "A reproduzir automaticamente...",
-  "select_stream": "Selecionar Stream",
+  "manual_select_stream": "Selecionar stream manualmente",
   "added_to_my_list": "Adicionado à Minha Lista",
   "removed_from_my_list": "Removido da Minha Lista",
   "no_trailers": "Sem trailers disponíveis",

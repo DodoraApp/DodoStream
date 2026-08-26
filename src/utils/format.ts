@@ -106,6 +106,17 @@ export const formatReleaseDate = (released?: string | null): string | undefined 
 };
 
 /**
+ * True when the release date exists and is in the future.
+ * Missing/invalid dates count as released (cannot prove otherwise).
+ */
+export const isEpisodeUnreleased = (released?: string | null): boolean => {
+  if (!released) return false;
+  const date = new Date(released);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() > Date.now();
+};
+
+/**
  * Format release year from ISO date string.
  */
 export const formatReleaseYear = (released?: string | null): string | undefined => {

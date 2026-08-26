@@ -278,6 +278,40 @@ describe('getContinueWatchingWithUpNext (integration)', () => {
       expect(result[0].progressRatio).toBe(0);
     });
 
+    it('does not emit an up-next entry for an unreleased next episode', async () => {
+      await db.insert(videos).values([
+        {
+          metaId: 'series-unreleased',
+          videoId: 'ep-1',
+          season: 1,
+          episode: 1,
+          released: '2020-01-01',
+          fetchedAt: Date.now(),
+        },
+        {
+          metaId: 'series-unreleased',
+          videoId: 'ep-2',
+          season: 1,
+          episode: 2,
+          released: '2999-01-01',
+          fetchedAt: Date.now(),
+        },
+      ]);
+
+      await upsertWatchProgress({
+        profileId: testProfileId,
+        metaId: 'series-unreleased',
+        videoId: 'ep-1',
+        type: 'series',
+        progressSeconds: 950,
+        durationSeconds: 1000,
+      });
+
+      const result = await getContinueWatchingWithUpNext(testProfileId);
+
+      expect(result.find((entry) => entry.metaId === 'series-unreleased')).toBeUndefined();
+    });
+
     it('filters out finished series episode when no next episode exists', async () => {
       // Add video info for the last episode only
       await db.insert(videos).values({

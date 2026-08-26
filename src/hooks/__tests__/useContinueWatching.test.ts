@@ -5,6 +5,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 
 import * as db from '@/db';
 import { useProfileStore } from '@/store/profile.store';
+import type { MetaVideo } from '@/types/stremio';
 
 import {
   useContinueWatching,
@@ -44,6 +45,12 @@ describe('useContinueWatching', () => {
     durationSeconds: 1000,
     lastWatchedAt: 1000,
     ...overrides,
+  });
+
+  const makeVideo = (id: string, released = '2020-01-01'): MetaVideo => ({
+    id,
+    title: id,
+    released,
   });
 
   beforeEach(() => {
@@ -173,6 +180,31 @@ describe('useContinueWatching', () => {
       expect(result.current.entry?.progressRatio).toBe(0);
     });
 
+    it('skips unreleased next episode', async () => {
+      (db.listWatchHistoryForMeta as jest.Mock).mockResolvedValue([
+        makeHistoryItem({
+          id: 'meta-1',
+          videoId: 'ep1',
+          type: 'series',
+          progressSeconds: 950,
+          durationSeconds: 1000,
+        }),
+      ]);
+
+      const { result } = renderHook(
+        () =>
+          useContinueWatchingForMeta('meta-1', {
+            videos: [makeVideo('ep1'), makeVideo('ep2', '2999-01-01'), makeVideo('ep3')],
+          }),
+        { wrapper: createWrapper() }
+      );
+
+      await waitFor(() => {
+        expect(result.current.entry?.videoId).toBe('ep3');
+      });
+      expect(result.current.entry?.isUpNext).toBe(true);
+    });
+
     it('returns undefined for finished movie', async () => {
       (db.listWatchHistoryForMeta as jest.Mock).mockResolvedValue([
         makeHistoryItem({
@@ -263,6 +295,21 @@ describe('useContinueWatching', () => {
         useNextVideo([{ id: 'ep1' } as any, { id: 'ep2' } as any], 'ep99')
       );
       expect(result.current).toBeUndefined();
+    });
+    it('returns undefined when the only next video is unreleased', () => {
+      const { result } = renderHook(() =>
+        useNextVideo([makeVideo('ep1'), makeVideo('ep2', '2999-01-01')], 'ep1')
+      );
+
+      expect(result.current).toBeUndefined();
+    });
+
+    it('returns the next released video after an unreleased video', () => {
+      const { result } = renderHook(() =>
+        useNextVideo([makeVideo('ep1'), makeVideo('ep2', '2999-01-01'), makeVideo('ep3')], 'ep1')
+      );
+
+      expect(result.current).toEqual(makeVideo('ep3'));
     });
   });
 });

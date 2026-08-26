@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useStreams } from '@/api/stremio';
@@ -42,6 +42,7 @@ export const useAutoPlay = ({
 }: UseAutoPlayParams) => {
   const { t } = useTranslation('media');
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
+  const [autoPlayCancelled, setAutoPlayCancelled] = useState(false);
   const { autoPlayFirstStream } = usePlaybackStore((state) => ({
     autoPlayFirstStream: state.activeProfileId
       ? state.byProfile[state.activeProfileId]?.autoPlayFirstStream
@@ -51,7 +52,8 @@ export const useAutoPlay = ({
   const autoPlayFromParams = parseBooleanParam(autoPlay);
   const autoPlayFromSetting = !autoPlay && autoPlayFirstStream;
   const shouldAutoPlay = autoPlayFromParams || autoPlayFromSetting;
-  const effectiveAutoPlay = shouldAutoPlay && !autoPlayFailed;
+  const effectiveAutoPlay = shouldAutoPlay && !autoPlayFailed && !autoPlayCancelled;
+  const cancelAutoPlay = useCallback(() => setAutoPlayCancelled(true), []);
 
   const autoPlayAttemptRef = useRef(0);
   const didAutoNavigateRef = useRef(false);
@@ -162,5 +164,6 @@ export const useAutoPlay = ({
 
   return {
     effectiveAutoPlay,
+    cancelAutoPlay,
   };
 };

@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
+import { useSimklSync } from '@/api/simkl/hooks';
+import { useTraktSync } from '@/api/trakt/hooks';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useTVBackButton } from '@/hooks/useTVBackButton';
+import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
 import { Box } from '@/theme/theme';
 import type { ContentType } from '@/types/stremio';
@@ -37,6 +40,9 @@ const Play = () => {
   }>();
   const router = useRouter();
   const { replaceToStreams } = useMediaNavigation();
+  const activeProfileId = useProfileStore((state) => state.activeProfileId);
+  const { sync: syncSimkl } = useSimklSync(activeProfileId);
+  const { sync: syncTrakt } = useTraktSync(activeProfileId);
 
   const shouldReturnToStreams = fromAutoPlay === '1';
 
@@ -52,15 +58,22 @@ const Play = () => {
     // not immediately auto-restart the last stream.
     replaceToStreams({ metaId, videoId, type }, { bingeGroup, autoPlay: '0' });
   }, [bingeGroup, metaId, replaceToStreams, router, shouldReturnToStreams, type, videoId]);
+  const dismissToDetails = useCallback(() => {
+    if (!metaId || !type) {
+      router.back();
+      return;
+    }
+    router.dismissTo({ pathname: '/details/[id]', params: { id: metaId, type } });
+  }, [metaId, router, type]);
 
   const handleStop = useCallback(() => {
     debug('handleStop');
-    if (shouldReturnToStreams) {
-      returnToStreams();
-      return;
-    }
-    router.back();
-  }, [returnToStreams, router, shouldReturnToStreams]);
+    dismissToDetails();
+    // Push watch progress to enabled providers immediately (same call the
+    // settings "Sync now" button makes; no-op when disconnected).
+    void syncSimkl();
+    void syncTrakt();
+  }, [dismissToDetails, syncSimkl, syncTrakt]);
 
   useTVBackButton(() => {
     debug('backButtonPressed');

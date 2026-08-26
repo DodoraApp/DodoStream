@@ -51,7 +51,6 @@ export const SettingsMenu: FC<SettingsMenuProps> = memo(
             item={item}
             isSelected={item.id === selectedId}
             onPress={() => handlePress(item)}
-            hasTVPreferredFocus={item.id === selectedId}
           />
         ))}
       </Box>
@@ -69,11 +68,10 @@ interface SettingsMenuItemInnerProps {
   item: SettingsMenuItem;
   isSelected: boolean;
   onPress: () => void;
-  hasTVPreferredFocus?: boolean;
 }
 
 const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
-  ({ item, isSelected, onPress, hasTVPreferredFocus = false }) => {
+  ({ item, isSelected, onPress }) => {
     const theme = useTheme<Theme>();
     const setSelectedSettingsMenuNodeHandle = useSidebarFocusStore(
       (state) => state.setSelectedSettingsMenuNodeHandle
@@ -100,7 +98,7 @@ const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
     }, [isSelected, setSelectedSettingsMenuNodeHandle]);
 
     return (
-      <Focusable onPress={onPress} hasTVPreferredFocus={hasTVPreferredFocus} onRef={handleRef}>
+      <Focusable onPress={onPress} onRef={handleRef}>
         <Box borderRadius="m" padding="s" flexDirection="row" alignItems="center" gap="m">
           <Box
             backgroundColor={isSelected ? 'primaryBackground' : undefined}

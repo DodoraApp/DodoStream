@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import * as streamsApi from '@/api/stremio';
 import { MAX_AUTO_PLAY_ATTEMPTS } from '@/constants/playback';
@@ -168,5 +168,16 @@ describe('useAutoPlay', () => {
 
     // Ensure openStreamFromStream is NOT called
     expect(openStreamFromStream).not.toHaveBeenCalled();
+  });
+  it('cancels autoplay when manual stream selection is requested', () => {
+    const { result } = renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1' }));
+
+    expect(result.current.effectiveAutoPlay).toBe(true);
+
+    act(() => {
+      result.current.cancelAutoPlay();
+    });
+
+    expect(result.current.effectiveAutoPlay).toBe(false);
   });
 });

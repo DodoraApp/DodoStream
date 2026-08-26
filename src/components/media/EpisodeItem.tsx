@@ -13,7 +13,7 @@ import { getWatchProgressRatio, useWatchHistoryItem } from '@/hooks/useWatchHist
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
 import type { MetaVideo } from '@/types/stremio';
-import { formatEpisodeListTitle, formatReleaseDate } from '@/utils/format';
+import { formatEpisodeListTitle, formatReleaseDate, isEpisodeUnreleased } from '@/utils/format';
 
 export interface EpisodeItemProps {
   video: MetaVideo;
@@ -35,6 +35,7 @@ export const EpisodeItem = memo(
     const isFinished = clampedProgressRatio >= PLAYBACK_FINISHED_RATIO;
 
     const releaseLabel = useMemo(() => formatReleaseDate(video.released), [video.released]);
+    const isUnreleased = useMemo(() => isEpisodeUnreleased(video.released), [video.released]);
     const titleText = useMemo(() => formatEpisodeListTitle(video, t), [video, t]);
     const imageSource = video.thumbnail ? { uri: video.thumbnail } : undefined;
 
@@ -73,7 +74,11 @@ export const EpisodeItem = memo(
               }}
             />
 
-            {!!isFinished && <CompletedBadge mode="overlay" source={historyItem?.source} />}
+            {isUnreleased ? (
+              <CompletedBadge mode="overlay" variant="unreleased" />
+            ) : (
+              !!isFinished && <CompletedBadge mode="overlay" source={historyItem?.source} />
+            )}
 
             {!isFinished && clampedProgressRatio > 0 && (
               <Box position="absolute" left={0} right={0} bottom={0}>

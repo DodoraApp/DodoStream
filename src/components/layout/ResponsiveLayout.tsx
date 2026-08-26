@@ -1,6 +1,9 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import { BackHandler, Platform, UIManager, useWindowDimensions, View } from 'react-native';
 
+import { usePathname } from 'expo-router';
+
+import { NAV_ITEMS } from '@/constants/navigation';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useSidebarFocusStore } from '@/store/sidebar-focus.store';
 import { Box } from '@/theme/theme';
@@ -15,6 +18,11 @@ interface ResponsiveLayoutProps {
 export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth }) => {
   const breakpoint = useBreakpoint();
   const { width } = useWindowDimensions();
+  const pathname = usePathname();
+  const isTabsRoute =
+    pathname === '/' ||
+    pathname === '/index' ||
+    NAV_ITEMS.some(({ route }) => route !== '/' && pathname.startsWith(route));
   const [isSidebarFocused, setIsSidebarFocused] = useState(false);
   const activeSidebarNodeHandle = useSidebarFocusStore((state) => state.activeSidebarNodeHandle);
 
@@ -24,7 +32,7 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
   // Handle TV back button: focus sidebar if not already focused
   // This must be before any conditional returns to maintain hook order
   useEffect(() => {
-    if (!Platform.isTV || !showSidebar) return;
+    if (!Platform.isTV || !showSidebar || !isTabsRoute) return;
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (!isSidebarFocused && activeSidebarNodeHandle) {
@@ -36,7 +44,7 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
     });
 
     return () => backHandler.remove();
-  }, [showSidebar, isSidebarFocused, activeSidebarNodeHandle]);
+  }, [showSidebar, isSidebarFocused, activeSidebarNodeHandle, isTabsRoute]);
 
   // Calculate max width for content (50% on large screens)
   const contentMaxWidth: number | undefined =

@@ -13,6 +13,7 @@ interface LoadingIndicatorProps {
   type?: 'default' | 'simple';
   size?: 'small' | 'large';
   message?: string;
+  noFlex?: boolean;
 }
 
 const SimpleLoadingIndicator = ({ size }: { size: 'small' | 'large' }) => {
@@ -26,7 +27,15 @@ const SimpleLoadingIndicator = ({ size }: { size: 'small' | 'large' }) => {
   );
 };
 
-const LogoLoadingIndicator = ({ size, message }: { size: 'small' | 'large'; message?: string }) => {
+const LogoLoadingIndicator = ({
+  size,
+  message,
+  noFlex,
+}: {
+  size: 'small' | 'large';
+  message?: string;
+  noFlex?: boolean;
+}) => {
   const theme = useTheme<Theme>();
   const containerSize =
     size === 'small'
@@ -39,7 +48,7 @@ const LogoLoadingIndicator = ({ size, message }: { size: 'small' | 'large'; mess
 
   const travelDistance = theme.spacing.s;
   return (
-    <Box flex={1} justifyContent="center" alignItems="center" alignSelf="center">
+    <Box flex={noFlex ? 0 : 1} justifyContent="center" alignItems="center" alignSelf="center">
       <Box width={containerSize} height={containerSize}>
         <MotiView
           from={{ translateY: 0 }}
@@ -67,10 +76,11 @@ export const LoadingIndicator = ({
   type = 'default',
   size = 'large',
   message,
+  noFlex,
 }: LoadingIndicatorProps) => {
   if (type === 'simple') {
     return <SimpleLoadingIndicator size={size} />;
   }
 
-  return <LogoLoadingIndicator size={size} message={message} />;
+  return <LogoLoadingIndicator size={size} message={message} noFlex={noFlex} />;
 };
