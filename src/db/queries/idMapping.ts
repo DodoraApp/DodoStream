@@ -170,3 +170,14 @@ export async function getExternalIdsForMetaId(metaId: string): Promise<{
     malId: row.malId ?? null,
   };
 }
+
+export async function countMetaIds(): Promise<number> {
+  await initializeDatabase();
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(metaIds);
+  return Number(rows[0]?.count ?? 0);
+}
+
+export async function clearMetaIds(): Promise<void> {
+  await initializeDatabase();
+  await db.delete(metaIds);
+}

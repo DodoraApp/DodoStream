@@ -18,7 +18,6 @@ import { ContinueWatchingItem } from '@/components/media/ContinueWatchingItem';
 import { ContinueWatchingListSkeleton } from '@/components/media/ContinueWatchingListSkeleton';
 import { HeroSection } from '@/components/media/HeroSection';
 import { MediaList } from '@/components/media/MediaList';
-import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import {
   ANIMATION_FADE_IN_MS,
   HOME_PRIORITY_BUFFER_ROWS,
@@ -568,7 +567,7 @@ const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSection
         id: item.id,
         type: item.type,
         name: item.metaName ?? '',
-        poster: item.imageUrl ?? NO_POSTER_PORTRAIT,
+        poster: item.imageUrl,
       })),
     [filteredData]
   );
@@ -594,8 +593,9 @@ const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSection
       </Box>
       <MediaList
         data={mappedData}
-        onMediaPress={onMediaPress as any}
+        onMediaPress={onMediaPress}
         onItemFocused={onSectionFocused}
+        hydrateMetadata
       />
     </Box>
   );

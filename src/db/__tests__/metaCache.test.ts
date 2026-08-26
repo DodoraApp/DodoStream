@@ -14,6 +14,8 @@ import type { MetaDetail } from '@/types/stremio';
 
 import { db, initializeDatabase } from '../client';
 import {
+  clearMetaCache,
+  countMetaCache,
   getStaleMetaIds,
   getVideoForEntry,
   isMetaCacheStale,
@@ -768,5 +770,39 @@ describe('getStaleMetaIds edge cases (integration)', () => {
     expect(result.filter((id) => id === 'missing-dup')).toHaveLength(2);
     // dup-valid should not appear
     expect(result.filter((id) => id === 'dup-valid')).toHaveLength(0);
+  });
+});
+
+describe('metaCache management (integration)', () => {
+  const now = Date.now();
+
+  beforeAll(async () => {
+    await initializeDatabase();
+  });
+
+  beforeEach(async () => {
+    await db.delete(videos);
+    await db.delete(metaCache);
+  });
+
+  it('counts and clears metadata and video cache entries', async () => {
+    await db.insert(metaCache).values({
+      metaId: 'cached-meta',
+      type: 'movie',
+      name: 'Cached Movie',
+      fetchedAt: now,
+      expiresAt: now + CACHE_TTL_MS,
+    });
+    await db.insert(videos).values({
+      metaId: 'cached-meta',
+      videoId: 'cached-video',
+      fetchedAt: now,
+    });
+
+    await expect(countMetaCache()).resolves.toEqual({ metaEntries: 1, videoEntries: 1 });
+
+    await clearMetaCache();
+
+    await expect(countMetaCache()).resolves.toEqual({ metaEntries: 0, videoEntries: 0 });
   });
 });

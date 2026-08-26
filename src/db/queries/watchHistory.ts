@@ -614,7 +614,11 @@ async function findNextUnwatchedEpisode(
       and(
         eq(videos.metaId, metaId),
         nextEpisodeConditions,
-        sql`COALESCE(${videos.season}, 0) != 0`,
+        or(
+          isNull(videos.released),
+          sql`date(${videos.released}) IS NULL`,
+          sql`date(${videos.released}) <= date('now')`
+        ),
         or(
           isNull(watchHistory.id),
           lt(
@@ -887,4 +891,13 @@ export async function getContinueWatchingWithUpNext(
   }
 
   return resolved;
+}
+
+export async function countWatchHistory(profileId: string): Promise<number> {
+  await initializeDatabase();
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(watchHistory)
+    .where(eq(watchHistory.profileId, profileId));
+  return Number(rows[0]?.count ?? 0);
 }

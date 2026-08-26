@@ -246,3 +246,21 @@ export async function getVideosForEntries(
 
   return result;
 }
+
+export async function countMetaCache(): Promise<{ metaEntries: number; videoEntries: number }> {
+  await initializeDatabase();
+  const [metaRows, videoRows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(metaCache),
+    db.select({ count: sql<number>`count(*)` }).from(videos),
+  ]);
+  return {
+    metaEntries: Number(metaRows[0]?.count ?? 0),
+    videoEntries: Number(videoRows[0]?.count ?? 0),
+  };
+}
+
+export async function clearMetaCache(): Promise<void> {
+  await initializeDatabase();
+  await db.delete(videos);
+  await db.delete(metaCache);
+}

@@ -12,6 +12,7 @@ import {
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 import { useProfileStore } from '@/store/profile.store';
 import type { ContentType, MetaDetail, MetaVideo } from '@/types/stremio';
+import { isEpisodeUnreleased } from '@/utils/format';
 
 // ============================================================================
 // Types
@@ -69,6 +70,7 @@ const findNextUnwatchedVideo = (
 ): MetaVideo | undefined => {
   for (let i = currentIndex + 1; i < videos.length; i++) {
     const video = videos[i];
+    if (isEpisodeUnreleased(video.released)) continue;
     const ratio = getProgressRatioForVideo(video.id);
     if (ratio < PLAYBACK_FINISHED_RATIO) {
       return video;
@@ -251,8 +253,7 @@ export function useContinueWatchingForMeta(
 }
 
 /**
- * Returns the next video in sequence (for UpNext popup).
- * This is the immediate next video, not based on watch history.
+ * Returns the next released video in sequence (for UpNext popup).
  */
 export function useNextVideo(
   videos: MetaVideo[] | undefined,
@@ -261,6 +262,10 @@ export function useNextVideo(
   return useMemo(() => {
     if (!videos || !currentVideoId) return undefined;
     const currentIndex = videos.findIndex((v) => v.id === currentVideoId);
-    return currentIndex >= 0 ? videos[currentIndex + 1] : undefined;
+    if (currentIndex < 0) return undefined;
+    for (let i = currentIndex + 1; i < videos.length; i++) {
+      if (!isEpisodeUnreleased(videos[i].released)) return videos[i];
+    }
+    return undefined;
   }, [videos, currentVideoId]);
 }

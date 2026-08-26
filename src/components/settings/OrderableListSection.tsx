@@ -1,4 +1,5 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Platform, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +50,19 @@ function OrderableListSectionImpl<T extends OrderableItem>({
   getItemKey,
 }: OrderableListSectionProps<T>) {
   const keyFn = useCallback((item: T) => (getItemKey ? getItemKey(item) : item.id), [getItemKey]);
+  const [focusTargetKey, setFocusTargetKey] = useState<string>();
+  const focusTargetRef = useRef<View | null>(null);
+  const handleFocusTargetRef = useCallback((node: View | null) => {
+    focusTargetRef.current = node;
+  }, []);
+
+  useEffect(() => {
+    if (!focusTargetKey || !Platform.isTV) return;
+    if (!selectedItems.some((item) => keyFn(item) === focusTargetKey)) return;
+
+    focusTargetRef.current?.requestTVFocus?.();
+    setFocusTargetKey(undefined);
+  }, [focusTargetKey, keyFn, selectedItems]);
 
   const handleMoveUp = useCallback(
     (index: number) => {
@@ -77,9 +91,11 @@ function OrderableListSectionImpl<T extends OrderableItem>({
 
   const handleAdd = useCallback(
     (item: T) => {
+      focusTargetRef.current = null;
+      setFocusTargetKey(keyFn(item));
       onChange([...selectedItems, item]);
     },
-    [selectedItems, onChange]
+    [keyFn, onChange, selectedItems]
   );
 
   return (
@@ -106,6 +122,9 @@ function OrderableListSectionImpl<T extends OrderableItem>({
                   onMoveUp={() => handleMoveUp(index)}
                   onMoveDown={() => handleMoveDown(index)}
                   onRemove={() => handleRemove(item)}
+                  itemKey={keyFn(item)}
+                  focusTargetKey={focusTargetKey}
+                  onFocusTargetRef={handleFocusTargetRef}
                 />
               ))}
             </Box>
@@ -137,20 +156,26 @@ export const OrderableListSection = memo(
 
 interface SelectedRowProps<T extends OrderableItem> {
   item: T;
+  itemKey: string;
   index: number;
   total: number;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRemove: () => void;
+  focusTargetKey?: string;
+  onFocusTargetRef?: (node: View | null) => void;
 }
 
 function SelectedRowImpl<T extends OrderableItem>({
   item,
+  itemKey,
   index,
   total,
   onMoveUp,
   onMoveDown,
   onRemove,
+  focusTargetKey,
+  onFocusTargetRef,
 }: SelectedRowProps<T>) {
   return (
     <Box
@@ -181,7 +206,12 @@ function SelectedRowImpl<T extends OrderableItem>({
           onPress={onMoveDown}
           variant="secondary"
         />
-        <Button icon="trash" onPress={onRemove} variant="tertiary" />
+        <Button
+          icon="trash"
+          onPress={onRemove}
+          onRef={itemKey === focusTargetKey ? onFocusTargetRef : undefined}
+          variant="tertiary"
+        />
       </Box>
     </Box>
   );

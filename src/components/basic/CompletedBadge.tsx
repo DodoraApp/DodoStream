@@ -11,7 +11,7 @@ import { Box, Text } from '@/theme/theme';
 
 interface CompletedBadgeProps {
   mode?: 'inline' | 'overlay';
-  variant?: 'completed' | 'watching';
+  variant?: 'completed' | 'watching' | 'unreleased';
   /** Origin of the watch state (local playback, Simkl import, Trakt import). */
   source?: WatchHistorySource;
 }
@@ -25,6 +25,8 @@ export const CompletedBadge = ({
   const { t } = useTranslation('media');
   const isOverlay = mode === 'overlay';
   const isCompleted = variant === 'completed';
+  const isUnreleased = variant === 'unreleased';
+  const isPrimary = isCompleted;
 
   // Provenance icon: mirrors the provider the watch state was imported from.
   // Locally-watched entries (source 'internal') show no icon.
@@ -37,24 +39,26 @@ export const CompletedBadge = ({
       right={isOverlay ? 0 : undefined}
       borderBottomLeftRadius={isOverlay ? 'm' : undefined}
       borderRadius={isOverlay ? undefined : 's'}
-      backgroundColor={isCompleted ? 'primaryBackground' : 'tertiaryBackground'}
+      backgroundColor={isPrimary ? 'primaryBackground' : 'tertiaryBackground'}
       paddingHorizontal="s"
       paddingVertical="xs"
       flexDirection="row"
       alignItems="center"
       gap="xs">
       <Ionicons
-        name={isCompleted ? 'checkmark-circle' : 'play-circle'}
+        name={isUnreleased ? 'calendar-outline' : isCompleted ? 'checkmark-circle' : 'play-circle'}
         size={theme.sizes.iconSmall}
-        color={isCompleted ? theme.colors.primaryForeground : theme.colors.tertiaryForeground}
+        color={isPrimary ? theme.colors.primaryForeground : theme.colors.tertiaryForeground}
       />
-      <Text
-        variant="bodySmall"
-        fontWeight="700"
-        color={isCompleted ? 'primaryForeground' : 'tertiaryForeground'}>
-        {isCompleted ? t('completed') : t('watching')}
-      </Text>
-      {showProviderIcon && (
+      {!isUnreleased && (
+        <Text
+          variant="bodySmall"
+          fontWeight="700"
+          color={isPrimary ? 'primaryForeground' : 'tertiaryForeground'}>
+          {isCompleted ? t('completed') : t('watching')}
+        </Text>
+      )}
+      {!isUnreleased && showProviderIcon && (
         <Box testID={`status-provider-${source}`}>
           {source === 'simkl' ? <SimklLogo size="iconSmall" /> : <TraktLogo size="iconSmall" />}
         </Box>

@@ -17,7 +17,7 @@
   "no_details": "No details available for this content. Try installing a metadata addon that supports it.",
   "failed_load_details": "Failed to load details",
   "auto_playing": "Auto playing...",
-  "select_stream": "Select Stream",
+  "manual_select_stream": "Manually select stream",
   "added_to_my_list": "Added to My List",
   "removed_from_my_list": "Removed from My List",
   "no_trailers": "No trailers available",

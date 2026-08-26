@@ -42,7 +42,7 @@ export const TVSidebar: FC<TVSidebarProps> = ({ onItemFocus }) => {
           borderRightColor: theme.colors.cardBorder,
         },
       ]}>
-      <Box flex={1} paddingVertical="s" gap="l">
+      <Box flex={1} padding="s" gap="l">
         <Box alignItems="center">
           <AppLogo size={theme.sizes.stickyLogoHeight} />
         </Box>
