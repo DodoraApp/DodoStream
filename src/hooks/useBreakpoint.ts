@@ -122,6 +122,7 @@ export function useResponsiveLayout(): ResponsiveLayoutResult {
     isWide,
     width,
     height,
+    isLandscape,
     isTVLayout,
     isPlatformTV,
     splitLayout,
