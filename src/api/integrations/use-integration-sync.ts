@@ -5,6 +5,7 @@ import { AppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { INTEGRATION_AUTO_SYNC_INTERVAL_MS, TOAST_DURATION_SHORT } from '@/constants/ui';
+import { syncLogKeys } from '@/hooks/useSyncLog';
 import { watchHistoryKeys } from '@/hooks/useWatchHistoryDb';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import { showToast } from '@/store/toast.store';
@@ -108,6 +109,7 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
         setSyncStatus(cfg.profileId, cfg.provider, 'success');
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['my-list-db'] }),
+          queryClient.invalidateQueries({ queryKey: syncLogKeys.all }),
           queryClient.invalidateQueries({
             queryKey: [...watchHistoryKeys.all, 'item', cfg.profileId],
           }),

@@ -36,6 +36,13 @@
       "when": 1777814782026,
       "tag": "0005_white_franklin_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787856392537,
+      "tag": "0006_brief_hawkeye",
+      "breakpoints": true
     }
   ]
 }

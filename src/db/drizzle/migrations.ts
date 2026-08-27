@@ -44,6 +44,13 @@ const journal = {
       tag: '0005_white_franklin_richards',
       breakpoints: true,
     },
+    {
+      idx: 6,
+      version: '6',
+      when: 1787856392537,
+      tag: '0006_brief_hawkeye',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -153,6 +160,19 @@ CREATE INDEX \`meta_ids_tmdb_idx\` ON \`meta_ids\` (\`tmdb_id\`);--> statement-b
 CREATE INDEX \`meta_ids_trakt_idx\` ON \`meta_ids\` (\`trakt_id\`);--> statement-breakpoint
 CREATE INDEX \`meta_ids_simkl_idx\` ON \`meta_ids\` (\`simkl_id\`);`;
 
+const m0006 = `CREATE TABLE \`sync_log\` (
+	\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	\`profile_id\` text NOT NULL,
+	\`provider\` text NOT NULL,
+	\`direction\` text NOT NULL,
+	\`meta_id\` text NOT NULL,
+	\`type\` text NOT NULL,
+	\`title\` text NOT NULL,
+	\`created_at\` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX \`sync_log_profile_idx\` ON \`sync_log\` (\`profile_id\`,\`id\`);`;
+
 export default {
   journal,
   migrations: {
@@ -162,5 +182,6 @@ export default {
     m0003,
     m0004,
     m0005,
+    m0006,
   },
 };

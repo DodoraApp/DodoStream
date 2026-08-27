@@ -11,6 +11,7 @@ import { TraktLogo } from '@/components/basic/TraktLogo';
 import { IntegrationFirstConnectModal } from '@/components/settings/IntegrationFirstConnectModal';
 import { IntegrationPinAuthModal } from '@/components/settings/IntegrationPinAuthModal';
 import { IntegrationSettingsCard } from '@/components/settings/IntegrationSettingsCard';
+import { SyncLogCard } from '@/components/settings/SyncLogCard';
 import { SIMKL_PIN_TIMEOUT_S, TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useIntegrationsStore } from '@/store/integrations.store';
 import { useProfileStore } from '@/store/profile.store';
@@ -230,6 +231,8 @@ export const IntegrationsSettingsContent: FC<IntegrationsSettingsContentProps> =
             simklConnected && !traktConnected ? t('trakt.other_connected') : undefined
           }
         />
+
+        <SyncLogCard profileId={activeProfileId} />
       </Box>
     );
 

@@ -348,5 +348,13 @@
     "sync": "Sincronizar",
     "last_synced": "Última sincronização",
     "other_connected": "Desliga primeiro o Simkl para ligar ao Trakt.tv"
+  },
+  "sync_log": {
+    "title": "Registo de sincronização",
+    "show": "Mostrar itens sincronizados",
+    "hide": "Ocultar itens sincronizados",
+    "empty": "Ainda sem itens sincronizados",
+    "imported": "Importado",
+    "exported": "Exportado"
   }
 }

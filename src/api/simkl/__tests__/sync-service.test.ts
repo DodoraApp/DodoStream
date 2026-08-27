@@ -44,6 +44,13 @@ jest.mock('@/db/queries/syncQueue', () => ({
   deleteFromSyncQueue: (...args: unknown[]) => mockDeleteFromSyncQueue(...args),
 }));
 
+const mockLogSyncedItems = jest.fn();
+const mockLogSyncedItemsForMetaIds = jest.fn();
+jest.mock('@/db/queries/syncLog', () => ({
+  logSyncedItems: (...args: unknown[]) => mockLogSyncedItems(...args),
+  logSyncedItemsForMetaIds: (...args: unknown[]) => mockLogSyncedItemsForMetaIds(...args),
+}));
+
 const mockAddToMyList = jest.fn();
 const mockListExportableMyList = jest.fn();
 const mockRemoveFromMyList = jest.fn();
@@ -227,6 +234,12 @@ describe('simkl sync service', () => {
           metaId: '555',
           type: 'movie',
         })
+      );
+      expect(mockLogSyncedItems).toHaveBeenCalledWith(
+        'profile-1',
+        'simkl',
+        'import',
+        expect.arrayContaining([expect.objectContaining({ metaId: '555', title: 'Movie' })])
       );
     });
 
@@ -556,6 +569,12 @@ describe('simkl sync service', () => {
         movies: [{ ids: { simkl: 77, imdb: 'tt77' } }],
         shows: [],
       });
+      expect(mockLogSyncedItemsForMetaIds).toHaveBeenCalledWith(
+        'profile-1',
+        'simkl',
+        'export',
+        expect.arrayContaining([expect.objectContaining({ id: 'movie-1', type: 'movie' })])
+      );
     });
 
     it('skips items below completion threshold', async () => {

@@ -1,5 +1,6 @@
 import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import * as myListQueries from '@/db/queries/myList';
+import { logSyncedItems } from '@/db/queries/syncLog';
 import * as syncQueueQueries from '@/db/queries/syncQueue';
 import * as watchHistoryQueries from '@/db/queries/watchHistory';
 import { useIntegrationsStore } from '@/store/integrations.store';
@@ -13,6 +14,7 @@ jest.mock('../client');
 jest.mock('@/db/queries/watchHistory');
 jest.mock('@/db/queries/myList');
 jest.mock('@/db/queries/syncQueue');
+jest.mock('@/db/queries/syncLog');
 jest.mock('@/db/queries/metaCache');
 
 const mockGetLastActivities = client.getLastActivities as jest.Mock;
@@ -35,6 +37,7 @@ const mockAddToMyList = myListQueries.addToMyList as jest.Mock;
 const mockListSyncQueue = syncQueueQueries.listSyncQueueForProvider as jest.Mock;
 const mockDeleteFromSyncQueue = syncQueueQueries.deleteFromSyncQueue as jest.Mock;
 const mockUpsertMinimalMetaCache = upsertMinimalMetaCache as jest.Mock;
+const mockLogSyncedItems = logSyncedItems as jest.Mock;
 
 describe('Trakt Sync Service', () => {
   beforeEach(() => {
@@ -192,6 +195,114 @@ describe('Trakt Sync Service', () => {
         undefined,
         'trakt'
       );
+    });
+
+    it('logs only movies watched since the previous cursor', async () => {
+      mockGetLastActivities.mockResolvedValue({
+        movies: { watched_at: '2023-01-03T00:00:00.000Z' },
+      });
+      mockGetWatchedMovies.mockResolvedValue([
+        {
+          movie: { ids: { imdb: 'tt-old' }, title: 'Old Movie', year: 2022 },
+          last_watched_at: '2023-01-01T00:00:00.000Z',
+        },
+        {
+          movie: { ids: { imdb: 'tt-new' }, title: 'New Movie', year: 2023 },
+          last_watched_at: '2023-01-03T00:00:00.000Z',
+        },
+      ]);
+
+      await runImport('profile1', 'token', {
+        movies: { watched_at: '2023-01-02T00:00:00.000Z' },
+      });
+
+      // Both items are still re-imported (full fetch is required for
+      // removal detection and idempotent upserts).
+      expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
+        expect.objectContaining({ metaId: 'tt-old' })
+      );
+      expect(mockUpsertWatchProgress).toHaveBeenCalledWith(
+        expect.objectContaining({ metaId: 'tt-new' })
+      );
+      // ...but only the genuinely new item lands in the sync log.
+      expect(mockLogSyncedItems).toHaveBeenCalledTimes(1);
+      expect(mockLogSyncedItems).toHaveBeenCalledWith('profile1', 'trakt', 'import', [
+        { metaId: 'tt-new', type: 'movie', title: 'New Movie' },
+      ]);
+    });
+
+    it('logs all items on first import (no previous cursor)', async () => {
+      mockGetLastActivities.mockResolvedValue({
+        movies: { watched_at: '2023-01-03T00:00:00.000Z' },
+      });
+      mockGetWatchedMovies.mockResolvedValue([
+        {
+          movie: { ids: { imdb: 'tt-old' }, title: 'Old Movie', year: 2022 },
+          last_watched_at: '2023-01-01T00:00:00.000Z',
+        },
+      ]);
+
+      await runImport('profile1', 'token');
+
+      expect(mockLogSyncedItems).toHaveBeenCalledWith('profile1', 'trakt', 'import', [
+        { metaId: 'tt-old', type: 'movie', title: 'Old Movie' },
+      ]);
+    });
+
+    it('logs only shows watched since the previous cursor', async () => {
+      mockGetLastActivities.mockResolvedValue({
+        episodes: { watched_at: '2023-01-03T00:00:00.000Z' },
+      });
+      mockGetWatchedShowsWithSeasons.mockResolvedValue([
+        {
+          show: { ids: { tmdb: 1 }, title: 'Old Show', year: 2022 },
+          last_watched_at: '2023-01-01T00:00:00.000Z',
+          seasons: [],
+        },
+        {
+          show: { ids: { tmdb: 2 }, title: 'New Show', year: 2023 },
+          last_watched_at: '2023-01-03T00:00:00.000Z',
+          seasons: [],
+        },
+      ]);
+
+      await runImport('profile1', 'token', {
+        episodes: { watched_at: '2023-01-02T00:00:00.000Z' },
+      });
+
+      expect(mockLogSyncedItems).toHaveBeenCalledTimes(1);
+      expect(mockLogSyncedItems).toHaveBeenCalledWith('profile1', 'trakt', 'import', [
+        { metaId: 'tmdb:series:2', type: 'series', title: 'New Show' },
+      ]);
+    });
+
+    it('logs only watchlist items listed since the previous cursor', async () => {
+      mockGetLastActivities.mockResolvedValue({
+        watchlist: { updated_at: '2023-01-03T00:00:00.000Z' },
+      });
+      mockGetWatchlistMovies.mockResolvedValue([
+        {
+          movie: { ids: { imdb: 'tt-old' }, title: 'Old WL', year: 2022 },
+          listed_at: '2023-01-01T00:00:00.000Z',
+        },
+        {
+          movie: { ids: { imdb: 'tt-new' }, title: 'New WL', year: 2023 },
+          listed_at: '2023-01-03T00:00:00.000Z',
+        },
+      ]);
+      mockGetWatchlistShows.mockResolvedValue([]);
+
+      await runImport('profile1', 'token', {
+        watchlist: { updated_at: '2023-01-02T00:00:00.000Z' },
+      });
+
+      // Both items are still imported...
+      expect(mockAddToMyList).toHaveBeenCalledTimes(2);
+      // ...but only the newly listed one is logged.
+      expect(mockLogSyncedItems).toHaveBeenCalledTimes(1);
+      expect(mockLogSyncedItems).toHaveBeenCalledWith('profile1', 'trakt', 'import', [
+        { metaId: 'tt-new', type: 'movie', title: 'New WL' },
+      ]);
     });
 
     it('passes listed_at as addedAt when available', async () => {

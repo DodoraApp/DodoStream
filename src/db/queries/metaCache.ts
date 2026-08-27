@@ -130,6 +130,23 @@ export async function upsertMinimalMetaCache(params: {
     });
 }
 
+/**
+ * Batch-fetches cached display names for meta ids (used for sync log titles).
+ * Missing entries are simply absent from the returned map.
+ */
+export async function getMetaCacheNames(metaIds: string[]): Promise<Map<string, string>> {
+  await initializeDatabase();
+
+  if (metaIds.length === 0) return new Map();
+
+  const rows = await db
+    .select({ metaId: metaCache.metaId, name: metaCache.name })
+    .from(metaCache)
+    .where(inArray(metaCache.metaId, metaIds));
+
+  return new Map(rows.map((row) => [row.metaId, row.name]));
+}
+
 export async function isMetaCacheStale(
   metaId: string,
   options: { allowPartial?: boolean } = {}
