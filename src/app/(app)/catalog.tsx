@@ -147,7 +147,7 @@ export default function CatalogPage() {
   // Loading state
   if (isLoading) {
     return (
-      <Container safeAreaEdges={['left', 'right', 'top']}>
+      <Container safeAreaEdges={['left', 'right']}>
         <Stack.Screen options={{ title: displayTitle }} />
         <Box flex={1} justifyContent="center" alignItems="center">
           <LoadingIndicator />
@@ -159,7 +159,7 @@ export default function CatalogPage() {
   // Error state
   if (isError) {
     return (
-      <Container safeAreaEdges={['left', 'right', 'top']}>
+      <Container safeAreaEdges={['left', 'right']}>
         <Stack.Screen options={{ title: displayTitle }} />
         <Box flex={1} justifyContent="center" alignItems="center" padding="m">
           <Text variant="body" color="textSecondary" textAlign="center">
@@ -173,7 +173,7 @@ export default function CatalogPage() {
   // Empty state
   if (allMetas.length === 0) {
     return (
-      <Container safeAreaEdges={['left', 'right', 'top']}>
+      <Container safeAreaEdges={['left', 'right']}>
         <Stack.Screen options={{ title: displayTitle }} />
         <Box flex={1} justifyContent="center" alignItems="center" padding="m">
           <Text variant="body" color="textSecondary" textAlign="center">
@@ -185,7 +185,7 @@ export default function CatalogPage() {
   }
 
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right', 'top']}>
+    <Container disablePadding safeAreaEdges={['left', 'right']}>
       <Stack.Screen options={{ title: displayTitle }} />
       <Box flex={1} paddingHorizontal="m">
         <LegendList

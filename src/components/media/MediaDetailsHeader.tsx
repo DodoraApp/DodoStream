@@ -1,5 +1,5 @@
 import { memo, PropsWithChildren, useMemo } from 'react';
-import { Dimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 
 import { useTheme } from '@shopify/restyle';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,13 +8,12 @@ import { AnimatedImage } from '@/components/basic/AnimatedImage';
 import FadeIn from '@/components/basic/FadeIn';
 import { Tag } from '@/components/basic/Tag';
 import { MediaInfo } from '@/components/media/MediaInfo';
+import { LANDSCAPE_COVER_HEIGHT_FACTOR } from '@/constants/ui';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
 import type { MetaDetail, MetaVideo } from '@/types/stremio';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
 import { getDetailsCoverSource, getDetailsLogoSource } from '@/utils/media-artwork';
-
-const { width } = Dimensions.get('window');
 
 interface MediaDetailsHeaderProps {
   media: MetaDetail;
@@ -25,6 +24,11 @@ interface MediaDetailsHeaderProps {
 export const MediaDetailsHeader = memo(
   ({ media, video, variant = 'full', children }: PropsWithChildren<MediaDetailsHeaderProps>) => {
     const theme = useTheme<Theme>();
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
+    const coverHeight = isLandscape
+      ? Math.min(theme.sizes.mediaDetailsHeader, height * LANDSCAPE_COVER_HEIGHT_FACTOR)
+      : theme.sizes.mediaDetailsHeader;
 
     const coverSource = useMemo(() => {
       return getDetailsCoverSource(media.background, media.poster);
@@ -50,7 +54,7 @@ export const MediaDetailsHeader = memo(
     return (
       <Box>
         {variant !== 'minimal' && (
-          <Box height={theme.sizes.mediaDetailsHeader} width={width} position="relative">
+          <Box height={coverHeight} width={width} position="relative">
             <AnimatedImage
               source={coverSource}
               style={{ width: '100%', height: '100%' }}

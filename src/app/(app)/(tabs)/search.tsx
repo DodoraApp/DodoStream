@@ -132,7 +132,11 @@ export default function SearchTab() {
   );
 
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right', 'top']}>
+    <Container
+      disablePadding
+      safeAreaEdges={['left', 'right', 'top']}
+      preserveVerticalInsetsInLandscape
+      ignoreLeftInsetInLandscape>
       <Box flex={1}>
         <SearchBar searchBar={searchBar} />
         {searchBar.submittedQuery.length === 0 ? (

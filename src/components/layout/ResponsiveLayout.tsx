@@ -1,5 +1,6 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import { BackHandler, Platform, UIManager, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePathname } from 'expo-router';
 
@@ -17,7 +18,9 @@ interface ResponsiveLayoutProps {
 
 export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth }) => {
   const breakpoint = useBreakpoint();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const isTabsRoute =
     pathname === '/' ||
@@ -26,8 +29,8 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
   const [isSidebarFocused, setIsSidebarFocused] = useState(false);
   const activeSidebarNodeHandle = useSidebarFocusStore((state) => state.activeSidebarNodeHandle);
 
-  // Show sidebar on tablet and TV
-  const showSidebar = breakpoint === 'tablet' || breakpoint === 'tv';
+  // Landscape mobile and tablet screens use the same sidebar navigation as TV.
+  const showSidebar = isLandscape || breakpoint === 'tablet' || breakpoint === 'tv';
 
   // Handle TV back button: focus sidebar if not already focused
   // This must be before any conditional returns to maintain hook order
@@ -36,25 +39,18 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (!isSidebarFocused && activeSidebarNodeHandle) {
-        // Focus the active sidebar item instead of closing the app
-        UIManager.dispatchViewManagerCommand(activeSidebarNodeHandle, 'requestTVFocus' as any, []);
-        return true; // Handled
+        UIManager.dispatchViewManagerCommand(activeSidebarNodeHandle, 'requestTVFocus', []);
+        return true;
       }
-      return false; // Let default behavior occur (close app)
+      return false;
     });
 
     return () => backHandler.remove();
   }, [showSidebar, isSidebarFocused, activeSidebarNodeHandle, isTabsRoute]);
 
-  // Calculate max width for content (50% on large screens)
-  const contentMaxWidth: number | undefined =
-    maxWidth !== undefined
-      ? typeof maxWidth === 'number'
-        ? maxWidth
-        : undefined
-      : breakpoint === 'tv'
-        ? width * 0.5
-        : undefined;
+  // The content area must fill the viewport beside the sidebar on both
+  // tablets and TVs. Callers can still opt into a narrower content width.
+  const contentMaxWidth: number | undefined = typeof maxWidth === 'number' ? maxWidth : undefined;
 
   if (!showSidebar) {
     // Mobile layout: just render children
@@ -72,11 +68,22 @@ export const ResponsiveLayout: FC<ResponsiveLayoutProps> = ({ children, maxWidth
 
   return (
     <Box flex={1} flexDirection="row" backgroundColor="mainBackground">
-      <View onFocus={() => setIsSidebarFocused(true)} onBlur={() => setIsSidebarFocused(false)}>
+      <View
+        style={
+          isLandscape
+            ? {
+                paddingTop: insets.top,
+                paddingBottom: insets.bottom,
+                paddingLeft: insets.left,
+              }
+            : undefined
+        }
+        onFocus={() => setIsSidebarFocused(true)}
+        onBlur={() => setIsSidebarFocused(false)}>
         <TVSidebar />
       </View>
       <View style={{ flex: 1 }}>
-        <Box flex={1} alignItems="center" backgroundColor="mainBackground">
+        <Box flex={1} alignItems="stretch" backgroundColor="mainBackground">
           <Box
             flex={1}
             width="100%"

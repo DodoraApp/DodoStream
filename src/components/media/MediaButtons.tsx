@@ -35,7 +35,7 @@ interface MediaButtonsProps {
 
 export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) => {
   const { t } = useTranslation('media');
-  const { isPlatformTV } = useResponsiveLayout();
+  const { isTVLayout: isPlatformTV } = useResponsiveLayout();
   const { pushToStreams } = useMediaNavigation();
 
   const videos = media.videos;

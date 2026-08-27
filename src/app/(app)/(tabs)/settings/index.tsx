@@ -38,7 +38,7 @@ export default function Settings() {
   // Wide layout: use SettingsShell with split view
   if (splitLayout.enabled) {
     return (
-      <Container disablePadding>
+      <Container disablePadding preserveVerticalInsetsInLandscape ignoreLeftInsetInLandscape>
         <SettingsShell
           firstMenuItemRef={firstMenuItemRef}
           menu={
@@ -75,7 +75,10 @@ export default function Settings() {
 
   // Mobile layout: show menu with links to separate pages
   return (
-    <Container safeAreaEdges={['left', 'right', 'top']}>
+    <Container
+      safeAreaEdges={['left', 'right', 'top']}
+      preserveVerticalInsetsInLandscape
+      ignoreLeftInsetInLandscape>
       <Box flex={1}>
         <PageHeader title={t('title')} />
         <ScrollView showsVerticalScrollIndicator={false}>

@@ -32,8 +32,8 @@ export const EpisodeList: FC<EpisodeListProps> = ({
   onEpisodeLongPress,
 }) => {
   const { t } = useTranslation('media');
-  const { isPlatformTV } = useResponsiveLayout();
-  const isHorizontal = isPlatformTV;
+  const { isTVLayout } = useResponsiveLayout();
+  const isHorizontal = isTVLayout;
   const { entry: continueWatching } = useContinueWatchingForMeta(metaId, { videos });
 
   const getSeasonLabel = useCallback(

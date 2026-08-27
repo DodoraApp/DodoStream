@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, TVFocusGuideView } from 'react-native';
+import { StyleSheet, TVFocusGuideView, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -21,6 +21,7 @@ import {
   HERO_CONTENT_SLIDE_DELAY_MS,
   HERO_CONTENT_SLIDE_DURATION_MS,
   HERO_CROSSFADE_DURATION_MS,
+  LANDSCAPE_HERO_HEIGHT_FACTOR,
 } from '@/constants/ui';
 import { useHomeScroll } from '@/hooks/useHomeScroll';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
@@ -38,6 +39,8 @@ interface HeroSectionProps {
 export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionProps) => {
   const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
+  const { height } = useWindowDimensions();
+  const heroHeight = Math.min(theme.sizes.heroHeight, height * LANDSCAPE_HERO_HEIGHT_FACTOR);
   const { pushToStreams, navigateToDetails } = useMediaNavigation();
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -236,12 +239,12 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   // Sources configured but data not yet ready — hold the space so the list below
   // doesn't jump when hero content arrives
   if (!hasData || !activeItem) {
-    return <Skeleton width="100%" height={theme.sizes.heroHeight} style={{ borderRadius: 0 }} />;
+    return <Skeleton width="100%" height={heroHeight} style={{ borderRadius: 0 }} />;
   }
 
   return (
     <TVFocusGuideView autoFocus trapFocusRight trapFocusUp>
-      <Box height={theme.sizes.heroHeight} width="100%" overflow="hidden">
+      <Box height={heroHeight} width="100%" overflow="hidden">
         {/* Dual-layer crossfade: two persistent Image nodes, opacity animated */}
         <Animated.View style={[StyleSheet.absoluteFill, animatedStyleA]}>
           <FastImage

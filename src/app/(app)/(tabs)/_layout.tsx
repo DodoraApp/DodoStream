@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -14,10 +15,12 @@ export default function TabsLayout() {
   const { t } = useTranslation('navigation');
   const theme = useTheme<Theme>();
   const { bottom } = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const breakpoint = useBreakpoint();
+  const isLandscape = width > height;
 
-  // Hide tabs on tablet/TV since we have sidebar
-  const showTabs = breakpoint === 'mobile';
+  // Landscape screens use the sidebar, so the phone tab bar is portrait-only.
+  const showTabs = breakpoint === 'mobile' && !isLandscape;
 
   return (
     <ResponsiveLayout>
@@ -35,13 +38,13 @@ export default function TabsLayout() {
                 height: theme.sizes.tabBarHeight + bottom + theme.sizes.tabBarPadding * 2,
               }
             : {
-                display: 'none', // Hide tabs on tablet/TV
+                display: 'none',
               },
           tabBarActiveTintColor: theme.colors.primaryBackground,
           tabBarInactiveTintColor: theme.colors.textSecondary,
           tabBarLabelStyle: {
             fontFamily: theme.fonts.poppinsSemiBold,
-            fontSize: 12,
+            fontSize: theme.sizes.tabBarLabelSize,
           },
         }}>
         {NAV_ITEMS.map((item) => (

@@ -3,7 +3,7 @@ import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsConte
 
 export default function AddonsSettings() {
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right']}>
+    <Container disablePadding safeAreaEdges={['left', 'right']} ignoreLeftInsetInLandscape>
       <AddonsSettingsContent />
     </Container>
   );

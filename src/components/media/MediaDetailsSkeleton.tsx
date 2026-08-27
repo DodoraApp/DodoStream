@@ -14,9 +14,9 @@ export interface MediaDetailsSkeletonProps {
 
 export const MediaDetailsSkeleton = memo(({ variant = 'full' }: MediaDetailsSkeletonProps) => {
   const theme = useTheme<Theme>();
-  const { isPlatformTV, width } = useResponsiveLayout();
+  const { isTVLayout, width } = useResponsiveLayout();
 
-  if (isPlatformTV) {
+  if (isTVLayout) {
     return (
       <Box flex={1} padding="xl" gap="l">
         <Box alignItems="center" paddingTop="xxl" gap="m">
@@ -63,9 +63,9 @@ export const MediaDetailsSkeleton = memo(({ variant = 'full' }: MediaDetailsSkel
 
         <Box paddingTop="m">
           <CardListSkeleton
-            horizontal={isPlatformTV}
-            count={isPlatformTV ? 6 : 4}
-            cardWidth={isPlatformTV ? theme.cardSizes.continueWatching.width : '100%'}
+            horizontal={isTVLayout}
+            count={isTVLayout ? 6 : 4}
+            cardWidth={isTVLayout ? theme.cardSizes.continueWatching.width : '100%'}
             cardHeight={
               theme.cardSizes.episode.imageHeight + theme.spacing.m * 2 + theme.spacing.xl
             }

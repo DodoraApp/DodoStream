@@ -35,6 +35,10 @@ export const HERO_CONTENT_SLIDE_DELAY_MS = 150;
 export const HERO_DOT_ANIMATION_MS = 300;
 export const HERO_CONTENT_REFRESH_MS = 1000 * 60 * 30; // 30 minutes - how often to pick new random items
 
+// Landscape media proportions
+export const LANDSCAPE_HERO_HEIGHT_FACTOR = 0.7;
+export const LANDSCAPE_COVER_HEIGHT_FACTOR = 0.5;
+
 // Network timeouts
 export const ADDON_MANIFEST_FETCH_TIMEOUT_MS = 10_000;
 

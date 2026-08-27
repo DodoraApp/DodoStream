@@ -8,19 +8,21 @@ import { Theme } from '@/theme/theme';
 export type Breakpoint = 'mobile' | 'tablet' | 'tv';
 
 /**
- * Hook to detect current breakpoint based on window width
- * @returns Current breakpoint: 'mobile' | 'tablet' | 'tv'
+ * Detect the layout tier from the shortest viewport side.
+ *
+ * Using the shortest side keeps a phone or tablet in the same tier after
+ * rotation. TVs are identified by platform so 720p TV screens still receive
+ * the TV navigation layout.
  */
 export function useBreakpoint(): Breakpoint {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const theme = useTheme<Theme>();
 
-  if (width >= theme.breakpoints.tv) {
-    return 'tv';
-  }
-  if (width >= theme.breakpoints.tablet) {
-    return 'tablet';
-  }
+  if (Platform.isTV) return 'tv';
+
+  const shortSide = Math.min(width, height);
+  if (shortSide >= theme.breakpoints.tv) return 'tv';
+  if (shortSide >= theme.breakpoints.tablet) return 'tablet';
   return 'mobile';
 }
 
@@ -60,10 +62,15 @@ export interface ResponsiveLayoutResult {
   /** True for tablet or TV (wide layouts that can show split views) */
   isWide: boolean;
 
-  /** Current window width */
+  /** Current window dimensions */
   width: number;
+  height: number;
 
-  /** Whether device is a TV platform */
+  /** Whether viewport is landscape-oriented */
+  isLandscape: boolean;
+  /** Whether the TV-oriented composition should be used */
+  isTVLayout: boolean;
+
   isPlatformTV: boolean;
 
   /** Split layout configuration for settings-style pages */
@@ -90,13 +97,14 @@ export interface ResponsiveLayoutResult {
  * }
  */
 export function useResponsiveLayout(): ResponsiveLayoutResult {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const breakpoint = useBreakpoint();
 
-  const isTablet = breakpoint === 'tablet';
   const isTV = breakpoint === 'tv';
-  const isWide = isTablet || isTV;
+  const isWide = breakpoint === 'tablet' || isTV;
+  const isLandscape = width > height;
   const isPlatformTV = Platform.isTV;
+  const isTVLayout = isPlatformTV || isLandscape;
 
   // Split layout config
   const splitLayout = useMemo<SplitLayoutConfig>(
@@ -113,6 +121,8 @@ export function useResponsiveLayout(): ResponsiveLayoutResult {
     isTV,
     isWide,
     width,
+    height,
+    isTVLayout,
     isPlatformTV,
     splitLayout,
   };

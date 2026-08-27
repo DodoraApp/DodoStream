@@ -48,7 +48,6 @@ export const MediaDetailsTabs: FC<MediaDetailsTabsProps> = ({
   return (
     <Box gap="m">
       <DetailsTabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
-
       {activeTab === 'seasons' && hasSeasonsTab && media.videos && (
         <EpisodeList
           metaId={media.id}

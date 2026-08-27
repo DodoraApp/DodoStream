@@ -41,7 +41,7 @@ export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
   ({ selectedTrack, currentTime, delay, onDelayChange }) => {
     const { t } = useTranslation('player');
     const theme = useTheme<Theme>();
-    const { isPlatformTV } = useResponsiveLayout();
+    const { isTVLayout: isPlatformTV } = useResponsiveLayout();
     const adjustedTime = currentTime - delay;
 
     // Only load cues for addon subtitles
