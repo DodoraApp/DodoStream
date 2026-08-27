@@ -348,5 +348,13 @@
     "sync": "Sync",
     "last_synced": "Zuletzt synchronisiert",
     "other_connected": "Trenne zuerst Simkl, um dich mit Trakt.tv zu verbinden"
+  },
+  "sync_log": {
+    "title": "Sync-Log",
+    "show": "Synchronisierte Elemente anzeigen",
+    "hide": "Synchronisierte Elemente ausblenden",
+    "empty": "Noch keine synchronisierten Elemente",
+    "imported": "Importiert",
+    "exported": "Exportiert"
   }
 }

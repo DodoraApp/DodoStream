@@ -1,6 +1,7 @@
 import { batchProcess, guardedImport } from '@/api/integrations/sync-guard';
 import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import { addToMyList, listExportableMyListForProfile, removeFromMyList } from '@/db/queries/myList';
+import { logSyncedItems, logSyncedItemsForMetaIds } from '@/db/queries/syncLog';
 import { deleteFromSyncQueue, listSyncQueueForProvider } from '@/db/queries/syncQueue';
 import {
   dismissFromContinueWatching,
@@ -41,6 +42,17 @@ function needsSync(remoteTimestamp?: string, localTimestamp?: string): boolean {
   if (!remoteTimestamp) return false;
   if (!localTimestamp) return true;
   return new Date(remoteTimestamp) > new Date(localTimestamp);
+}
+
+/**
+ * Whether an item counts as new for the sync log: its timestamp is newer than
+ * the previous import cursor. First sync (no previous cursor) and unknown
+ * timestamps log the item — never silently drop entries from the log.
+ */
+function isNewSinceLastSync(itemTimestamp: string | undefined, prevCursorMs: number): boolean {
+  if (!prevCursorMs || !itemTimestamp) return true;
+  const itemMs = new Date(itemTimestamp).getTime();
+  return Number.isNaN(itemMs) || itemMs > prevCursorMs;
 }
 
 type TraktSeason = { number: number; episodes: { number: number; watched_at?: string }[] };
@@ -101,12 +113,22 @@ export async function runImport(
 
       const historyUpserts: Parameters<typeof upsertWatchProgress>[0][] = [];
       const currentlyImportedIds = new Set<string>();
+      const importedItems = new Map<
+        string,
+        { metaId: string; type: ContentType; title?: string }
+      >();
+      const prevMoviesCursorMs = cursors?.movies?.watched_at
+        ? new Date(cursors.movies.watched_at).getTime()
+        : 0;
 
       for (const item of movies) {
         const metaId = resolveTraktIds(item.movie.ids, 'movie');
         if (!metaId) continue;
 
         currentlyImportedIds.add(metaId);
+        if (isNewSinceLastSync(item.last_watched_at, prevMoviesCursorMs)) {
+          importedItems.set(metaId, { metaId, type: 'movie', title: item.movie.title });
+        }
 
         await upsertMinimalMetaCache({
           metaId,
@@ -129,6 +151,7 @@ export async function runImport(
       }
 
       await batchProcess(historyUpserts, (p) => upsertWatchProgress(p));
+      await logSyncedItems(profileId, 'trakt', 'import', Array.from(importedItems.values()));
 
       await cleanupRemovedItems(profileId, 'history', currentlyImportedIds, 'movie');
 
@@ -148,12 +171,22 @@ export async function runImport(
 
       const historyUpserts: Parameters<typeof upsertWatchProgress>[0][] = [];
       const currentlyImportedIds = new Set<string>();
+      const importedItems = new Map<
+        string,
+        { metaId: string; type: ContentType; title?: string }
+      >();
+      const prevEpisodesCursorMs = cursors?.episodes?.watched_at
+        ? new Date(cursors.episodes.watched_at).getTime()
+        : 0;
 
       for (const item of shows) {
         const metaId = resolveTraktIds(item.show.ids, 'series');
         if (!metaId) continue;
 
         currentlyImportedIds.add(metaId);
+        if (isNewSinceLastSync(item.last_watched_at, prevEpisodesCursorMs)) {
+          importedItems.set(metaId, { metaId, type: 'series', title: item.show.title });
+        }
 
         await upsertMinimalMetaCache({
           metaId,
@@ -184,6 +217,7 @@ export async function runImport(
       }
 
       await batchProcess(historyUpserts, (p) => upsertWatchProgress(p));
+      await logSyncedItems(profileId, 'trakt', 'import', Array.from(importedItems.values()));
 
       await cleanupRemovedItems(profileId, 'history', currentlyImportedIds, 'series');
 
@@ -200,6 +234,13 @@ export async function runImport(
 
       const watchlistUpserts: { metaId: string; type: string; addedAt?: number }[] = [];
       const currentlyImportedIds = new Set<string>();
+      const importedItems = new Map<
+        string,
+        { metaId: string; type: ContentType; title?: string }
+      >();
+      const prevWatchlistCursorMs = cursors?.watchlist?.updated_at
+        ? new Date(cursors.watchlist.updated_at).getTime()
+        : 0;
 
       for (const item of movies) {
         if (!item.movie) continue;
@@ -207,6 +248,9 @@ export async function runImport(
         if (!metaId) continue;
 
         currentlyImportedIds.add(metaId);
+        if (isNewSinceLastSync(item.listed_at, prevWatchlistCursorMs)) {
+          importedItems.set(metaId, { metaId, type: 'movie', title: item.movie.title });
+        }
 
         await upsertMinimalMetaCache({
           metaId,
@@ -229,6 +273,9 @@ export async function runImport(
         if (!metaId) continue;
 
         currentlyImportedIds.add(metaId);
+        if (isNewSinceLastSync(item.listed_at, prevWatchlistCursorMs)) {
+          importedItems.set(metaId, { metaId, type: 'series', title: item.show.title });
+        }
 
         await upsertMinimalMetaCache({
           metaId,
@@ -248,6 +295,7 @@ export async function runImport(
       await batchProcess(watchlistUpserts, (p) =>
         addToMyList(profileId, p.metaId, p.type as ContentType, p.addedAt, 'trakt')
       );
+      await logSyncedItems(profileId, 'trakt', 'import', Array.from(importedItems.values()));
 
       await cleanupRemovedItems(profileId, 'watchlist', currentlyImportedIds);
 
@@ -381,6 +429,7 @@ export async function runExport(profileId: string, token: string): Promise<boole
         movies: historyPayload.movies?.length,
         shows: historyPayload.shows?.length,
       });
+      await logSyncedItemsForMetaIds(profileId, 'trakt', 'export', completed);
     }
 
     // 2. Export Watchlist
@@ -421,6 +470,7 @@ export async function runExport(profileId: string, token: string): Promise<boole
         movies: watchlistPayload.movies!.length,
         shows: watchlistPayload.shows!.length,
       });
+      await logSyncedItemsForMetaIds(profileId, 'trakt', 'export', watchlistItems);
     }
 
     return true;

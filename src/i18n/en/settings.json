@@ -348,5 +348,13 @@
     "sync": "Sync",
     "last_synced": "Last synced",
     "other_connected": "Disconnect Simkl first to connect with Trakt.tv"
+  },
+  "sync_log": {
+    "title": "Sync log",
+    "show": "Show synced items",
+    "hide": "Hide synced items",
+    "empty": "No synced items yet",
+    "imported": "Imported",
+    "exported": "Exported"
   }
 }

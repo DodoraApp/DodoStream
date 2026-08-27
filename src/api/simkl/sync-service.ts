@@ -1,6 +1,7 @@
 import { batchProcess, guardedImport } from '@/api/integrations/sync-guard';
 import { upsertMinimalMetaCache } from '@/db/queries/metaCache';
 import { addToMyList, listExportableMyListForProfile, removeFromMyList } from '@/db/queries/myList';
+import { logSyncedItems, logSyncedItemsForMetaIds } from '@/db/queries/syncLog';
 import { deleteFromSyncQueue, listSyncQueueForProvider } from '@/db/queries/syncQueue';
 import {
   listExportableWatchHistoryForProfile,
@@ -251,6 +252,10 @@ export async function runImport(
         const myListAdditions: { metaId: string; type: ContentType; addedAt?: number }[] = [];
         const historyUpserts: Parameters<typeof upsertImportedProgress>[0][] = [];
         const removals: { metaId: string; type: ContentType }[] = [];
+        const importedItems = new Map<
+          string,
+          { metaId: string; type: ContentType; title?: string }
+        >();
 
         for (const item of items) {
           const itemStatus = item.status;
@@ -283,6 +288,7 @@ export async function runImport(
                 ? new Date(item.added_to_watchlist_at).getTime()
                 : undefined,
             });
+            importedItems.set(metaId, { metaId, type: contentType, title: mediaData?.title });
           }
 
           // Map Simkl status to local watch history
@@ -294,6 +300,7 @@ export async function runImport(
               const params = collectShowParams(profileId, item, contentType);
               historyUpserts.push(...params);
             }
+            importedItems.set(metaId, { metaId, type: contentType, title: mediaData?.title });
           } else if (itemStatus === 'dropped') {
             // Dropped items are removed from local history/watchlist to keep it clean
             removals.push({ metaId, type: contentType });
@@ -311,6 +318,8 @@ export async function runImport(
           await removeWatchHistoryMeta(profileId, removal.metaId, 'simkl');
           await removeFromMyList(profileId, removal.metaId, 'simkl');
         }
+
+        await logSyncedItems(profileId, 'simkl', 'import', Array.from(importedItems.values()));
 
         // Success! Now update the cursors locally.
         Object.assign(newTypeCursors, pendingTypeCursors);
@@ -599,6 +608,7 @@ export async function runExport(profileId: string, token: string): Promise<boole
         movies: historyPayload.movies.length,
         shows: historyPayload.shows.length,
       });
+      await logSyncedItemsForMetaIds(profileId, 'simkl', 'export', completed);
     }
 
     // 2. Export Watchlist (My List)
@@ -620,6 +630,7 @@ export async function runExport(profileId: string, token: string): Promise<boole
         movies: watchlistPayload.movies.length,
         shows: watchlistPayload.shows.length,
       });
+      await logSyncedItemsForMetaIds(profileId, 'simkl', 'export', myListItems);
     }
 
     return true;

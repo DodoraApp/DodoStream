@@ -70,6 +70,15 @@ jest.mock('@/db/queries/syncQueue', () => ({
   ...jest.requireActual('./db-store').syncQueueQueries,
 }));
 
+// Sync log writes are not asserted by the e2e suite — no-op so the real
+// SQLite-backed module (which would touch the mocked db) is never loaded.
+jest.mock('@/db/queries/syncLog', () => ({
+  __esModule: true,
+  logSyncedItems: jest.fn(async () => {}),
+  logSyncedItemsForMetaIds: jest.fn(async () => {}),
+  listSyncLogForProfile: jest.fn(async () => []),
+}));
+
 jest.mock('@/db/queries/metaCache', () => ({
   __esModule: true,
   ...jest.requireActual('./db-store').metaCacheQueries,

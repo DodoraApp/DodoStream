@@ -60,6 +60,11 @@ jest.mock('@/db/queries/metaCache', () => ({
   upsertMinimalMetaCache: jest.fn(),
 }));
 
+jest.mock('@/db/queries/syncLog', () => ({
+  logSyncedItems: jest.fn(async () => {}),
+  logSyncedItemsForMetaIds: jest.fn(async () => {}),
+}));
+
 const mockUpdateSimklCursors = jest.fn();
 jest.mock('@/store/integrations.store', () => ({
   useIntegrationsStore: {

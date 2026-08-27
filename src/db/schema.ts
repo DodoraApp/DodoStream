@@ -140,4 +140,21 @@ export const syncQueue = sqliteTable(
   (table) => [index('profile_provider_idx').on(table.profileId, table.provider)]
 );
 
+export const syncLog = sqliteTable(
+  'sync_log',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    profileId: text('profile_id').notNull(),
+    provider: text('provider', { enum: ['simkl', 'trakt'] as const }).notNull(),
+    direction: text('direction', { enum: ['import', 'export'] as const }).notNull(),
+    metaId: text('meta_id').notNull(),
+    type: contentTypeColumn('type').notNull(),
+    title: text('title').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [index('sync_log_profile_idx').on(table.profileId, table.id)]
+);
+
 export type WatchHistoryStatus = 'watching' | 'dismissed' | 'completed';
+export type SyncLogProvider = 'simkl' | 'trakt';
+export type SyncLogDirection = 'import' | 'export';
