@@ -345,7 +345,10 @@ export default function Library() {
   }, []);
 
   return (
-    <Container>
+    <Container
+      safeAreaEdges={['left', 'right', 'top']}
+      preserveVerticalInsetsInLandscape
+      ignoreLeftInsetInLandscape>
       <Box paddingHorizontal="s" gap="m">
         <PageHeader title={t('library_title')} />
         <TagFilters

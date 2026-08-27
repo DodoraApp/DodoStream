@@ -3,7 +3,7 @@ import { DataSettingsContent } from '@/components/settings/DataSettingsContent';
 
 export default function DataSettings() {
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right']}>
+    <Container disablePadding safeAreaEdges={['left', 'right']} ignoreLeftInsetInLandscape>
       <DataSettingsContent />
     </Container>
   );

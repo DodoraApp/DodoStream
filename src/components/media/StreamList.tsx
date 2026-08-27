@@ -169,8 +169,8 @@ export const StreamList = memo(
     const { data: streams, isLoading, isError, allResults, addons } = useStreams(type, id, videoId);
     const [selectedAddonId, setSelectedAddonId] = useState<string | null>(null);
     const { openStreamFromStream } = useMediaNavigation();
-    const { isPlatformTV } = useResponsiveLayout();
-    const isHorizontal = isPlatformTV;
+    const { isTVLayout } = useResponsiveLayout();
+    const isHorizontal = isTVLayout;
 
     const handleSelectStream = useCallback(
       (stream: Stream) => {

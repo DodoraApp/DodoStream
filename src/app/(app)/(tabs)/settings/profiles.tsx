@@ -3,7 +3,7 @@ import { ProfilesSettingsContent } from '@/components/settings/ProfilesSettingsC
 
 export default function ProfilesSettings() {
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right']}>
+    <Container disablePadding safeAreaEdges={['left', 'right']} ignoreLeftInsetInLandscape>
       <ProfilesSettingsContent />
     </Container>
   );

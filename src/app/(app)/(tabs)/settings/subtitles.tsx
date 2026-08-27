@@ -3,7 +3,7 @@ import { SubtitlesSettingsContent } from '@/components/settings/SubtitlesSetting
 
 export default function SubtitlesSettings() {
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right']}>
+    <Container disablePadding safeAreaEdges={['left', 'right']} ignoreLeftInsetInLandscape>
       <SubtitlesSettingsContent />
     </Container>
   );

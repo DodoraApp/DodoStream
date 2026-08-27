@@ -155,7 +155,8 @@ const createAppTheme = (scalingFactor: number) =>
       // Tab bar (mobile only)
       tabBarHeight: withScale(50, scalingFactor),
       tabBarPadding: withScale(10, scalingFactor),
-      // Toast
+      tabBarLabelSize: withScale(12, scalingFactor),
+      tabBarCompactLabelSize: withScale(10, scalingFactor),
       toastMaxWidth: withScale(400, scalingFactor),
       toastStackGap: withScale(8, scalingFactor),
       // App start animation

@@ -3,7 +3,7 @@ import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
 
 export default function HomeSettings() {
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right']}>
+    <Container disablePadding safeAreaEdges={['left', 'right']} ignoreLeftInsetInLandscape>
       <HomeSettingsContent />
     </Container>
   );

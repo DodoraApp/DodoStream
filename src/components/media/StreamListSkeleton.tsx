@@ -12,9 +12,8 @@ export interface StreamListSkeletonProps {
 
 export const StreamListSkeleton = memo(({ count }: StreamListSkeletonProps) => {
   const theme = useTheme<Theme>();
-  const { isPlatformTV } = useResponsiveLayout();
-
-  const horizontal = isPlatformTV;
+  const { isTVLayout } = useResponsiveLayout();
+  const horizontal = isTVLayout;
   const defaultCount = horizontal ? 6 : 4;
 
   return (

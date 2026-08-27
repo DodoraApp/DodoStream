@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Platform, TVFocusGuideView } from 'react-native';
+import { TVFocusGuideView } from 'react-native';
 
 import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
@@ -7,6 +7,7 @@ import { useTheme } from '@shopify/restyle';
 import { useMeta } from '@/api/stremio';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import { MOBILE_HORIZONTAL_DRAW_DISTANCE, TV_HORIZONTAL_DRAW_DISTANCE } from '@/constants/ui';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import type { Theme } from '@/theme/theme';
 import { MetaPreview } from '@/types/stremio';
 import { getMediaSectionHeight } from '@/utils/layout';
@@ -67,6 +68,7 @@ export const MediaList = memo(
     hydrateMetadata,
   }: MediaListProps) => {
     const theme = useTheme<Theme>();
+    const { isTVLayout } = useResponsiveLayout();
     const gap = theme.spacing.s + theme.spacing.xs;
     const itemSize = theme.cardSizes.media.width + gap;
     const listHeight = getMediaSectionHeight(theme);
@@ -109,9 +111,7 @@ export const MediaList = memo(
           nestedScrollEnabled
           recycleItems
           getFixedItemSize={getFixedItemSize}
-          drawDistance={
-            Platform.isTV ? TV_HORIZONTAL_DRAW_DISTANCE : MOBILE_HORIZONTAL_DRAW_DISTANCE
-          }
+          drawDistance={isTVLayout ? TV_HORIZONTAL_DRAW_DISTANCE : MOBILE_HORIZONTAL_DRAW_DISTANCE}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: theme.spacing.m,

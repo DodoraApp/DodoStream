@@ -27,9 +27,9 @@ interface DetailsShellProps {
 export const DetailsShell = memo(
   ({ media, forceTVLayout, headerChildren, children }: PropsWithChildren<DetailsShellProps>) => {
     const theme = useTheme<Theme>();
-    const { isPlatformTV, width } = useResponsiveLayout();
+    const { isTVLayout, width } = useResponsiveLayout();
 
-    const useTVLayout = forceTVLayout ?? isPlatformTV;
+    const useTVLayout = forceTVLayout ?? isTVLayout;
 
     const coverSource = useMemo(
       () => getDetailsCoverSource(media.background, media.poster),

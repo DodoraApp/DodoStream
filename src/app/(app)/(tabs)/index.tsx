@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, TVFocusGuideView, useWindowDimensions } from 'react-native';
+import { TVFocusGuideView, useWindowDimensions } from 'react-native';
 
 import { LegendList } from '@legendapp/list/react-native';
 import { useTheme } from '@shopify/restyle';
@@ -26,6 +26,7 @@ import {
   TV_DRAW_DISTANCE,
   TV_HORIZONTAL_DRAW_DISTANCE,
 } from '@/constants/ui';
+import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { ContinueWatchingEntry, useContinueWatching } from '@/hooks/useContinueWatching';
 import { useContinueWatchingActions } from '@/hooks/useContinueWatchingActions';
 import { type PriorityCatalogEntry, useHomePriorityLoading } from '@/hooks/useHomePriorityLoading';
@@ -138,6 +139,7 @@ const HomeContent = () => {
   const myList = useMyList();
   const { scrollToSection, listRef } = useHomeScroll();
   const theme = useTheme<Theme>();
+  const { isTVLayout } = useResponsiveLayout();
   const { height: screenHeight } = useWindowDimensions();
   // Whether the continue watching section will be visible
   const hasContinueWatching =
@@ -384,7 +386,11 @@ const HomeContent = () => {
   );
 
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right', 'top']}>
+    <Container
+      disablePadding
+      safeAreaEdges={['left', 'right', 'top']}
+      preserveVerticalInsetsInLandscape
+      ignoreLeftInsetInLandscape>
       {hasAddons && !isPriorityReady ? (
         <Box flex={1} justifyContent="center" alignItems="center">
           <LoadingIndicator />
@@ -402,13 +408,12 @@ const HomeContent = () => {
             keyExtractor={keyExtractor}
             getItemType={getItemType}
             getEstimatedItemSize={getEstimatedItemSize}
-            style={{ flex: 1 }}
             ListHeaderComponent={
-              heroEnabled ? <HeroSection hasTVPreferredFocus={Platform.isTV} /> : null
+              heroEnabled ? <HeroSection hasTVPreferredFocus={isTVLayout} /> : null
             }
             recycleItems={false}
             maintainVisibleContentPosition={false}
-            drawDistance={Platform.isTV ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
+            drawDistance={isTVLayout ? TV_DRAW_DISTANCE : MOBILE_DRAW_DISTANCE}
             ListEmptyComponent={
               !hasAddons ? (
                 <Box
@@ -471,7 +476,7 @@ const ContinueWatchingSectionRow = memo(
     hasTVPreferredFocus = false,
   }: ContinueWatchingSectionRowProps) => {
     const theme = useTheme<Theme>();
-    const isTV = Platform.isTV;
+    const { isTVLayout } = useResponsiveLayout();
 
     const handleItemFocused = useCallback(() => {
       onSectionFocused(sectionKey);
@@ -489,12 +494,12 @@ const ContinueWatchingSectionRow = memo(
       ({ item, index }: { item: ContinueWatchingEntry; index: number }) => (
         <ContinueWatchingItem
           entry={item}
-          hasTVPreferredFocus={Boolean(hasTVPreferredFocus && isTV && index === 0)}
+          hasTVPreferredFocus={Boolean(hasTVPreferredFocus && isTVLayout && index === 0)}
           onFocused={handleItemFocused}
           onLongPress={onLongPressEntry}
         />
       ),
-      [hasTVPreferredFocus, isTV, handleItemFocused, onLongPressEntry]
+      [hasTVPreferredFocus, isTVLayout, handleItemFocused, onLongPressEntry]
     );
 
     if (isLoading) {
@@ -511,9 +516,7 @@ const ContinueWatchingSectionRow = memo(
           nestedScrollEnabled
           recycleItems
           getFixedItemSize={getFixedItemSize}
-          drawDistance={
-            Platform.isTV ? TV_HORIZONTAL_DRAW_DISTANCE : MOBILE_HORIZONTAL_DRAW_DISTANCE
-          }
+          drawDistance={isTVLayout ? TV_HORIZONTAL_DRAW_DISTANCE : MOBILE_HORIZONTAL_DRAW_DISTANCE}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: theme.spacing.m,

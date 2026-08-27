@@ -74,7 +74,10 @@ export default function StreamsPage() {
   }
 
   return (
-    <Container disablePadding safeAreaEdges={['left', 'right', 'top', 'bottom']}>
+    <Container
+      disablePadding
+      safeAreaEdges={['left', 'right', 'top', 'bottom']}
+      preserveVerticalInsetsInLandscape>
       <Stack.Screen
         options={{
           title: t('select_stream'),
