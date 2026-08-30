@@ -1,0 +1,58 @@
+# Library: capture My List (containing the item added in home.yaml), then
+# switch to History after playback.
+# Precondition: onboarding + home + player flows have run.
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+- tapOn:
+    id: nav-library
+
+# My List contains the item added during the home journey.
+- extendedWaitUntil:
+    visible: 'My List'
+    timeout: 15000
+- scrollUntilVisible:
+    element: 'The Meridian Archive'
+    direction: DOWN
+    timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: 'The Meridian Archive'
+- takeScreenshot: library/01-my-list
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/library/01-my-list.png'
+          thresholdPercentage: 98
+
+# History after playback.
+- tapOn: 'History'
+- extendedWaitUntil:
+    visible: 'History'
+    timeout: 15000
+- scrollUntilVisible:
+    element: 'The Meridian Archive'
+    direction: DOWN
+    timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: 'The Meridian Archive'
+- takeScreenshot: library/02-history
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/library/02-history.png'
+          thresholdPercentage: 98
+
+# History action menu.
+- longPressOn:
+    id: history-e2e:movie:the-meridian-archive
+- extendedWaitUntil:
+    visible: 'Remove from History'
+    timeout: 15000
+- tapOn:
+    id: modal-close

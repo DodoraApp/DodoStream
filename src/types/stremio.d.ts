@@ -28,7 +28,7 @@ export interface MetaDetail extends SDKMetaDetail {
   /** Series airing status, e.g. "Ended", "Continuing" */
   status?: string;
   /** YouTube trailer streams provided by metadata addons */
-  trailerStreams?: { title: string; ytId: string; lang?: string }[];
+  trailerStreams?: { title: string; ytId: string; lang?: string; thumbnail?: string }[];
   /** Landscape backdrop poster URL */
   landscapePoster?: string;
   /** Extended metadata provided by compatible addons */

@@ -83,6 +83,7 @@ const MyListEntryCard = memo(
         }}
         onPress={handlePress}
         hasTVPreferredFocus={hasTVPreferredFocus}
+        testID={`my-list-${entry.id}`}
       />
     );
   }
@@ -239,6 +240,7 @@ const HistoryTab = memo(({ numColumns }: HistoryTabProps) => {
           onPress={handlePress}
           onLongPress={handleLongPress}
           hasTVPreferredFocus={Platform.isTV && index === 0}
+          testID={`history-${item.id}`}
         />
       </Box>
     ),

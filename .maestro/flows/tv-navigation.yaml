@@ -1,0 +1,79 @@
+# Android TV D-pad navigation: core home -> details -> streams path using the
+# remote D-pad, asserting focus-visible controls.
+# This flow starts with a clean onboarding pass.
+appId: app.dodora.dodostream.dev
+---
+- runFlow: onboarding.yaml
+- launchApp
+- runFlow: select-profile.yaml
+
+# Home with the deterministic hero (TV sidebar layout).
+- extendedWaitUntil:
+    visible: 'The Meridian Archive'
+    timeout: 30000
+- takeScreenshot: tv/01-home
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/tv/01-home.png'
+          thresholdPercentage: 98
+
+# Focus the hero "Details" action and activate it.
+- pressKey: 'Remote Dpad Right'
+- pressKey: 'Remote Dpad Center'
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- takeScreenshot: tv/02-details
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/tv/02-details.png'
+          thresholdPercentage: 98
+
+# Focus and activate the Play control to reach streams.
+- pressKey: 'Remote Dpad Center'
+- extendedWaitUntil:
+    visible: '1080p MP4 (Direct)'
+    timeout: 15000
+- takeScreenshot: tv/03-streams
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/tv/03-streams.png'
+          thresholdPercentage: 98
+
+# The streams row restores focus near the end of the horizontal list.
+- pressKey: 'Remote Dpad Down'
+# TODO fix initial down focus item
+- pressKey: 'Remote Dpad Left'
+- pressKey: 'Remote Dpad Left'
+- pressKey: 'Remote Dpad Left'
+- pressKey: 'Remote Dpad Center'
+- extendedWaitUntil:
+    visible:
+      id: player-controls-invisible-area
+    timeout: 30000
+- pressKey: 'Remote Dpad Center'
+- extendedWaitUntil:
+    visible:
+      id: player-controls-overlay
+    timeout: 30000
+- takeScreenshot: tv/04-player
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/tv/04-player.png'
+          thresholdPercentage: 98
+
+# Leave playback.
+- pressKey: 'back'

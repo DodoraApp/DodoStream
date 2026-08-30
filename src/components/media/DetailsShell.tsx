@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { memo, PropsWithChildren, useMemo } from 'react';
+import { memo, PropsWithChildren, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { useTheme } from '@shopify/restyle';
@@ -35,6 +35,9 @@ export const DetailsShell = memo(
       () => getDetailsCoverSource(media.background, media.poster),
       [media.background, media.poster]
     );
+    const [loadedCoverSource, setLoadedCoverSource] = useState<typeof coverSource>();
+    const coverReady = loadedCoverSource === coverSource;
+
     const logoSource = useMemo(() => getDetailsLogoSource(media.logo), [media.logo]);
 
     if (!useTVLayout) {
@@ -50,9 +53,10 @@ export const DetailsShell = memo(
     }
 
     return (
-      <Box flex={1}>
+      <Box flex={1} testID={coverReady ? 'details-cover-ready' : 'details-cover-loading'}>
         <AnimatedImage
           source={coverSource}
+          onLoadEnd={() => setLoadedCoverSource(coverSource)}
           contentFit="cover"
           style={StyleSheet.absoluteFillObject}
         />

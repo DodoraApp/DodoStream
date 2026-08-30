@@ -1,15 +1,16 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 
 import FastImage from '@d11/react-native-fast-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';
+import { NO_POSTER_LANDSCAPE } from '@/constants/images';
 import type { Theme } from '@/theme/theme';
 import { Box, Text } from '@/theme/theme';
 
 interface TrailerCardProps {
-  trailer: { title: string; ytId: string; lang?: string };
+  trailer: { title: string; ytId: string; lang?: string; thumbnail?: string };
   onPress: () => void;
   recyclingKey?: string;
 }
@@ -18,7 +19,11 @@ export const TrailerCard = memo(({ trailer, onPress, recyclingKey }: TrailerCard
   const theme = useTheme<Theme>();
   const { width, height } = theme.cardSizes.continueWatching;
 
-  const thumbnailUrl = `https://img.youtube.com/vi/${trailer.ytId}/hqdefault.jpg`;
+  const thumbnailUrl =
+    trailer.thumbnail ?? `https://img.youtube.com/vi/${trailer.ytId}/hqdefault.jpg`;
+  const [loadedThumbnailUrl, setLoadedThumbnailUrl] = useState<string>();
+  const thumbnailReady = loadedThumbnailUrl === thumbnailUrl;
+  const markThumbnailReady = () => setLoadedThumbnailUrl(thumbnailUrl);
 
   return (
     <Box width={width} gap="s">
@@ -32,11 +37,15 @@ export const TrailerCard = memo(({ trailer, onPress, recyclingKey }: TrailerCard
           borderRadius="l"
           overflow="hidden"
           backgroundColor="cardBackground"
-          position="relative">
+          position="relative"
+          testID={thumbnailReady ? 'trailer-thumbnail-ready' : 'trailer-thumbnail-loading'}>
           <FastImage
             source={{ uri: thumbnailUrl }}
+            defaultSource={NO_POSTER_LANDSCAPE}
+            onLoad={markThumbnailReady}
+            onLoadEnd={markThumbnailReady}
+            onError={markThumbnailReady}
             style={{ width: '100%', height: '100%' }}
-            resizeMode={FastImage.resizeMode.cover}
           />
 
           {/* Play icon overlay */}

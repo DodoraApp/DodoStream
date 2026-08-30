@@ -1,0 +1,218 @@
+# First-run setup: language -> welcome -> ui -> profile -> integrations ->
+# addons -> home -> playback -> complete -> home screen.
+# Requires the fixture addon server reachable at ${ADDON_MANIFEST_URL}.
+appId: app.dodora.dodostream.dev
+---
+- clearState
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: wizard-next
+    timeout: 30000
+
+# Language selection
+- tapOn:
+    id: settings-picker-language
+- pressKey: BACK
+- takeScreenshot: onboarding/01-language
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/01-language.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-next
+
+# Welcome
+- extendedWaitUntil:
+    visible: 'Get Started'
+    timeout: 15000
+- takeScreenshot: onboarding/02-welcome
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/02-welcome.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-next
+
+# UI customization (skippable)
+- extendedWaitUntil:
+    visible:
+      id: wizard-skip
+    timeout: 15000
+- takeScreenshot: onboarding/03-ui
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/03-ui.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-skip
+
+# Profile (mandatory)
+- extendedWaitUntil:
+    visible:
+      id: profile-name-input
+    timeout: 15000
+- tapOn:
+    id: profile-name-input
+- inputText: Alex
+- hideKeyboard
+- takeScreenshot: onboarding/04-profile
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/04-profile.png'
+          thresholdPercentage: 98
+- scrollUntilVisible:
+    element:
+      id: profile-save-button
+    direction: DOWN
+    timeout: 40000
+- tapOn:
+    id: profile-save-button
+
+# Integrations
+- extendedWaitUntil:
+    visible:
+      id: wizard-next
+    timeout: 15000
+- takeScreenshot: onboarding/05-integrations
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/05-integrations.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-next
+
+# Addons: install the fixture
+- extendedWaitUntil:
+    visible:
+      id: addon-manifest-input
+    timeout: 15000
+- tapOn:
+    id: addon-manifest-input
+- inputText: ${ADDON_MANIFEST_URL}
+- hideKeyboard
+- takeScreenshot: onboarding/06-addons
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/06-addons.png'
+          thresholdPercentage: 98
+- scrollUntilVisible:
+    element:
+      id: addon-install-button
+    direction: DOWN
+    timeout: 40000
+- tapOn:
+    id: addon-install-button
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: 'Use for Subtitles'
+    direction: DOWN
+    visibilityPercentage: 100
+    centerElement: false
+- waitForAnimationToEnd
+- assertVisible:
+    id: addon-card-com.dodostream.e2e-fixture
+- takeScreenshot: onboarding/07-addons-installed
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/07-addons-installed.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-next
+
+# Home settings
+- extendedWaitUntil:
+    visible:
+      id: wizard-next
+    timeout: 15000
+
+# Configure the hero from the fixture catalog before continuing setup.
+- scrollUntilVisible:
+    element:
+      text: 'DodoStream Movies'
+    direction: DOWN
+- waitForAnimationToEnd
+- tapOn: 'DodoStream Movies'
+- takeScreenshot: onboarding/08-home
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/08-home.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-next
+
+# Playback settings
+- extendedWaitUntil:
+    visible:
+      id: wizard-next
+    timeout: 15000
+- takeScreenshot: onboarding/09-playback
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/09-playback.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: wizard-next
+
+# Complete
+- extendedWaitUntil:
+    visible: 'Start Exploring'
+    timeout: 15000
+- takeScreenshot: onboarding/10-complete
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/10-complete.png'
+          thresholdPercentage: 98
+- tapOn: 'Start Exploring'
+
+# Close the optional What's New modal instead of advancing a single page.
+- runFlow:
+    when:
+      visible: "What's New"
+    commands:
+      - tapOn:
+          id: modal-close
+
+# The deterministic hero (first fixture movie) anchors the home screen.
+- extendedWaitUntil:
+    visible: 'The Meridian Archive'
+    timeout: 30000
+- takeScreenshot: onboarding/11-home
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/onboarding/11-home.png'
+          thresholdPercentage: 98

@@ -52,12 +52,18 @@ export const WizardNavigation: FC<WizardNavigationProps> = memo(
         gap="m"
         paddingVertical="m">
         {showBack && (
-          <Button variant="tertiary" icon="arrow-back" title={t('back')} onPress={onBack} />
+          <Button
+            variant="tertiary"
+            icon="arrow-back"
+            title={t('back')}
+            onPress={onBack}
+            testID="wizard-back"
+          />
         )}
 
         <Box flexDirection="row" gap="m" alignItems="center">
           {isStepSkippable(currentStep) && onSkip && (
-            <Button variant="secondary" title={t('skip')} onPress={onSkip} />
+            <Button variant="secondary" title={t('skip')} onPress={onSkip} testID="wizard-skip" />
           )}
           {showNext && onNext && (
             <Button
@@ -67,6 +73,7 @@ export const WizardNavigation: FC<WizardNavigationProps> = memo(
               disabled={nextDisabled}
               hasTVPreferredFocus={hasTVPreferredFocus && isTV}
               icon="arrow-forward"
+              testID="wizard-next"
             />
           )}
         </Box>

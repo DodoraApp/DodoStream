@@ -1,0 +1,258 @@
+# Settings: exercise every settings page in the split and mobile layouts.
+# Precondition: onboarding.yaml has run.
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+- tapOn:
+    id: nav-settings
+- extendedWaitUntil:
+    visible: 'Current Profile'
+    timeout: 15000
+
+- takeScreenshot: settings/00-index
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/00-index.png'
+          thresholdPercentage: 98
+
+# Each mobile settings page is a separate route. Wide layouts keep the menu
+# visible beside the selected page, so only the mobile branch goes back.
+- tapOn:
+    id: settings-menu-profiles
+- extendedWaitUntil:
+    visible: 'Profiles'
+    timeout: 15000
+- takeScreenshot: settings/01-profiles
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/01-profiles.png'
+          thresholdPercentage: 98
+- tapOn: 'Add Profile'
+- extendedWaitUntil:
+    visible: 'Create Profile'
+    timeout: 15000
+- tapOn:
+    id: modal-close
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-addons
+    timeout: 15000
+
+- tapOn:
+    id: settings-menu-addons
+- extendedWaitUntil:
+    visible:
+      id: addon-manifest-input
+    timeout: 15000
+- takeScreenshot: settings/02-addons
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/02-addons.png'
+          thresholdPercentage: 98
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-integrations
+    timeout: 15000
+
+- tapOn:
+    id: settings-menu-integrations
+- extendedWaitUntil:
+    visible: 'Integrations'
+    timeout: 15000
+- takeScreenshot: settings/03-integrations
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/03-integrations.png'
+          thresholdPercentage: 98
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-home
+    timeout: 15000
+
+# Home — exercise switches and the hero item-count slider.
+- tapOn:
+    id: settings-menu-home
+- extendedWaitUntil:
+    visible:
+      id: settings-switch-show-hero
+    timeout: 15000
+- tapOn:
+    id: settings-switch-continue-watching
+- tapOn:
+    id: settings-switch-continue-watching
+- tapOn:
+    id: settings-switch-my-list
+- tapOn:
+    id: settings-switch-my-list
+- tapOn:
+    id: settings-switch-show-hero
+- tapOn:
+    id: settings-slider-hero-item-count
+- takeScreenshot: settings/04-home
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/04-home.png'
+          thresholdPercentage: 98
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-playback
+    timeout: 15000
+
+# Playback — toggle both persisted switches and restore their values.
+- tapOn:
+    id: settings-menu-playback
+- extendedWaitUntil:
+    visible: 'Playback'
+    timeout: 15000
+- tapOn:
+    id: settings-switch-automatic-fallback
+- tapOn:
+    id: settings-switch-automatic-fallback
+- tapOn:
+    id: settings-switch-autoplay
+- tapOn:
+    id: settings-switch-autoplay
+- takeScreenshot: settings/05-playback
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/05-playback.png'
+          thresholdPercentage: 98
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-subtitles
+    timeout: 15000
+
+- tapOn:
+    id: settings-menu-subtitles
+- extendedWaitUntil:
+    visible: 'Subtitles'
+    timeout: 15000
+- takeScreenshot: settings/06-subtitles
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/06-subtitles.png'
+          thresholdPercentage: 98
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-ui
+    timeout: 15000
+
+# UI — exercise theme and language pickers, restoring the language afterwards.
+- tapOn:
+    id: settings-menu-ui
+- extendedWaitUntil:
+    visible: 'UI'
+    timeout: 15000
+- tapOn: 'Emerald'
+- takeScreenshot: settings/07-ui-picker-modal
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/07-ui-picker-modal.png'
+          thresholdPercentage: 98
+- tapOn: 'Emerald'
+- tapOn: 'System Default'
+- tapOn: 'English'
+- tapOn: 'English'
+- tapOn: 'System Default'
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-data
+    timeout: 15000
+
+- tapOn:
+    id: settings-menu-data
+- extendedWaitUntil:
+    visible: 'Data'
+    timeout: 15000
+- takeScreenshot: settings/08-data
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/08-data.png'
+          thresholdPercentage: 98
+- runFlow:
+    when:
+      true: ${PROFILE == 'phone'}
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: settings-menu-about
+    timeout: 15000
+
+- tapOn:
+    id: settings-menu-about
+- extendedWaitUntil:
+    visible: 'About'
+    timeout: 15000
+- takeScreenshot: settings/09-about
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/settings/09-about.png'
+          thresholdPercentage: 98

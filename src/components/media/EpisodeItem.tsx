@@ -21,10 +21,11 @@ export interface EpisodeItemProps {
   horizontal: boolean;
   onPress: () => void;
   onLongPress?: () => void;
+  testID?: string;
 }
 
 export const EpisodeItem = memo(
-  ({ video, metaId, horizontal, onPress, onLongPress }: EpisodeItemProps) => {
+  ({ video, metaId, horizontal, onPress, onLongPress, testID }: EpisodeItemProps) => {
     const { t } = useTranslation('media');
     const theme = useTheme<Theme>();
 
@@ -45,6 +46,7 @@ export const EpisodeItem = memo(
         onLongPress={onLongPress}
         recyclingKey={video.id}
         variant="background"
+        testID={testID}
         style={{ backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadii.m }}>
         <Box
           borderRadius="m"

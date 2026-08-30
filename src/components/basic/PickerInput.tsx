@@ -11,10 +11,12 @@ interface PickerInputProps<
   T extends string | number | undefined = string | number | undefined,
 > extends Omit<PickerModalProps<T>, 'visible' | 'onClose'> {
   selectedLabel: string;
+  testID?: string;
 }
 
 export function PickerInput<T extends string | number | undefined = string | number | undefined>({
   selectedLabel,
+  testID,
   ...modalProps
 }: PickerInputProps<T>) {
   const [showModal, setShowModal] = useState(false);
@@ -25,6 +27,7 @@ export function PickerInput<T extends string | number | undefined = string | num
       <Focusable
         onPress={() => setShowModal(true)}
         variant="outline"
+        testID={testID}
         focusedStyle={{
           outlineWidth: theme.focus.borderWidthSmall,
           borderRadius: theme.borderRadii.m,

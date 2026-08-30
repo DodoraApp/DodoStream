@@ -21,6 +21,8 @@ interface TagFiltersProps {
   onSelectId: (id: string | null) => void;
   includeAllOption?: boolean;
   allLabel?: string;
+  /** testID for the "all" filter option */
+  allTestID?: string;
   /** Size variant for tags: 'default' or 'large' */
   size?: TagSize;
 }
@@ -34,6 +36,7 @@ const TagFiltersItem = memo(
     selected,
     hasTVPreferredFocus,
     size,
+    testID,
     onPress,
   }: {
     id: string | null;
@@ -43,6 +46,7 @@ const TagFiltersItem = memo(
     selected: boolean;
     hasTVPreferredFocus?: boolean;
     size?: TagSize;
+    testID?: string;
     onPress: (id: string | null) => void;
   }) => {
     return (
@@ -53,6 +57,7 @@ const TagFiltersItem = memo(
         disabled={disabled ?? false}
         hasTVPreferredFocus={hasTVPreferredFocus}
         size={size}
+        testID={testID}
         rightElement={
           id === null || !isLoading ? null : <LoadingIndicator type="simple" size="small" />
         }
@@ -69,6 +74,7 @@ export const TagFilters = memo(
     onSelectId,
     includeAllOption = true,
     allLabel,
+    allTestID,
     size = 'default',
   }: TagFiltersProps) => {
     const { t } = useTranslation('media');
@@ -85,6 +91,7 @@ export const TagFilters = memo(
               selected={allSelected}
               hasTVPreferredFocus={true}
               size={size}
+              testID={allTestID}
               onPress={onSelectId}
             />
           ) : null}

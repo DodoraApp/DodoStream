@@ -158,6 +158,8 @@ const SidebarItem: FC<SidebarItemProps> = ({ item, onPress, onFocus, onActiveRef
 
   return (
     <Focusable
+      testID={`nav-${item.id}`}
+      accessibilityLabel={t(item.id)}
       onPress={onPress}
       onFocusChange={(isFocused) => isFocused && onFocus?.()}
       onRef={handleRef}>

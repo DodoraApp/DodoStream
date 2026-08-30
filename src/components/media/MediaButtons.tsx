@@ -131,12 +131,17 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   const renderActions = () => (
     <TVFocusGuideView trapFocusRight>
       <Box flexDirection="row" gap="s">
-        <MyListHeaderButton isInMyList={isInMyList} onPress={handleToggleMyList} />
+        <MyListHeaderButton
+          isInMyList={isInMyList}
+          onPress={handleToggleMyList}
+          testID="media-add-to-list"
+        />
         {mediaActions.items.length > 0 && (
           <Button
             icon="ellipsis-horizontal"
             variant="secondary"
             onPress={mediaActions.openActions}
+            testID="media-more"
           />
         )}
       </Box>
@@ -169,6 +174,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
                 onPress={handleContinue}
                 hasTVPreferredFocus={isPlatformTV}
                 flex={buttonFlex}
+                testID="media-play"
               />
             ) : (
               <Button
@@ -180,6 +186,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
                 paddingHorizontal="l"
                 paddingVertical="m"
                 flex={buttonFlex}
+                testID="media-play"
               />
             )
           ) : (
@@ -192,6 +199,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
               paddingHorizontal="l"
               paddingVertical="m"
               flex={buttonFlex}
+              testID="media-play"
             />
           )}
           {renderActions()}
@@ -213,6 +221,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
             onPress={handlePlay}
             hasTVPreferredFocus={isPlatformTV}
             flex={buttonFlex}
+            testID="media-play"
           />
           <Button
             icon="refresh"
@@ -241,6 +250,7 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
           paddingHorizontal="l"
           paddingVertical="m"
           flex={buttonFlex}
+          testID="media-play"
         />
         {renderActions()}
       </Box>

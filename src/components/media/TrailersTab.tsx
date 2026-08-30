@@ -16,6 +16,7 @@ interface TrailerStream {
   title: string;
   ytId: string;
   lang?: string;
+  thumbnail?: string;
 }
 
 interface TrailersTabProps {

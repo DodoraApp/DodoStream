@@ -34,7 +34,12 @@ const CatalogGridItem = memo(
   ({ media, onPress, hasTVPreferredFocus = false }: CatalogGridItemProps) => {
     return (
       <Box flex={1} alignItems="center" paddingBottom="m">
-        <MediaCard media={media} onPress={onPress} hasTVPreferredFocus={hasTVPreferredFocus} />
+        <MediaCard
+          media={media}
+          onPress={onPress}
+          hasTVPreferredFocus={hasTVPreferredFocus}
+          testID={`catalog-card-${media.id}`}
+        />
       </Box>
     );
   }

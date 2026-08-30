@@ -240,6 +240,7 @@ function SearchBar({ searchBar }: SearchBarProps) {
               }
             }}
             blurOnSubmit={!Platform.isTV} // TV: submit without blurring so focus stays put
+            testID="search-input"
           />
         )}
         {searchQuery.length > 0 && (
@@ -248,7 +249,7 @@ function SearchBar({ searchBar }: SearchBarProps) {
             flexDirection="row"
             alignItems="center"
             marginRight={isAndroidTV ? 'm' : undefined}>
-            <Focusable onPress={handleClear} variant="outline">
+            <Focusable onPress={handleClear} variant="outline" testID="search-clear">
               <Box padding="xs">
                 <Ionicons
                   name="close-circle"
@@ -257,7 +258,7 @@ function SearchBar({ searchBar }: SearchBarProps) {
                 />
               </Box>
             </Focusable>
-            <Focusable onPress={handleSearch} variant="outline">
+            <Focusable onPress={handleSearch} variant="outline" testID="search-submit">
               <Box padding="xs">
                 <Ionicons
                   name="arrow-forward-circle"

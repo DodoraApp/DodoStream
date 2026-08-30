@@ -94,6 +94,7 @@ export default function Settings() {
                   description={item.description}
                   icon={item.icon}
                   href={item.href ?? '/settings'}
+                  testID={`settings-menu-${item.id}`}
                 />
               ))}
             </Box>
@@ -107,6 +108,7 @@ export default function Settings() {
                   description={item.description}
                   icon={item.icon}
                   href={item.href ?? '/settings'}
+                  testID={`settings-menu-${item.id}`}
                 />
               ))}
             </Box>

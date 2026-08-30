@@ -61,6 +61,7 @@ const StreamListItem = memo(({ stream, horizontal, onSelect }: StreamListItemPro
       onPress={() => onSelect(stream)}
       disabled={!available}
       recyclingKey={recyclingKey}
+      testID={`stream-${getStreamStableId(stream)}`}
       focusedStyle={{ borderRadius: theme.borderRadii.m }}>
       {({ isFocused }) => (
         <Box
@@ -239,6 +240,7 @@ export const StreamList = memo(
             onSelectId={setSelectedAddonId}
             includeAllOption
             allLabel={t('all')}
+            allTestID="stream-filter-all"
           />
         </FadeIn>
 

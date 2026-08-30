@@ -1,0 +1,83 @@
+name: Android E2E
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: phone
+            target: google_apis
+            emulator: pixel_7_pro
+            profile: phone
+            flow: full-journey.yaml
+          - name: tablet
+            target: google_apis
+            emulator: pixel_7_pro
+            profile: tablet
+            flow: full-journey.yaml
+          - name: tv
+            target: android-tv
+            emulator: tv_1080p
+            profile: tv
+            flow: full-journey.yaml
+          - name: tv-navigation
+            target: android-tv
+            emulator: tv_1080p
+            profile: tv
+            flow: tv-navigation.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Maestro
+        run: |
+          curl -Ls https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run E2E
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.emulator }}
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: pnpm e2e:android -- --profile ${{ matrix.profile }} --flow ${{ matrix.flow }}
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.name }}
+          path: artifacts/maestro/${{ matrix.profile }}/
+          if-no-files-found: ignore
+          retention-days: 14

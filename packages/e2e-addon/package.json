@@ -1,0 +1,24 @@
+{
+  "name": "@dodostream/e2e-addon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deterministic Stremio fixture add-on driving DodoStream mobile UI automation and visual regression.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsx scripts/generate-assets.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "stremio-addon-sdk": "1.6.10"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "@types/stremio-addon-sdk": "^1.6.12",
+    "sharp": "^0.35.4",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.2"
+  }
+}

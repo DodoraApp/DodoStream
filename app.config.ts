@@ -13,6 +13,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const appVariant = (process.env.APP_VARIANT ?? 'prod').toLowerCase();
   const isDevVariant = appVariant !== 'prod';
   const isTVVariant = process.env.EXPO_TV === '1';
+  const e2eOrientation: ExpoConfig['orientation'] =
+    process.env.EXPO_PUBLIC_E2E === '1'
+      ? process.env.E2E_ORIENTATION === 'landscape'
+        ? 'landscape'
+        : 'portrait'
+      : 'default';
 
   const appName = isDevVariant ? 'DodoStream (Dev)' : 'DodoStream';
   const iosBundleIdentifier = isDevVariant ? 'app.dodora.dodostream.dev' : 'app.dodora.dodostream';
@@ -92,7 +98,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       tsconfigPaths: true,
       reactCompiler: true,
     },
-    orientation: 'default',
+    orientation: e2eOrientation,
     icon: './assets/app/icon.png',
     backgroundColor: appBackgroundColor,
     userInterfaceStyle: 'dark',

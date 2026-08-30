@@ -1,0 +1,44 @@
+# Search: submit a stable query, assert grouped fixture results, open a result.
+# Precondition: onboarding.yaml has run (addon installed, search enabled).
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+- tapOn:
+    id: nav-search
+- tapOn:
+    id: search-input
+- inputText: "meridian"
+- hideKeyboard
+- tapOn:
+    id: search-submit
+
+# Grouped results from the fixture movie catalog.
+- extendedWaitUntil:
+    visible: "The Meridian Archive"
+    timeout: 15000
+- assertVisible: "DodoStream Movies"
+- takeScreenshot: search/01-results
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/search/01-results.png'
+          thresholdPercentage: 98
+
+# Open a result.
+- tapOn: "The Meridian Archive"
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- takeScreenshot: search/02-result
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/search/02-result.png'
+          thresholdPercentage: 98

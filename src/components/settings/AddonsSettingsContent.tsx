@@ -172,12 +172,14 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
               onChangeText={setManifestUrl}
               autoCapitalize="none"
               autoCorrect={false}
+              testID="addon-manifest-input"
             />
             <Button
               variant="primary"
               title={installAddon.isPending ? t('addons.installing') : t('addons.install_button')}
               onPress={handleInstall}
               disabled={installAddon.isPending}
+              testID="addon-install-button"
             />
             {(storeError || installAddon.isError) && (
               <Text variant="bodySmall" color="danger">
@@ -402,7 +404,12 @@ const AddonCard: FC<AddonCardProps> = memo(
     }, [addon.id, onMoveDown]);
 
     return (
-      <Box backgroundColor="cardBackground" padding="m" borderRadius="m" gap="m">
+      <Box
+        backgroundColor="cardBackground"
+        padding="m"
+        borderRadius="m"
+        gap="m"
+        testID={`addon-card-${addon.manifest.id}`}>
         {/* Header with title and action buttons */}
         <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
           <Box flex={1} gap="xs">

@@ -1,0 +1,96 @@
+# Edge cases: missing art, sparse metadata, long descriptions, and no streams.
+# Precondition: onboarding.yaml has run (fixture addon installed).
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+- scrollUntilVisible:
+    element: 'DodoStream Edge Cases'
+    direction: DOWN
+    timeout: 40000
+- tapOn: 'DodoStream Edge Cases'
+- extendedWaitUntil:
+    visible:
+      id: catalog-card-e2e:movie:bare-signal
+    timeout: 15000
+- assertVisible: 'Bare Signal'
+- takeScreenshot: edge/01-catalog
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/edge/01-catalog.png'
+          thresholdPercentage: 98
+
+# Sparse metadata must still render a usable details page.
+- tapOn:
+    id: catalog-card-e2e:movie:bare-signal
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- assertVisible: 'Bare Signal'
+- takeScreenshot: edge/02-sparse-details
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/edge/02-sparse-details.png'
+          thresholdPercentage: 98
+- back
+
+# A valid metadata item with no streams must show the empty state.
+- extendedWaitUntil:
+    visible:
+      id: catalog-card-e2e:movie:silent-tide
+    timeout: 15000
+- tapOn:
+    id: catalog-card-e2e:movie:silent-tide
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- tapOn:
+    id: media-play
+- extendedWaitUntil:
+    visible: 'No streams available for this content'
+    timeout: 15000
+- takeScreenshot: edge/03-empty-streams
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/edge/03-empty-streams.png'
+          thresholdPercentage: 98
+- back
+- back
+
+# Long descriptions must remain readable without breaking the details layout.
+- extendedWaitUntil:
+    visible:
+      id: catalog-card-e2e:movie:the-endless-voyage
+    timeout: 15000
+- tapOn:
+    id: catalog-card-e2e:movie:the-endless-voyage
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- runFlow:
+    when:
+      visible: 'Show more'
+    commands:
+      - tapOn: 'Show more'
+- assertVisible: 'Across a sea that refuses.*'
+- takeScreenshot: edge/04-long-details
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/edge/04-long-details.png'
+          thresholdPercentage: 98

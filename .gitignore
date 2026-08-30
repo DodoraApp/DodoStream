@@ -30,3 +30,6 @@ src/api/local-server/web-ui.ts
 src/constants/whats-new/_registry.ts
 
 .e2e-tokens.json
+
+# Generated Maestro run output; CI uploads this separately.
+artifacts/maestro/

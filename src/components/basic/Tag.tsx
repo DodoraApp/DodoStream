@@ -30,6 +30,7 @@ interface TagProps {
   onPress?: () => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  testID?: string;
 }
 
 export const Tag = memo(
@@ -46,6 +47,7 @@ export const Tag = memo(
     onPress,
     onFocus,
     onBlur,
+    testID,
   }: TagProps) => {
     const theme = useTheme<Theme>();
 
@@ -97,6 +99,7 @@ export const Tag = memo(
         onFocus={onFocus}
         onBlur={onBlur}
         hasTVPreferredFocus={hasTVPreferredFocus}
+        testID={testID}
         style={{ borderRadius: theme.borderRadii.s }}>
         {({ isFocused }) => renderContent(isFocused)}
       </Focusable>

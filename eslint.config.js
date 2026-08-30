@@ -7,7 +7,7 @@ module.exports = [
   ...expoConfig,
   reactCompiler.configs.recommended,
   {
-    ignores: ['dist/*', '.expo/**', 'remote-ui/**'],
+    ignores: ['dist/*', '.expo/**', 'remote-ui/**', 'packages/e2e-addon/**'],
   },
   {
     plugins: {

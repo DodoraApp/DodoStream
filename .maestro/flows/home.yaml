@@ -1,0 +1,81 @@
+# Home: deterministic hero, open first catalog item, add to My List, open the
+# movie catalog and scroll to the terminal page.
+# Precondition: onboarding.yaml has run (addon installed, search enabled).
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+# First fixture movie card anchors the home screen.
+- extendedWaitUntil:
+    visible: 'The Meridian Archive'
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: hero-backdrop-loaded
+    timeout: 15000
+- takeScreenshot: home/01-home
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/home/01-home.png'
+          thresholdPercentage: 98
+
+# Open the first fixture item's details through its stable card ID.
+- tapOn:
+    id: media-card-e2e:movie:the-meridian-archive
+- extendedWaitUntil:
+    visible:
+      id: media-add-to-list
+    timeout: 15000
+- takeScreenshot: home/02-details
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/home/02-details.png'
+          thresholdPercentage: 98
+
+# Add to My List, then return to home.
+- tapOn:
+    id: media-add-to-list
+- back
+
+# Open the movie catalog from its section header.
+- scrollUntilVisible:
+    element: 'DodoStream Movies'
+    direction: DOWN
+    timeout: 40000
+- tapOn: 'DodoStream Movies'
+- extendedWaitUntil:
+    visible: 'The Meridian Archive'
+    timeout: 15000
+- takeScreenshot: home/03-catalog
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/home/03-catalog.png'
+          thresholdPercentage: 98
+
+# Scroll to the terminal page and assert the known terminal fixture title.
+- scrollUntilVisible:
+    element:
+      text: 'Verdant Signal'
+    direction: DOWN
+    speed: 80
+    timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: 'Verdant Signal'
+- takeScreenshot: home/04-terminal
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/home/04-terminal.png'
+          thresholdPercentage: 98

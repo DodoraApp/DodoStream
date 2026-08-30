@@ -11,9 +11,10 @@ interface SettingsLinkProps {
   description?: string;
   icon: keyof typeof Ionicons.glyphMap;
   href: string;
+  testID?: string;
 }
 
-export function SettingsLink({ title, description, icon, href }: SettingsLinkProps) {
+export function SettingsLink({ title, description, icon, href, testID }: SettingsLinkProps) {
   const router = useRouter();
   const theme = useTheme<Theme>();
 
@@ -21,7 +22,7 @@ export function SettingsLink({ title, description, icon, href }: SettingsLinkPro
   const iconSize = theme.spacing.l;
 
   return (
-    <Focusable onPress={() => router.push(href as any)}>
+    <Focusable onPress={() => router.push(href as any)} testID={testID}>
       {({ isFocused }) => (
         <Box
           backgroundColor={getFocusableBackgroundColor({ isFocused })}
