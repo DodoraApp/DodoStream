@@ -10,5 +10,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["remote-ui"]
+  "exclude": ["remote-ui", "packages"]
 }

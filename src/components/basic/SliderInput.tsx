@@ -28,6 +28,7 @@ interface SliderInputProps {
   disabled?: boolean;
   /** Show increment/decrement buttons (default: true) */
   showButtons?: boolean;
+  testID?: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
     formatValue,
     disabled = false,
     showButtons = true,
+    testID,
   }) => {
     const theme = useTheme<Theme>();
     const [isSliderFocused, setIsSliderFocused] = useState(false);
@@ -107,6 +109,7 @@ export const SliderInput: FC<SliderInputProps> = memo(
           <Box flex={1}>
             <Slider
               style={{ flex: 1, height: theme.sizes.inputHeight }}
+              testID={testID}
               minimumValue={minimumValue}
               maximumValue={maximumValue}
               step={step}

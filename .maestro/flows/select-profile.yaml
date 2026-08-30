@@ -1,0 +1,9 @@
+# Select the deterministic profile after an app relaunch. Profile selection is
+# required because the app intentionally clears the active profile on startup.
+appId: app.dodora.dodostream.dev
+---
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Who's watching?"
+    timeout: 15000
+- tapOn: Alex

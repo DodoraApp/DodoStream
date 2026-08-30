@@ -1,0 +1,11 @@
+1
+00:00:30,000 --> 00:01:00,000
+El mar guarda un registro de todo lo que se lleva.
+
+2
+00:05:00,000 --> 00:05:30,000
+Encontré mi propio nombre escrito en sus márgenes.
+
+3
+00:09:00,000 --> 00:09:30,000
+El Archivo del Meridiano nunca debió abrirse.

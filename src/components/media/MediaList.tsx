@@ -41,6 +41,7 @@ const HydratedMediaCard = memo(
         onPress={onPress}
         hasTVPreferredFocus={hasTVPreferredFocus}
         onFocused={onFocused}
+        testID={`media-card-${media.id}`}
       />
     );
   }
@@ -96,6 +97,7 @@ export const MediaList = memo(
             onPress={onMediaPress}
             hasTVPreferredFocus={hasTVPreferredFocus && index === 0}
             onFocused={onItemFocused}
+            testID={`media-card-${item.id}`}
           />
         ),
       [onMediaPress, hasTVPreferredFocus, onItemFocused, hydrateMetadata]

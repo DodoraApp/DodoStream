@@ -80,6 +80,7 @@ export const SubtitleSyncPanel: FC<SubtitleSyncPanelProps> = memo(
               label={t('delay')}
               unit="s"
               formatValue={formatDelay}
+              testID="settings-slider-subtitle-delay"
             />
 
             {/* Cue Preview */}

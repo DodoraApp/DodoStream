@@ -1,0 +1,10 @@
+# Maestro configuration for DodoStream Android E2E.
+# The dev variant installs as app.dodora.dodostream.dev (APP_VARIANT != prod).
+appId: app.dodora.dodostream.dev
+
+env:
+  # The emulator reaches the host fixture server via the 10.0.2.2 alias.
+  ADDON_MANIFEST_URL: http://10.0.2.2:8765/manifest.json
+
+flows:
+  - flows/*.yaml

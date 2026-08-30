@@ -69,6 +69,7 @@ export default function LanguageStep() {
               selectedLabel={currentLanguageLabel}
               selectedValue={language}
               onValueChange={handleLanguageChange}
+              testID="settings-picker-language"
             />
           </Box>
         </Box>

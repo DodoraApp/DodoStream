@@ -24,6 +24,7 @@ interface SettingsSwitchProps {
   /** Block focus from going down */
   blockDown?: boolean;
   flex?: boolean;
+  testID?: string;
 }
 
 /**
@@ -38,6 +39,7 @@ export const SettingsSwitch = memo(function SettingsSwitch({
   disabled = false,
   viewRef,
   flex = true,
+  testID,
 }: SettingsSwitchProps) {
   const theme = useTheme<Theme>();
   return (
@@ -45,7 +47,8 @@ export const SettingsSwitch = memo(function SettingsSwitch({
       onPress={() => !disabled && onValueChange(!value)}
       variant="background"
       disabled={disabled}
-      viewRef={viewRef}>
+      viewRef={viewRef}
+      testID={testID}>
       <Box
         flexDirection="row"
         alignItems="center"

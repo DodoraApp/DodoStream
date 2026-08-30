@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import {
@@ -129,10 +130,12 @@ function Layout() {
  */
 function ThemedAppRoot() {
   const currentTheme = useTheme<Theme>();
+  const isE2E = process.env.EXPO_PUBLIC_E2E === '1';
 
   return (
     <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: currentTheme.colors.mainBackground }}>
+      <StatusBar hidden={isE2E} />
       <ToastContainer />
       <Slot />
     </GestureHandlerRootView>

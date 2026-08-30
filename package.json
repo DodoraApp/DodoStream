@@ -32,7 +32,11 @@
     "postinstall": "lefthook install",
     "test:e2e:sync": "jest --config ./scripts/sync-e2e/jest-e2e.config.js",
     "test:e2e:sync:trakt": "jest --config ./scripts/sync-e2e/jest-e2e.config.js --testNamePattern=Trakt",
-    "test:e2e:sync:simkl": "jest --config ./scripts/sync-e2e/jest-e2e.config.js --testNamePattern=Simkl"
+    "test:e2e:sync:simkl": "jest --config ./scripts/sync-e2e/jest-e2e.config.js --testNamePattern=Simkl",
+    "test:e2e:addon": "pnpm --filter @dodostream/e2e-addon test",
+    "e2e:addon": "pnpm --filter @dodostream/e2e-addon start",
+    "e2e:android": "node scripts/e2e/run-android.mjs",
+    "e2e:android:all": "node scripts/e2e/run-all.mjs"
   },
   "dependencies": {
     "@anatine/zod-openapi": "2.2.8",

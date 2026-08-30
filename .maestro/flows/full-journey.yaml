@@ -1,0 +1,13 @@
+# Shared touch-driven UI journey for release screenshots. It runs on every
+# profile; TV-specific D-pad behavior is covered by tv-navigation.yaml.
+appId: app.dodora.dodostream.dev
+---
+- runFlow: onboarding.yaml
+- runFlow: home.yaml
+- runFlow: edge-cases.yaml
+- runFlow: details.yaml
+- runFlow: streams.yaml
+- runFlow: player.yaml
+- runFlow: search.yaml
+- runFlow: library.yaml
+- runFlow: settings.yaml

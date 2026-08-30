@@ -265,6 +265,8 @@ Effects are for synchronizing with **external systems** only.
 - **Mocking:** Prefer real dependencies when practical, but mock **external systems** (network, native modules). See `jest.setup.js` for existing mocks.
 - **Snapshots:** Use sparingly and keep them small. Prefer explicit expectations.
 - **E2E tests:** Use device/simulator tests (Detox/Maestro) for critical flows.
+
+- **Android visual E2E:** See [E2E.md](E2E.md) for commands and snapshot updates.
 - Run `pnpm lint` and `pnpm test` before finishing any task.
 
 ## 15. Forbidden Patterns

@@ -16,6 +16,7 @@ import { useAddonStore } from '@/store/addon.store';
 import { useProfileStore } from '@/store/profile.store';
 import { AddonSubtitle, ContentType, InstalledAddon, MetaPreview, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
+import { IS_E2E } from '@/utils/e2e';
 import { sortVideosBySeason } from '@/utils/video';
 
 import {
@@ -745,7 +746,10 @@ export function useHeroCatalogContent(
   const { data: selectedMetas } = useQuery({
     queryKey: heroSelectionKey(sources, itemCount),
     queryFn: () => {
-      // Pick random items from available metas
+      // E2E: deterministic first-N selection; production: Fisher-Yates shuffle.
+      if (IS_E2E) {
+        return allMetas.slice(0, itemCount);
+      }
       const shuffled = shuffleArray(allMetas);
       return shuffled.slice(0, itemCount);
     },

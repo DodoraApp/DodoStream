@@ -16,6 +16,7 @@ export interface ControlButtonProps extends Pick<
   hasTVPreferredFocus?: boolean;
   disabled?: boolean;
   onFocusChange?: (focused: boolean) => void;
+  testID?: string;
   /** Badge text displayed at top right of button */
   badge?: string;
   /** Badge variant (default: primary) */
@@ -33,6 +34,7 @@ export const ControlButton = memo(
     badge,
     badgeVariant = 'primary',
     labelPosition = 'top',
+    testID,
     ...buttonProps
   }: ControlButtonProps) => {
     const theme = useTheme<Theme>();
@@ -72,6 +74,7 @@ export const ControlButton = memo(
           onFocus={handleFocused}
           onBlur={handleBlurred}
           variant={variant}
+          testID={testID}
         />
         {badge && (
           <Box position="absolute" top={-theme.spacing.xs} right={-theme.spacing.xs}>

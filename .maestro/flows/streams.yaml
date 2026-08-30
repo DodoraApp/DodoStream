@@ -1,0 +1,111 @@
+# Streams: open the movie streams and assert every SDK source family, then
+# select the direct MP4 row.
+# Precondition: onboarding.yaml has run.
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+# Navigate to the movie via search, then open streams.
+- tapOn:
+    id: nav-search
+- tapOn:
+    id: search-input
+- inputText: 'meridian'
+- hideKeyboard
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible: 'The Meridian Archive'
+    timeout: 15000
+- tapOn: 'The Meridian Archive'
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- tapOn:
+    id: media-play
+
+# Stream selection screen: assert each source family renders.
+- extendedWaitUntil:
+    visible: '1080p MP4 (Direct)'
+    timeout: 15000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: '720p HLS'
+          direction: DOWN
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: '720p HLS'
+          direction: RIGHT
+          timeout: 40000
+- assertVisible: '720p HLS'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'YouTube'
+          direction: DOWN
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'YouTube'
+          direction: RIGHT
+          timeout: 40000
+- assertVisible: 'YouTube'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'External URL'
+          direction: DOWN
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'External URL'
+          direction: RIGHT
+          timeout: 40000
+- assertVisible: 'External URL'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: '1080p MP4 (Direct)'
+          direction: UP
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: '1080p MP4 (Direct)'
+          direction: LEFT
+          timeout: 40000
+- waitForAnimationToEnd
+- takeScreenshot: streams/01-selection
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/streams/01-selection.png'
+          thresholdPercentage: 98
+
+# Select the playable direct MP4 row.
+- tapOn: '1080p MP4 (Direct)'

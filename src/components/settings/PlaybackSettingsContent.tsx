@@ -158,6 +158,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
               onValueChange={(value) =>
                 activeProfileId && setAutomaticFallbackForProfile(activeProfileId, value)
               }
+              testID="settings-switch-automatic-fallback"
             />
             <SettingsSwitch
               label={t('playback.auto_play')}
@@ -166,6 +167,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
               onValueChange={(value) =>
                 activeProfileId && setAutoPlayFirstStreamForProfile(activeProfileId, value)
               }
+              testID="settings-switch-autoplay"
             />
           </SettingsCard>
         )}

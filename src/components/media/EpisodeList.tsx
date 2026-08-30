@@ -121,6 +121,7 @@ export const EpisodeList: FC<EpisodeListProps> = ({
         onPress={() => handleEpisodePress(item)}
         onLongPress={onEpisodeLongPress ? () => onEpisodeLongPress(item) : undefined}
         horizontal={isHorizontal}
+        testID={`episode-${item.id}`}
       />
     ),
     [metaId, handleEpisodePress, onEpisodeLongPress, isHorizontal]
@@ -150,6 +151,7 @@ export const EpisodeList: FC<EpisodeListProps> = ({
               selectedValue={selectedSeason}
               onValueChange={handleSeasonChange}
               selectedLabel={getSeasonLabel(selectedSeason)}
+              testID="settings-picker-season"
             />
           )}
         </Box>

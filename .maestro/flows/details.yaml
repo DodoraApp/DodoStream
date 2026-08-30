@@ -1,0 +1,253 @@
+# Details: open the series, switch through Seasons / Cast / Trailers, choose a
+# season-0 special and a regular episode, and assert long text / release labels.
+# Precondition: onboarding.yaml has run (addon installed, search enabled).
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+# Find the series via search.
+- tapOn:
+    id: nav-search
+- tapOn:
+    id: search-input
+- inputText: 'Harbor Lights'
+- hideKeyboard
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible:
+      id: media-card-e2e:series:harbor-lights
+    timeout: 15000
+- tapOn:
+    id: media-card-e2e:series:harbor-lights
+
+# Full detail screen.
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: details-cover-ready
+    timeout: 15000
+- takeScreenshot: details/01-full
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/details/01-full.png'
+          thresholdPercentage: 98
+
+# Seasons tab (default): long episode title + release label render.
+- assertVisible: 'Episodes'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "2\\. The Lighthouse Keeper’s Long and Winding Journey Through the Storm That Never Quite Arrives"
+          direction: DOWN
+          visibilityPercentage: 100
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "2\\. The Lighthouse Keeper’s Long and Winding Journey Through the Storm That Never Quite Arrives"
+          direction: RIGHT
+          visibilityPercentage: 100
+          timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: "2\\. The Lighthouse Keeper’s Long and Winding Journey Through the Storm That Never Quite Arrives"
+- takeScreenshot: details/02-seasons
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/details/02-seasons.png'
+          thresholdPercentage: 98
+
+# Choose a regular episode (Season 1).
+- tapOn:
+    id: settings-picker-season
+- tapOn: 'Season 1'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "1\\. Pilot"
+          direction: UP
+          visibilityPercentage: 100
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "1\\. Pilot"
+          direction: RIGHT
+          visibilityPercentage: 100
+          timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: "1\\. Pilot"
+- takeScreenshot: details/03-season-1
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/details/03-season-1.png'
+          thresholdPercentage: 98
+# Selecting an episode must preserve its media and video IDs.
+- tapOn:
+    id: episode-e2e:series:harbor-lights:1:1
+- extendedWaitUntil:
+    visible: '1080p MP4 \(Direct\)'
+    timeout: 15000
+- assertVisible: '1080p MP4 \(Direct\)'
+- back
+- extendedWaitUntil:
+    visible:
+      id: settings-picker-season
+    timeout: 15000
+
+
+# Episode long-press action menu.
+- longPressOn:
+    id: episode-e2e:series:harbor-lights:1:1
+- extendedWaitUntil:
+    visible: 'Mark as Watched'
+    timeout: 15000
+- tapOn:
+    id: modal-close
+# Choose a season-0 special.
+- tapOn:
+    id: settings-picker-season
+- tapOn: 'Specials'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "1\\. Behind the Lights"
+          direction: DOWN
+          visibilityPercentage: 100
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "1\\. Behind the Lights"
+          direction: RIGHT
+          visibilityPercentage: 100
+          timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: "1\\. Behind the Lights"
+- takeScreenshot: details/04-specials
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/details/04-specials.png'
+          thresholdPercentage: 98
+
+# Cast tab.
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'Cast'
+          direction: UP
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'Cast'
+          direction: UP
+          timeout: 40000
+- tapOn: 'Cast'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'Lena Okafor'
+          direction: DOWN
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'Lena Okafor'
+          direction: DOWN
+          timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: 'Lena Okafor'
+- takeScreenshot: details/05-cast
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/details/05-cast.png'
+          thresholdPercentage: 98
+
+# Trailers tab.
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'Trailers'
+          direction: UP
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: 'Trailers'
+          direction: UP
+          timeout: 40000
+- tapOn: 'Trailers'
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION != 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "Official Trailer \\(EN\\)"
+          direction: DOWN
+          timeout: 40000
+- runFlow:
+    when:
+      true: ${E2E_ORIENTATION == 'landscape'}
+    commands:
+      - scrollUntilVisible:
+          element: "Official Trailer \\(EN\\)"
+          direction: DOWN
+          timeout: 40000
+- waitForAnimationToEnd
+- assertVisible: "Official Trailer \\(EN\\)"
+- extendedWaitUntil:
+    visible:
+      id: trailer-thumbnail-ready
+    timeout: 15000
+- takeScreenshot: details/06-trailers
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/details/06-trailers.png'
+          thresholdPercentage: 98

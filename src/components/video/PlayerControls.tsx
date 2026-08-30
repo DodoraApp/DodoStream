@@ -143,7 +143,12 @@ const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings, currentTime, 
 
   return (
     <Box flexDirection="row" alignItems="center" paddingHorizontal="l" paddingVertical="m" gap="m">
-      <ControlButton onPress={onBack} icon="arrow-back" iconComponent={Ionicons} />
+      <ControlButton
+        onPress={onBack}
+        icon="arrow-back"
+        iconComponent={Ionicons}
+        testID="player-back"
+      />
       <Box flex={1}>
         <Text variant="cardTitle" color="mainForeground" numberOfLines={1}>
           {title || t('play')}
@@ -156,6 +161,7 @@ const TopBar = memo<TopBarProps>(({ title, onBack, onOpenSettings, currentTime, 
         iconComponent={Ionicons}
         label={t('common:settings')}
         labelPosition="bottom"
+        testID="player-settings"
       />
     </Box>
   );
@@ -393,6 +399,7 @@ const RightControls = memo<RightControlsProps>(
             label={t('subtitles')}
             badge={getTrackBadge(selectedTextLanguage)}
             badgeVariant="tertiary"
+            testID="player-subtitles"
           />
         )}
         <ControlButton
@@ -404,6 +411,7 @@ const RightControls = memo<RightControlsProps>(
           label={t('audio')}
           badge={getTrackBadge(selectedAudioLanguage)}
           badgeVariant="tertiary"
+          testID="player-audio"
         />
       </Box>
     );

@@ -29,6 +29,7 @@ import { useAddonStore } from '@/store/addon.store';
 import { useHomeStore } from '@/store/home.store';
 import { Box, Text, Theme } from '@/theme/theme';
 import { createDebugLogger } from '@/utils/debug';
+import { IS_E2E } from '@/utils/e2e';
 
 const debug = createDebugLogger('HeroSection');
 
@@ -118,6 +119,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
 
   // Auto-scroll effect
   useEffect(() => {
+    if (IS_E2E) return;
     if (!hasData || heroItems.length <= 1) return;
 
     autoScrollRef.current = setInterval(() => {
@@ -133,6 +135,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
 
   // Reset auto-scroll when user interacts
   const resetAutoScroll = useCallback(() => {
+    if (IS_E2E) return;
     if (!hasData || heroItems.length <= 1) return;
 
     if (autoScrollRef.current) {
@@ -175,6 +178,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   const [imageSourceA, setImageSourceA] = useState<Source | undefined>(undefined);
   const [imageSourceB, setImageSourceB] = useState<Source | undefined>(undefined);
   const activeLayerRef = useRef<'A' | 'B'>('A');
+  const [isBackdropLoaded, setIsBackdropLoaded] = useState(false);
   const opacityA = useSharedValue(1);
   const opacityB = useSharedValue(0);
 
@@ -226,8 +230,16 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
     [opacityA, opacityB]
   );
 
+  const handleBackdropLoad = useCallback(
+    (source: Source | undefined) => {
+      if (source?.uri === backdropImage) setIsBackdropLoaded(true);
+    },
+    [backdropImage]
+  );
+
   useEffect(() => {
     if (!backdropImage) return;
+    setIsBackdropLoaded(false);
     updateCrossfade(backdropImage);
   }, [backdropImage, updateCrossfade]);
 
@@ -244,17 +256,23 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
 
   return (
     <TVFocusGuideView autoFocus trapFocusRight trapFocusUp>
-      <Box height={heroHeight} width="100%" overflow="hidden">
+      <Box
+        testID={isBackdropLoaded ? 'hero-backdrop-loaded' : 'hero-backdrop-loading'}
+        height={heroHeight}
+        width="100%"
+        overflow="hidden">
         {/* Dual-layer crossfade: two persistent Image nodes, opacity animated */}
         <Animated.View style={[StyleSheet.absoluteFill, animatedStyleA]}>
           <FastImage
             source={imageSourceA}
+            onLoadEnd={() => handleBackdropLoad(imageSourceA)}
             style={StyleSheet.absoluteFill}
             resizeMode={FastImage.resizeMode.cover}
           />
         </Animated.View>
         <Animated.View style={[StyleSheet.absoluteFill, animatedStyleB]}>
           <FastImage
+            onLoadEnd={() => handleBackdropLoad(imageSourceB)}
             source={imageSourceB}
             style={StyleSheet.absoluteFill}
             resizeMode={FastImage.resizeMode.cover}

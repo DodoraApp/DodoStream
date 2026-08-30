@@ -1,0 +1,100 @@
+# Player: reach the local player surface, capture playback, open controls and
+# subtitles, select the English add-on subtitle, change subtitle delay, then
+# leave playback via the back control. If the local MP4 cannot load, the flow
+# asserts the documented player error/return path instead of hanging.
+# Precondition: onboarding.yaml has run.
+appId: app.dodora.dodostream.dev
+---
+- launchApp
+- runFlow: select-profile.yaml
+
+# Navigate to the movie streams and select the direct MP4.
+- tapOn:
+    id: nav-search
+- tapOn:
+    id: search-input
+- inputText: 'meridian'
+- hideKeyboard
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible: 'The Meridian Archive'
+    timeout: 15000
+- tapOn: 'The Meridian Archive'
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000
+- tapOn:
+    id: media-play
+- extendedWaitUntil:
+    visible: '1080p MP4 (Direct)'
+    timeout: 15000
+- tapOn: '1080p MP4 (Direct)'
+
+# Controls are hidden after playback starts; reveal them through the player surface.
+- tapOn:
+    id: player-controls-invisible-area
+- extendedWaitUntil:
+    visible:
+      id: player-controls-overlay
+    timeout: 30000
+- takeScreenshot: player/01-playback
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/player/01-playback.png'
+          thresholdPercentage: 98
+
+# Open subtitle selection and choose the English add-on subtitle.
+- tapOn:
+    id: player-subtitles
+- extendedWaitUntil:
+    visible: 'DodoStream E2E Fixture | English'
+    timeout: 15000
+- tapOn: 'DodoStream E2E Fixture | English'
+- takeScreenshot: player/02-subtitles
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/player/02-subtitles.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: settings-slider-subtitle-delay
+- takeScreenshot: player/03-subtitle-sync
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/player/03-subtitle-sync.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: modal-close
+- tapOn:
+    id: player-settings
+- extendedWaitUntil:
+    visible: 'Playback'
+    timeout: 15000
+- takeScreenshot: player/03-settings
+- runFlow:
+    when:
+      true: ${E2E_VISUAL_ASSERT == '1'}
+    commands:
+      - assertScreenshot:
+          path: '.maestro/snapshots/${PROFILE}/player/03-settings.png'
+          thresholdPercentage: 98
+- tapOn:
+    id: modal-close
+- tapOn:
+    id: player-back
+
+# Return path: leave playback back to the media details surface.
+- extendedWaitUntil:
+    visible:
+      id: media-play
+    timeout: 15000

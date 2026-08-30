@@ -154,12 +154,14 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
           description={t('home.continue_watching_desc')}
           value={continueWatchingEnabled}
           onValueChange={setContinueWatchingEnabled}
+          testID="settings-switch-continue-watching"
         />
         <SettingsSwitch
           label={t('home.my_list')}
           description={t('home.my_list_desc')}
           value={myListEnabled}
           onValueChange={setMyListEnabled}
+          testID="settings-switch-my-list"
         />
       </SettingsCard>
 
@@ -169,6 +171,7 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
           description={t('home.show_hero_desc')}
           value={heroEnabled}
           onValueChange={setHeroEnabled}
+          testID="settings-switch-show-hero"
         />
 
         <Box gap="s">
@@ -180,6 +183,7 @@ export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrolla
             label={t('home.item_count')}
             onValueChange={handleItemCountChange}
             showButtons
+            testID="settings-slider-hero-item-count"
           />
         </Box>
       </SettingsCard>

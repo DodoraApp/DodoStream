@@ -98,7 +98,7 @@ const SettingsMenuItemInner: FC<SettingsMenuItemInnerProps> = memo(
     }, [isSelected, setSelectedSettingsMenuNodeHandle]);
 
     return (
-      <Focusable onPress={onPress} onRef={handleRef}>
+      <Focusable onPress={onPress} onRef={handleRef} testID={`settings-menu-${item.id}`}>
         <Box borderRadius="m" padding="s" flexDirection="row" alignItems="center" gap="m">
           <Box
             backgroundColor={isSelected ? 'primaryBackground' : undefined}

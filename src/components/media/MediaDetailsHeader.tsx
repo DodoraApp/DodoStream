@@ -1,4 +1,4 @@
-import { memo, PropsWithChildren, useMemo } from 'react';
+import { memo, PropsWithChildren, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 
 import { useTheme } from '@shopify/restyle';
@@ -34,6 +34,9 @@ export const MediaDetailsHeader = memo(
       return getDetailsCoverSource(media.background, media.poster);
     }, [media.background, media.poster]);
 
+    const [loadedCoverSource, setLoadedCoverSource] = useState<typeof coverSource>();
+    const coverReady = loadedCoverSource === coverSource;
+
     const logoSource = useMemo(() => {
       return getDetailsLogoSource(media.logo);
     }, [media.logo]);
@@ -54,9 +57,14 @@ export const MediaDetailsHeader = memo(
     return (
       <Box>
         {variant !== 'minimal' && (
-          <Box height={coverHeight} width={width} position="relative">
+          <Box
+            height={coverHeight}
+            width={width}
+            position="relative"
+            testID={coverReady ? 'details-cover-ready' : 'details-cover-loading'}>
             <AnimatedImage
               source={coverSource}
+              onLoadEnd={() => setLoadedCoverSource(coverSource)}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
             />

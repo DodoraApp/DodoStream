@@ -9,6 +9,7 @@ import type { StreamTargetType } from '@/db/schema';
 import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
 import type { ContentType, Stream } from '@/types/stremio';
+import { IS_E2E } from '@/utils/e2e';
 
 type StreamsBaseParams = {
   metaId: string;
@@ -64,7 +65,7 @@ export const useMediaNavigation = () => {
     (base: StreamsBaseParams, extras?: StreamsExtraParams) => {
       const params: Record<string, string | undefined> = { ...base, ...(extras ?? {}) };
 
-      if (typeof params.autoPlay !== 'undefined' || !activeProfileId) {
+      if (IS_E2E || typeof params.autoPlay !== 'undefined' || !activeProfileId) {
         router.push({ pathname: '/streams', params });
         return;
       }
@@ -82,7 +83,7 @@ export const useMediaNavigation = () => {
     (base: StreamsBaseParams, extras?: StreamsExtraParams) => {
       const params: Record<string, string | undefined> = { ...base, ...(extras ?? {}) };
 
-      if (typeof params.autoPlay !== 'undefined' || !activeProfileId) {
+      if (IS_E2E || typeof params.autoPlay !== 'undefined' || !activeProfileId) {
         router.replace({ pathname: '/streams', params });
         return;
       }

@@ -119,7 +119,7 @@ export const Modal: FC<ModalProps> = ({
                     )}
                     {label && <Text variant="subheader">{label}</Text>}
                   </Box>
-                  <Button icon="close" variant="tertiary" onPress={onClose} />
+                  <Button icon="close" variant="tertiary" onPress={onClose} testID="modal-close" />
                 </Box>
                 {children}
               </Box>

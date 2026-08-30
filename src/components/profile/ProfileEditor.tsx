@@ -136,6 +136,7 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
               placeholder={t('name_placeholder')}
               maxLength={20}
               icon="person"
+              testID="profile-name-input"
             />
           </SettingsRow>
 
@@ -176,6 +177,7 @@ export const ProfileEditorContent: FC<ProfileEditorContentProps> = memo(
               title={saveButtonLabel ?? (isEditing ? t('save_changes') : t('create_profile'))}
               onPress={handleSave}
               disabled={!name.trim()}
+              testID="profile-save-button"
             />
           </Box>
         )}

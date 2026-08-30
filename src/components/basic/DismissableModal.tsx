@@ -64,6 +64,7 @@ export function DismissableModal({
             onPress={onPrimaryAction}
             hasTVPreferredFocus={preferredAction === 'primary'}
             width="100%"
+            testID="modal-primary-action"
           />
           {showSecondary ? (
             <Button
@@ -72,6 +73,7 @@ export function DismissableModal({
               onPress={onSecondaryAction!}
               hasTVPreferredFocus={preferredAction === 'secondary'}
               width="100%"
+              testID="modal-secondary-action"
             />
           ) : null}
 
@@ -82,6 +84,7 @@ export function DismissableModal({
               onPress={onTertiaryAction!}
               hasTVPreferredFocus={preferredAction === 'tertiary'}
               width="100%"
+              testID="modal-tertiary-action"
             />
           ) : null}
         </Box>

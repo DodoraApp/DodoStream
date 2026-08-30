@@ -143,6 +143,7 @@ export const WhatsNewModal: FC = () => {
               title={buttonTitle}
               onPress={handleButtonPress}
               hasTVPreferredFocus
+              testID="whats-new-primary-action"
             />
           </Box>
         </Box>
