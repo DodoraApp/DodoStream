@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "paths": {
-      "@app/*": ["../src/*"]
+      "@app/*": ["../../src/*"]
     },
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
@@ -16,5 +16,5 @@
     "jsx": "react-jsx",
     "strict": true
   },
-  "include": ["src", "../src/constants/logo-path.ts"]
+  "include": ["src", "../../src/constants/logo-path.ts"]
 }

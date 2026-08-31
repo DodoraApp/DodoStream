@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 
-const html = readFileSync(resolve(root, 'remote-ui/dist/index.html'), 'utf-8');
+const html = readFileSync(resolve(root, 'packages/remote-ui/dist/index.html'), 'utf-8');
 const escaped = html.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 
 const output = `// AUTO-GENERATED — do not edit. Run pnpm build:ui to regenerate.\nexport const WEB_UI_HTML = \`${escaped}\`;\n`;

@@ -292,7 +292,7 @@ importers:
         specifier: ~5.9.2
         version: 5.9.3
 
-  remote-ui:
+  packages/remote-ui:
     dependencies:
       '@dnd-kit/core':
         specifier: ^6.3.1

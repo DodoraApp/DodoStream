@@ -1,5 +1,5 @@
 {
-  "name": "remote-ui",
+  "name": "@dodostream/remote-ui",
   "version": "1.0.0",
   "private": true,
   "type": "module",

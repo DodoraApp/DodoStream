@@ -19,7 +19,7 @@
     "build:production_apk:local": "eas build --profile production_apk --local",
     "build:production_apk:tv": "eas build --profile production_tv_apk",
     "build:production_apk:tv:local": "eas build --profile production_tv_apk --local",
-    "build:ui": "pnpm --filter remote-ui build && node scripts/embed-web-ui.mjs",
+    "build:ui": "pnpm --filter ./packages/remote-ui build && node scripts/embed-web-ui.mjs",
     "new-whats-new": "node scripts/new-whats-new.mjs",
     "generate-whats-new": "node scripts/generate-whats-new-registry.mjs",
     "prebuild": "expo prebuild",

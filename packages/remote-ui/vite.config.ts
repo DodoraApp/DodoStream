@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [tailwindcss(), react(), viteSingleFile()],
   resolve: {
     alias: {
-      '@app': path.resolve(__dirname, '../src'),
+      '@app': path.resolve(__dirname, '../../src'),
     },
   },
   build: {
