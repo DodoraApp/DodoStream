@@ -11,7 +11,7 @@ import path from 'path';
  * is being prebuilt. A module-level flag ensures the build only executes once
  * when both platforms are built together.
  *
- * Runs: pnpm --filter remote-ui build && node scripts/embed-web-ui.mjs
+ * Runs: pnpm --filter ./packages/remote-ui build && node scripts/embed-web-ui.mjs
  */
 
 let built = false;
@@ -24,7 +24,7 @@ function buildRemoteUI(projectRoot: string): void {
 
   console.log('🌐 Building remote-ui SPA...');
   try {
-    execSync('pnpm --filter remote-ui build', { cwd: projectRoot, stdio: 'inherit' });
+    execSync('pnpm --filter ./packages/remote-ui build', { cwd: projectRoot, stdio: 'inherit' });
     execSync('node scripts/embed-web-ui.mjs', { cwd: projectRoot, stdio: 'inherit' });
     console.log('✓ Remote UI embedded successfully');
   } catch (error) {

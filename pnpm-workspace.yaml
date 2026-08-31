@@ -1,5 +1,4 @@
 packages:
-  - 'remote-ui'
   - 'packages/*'
 
 patchedDependencies:
