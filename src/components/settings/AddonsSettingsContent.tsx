@@ -1,11 +1,10 @@
-import { FC, memo, useCallback, useState } from 'react';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Linking, TVFocusGuideView } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
-import { useShallow } from 'zustand/react/shallow';
 
 import { useInstallAddon } from '@/api/stremio';
 import { Button } from '@/components/basic/Button';
@@ -20,6 +19,7 @@ import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { InstalledAddon } from '@/types/stremio';
+import { sortAddonsByOrder } from '@/utils/addons';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('AddonsSettings');
@@ -45,28 +45,21 @@ export const AddonsSettingsContent: FC<AddonsSettingsContentProps> = memo(
     const { isWide } = useResponsiveLayout();
     const theme = useTheme<Theme>();
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
-    const { configsByProfile, orderedAddons, storeError, reorderAddon } = useAddonStore(
-      useShallow((state) => {
-        const allAddons = Object.values(state.addons);
-        const order = activeProfileId ? state.addonOrderByProfile[activeProfileId] : undefined;
-        let sorted: typeof allAddons;
-        if (!order || order.length === 0) {
-          sorted = allAddons;
-        } else {
-          const orderMap = new Map(order.map((id, index) => [id, index]));
-          sorted = [...allAddons].sort((a, b) => {
-            const aIndex = orderMap.get(a.id) ?? Infinity;
-            const bIndex = orderMap.get(b.id) ?? Infinity;
-            return aIndex - bIndex;
-          });
-        }
-        return {
-          configsByProfile: state.configsByProfile,
-          orderedAddons: sorted,
-          storeError: state.error,
-          reorderAddon: state.reorderAddon,
-        };
-      })
+    // Stable per-slice selectors: zustand v5 + React 19 loop when a selector
+    // returns freshly computed references (useShallow cannot stabilize them).
+    const configsByProfile = useAddonStore((state) => state.configsByProfile);
+    const addons = useAddonStore((state) => state.addons);
+    const addonOrderByProfile = useAddonStore((state) => state.addonOrderByProfile);
+    const storeError = useAddonStore((state) => state.error);
+    const reorderAddon = useAddonStore((state) => state.reorderAddon);
+
+    const orderedAddons = useMemo(
+      () =>
+        sortAddonsByOrder(
+          Object.values(addons),
+          activeProfileId ? addonOrderByProfile[activeProfileId] : undefined
+        ),
+      [addons, addonOrderByProfile, activeProfileId]
     );
     const installAddon = useInstallAddon();
 
@@ -490,7 +483,7 @@ const AddonCard: FC<AddonCardProps> = memo(
 );
 
 interface AddonActionButtonProps {
-  iconName: keyof typeof Ionicons.glyphMap;
+  iconName: IoniconsIconName;
   iconColor: string;
   onPress: () => void;
 }

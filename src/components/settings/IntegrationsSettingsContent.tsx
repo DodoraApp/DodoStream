@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';

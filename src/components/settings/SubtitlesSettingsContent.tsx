@@ -20,12 +20,12 @@ export const SubtitlesSettingsContent: FC = memo(() => {
   const { t } = useTranslation('settings');
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
-  const { subtitleStyle, setSubtitleStyleForProfile } = usePlaybackStore((state) => ({
-    subtitleStyle:
+  const setSubtitleStyleForProfile = usePlaybackStore((state) => state.setSubtitleStyleForProfile);
+  const subtitleStyle = usePlaybackStore(
+    (state) =>
       (activeProfileId ? state.byProfile[activeProfileId]?.subtitleStyle : undefined) ??
-      DEFAULT_SUBTITLE_STYLE,
-    setSubtitleStyleForProfile: state.setSubtitleStyleForProfile,
-  }));
+      DEFAULT_SUBTITLE_STYLE
+  );
 
   const currentPreset = useMemo(
     () =>

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import React, {
   forwardRef,
   memo,
@@ -10,9 +11,16 @@ import React, {
 } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 
-import { LibVlcPlayerView, LibVlcPlayerViewRef, MediaInfo } from 'expo-libvlc-player';
+import {
+  LibVlcPlayerView,
+  LibVlcPlayerViewRef,
+  MediaInfo,
+  MediaTracks,
+  VideoAspectRatio,
+} from 'expo-libvlc-player';
 import { useFocusEffect } from 'expo-router';
 
+import { PLAYER_END_TOLERANCE_SECONDS } from '@/constants/playback';
 import { DEFAULT_SUBTITLE_STYLE } from '@/constants/subtitles';
 import { usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
@@ -145,7 +153,7 @@ export const VLCPlayer = memo(
         return [...performanceOptions, ...subtitleOptions];
       }, [subtitleStyleFromStore]);
 
-      const screenAspectRatio = useMemo(() => {
+      const screenAspectRatio = useMemo((): VideoAspectRatio | undefined => {
         if (!width || !height) return undefined;
         return `${Math.round(width)}:${Math.round(height)}`;
       }, [height, width]);
@@ -157,7 +165,7 @@ export const VLCPlayer = memo(
 
       const aspectRatio = useMemo(() => {
         if (effectiveFitMode !== 'stretch') return undefined;
-        return screenAspectRatio ?? null;
+        return screenAspectRatio ?? undefined;
       }, [effectiveFitMode, screenAspectRatio]);
 
       // Track playing state - use ref for synchronous checks in callbacks
@@ -167,6 +175,10 @@ export const VLCPlayer = memo(
       const [isReady, setIsReady] = useState(false);
       const isReadyRef = useRef(false);
       const isMountedRef = useRef(true);
+      // End detection guards for the ambiguous v8+ onStopped event
+      const lastTimeRef = useRef(0);
+      const durationRef = useRef(0);
+      const endFiredRef = useRef(false);
 
       // Workaround for VLC surface detach: force complete remount on focus
       useFocusEffect(
@@ -224,6 +236,13 @@ export const VLCPlayer = memo(
           debug('unmount');
         };
       }, []);
+
+      // Reset end-detection guards whenever a new source is prepared
+      useEffect(() => {
+        lastTimeRef.current = 0;
+        durationRef.current = 0;
+        endFiredRef.current = false;
+      }, [processedSource]);
 
       useImperativeHandle(ref, () => ({
         seekTo: async (time: number, durationParam: number) => {
@@ -292,9 +311,10 @@ export const VLCPlayer = memo(
       }, [onBuffer]);
 
       const handleTimeChanged = useCallback(
-        (event: { time: number }) => {
-          // time is in milliseconds, convert to seconds
-          const timeInSeconds = event.time / 1000;
+        (event: { value: number }) => {
+          // value is in milliseconds, convert to seconds
+          const timeInSeconds = event.value / 1000;
+          lastTimeRef.current = timeInSeconds;
           onProgress?.({
             currentTime: timeInSeconds,
           });
@@ -307,6 +327,7 @@ export const VLCPlayer = memo(
           debug('firstPlay', { lengthMs: event.length });
           // length is in milliseconds, convert to seconds
           const durationInSeconds = event.length / 1000;
+          durationRef.current = durationInSeconds;
 
           // Mark player as ready - this enables play/pause/seek controls
           // Set ref first (synchronous) so imperative methods can use it immediately
@@ -314,10 +335,16 @@ export const VLCPlayer = memo(
           setIsReady(true);
 
           onLoad?.({ duration: durationInSeconds });
+        },
+        [onLoad]
+      );
 
-          // Process audio tracks
-          if (event.tracks.audio) {
-            const audioTracks: AudioTrack[] = event.tracks.audio
+      const handleESAdded = useCallback(
+        (event: MediaTracks) => {
+          debug('esAdded', { audio: event.audio?.length, subtitle: event.subtitle?.length });
+          // v8+ reports track discovery through onESAdded instead of onFirstPlay
+          if (event.audio) {
+            const audioTracks: AudioTrack[] = event.audio
               .filter((t) => t.id !== -1)
               .map((track) => ({
                 index: track.id,
@@ -327,8 +354,8 @@ export const VLCPlayer = memo(
           }
 
           // Process subtitle tracks (in-stream video subtitles)
-          if (event.tracks.subtitle) {
-            const textTracks: TextTrack[] = event.tracks.subtitle
+          if (event.subtitle) {
+            const textTracks: TextTrack[] = event.subtitle
               .filter((t) => t.id !== -1)
               .map((track) => ({
                 source: 'video' as const,
@@ -339,18 +366,35 @@ export const VLCPlayer = memo(
             onTextTracks?.(textTracks);
           }
         },
-        [onLoad, onAudioTracks, onTextTracks]
+        [onAudioTracks, onTextTracks]
       );
 
-      const handleEndReached = useCallback(() => {
-        debug('endReached');
-        onEnd?.();
+      const handleStopped = useCallback(() => {
+        debug('stopped', {
+          duration: durationRef.current,
+          lastTime: lastTimeRef.current,
+          endFired: endFiredRef.current,
+        });
+        // v8+ emits onStopped for both natural end and teardown. Only report an
+        // end when the media actually ran to completion: a positive duration is
+        // known, at least one progress tick was observed, and the last observed
+        // time is within tolerance of the duration.
+        if (
+          !endFiredRef.current &&
+          durationRef.current > 0 &&
+          lastTimeRef.current > 0 &&
+          durationRef.current - lastTimeRef.current <= PLAYER_END_TOLERANCE_SECONDS
+        ) {
+          endFiredRef.current = true;
+          debug('endReached');
+          onEnd?.();
+        }
       }, [onEnd]);
 
       const handleError = useCallback(
-        (event: { error: string }) => {
+        (event: { message: string }) => {
           debug('error', { event });
-          onError?.(event.error || 'VLC playback error');
+          onError?.(event.message || 'VLC playback error');
         },
         [onError]
       );
@@ -368,7 +412,7 @@ export const VLCPlayer = memo(
           style={styles.player}
           autoplay={false}
           options={vlcOptions}
-          scale={0}
+          contentFit={effectiveFitMode === 'stretch' ? 'fill' : 'contain'}
           aspectRatio={aspectRatio}
           tracks={{
             audio: selectedAudioTrack?.index,
@@ -378,7 +422,8 @@ export const VLCPlayer = memo(
           onPlaying={handlePlaying}
           onTimeChanged={handleTimeChanged}
           onFirstPlay={handleFirstPlay}
-          onEndReached={handleEndReached}
+          onESAdded={handleESAdded}
+          onStopped={handleStopped}
           onEncounteredError={handleError}
         />
       );

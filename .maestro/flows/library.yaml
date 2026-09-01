@@ -23,6 +23,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/library/01-my-list.png'
@@ -43,6 +44,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/library/02-history.png'

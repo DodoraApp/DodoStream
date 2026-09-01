@@ -1,7 +1,7 @@
 import { FC, memo, useCallback, useEffect, useRef } from 'react';
 import { findNodeHandle, ScrollView, View } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import { router } from 'expo-router';
 
@@ -14,7 +14,7 @@ export interface SettingsMenuItem {
   id: string;
   title: string;
   description?: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IoniconsIconName;
   /** Navigation href for navigation mode */
   href?: string;
 }

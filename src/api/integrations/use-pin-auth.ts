@@ -45,7 +45,9 @@ export function usePinAuth(
 
   // Always-accurate provider reference to avoid stale closures
   const providerRef = useRef(provider);
-  providerRef.current = provider;
+  useEffect(() => {
+    providerRef.current = provider;
+  }, [provider]);
 
   const clearTimers = useCallback(() => {
     if (pollIntervalRef.current) {

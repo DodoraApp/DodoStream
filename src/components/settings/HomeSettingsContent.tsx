@@ -2,13 +2,15 @@ import { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 
+import { useShallow } from 'zustand/react/shallow';
+
 import { SliderInput } from '@/components/basic/SliderInput';
 import { OrderableItem, OrderableListSection } from '@/components/settings/OrderableListSection';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import { HERO_CONTENT_REFRESH_MS } from '@/constants/ui';
 import { useAddonStore } from '@/store/addon.store';
-import { HeroCatalogSource, useHomeStore } from '@/store/home.store';
+import { DEFAULT_HOME_SETTINGS, HeroCatalogSource, useHomeStore } from '@/store/home.store';
 import { useProfileStore } from '@/store/profile.store';
 import { Box, Text } from '@/theme/theme';
 
@@ -30,29 +32,26 @@ export interface HomeSettingsContentProps {
  */
 export const HomeSettingsContent: FC<HomeSettingsContentProps> = memo(({ scrollable = true }) => {
   const { t } = useTranslation('settings');
-  const {
-    heroEnabled,
-    heroItemCount,
-    heroCatalogSources,
-    continueWatchingEnabled,
-    myListEnabled,
-    setHeroEnabled,
-    setHeroItemCount,
-    setHeroCatalogSources,
-    setContinueWatchingEnabled,
-    setMyListEnabled,
-  } = useHomeStore((state) => ({
-    heroEnabled: state.getActiveSettings().heroEnabled,
-    heroItemCount: state.getActiveSettings().heroItemCount,
-    heroCatalogSources: state.getActiveSettings().heroCatalogSources,
-    continueWatchingEnabled: state.getActiveSettings().continueWatchingEnabled,
-    myListEnabled: state.getActiveSettings().myListEnabled,
-    setHeroEnabled: state.setHeroEnabled,
-    setHeroItemCount: state.setHeroItemCount,
-    setHeroCatalogSources: state.setHeroCatalogSources,
-    setContinueWatchingEnabled: state.setContinueWatchingEnabled,
-    setMyListEnabled: state.setMyListEnabled,
-  }));
+  const { heroEnabled, heroItemCount, heroCatalogSources, continueWatchingEnabled, myListEnabled } =
+    useHomeStore(
+      useShallow((state) => {
+        const settings =
+          (state.activeProfileId ? state.byProfile[state.activeProfileId] : undefined) ??
+          DEFAULT_HOME_SETTINGS;
+        return {
+          heroEnabled: settings.heroEnabled,
+          heroItemCount: settings.heroItemCount,
+          heroCatalogSources: settings.heroCatalogSources,
+          continueWatchingEnabled: settings.continueWatchingEnabled,
+          myListEnabled: settings.myListEnabled,
+        };
+      })
+    );
+  const setHeroEnabled = useHomeStore((state) => state.setHeroEnabled);
+  const setHeroItemCount = useHomeStore((state) => state.setHeroItemCount);
+  const setHeroCatalogSources = useHomeStore((state) => state.setHeroCatalogSources);
+  const setContinueWatchingEnabled = useHomeStore((state) => state.setContinueWatchingEnabled);
+  const setMyListEnabled = useHomeStore((state) => state.setMyListEnabled);
 
   const addons = useAddonStore((state) => state.addons);
   const configsByProfile = useAddonStore((state) => state.configsByProfile);

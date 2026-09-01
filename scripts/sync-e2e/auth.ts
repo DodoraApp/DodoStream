@@ -6,6 +6,8 @@
  * - Simkl: PIN flow (no refresh token).
  */
 
+/// <reference types="node" />
+
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline/promises';

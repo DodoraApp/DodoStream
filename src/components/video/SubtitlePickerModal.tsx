@@ -1,8 +1,8 @@
 import React, { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Ionicons } from '@expo/vector-icons';
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';

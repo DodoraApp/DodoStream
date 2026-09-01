@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { Pressable } from 'react-native';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 
 import { Badge } from '@/components/basic/Badge';
 import { Focusable } from '@/components/basic/Focusable';
@@ -69,11 +69,11 @@ export const MediaCard = memo(
             overflow="hidden"
             backgroundColor="cardBackground"
             position="relative">
-            <FastImage
+            <Image
               source={posterUri ? { uri: posterUri } : NO_POSTER_PORTRAIT}
-              defaultSource={NO_POSTER_PORTRAIT}
+              placeholder={NO_POSTER_PORTRAIT}
               style={{ width: '100%', height: '100%' }}
-              resizeMode={FastImage.resizeMode.cover}
+              contentFit="cover"
             />
 
             {badgeLabel ? (

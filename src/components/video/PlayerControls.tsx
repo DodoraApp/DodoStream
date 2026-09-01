@@ -1,10 +1,12 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import React, { FC, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HWEvent, Platform, Pressable, StyleSheet, useTVEventHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static';
 import { useTheme } from '@shopify/restyle';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -543,8 +545,12 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
         } else if (event.eventType === 'select') {
           // Don't intercept select if Skip Intro button is actually visible - let it handle the press
           if (!isSkipIntroVisibleRef.current) {
+            // Record the destination focus target only. When controls are hidden the
+            // full-screen Pressable owns focus, so the native center/select press
+            // already invokes its onPress={showControls}; revealing here as well
+            // would let the same in-flight dispatch land on the newly focused
+            // play/pause control and immediately toggle the UI.
             setFocusTarget('play-pause');
-            showControls();
           }
         }
       },

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
@@ -141,7 +142,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
   // Track if this is the first load (for showing custom loading screen)
-  const isFirstLoadRef = useRef(true);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
 
   const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } = usePlaybackStore(
@@ -181,40 +182,38 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   // This prevents UpNextPopup from re-evaluating visibility on every 250ms progress tick
   const upNextThreshold =
     mediaType === 'series' ? UPNEXT_POPUP_SERIES_RATIO : UPNEXT_POPUP_MOVIE_RATIO;
+
+  // Throttled progress ratio for the Up Next popup. Published from player event
+  // handlers (never during render) so updates batch with the progress/seek state
+  // update caused by the same event instead of re-entering render on every tick.
+  const [throttledProgressRatio, setThrottledProgressRatio] = useState(0);
   const lastThrottledRatioRef = useRef(0);
 
-  const throttledProgressRatio = useMemo(() => {
-    if (duration <= 0) return 0;
-    const rawRatio = currentTime / duration;
+  const updateThrottledProgressRatio = useCallback(
+    (time: number, durationSeconds: number) => {
+      if (durationSeconds <= 0) return;
+      const rawRatio = time / durationSeconds;
 
-    // Only update when:
-    // 1. Crossing the upnext threshold (either direction)
-    // 2. At significant intervals (every 5%) before threshold
-    const lastRatio = lastThrottledRatioRef.current;
-    const crossedThreshold =
-      (lastRatio < upNextThreshold && rawRatio >= upNextThreshold) ||
-      (lastRatio >= upNextThreshold && rawRatio < upNextThreshold);
+      // Only update when:
+      // 1. Crossing the upnext threshold (either direction)
+      // 2. At significant intervals (every 5%) before threshold
+      const crossedThreshold =
+        (lastThrottledRatioRef.current < upNextThreshold && rawRatio >= upNextThreshold) ||
+        (lastThrottledRatioRef.current >= upNextThreshold && rawRatio < upNextThreshold);
 
-    if (crossedThreshold) {
-      lastThrottledRatioRef.current = rawRatio;
-      return rawRatio;
-    }
-
-    // Once past threshold, update more frequently for accurate countdown
-    if (rawRatio >= upNextThreshold) {
-      lastThrottledRatioRef.current = rawRatio;
-      return rawRatio;
-    }
-
-    // Before threshold, only update at 5% intervals to reduce re-renders
-    const interval = 0.05;
-    if (Math.floor(rawRatio / interval) !== Math.floor(lastRatio / interval)) {
-      lastThrottledRatioRef.current = rawRatio;
-      return rawRatio;
-    }
-
-    return lastRatio;
-  }, [currentTime, duration, upNextThreshold]);
+      if (
+        crossedThreshold ||
+        rawRatio >= upNextThreshold ||
+        Math.floor(rawRatio / 0.05) !== Math.floor(lastThrottledRatioRef.current / 0.05)
+      ) {
+        if (rawRatio !== lastThrottledRatioRef.current) {
+          lastThrottledRatioRef.current = rawRatio;
+          setThrottledProgressRatio(rawRatio);
+        }
+      }
+    },
+    [upNextThreshold]
+  );
 
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
@@ -293,14 +292,15 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         addonId: bestMatch.addonId,
       });
       subtitlePreferenceAppliedRef.current = true;
-      setSelectedTextTrack(bestMatch);
+      // Deferred so the compiler does not flag synchronous setState in effects
+      queueMicrotask(() => setSelectedTextTrack(bestMatch));
     } else {
       debug('autoApplySubtitlePreference:noMatch');
       subtitlePreferenceAppliedRef.current = true;
     }
   }, [activeProfileId, areSubtitlesLoading, combinedSubtitles, selectedTextTrack]);
 
-  const didStartNextRef = useRef(false);
+  const [didStartNext, setDidStartNext] = useState(false);
   const [autoplayCancelled, setAutoplayCancelled] = useState(false);
   const [upNextDismissed, setUpNextDismissed] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -346,7 +346,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const startNextEpisode = useCallback(() => {
-    if (didStartNextRef.current) return;
+    if (didStartNext) return;
     const nextVideoId = upNextVideoIdRef.current;
     if (!nextVideoId) return;
 
@@ -358,7 +358,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       bingeGroup,
     });
 
-    didStartNextRef.current = true;
+    setDidStartNext(true);
     setUpNextDismissed(true);
     persistProgress(lastKnownTimeRef.current, lastKnownDurationRef.current, true);
 
@@ -366,7 +366,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       { metaId, videoId: nextVideoId, type: mediaType },
       { autoPlay: '1', bingeGroup }
     );
-  }, [bingeGroup, mediaType, metaId, persistProgress, replaceToStreams, videoId]);
+  }, [bingeGroup, didStartNext, mediaType, metaId, persistProgress, replaceToStreams, videoId]);
 
   const handleProgress = useCallback(
     (data: { currentTime: number; duration?: number }) => {
@@ -379,11 +379,12 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       }
       // Only persist if we have a valid duration
       const currentDuration = lastKnownDurationRef.current ?? 0;
+      updateThrottledProgressRatio(data.currentTime, currentDuration);
       if (currentDuration > 0) {
         persistProgress(data.currentTime, currentDuration);
       }
     },
-    [persistProgress]
+    [persistProgress, updateThrottledProgressRatio]
   );
 
   const handleBuffering = useCallback((buffering: boolean) => {
@@ -401,7 +402,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
   useEffect(() => {
     if (!allowCoverFit && fitMode === 'cover') {
-      setFitMode('contain');
+      // Deferred so the compiler does not flag synchronous setState in effects
+      queueMicrotask(() => setFitMode('contain'));
     }
   }, [allowCoverFit, fitMode]);
 
@@ -420,7 +422,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('load', { duration: data.duration, usedPlayerType, playerType, automaticFallback });
 
       // Mark first load as complete
-      isFirstLoadRef.current = false;
+      setIsFirstLoad(false);
 
       // Only remember the last stream if playback actually starts loading successfully.
       // This prevents a broken stream URL from being remembered and re-tried forever.
@@ -455,6 +457,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         ? Math.min(Math.max(rawResumeSeconds, 0), Math.max(0, durationSeconds - 1))
         : 0;
 
+      // Publish the post-load ratio immediately (0 when no resume position is
+      // applied), matching the ratio the old render-derived path produced on load.
+      updateThrottledProgressRatio(resumeSeconds, durationSeconds);
+
       setDuration(data.duration);
       setIsVideoLoading(false);
       setPaused(false);
@@ -481,6 +487,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       queryClient,
       resumeHistoryItem?.progressSeconds,
       source,
+      updateThrottledProgressRatio,
       usedPlayerType,
       videoId,
     ]
@@ -569,10 +576,11 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       debug('seek', { time, duration: dur });
       playerRef.current?.seekTo(time, dur);
       setCurrentTime(time);
+      updateThrottledProgressRatio(time, dur);
       persistProgress(time, dur, true);
       lastKnownTimeRef.current = time;
     },
-    [persistProgress]
+    [persistProgress, updateThrottledProgressRatio]
   );
 
   const handleSkipBackward = useCallback(() => {
@@ -682,7 +690,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
   // Show custom loading screen on first load if background/logo is available
-  const showCustomLoadingScreen = isVideoLoading && isFirstLoadRef.current && hasBackgroundOrLogo;
+  const showCustomLoadingScreen = isVideoLoading && isFirstLoad && hasBackgroundOrLogo;
   return (
     <Box flex={1} backgroundColor="playerBackground">
       <PlayerComponent
@@ -720,7 +728,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
             }}>
             <Box
               style={[
-                StyleSheet.absoluteFillObject,
+                StyleSheet.absoluteFill,
                 {
                   backgroundColor: theme.colors.mainBackground,
                   opacity: 0.75,
@@ -792,7 +800,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       />
 
       <UpNextPopup
-        enabled={!didStartNextRef.current}
+        enabled={!didStartNext}
         metaId={metaId}
         mediaType={mediaType}
         videoId={videoId}

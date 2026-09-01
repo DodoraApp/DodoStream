@@ -1,7 +1,7 @@
 import { FC, memo } from 'react';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 
 import { Theme } from '@/theme/theme';
 
@@ -13,10 +13,10 @@ export const TraktLogo: FC<TraktLogoProps> = memo(({ size = 'iconMedium' }) => {
   const theme = useTheme<Theme>();
   const themeSize = theme.sizes[size] as number;
   return (
-    <FastImage
+    <Image
       source={require('../../../assets/trakt-logomark.png')}
       style={{ width: themeSize, height: themeSize }}
-      resizeMode={FastImage.resizeMode.contain}
+      contentFit="contain"
     />
   );
 });

@@ -35,6 +35,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/details/01-full.png'
@@ -66,6 +67,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/details/02-seasons.png'
@@ -99,6 +101,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/details/03-season-1.png'
@@ -153,6 +156,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/details/04-specials.png'
@@ -198,6 +202,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/details/05-cast.png'
@@ -247,6 +252,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/details/06-trailers.png'

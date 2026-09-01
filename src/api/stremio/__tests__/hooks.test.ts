@@ -16,7 +16,7 @@ jest.mock('../client', () => ({
 }));
 
 const mockAddAddon = jest.fn();
-const mockGetAddonsList = jest.fn();
+const mockAddons = jest.fn();
 jest.mock('@/store/addon.store', () => ({
   useAddonStore: jest.fn((selector: any) =>
     selector({
@@ -31,7 +31,9 @@ jest.mock('@/store/addon.store', () => ({
           },
         },
       },
-      getAddonsList: mockGetAddonsList,
+      get addons() {
+        return mockAddons();
+      },
     })
   ),
 }));
@@ -55,7 +57,7 @@ describe('stremio hooks', () => {
     mockFetchManifest.mockReset();
     mockFetchMeta.mockReset();
     mockAddAddon.mockReset();
-    mockGetAddonsList.mockReset();
+    mockAddons.mockReset();
     mockUseProfileStore.mockReset();
     mockUpsertMetaCache.mockReset();
 
@@ -63,7 +65,7 @@ describe('stremio hooks', () => {
       selector({ activeProfileId: 'profile-1' })
     );
 
-    mockGetAddonsList.mockReturnValue([
+    mockAddons.mockReturnValue([
       {
         id: 'addon.id',
         manifestUrl: 'https://example.com/manifest.json',

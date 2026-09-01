@@ -108,7 +108,7 @@ export default function CatalogPage() {
   const allMetas = useMemo(() => {
     if (!data?.pages) return [];
     return data.pages.flatMap((page) => page.metas);
-  }, [data?.pages]);
+  }, [data]);
 
   // Handle media press
   const handleMediaPress = useCallback(

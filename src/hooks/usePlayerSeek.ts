@@ -76,11 +76,17 @@ export const usePlayerSeek = ({
 
   // Refs to read fresh values in callbacks without recreating them on every progress tick
   const currentTimeRef = useRef(currentTime);
-  currentTimeRef.current = currentTime;
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  });
   const pausedRef = useRef(paused);
-  pausedRef.current = paused;
+  useEffect(() => {
+    pausedRef.current = paused;
+  });
   const isSeekingRef = useRef(isSeeking);
-  isSeekingRef.current = isSeeking;
+  useEffect(() => {
+    isSeekingRef.current = isSeeking;
+  });
 
   // Refs for debouncing and state tracking
   const seekDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,6 +101,12 @@ export const usePlayerSeek = ({
 
   // Keep track of last valid duration (handles edge cases where duration becomes 0)
   const lastNonZeroDurationRef = useRef(0);
+  // Render-visible copy of the last valid duration (the compiler forbids
+  // reading refs during render); updated via the derived-state pattern.
+  const [lastNonZeroDuration, setLastNonZeroDuration] = useState(0);
+  if (duration > 0 && isFinite(duration) && duration !== lastNonZeroDuration) {
+    setLastNonZeroDuration(duration);
+  }
 
   // Update last known valid duration
   useEffect(() => {
@@ -251,7 +263,7 @@ export const usePlayerSeek = ({
   );
 
   // Computed values for slider
-  const effectiveDuration = duration > 0 ? duration : lastNonZeroDurationRef.current;
+  const effectiveDuration = duration > 0 ? duration : lastNonZeroDuration;
   const sliderMaximumValue = effectiveDuration > 0 ? effectiveDuration : 1;
 
   // When seeking, show the seek time instead of current playback time

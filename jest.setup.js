@@ -1,52 +1,57 @@
 /* eslint-env jest */
 /* global jest */
 
+// Reanimated 4 + RN Worklets need their Jest shim before any component that
+// touches animations is imported (WorkletsError: native part not initialized).
+// https://docs.swmansion.com/react-native-worklets/docs/guides/testing/
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+require('react-native-reanimated').setUpTests();
+
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
-jest.mock('@d11/react-native-fast-image', () => {
+jest.mock('expo-image', () => {
   const React = require('react');
   const { View } = require('react-native');
 
-  const FastImage = React.forwardRef((props, ref) =>
+  const Image = React.forwardRef((props, ref) =>
     React.createElement(View, { ...props, ref, testID: props.testID }, props.children)
   );
-  FastImage.displayName = 'FastImage';
-  FastImage.resizeMode = {
-    contain: 'contain',
-    cover: 'cover',
-    stretch: 'stretch',
-    center: 'center',
-  };
-  FastImage.priority = {
-    low: 'low',
-    normal: 'normal',
-    high: 'high',
-  };
-  FastImage.cacheControl = {
-    immutable: 'immutable',
-    web: 'web',
-    cacheOnly: 'cacheOnly',
-  };
-  FastImage.preload = jest.fn();
-  FastImage.clearMemoryCache = jest.fn(() => Promise.resolve());
-  FastImage.clearDiskCache = jest.fn(() => Promise.resolve());
+  Image.displayName = 'Image';
+  Image.prefetch = jest.fn(() => Promise.resolve());
+  Image.prefetchMemory = jest.fn();
+  Image.clearMemoryCache = jest.fn(() => Promise.resolve());
+  Image.clearDiskCache = jest.fn(() => Promise.resolve());
+  Image.useImage = jest.fn(() => null);
   return {
     __esModule: true,
-    default: FastImage,
+    default: Image,
+    Image,
   };
 });
 
-jest.mock('@expo/vector-icons', () => {
+jest.mock('@react-native-vector-icons/ionicons/static', () => {
   const React = require('react');
   const { Text } = require('react-native');
 
   const createIcon = (name) => (props) => React.createElement(Text, props, name);
 
   return {
-    Ionicons: createIcon('Ionicons'),
-    MaterialCommunityIcons: createIcon('MaterialCommunityIcons'),
+    __esModule: true,
+    default: createIcon('Ionicons'),
+  };
+});
+
+jest.mock('@react-native-vector-icons/material-design-icons/static', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+
+  const createIcon = (name) => (props) => React.createElement(Text, props, name);
+
+  return {
+    __esModule: true,
+    default: createIcon('MaterialCommunityIcons'),
   };
 });
 

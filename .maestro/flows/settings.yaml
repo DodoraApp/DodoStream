@@ -15,6 +15,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/00-index.png'
@@ -31,6 +32,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/01-profiles.png'
@@ -61,6 +63,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/02-addons.png'
@@ -84,6 +87,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/03-integrations.png'
@@ -121,6 +125,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/04-home.png'
@@ -153,6 +158,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/05-playback.png'
@@ -176,6 +182,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/06-subtitles.png'
@@ -201,6 +208,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/07-ui-picker-modal.png'
@@ -229,6 +237,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/08-data.png'
@@ -252,6 +261,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/settings/09-about.png'

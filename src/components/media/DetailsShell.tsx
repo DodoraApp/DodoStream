@@ -58,7 +58,7 @@ export const DetailsShell = memo(
           source={coverSource}
           onLoadEnd={() => setLoadedCoverSource(coverSource)}
           contentFit="cover"
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <LinearGradient
           colors={[
@@ -67,7 +67,7 @@ export const DetailsShell = memo(
             theme.colors.mainBackground,
           ]}
           locations={DETAILS_BACKDROP_GRADIENT_LOCATIONS}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
 
         <ScrollView>

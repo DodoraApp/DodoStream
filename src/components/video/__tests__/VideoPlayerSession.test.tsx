@@ -98,8 +98,10 @@ jest.mock('../PlayerControls', () => ({
 }));
 
 let mockUpNextResolved: any | undefined;
+let mockUpNextProps: any;
 jest.mock('../UpNextPopup', () => ({
   UpNextPopup: (props: any) => {
+    mockUpNextProps = props;
     mockReact.useEffect(() => {
       if (mockUpNextResolved) {
         props.onUpNextResolved(mockUpNextResolved);
@@ -117,6 +119,7 @@ describe('VideoPlayerSession', () => {
     mockLastExoProps = undefined;
     mockLastVlcProps = undefined;
     mockUpNextResolved = undefined;
+    mockUpNextProps = undefined;
     mockSeekTo.mockReset();
     mockUpsertItem.mockReset();
     mockSetLastStreamTarget.mockReset().mockResolvedValue(undefined);
@@ -296,5 +299,63 @@ describe('VideoPlayerSession', () => {
       { metaId: 'm1', videoId: 'v2', type: 'series' },
       { autoPlay: '1', bingeGroup: 'bg' }
     );
+  });
+
+  it('publishes throttled progressRatio to UpNextPopup from player events', () => {
+    // Arrange
+    renderSession({ usedPlayerType: 'exoplayer', playerType: 'exoplayer' });
+
+    // Duration 0 publishes 0 and never publishes a ratio
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 0 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0);
+
+    // Act - load with a valid duration
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0);
+
+    // Below threshold (movie: 0.90): publishes on 5% bucket changes
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 10 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.1);
+
+    // Same 5% bucket (0.1 and 0.12 both floor to bucket 2): unchanged
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 12 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.1);
+
+    // New 5% bucket: publishes
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 20 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.2);
+
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 25 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.25);
+
+    // Crossing the movie threshold publishes the crossing ratio
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 90 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.9);
+
+    // Post-threshold ticks keep publishing each new ratio
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 91 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.91);
+
+    // Later progress below the threshold publishes again once its bucket changes
+    act(() => {
+      mockLastExoProps.onProgress({ currentTime: 50 });
+    });
+    expect(mockUpNextProps.progressRatio).toBe(0.5);
   });
 });

@@ -1,8 +1,8 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Ionicons } from '@expo/vector-icons';
 import { LegendList } from '@legendapp/list/react-native';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { useStreams } from '@/api/stremio';

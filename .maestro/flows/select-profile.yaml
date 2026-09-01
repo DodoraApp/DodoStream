@@ -1,9 +1,14 @@
 # Select the deterministic profile after an app relaunch. Profile selection is
 # required because the app intentionally clears the active profile on startup.
+# Force a cold start: a warm app skips the profile picker entirely.
 appId: app.dodora.dodostream.dev
 ---
+- stopApp
+- launchApp
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible: "Who's watching?"
-    timeout: 15000
+    # Cold boot of the release build on software-rendered emulators takes
+    # well over a minute; CI hardware is faster.
+    timeout: 120000
 - tapOn: Alex

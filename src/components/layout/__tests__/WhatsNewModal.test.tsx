@@ -1,8 +1,9 @@
 import React from 'react';
-import { Dimensions, Image } from 'react-native';
+import { Dimensions } from 'react-native';
 
-import FastImage from '@d11/react-native-fast-image';
 import { fireEvent } from '@testing-library/react-native';
+import { Asset } from 'expo-asset';
+import { Image } from 'expo-image';
 
 import { WHATS_NEW_IMAGE_HEIGHT_FACTOR, WHATS_NEW_MODAL_HEIGHT_FACTOR } from '@/constants/ui';
 import { useAppSettingsStore } from '@/store/app-settings.store';
@@ -82,16 +83,15 @@ describe('WhatsNewModal image sizing', () => {
     // The image must not be sized from the asset's intrinsic pixel height
     // (which RN injects into the Image style); the frame has to derive from
     // the width measured via onLayout and the intrinsic aspect ratio instead.
-    jest.spyOn(Image, 'resolveAssetSource').mockReturnValue({
+    jest.spyOn(Asset, 'fromModule').mockReturnValue({
       uri: 'file:///entry-a.png',
-      scale: 1,
       width: INTRINSIC_WIDTH,
       height: INTRINSIC_HEIGHT,
-    });
+    } as never);
 
     const { UNSAFE_getByType } = renderWithProviders(<WhatsNewModal />);
 
-    const image = UNSAFE_getByType(FastImage);
+    const image = UNSAFE_getByType(Image);
     // Not sized until the rendered width is measured via onLayout.
     expect(image.props.style.height).toBeUndefined();
 
@@ -105,9 +105,9 @@ describe('WhatsNewModal image sizing', () => {
     const aspectRatio = INTRINSIC_WIDTH / INTRINSIC_HEIGHT;
     const expectedHeight = Math.min(CONTAINER_WIDTH / aspectRatio, maxImageHeight);
 
-    expect(UNSAFE_getByType(FastImage).props.style.height).toBe(expectedHeight);
+    expect(UNSAFE_getByType(Image).props.style.height).toBe(expectedHeight);
     // Regression guard: the frame must never fall back to the asset's
     // intrinsic pixel height.
-    expect(UNSAFE_getByType(FastImage).props.style.height).not.toBe(INTRINSIC_HEIGHT);
+    expect(UNSAFE_getByType(Image).props.style.height).not.toBe(INTRINSIC_HEIGHT);
   });
 });

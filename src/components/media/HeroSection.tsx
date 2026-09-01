@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TVFocusGuideView, useWindowDimensions } from 'react-native';
@@ -8,10 +9,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import FastImage, { Source } from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Image, ImageSource } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useHeroCatalogContent } from '@/api/stremio/hooks';
 import { Button } from '@/components/basic/Button';
@@ -26,7 +28,7 @@ import {
 import { useHomeScroll } from '@/hooks/useHomeScroll';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useAddonStore } from '@/store/addon.store';
-import { useHomeStore } from '@/store/home.store';
+import { DEFAULT_HOME_SETTINGS, useHomeStore } from '@/store/home.store';
 import { Box, Text, Theme } from '@/theme/theme';
 import { createDebugLogger } from '@/utils/debug';
 import { IS_E2E } from '@/utils/e2e';
@@ -48,10 +50,17 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Get home settings from store
-  const { heroItemCount, heroCatalogSources } = useHomeStore((state) => ({
-    heroItemCount: state.getActiveSettings().heroItemCount,
-    heroCatalogSources: state.getActiveSettings().heroCatalogSources,
-  }));
+  const { heroItemCount, heroCatalogSources } = useHomeStore(
+    useShallow((state) => {
+      const settings =
+        (state.activeProfileId ? state.byProfile[state.activeProfileId] : undefined) ??
+        DEFAULT_HOME_SETTINGS;
+      return {
+        heroItemCount: settings.heroItemCount,
+        heroCatalogSources: settings.heroCatalogSources,
+      };
+    })
+  );
 
   const addons = useAddonStore((state) => state.addons);
 
@@ -175,8 +184,8 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   // We alternate between two Image layers (A and B). On each transition,
   // the "front" layer fades in with the new image while the "back" layer
   // still shows the old image underneath.
-  const [imageSourceA, setImageSourceA] = useState<Source | undefined>(undefined);
-  const [imageSourceB, setImageSourceB] = useState<Source | undefined>(undefined);
+  const [imageSourceA, setImageSourceA] = useState<ImageSource | undefined>(undefined);
+  const [imageSourceB, setImageSourceB] = useState<ImageSource | undefined>(undefined);
   const activeLayerRef = useRef<'A' | 'B'>('A');
   const [isBackdropLoaded, setIsBackdropLoaded] = useState(false);
   const opacityA = useSharedValue(1);
@@ -192,14 +201,14 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
     const nextItem = heroItems[nextIndex];
     const nextImage = nextItem?.background ?? nextItem?.poster;
     if (nextImage) {
-      FastImage.preload([{ uri: nextImage }]);
+      Image.prefetch(nextImage);
     }
   }, [safeActiveIndex, hasData, heroItems]);
 
   // Update the dual crossfade layers when the active item changes
   const updateCrossfade = useCallback(
     (newBackdropImage: string) => {
-      const newSource: Source = { uri: newBackdropImage };
+      const newSource: ImageSource = { uri: newBackdropImage };
 
       if (activeLayerRef.current === 'A') {
         // Currently showing A, load new image into B and fade B in
@@ -231,7 +240,7 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
   );
 
   const handleBackdropLoad = useCallback(
-    (source: Source | undefined) => {
+    (source: ImageSource | undefined) => {
       if (source?.uri === backdropImage) setIsBackdropLoaded(true);
     },
     [backdropImage]
@@ -263,19 +272,19 @@ export const HeroSection = memo(({ hasTVPreferredFocus = false }: HeroSectionPro
         overflow="hidden">
         {/* Dual-layer crossfade: two persistent Image nodes, opacity animated */}
         <Animated.View style={[StyleSheet.absoluteFill, animatedStyleA]}>
-          <FastImage
+          <Image
             source={imageSourceA}
             onLoadEnd={() => handleBackdropLoad(imageSourceA)}
             style={StyleSheet.absoluteFill}
-            resizeMode={FastImage.resizeMode.cover}
+            contentFit="cover"
           />
         </Animated.View>
         <Animated.View style={[StyleSheet.absoluteFill, animatedStyleB]}>
-          <FastImage
+          <Image
             onLoadEnd={() => handleBackdropLoad(imageSourceB)}
             source={imageSourceB}
             style={StyleSheet.absoluteFill}
-            resizeMode={FastImage.resizeMode.cover}
+            contentFit="cover"
           />
         </Animated.View>
 

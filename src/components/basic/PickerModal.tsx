@@ -1,8 +1,8 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Ionicons } from '@expo/vector-icons';
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';
@@ -53,7 +53,7 @@ export interface PickerItem<T = string | number | undefined> {
   value: T;
   groupId?: string | null; // optional grouping identifier (e.g., language code)
   tag?: string; // optional tag displayed as a badge (e.g., "Addon", "Video")
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IoniconsIconName;
   tone?: 'default' | 'destructive';
 }
 
@@ -61,7 +61,7 @@ export interface PickerModalProps<T = string | number | undefined> {
   visible: boolean;
   onClose: () => void;
   label: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IoniconsIconName;
   items: PickerItem<T>[];
   selectedValue?: T | null;
   onValueChange: (value: T) => void;

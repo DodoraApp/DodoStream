@@ -12,6 +12,8 @@
  *   Anime:   Fullmetal Alchemist Brotherhood  kitsu:5081 (Simkl only)
  */
 
+/// <reference types="node" />
+
 import * as simklClient from '../../src/api/simkl/client';
 import {
   runExport as simklRunExport,

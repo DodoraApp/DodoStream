@@ -1,31 +1,16 @@
 import { memo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
-import type { FastImageProps, ResizeMode } from '@d11/react-native-fast-image';
-import FastImage from '@d11/react-native-fast-image';
+import { Image, ImageProps } from 'expo-image';
 import { MotiView } from 'moti';
 
 import { ANIMATION_FADE_IN_MS } from '@/constants/ui';
 
 type ContentFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 
-const contentFitToResizeMode = (contentFit: ContentFit): ResizeMode => {
-  switch (contentFit) {
-    case 'contain':
-    case 'scale-down':
-      return 'contain';
-    case 'cover':
-      return 'cover';
-    case 'fill':
-      return 'stretch';
-    case 'none':
-      return 'center';
-  }
-};
-
-export interface AnimatedImageProps extends Omit<FastImageProps, 'resizeMode'> {
+export interface AnimatedImageProps extends Omit<ImageProps, 'contentFit'> {
   durationMs?: number;
-  /** expo-image compatible prop; mapped to FastImage's resizeMode internally */
+  /** expo-image contentFit; defaults to cover to preserve the previous default */
   contentFit?: ContentFit;
 }
 
@@ -34,12 +19,10 @@ export const AnimatedImage = memo(
     durationMs = ANIMATION_FADE_IN_MS,
     onLoadEnd,
     style,
-    contentFit,
+    contentFit = 'cover',
     ...props
   }: AnimatedImageProps) => {
     const [isLoaded, setIsLoaded] = useState(false);
-
-    const resizeMode = contentFit ? contentFitToResizeMode(contentFit) : undefined;
 
     return (
       <MotiView
@@ -47,9 +30,9 @@ export const AnimatedImage = memo(
         animate={{ opacity: isLoaded ? 1 : 0 }}
         transition={{ type: 'timing', duration: durationMs }}
         style={style ?? styles.fill}>
-        <FastImage
+        <Image
           {...props}
-          resizeMode={resizeMode}
+          contentFit={contentFit}
           style={StyleSheet.compose(styles.fill, style)}
           onLoadEnd={() => {
             setIsLoaded(true);

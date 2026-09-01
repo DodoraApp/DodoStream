@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import React, { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   HWEvent,

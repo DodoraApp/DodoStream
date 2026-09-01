@@ -1,6 +1,6 @@
 import { FC } from 'react';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Box, Theme } from '@/theme/theme';

@@ -5,6 +5,8 @@
  * Provides RN globals + dotenv without Module._load hacks.
  */
 
+/// <reference types="node" />
+
 import { config } from 'dotenv';
 import path from 'path';
 

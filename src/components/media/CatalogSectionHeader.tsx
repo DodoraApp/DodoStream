@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react';
 import { TVFocusGuideView } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import { type Href, useRouter } from 'expo-router';
 
@@ -10,7 +10,7 @@ import { SyncBadge } from '@/components/basic/SyncBadge';
 import type { SyncProviderBadge } from '@/hooks/useSyncProviderBadges';
 import { Box, Text, Theme } from '@/theme/theme';
 
-const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+const TYPE_ICONS: Record<string, IoniconsIconName> = {
   movie: 'film-outline',
   series: 'tv-outline',
   anime: 'sparkles-outline',
@@ -20,7 +20,7 @@ export interface CatalogSectionHeaderProps {
   title: string;
   type?: string;
   /** Explicit icon to display - takes priority over type-derived icon */
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IoniconsIconName;
   onFocused?: () => void;
   /** Generic link destination - takes priority over catalogData */
   linkTo?: Href;

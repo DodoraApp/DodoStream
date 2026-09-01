@@ -2,7 +2,7 @@ import { FC, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import * as Linking from 'expo-linking';
 
@@ -25,7 +25,7 @@ interface AboutLinkItem {
   title: string;
   description?: string;
   url: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IoniconsIconName;
 }
 
 interface AboutLinkRowProps {

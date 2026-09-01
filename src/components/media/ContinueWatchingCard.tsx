@@ -2,8 +2,8 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 
 import { Badge } from '@/components/basic/Badge';
 import { Focusable } from '@/components/basic/Focusable';
@@ -64,11 +64,11 @@ export const ContinueWatchingCard = memo(
             overflow="hidden"
             backgroundColor="cardBackground"
             position="relative">
-            <FastImage
+            <Image
               source={finalImageUri ? { uri: finalImageUri } : NO_POSTER_LANDSCAPE}
-              defaultSource={NO_POSTER_LANDSCAPE}
+              placeholder={NO_POSTER_LANDSCAPE}
               style={{ width: '100%', height: '100%' }}
-              resizeMode={FastImage.resizeMode.cover}
+              contentFit="cover"
             />
 
             <Box

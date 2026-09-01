@@ -1,7 +1,7 @@
 import React, { FC, memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';
@@ -43,7 +43,7 @@ const IconSwatch = memo<IconSwatchProps>(({ icon, isSelected, onPress }) => {
         alignItems="center"
         backgroundColor={isSelected ? 'primaryBackground' : 'inputBackground'}>
         <Ionicons
-          name={icon as keyof typeof Ionicons.glyphMap}
+          name={icon as IoniconsIconName}
           size={theme.sizes.iconLarge}
           color={theme.colors.mainForeground}
         />
@@ -102,7 +102,7 @@ export const IconPicker: FC<IconPickerProps> = memo(
               alignItems="center"
               backgroundColor="inputBackground">
               <Ionicons
-                name={value as keyof typeof Ionicons.glyphMap}
+                name={value as IoniconsIconName}
                 size={theme.sizes.iconMedium}
                 color={theme.colors.mainForeground}
               />

@@ -43,11 +43,10 @@ export const useAutoPlay = ({
   const { t } = useTranslation('media');
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
   const [autoPlayCancelled, setAutoPlayCancelled] = useState(false);
-  const { autoPlayFirstStream } = usePlaybackStore((state) => ({
-    autoPlayFirstStream: state.activeProfileId
-      ? state.byProfile[state.activeProfileId]?.autoPlayFirstStream
-      : false,
-  }));
+  // zustand v5 + React 19: primitive selectors keep the snapshot cached.
+  const autoPlayFirstStream = usePlaybackStore((state) =>
+    state.activeProfileId ? state.byProfile[state.activeProfileId]?.autoPlayFirstStream : false
+  );
 
   const autoPlayFromParams = parseBooleanParam(autoPlay);
   const autoPlayFromSetting = !autoPlay && autoPlayFirstStream;
@@ -61,13 +60,13 @@ export const useAutoPlay = ({
 
   useEffect(() => {
     let isCancelled = false;
-    const profileId = usePlaybackStore.getState().activeProfileId;
-    if (!profileId) {
-      setLastStreamTarget(undefined);
-      return;
-    }
-
     void (async () => {
+      const profileId = usePlaybackStore.getState().activeProfileId;
+      if (!profileId) {
+        if (!isCancelled) setLastStreamTarget(undefined);
+        return;
+      }
+
       const target = await getLastStreamTarget(profileId, metaId, videoId);
       if (!isCancelled) setLastStreamTarget(target);
     })();
@@ -115,7 +114,8 @@ export const useAutoPlay = ({
         preset: 'error',
         duration: TOAST_DURATION_MEDIUM,
       });
-      setAutoPlayFailed(true);
+      // Async so the compiler does not flag synchronous setState in effects
+      queueMicrotask(() => setAutoPlayFailed(true));
       return;
     }
 

@@ -1,10 +1,11 @@
 import React, { FC, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, type LayoutChangeEvent, useWindowDimensions } from 'react-native';
+import { type LayoutChangeEvent, useWindowDimensions } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Asset } from 'expo-asset';
+import { Image } from 'expo-image';
 
 import { Button } from '@/components/basic/Button';
 import { MarkdownText } from '@/components/basic/MarkdownText';
@@ -59,12 +60,12 @@ export const WhatsNewModal: FC = () => {
 
   // Size the entry image from its intrinsic aspect ratio: RN's Image injects a
   // require()'d asset's pixel size into the style (making the frame hugely
-  // tall), so use FastImage and derive the height from the measured width
+  // tall), so use expo-image and derive the height from the measured width
   // instead, capped at maxImageHeight.
-  const imageAsset = currentEntry.image ? Image.resolveAssetSource(currentEntry.image) : null;
+  const imageAsset = currentEntry.image ? Asset.fromModule(currentEntry.image) : null;
   const imageAspectRatio =
-    imageAsset && imageAsset.width > 0 && imageAsset.height > 0
-      ? imageAsset.width / imageAsset.height
+    imageAsset && (imageAsset.width ?? 0) > 0 && (imageAsset.height ?? 0) > 0
+      ? (imageAsset.width ?? 0) / (imageAsset.height ?? 0)
       : null;
   const imageHeight =
     imageWidth > 0 && imageAspectRatio !== null
@@ -99,9 +100,9 @@ export const WhatsNewModal: FC = () => {
           }}
           showsVerticalScrollIndicator>
           {currentEntry.image && (
-            <FastImage
+            <Image
               source={currentEntry.image}
-              resizeMode={FastImage.resizeMode.contain}
+              contentFit="contain"
               onLayout={handleImageLayout}
               style={{
                 width: '100%',

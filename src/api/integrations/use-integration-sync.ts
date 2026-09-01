@@ -65,7 +65,9 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
 
   // Always-accurate config reference to avoid stale closures
   const configRef = useRef(config);
-  configRef.current = config;
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
 
   const sync = useCallback(async () => {
     const cfg = configRef.current;
