@@ -10,7 +10,9 @@ import { MediaButtons } from '../MediaButtons';
 const mockPushToStreams = jest.fn();
 
 jest.mock('@/components/basic/Button', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories require() their mocks
   const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock factories require() their mocks
   const { Pressable, Text } = require('react-native');
 
   return {

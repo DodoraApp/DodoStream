@@ -2,10 +2,12 @@ packages:
   - 'packages/*'
 
 patchedDependencies:
-  'react-native-tvos@0.81.5-1': patches/react-native-tvos.patch
-  '@legendapp/list@3.0.0-beta.44': patches/@legendapp__list@3.0.0-beta.44.patch
+  'react-native-tvos@0.86.2-0': patches/react-native-tvos.patch
 onlyBuiltDependencies:
   - 'better-sqlite3'
   - 'react-native-video'
   - 'sharp'
   - 'lefthook'
+overrides:
+  'zod-validation-error': '^4.0.2'
+  '@expo/dom-webview': '^57.0.1'

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import type { SyncStatus } from '@/hooks/useSyncProviderBadges';
@@ -16,7 +16,7 @@ interface SyncBadgeProps {
 export const SyncBadge = ({ status, provider }: SyncBadgeProps) => {
   const theme = useTheme<Theme>();
 
-  let iconName: keyof typeof Ionicons.glyphMap;
+  let iconName: IoniconsIconName;
 
   switch (status) {
     case 'synced':

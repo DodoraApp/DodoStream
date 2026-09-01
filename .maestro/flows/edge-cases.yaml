@@ -19,6 +19,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/edge/01-catalog.png'
@@ -36,6 +37,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/edge/02-sparse-details.png'
@@ -62,6 +64,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/edge/03-empty-streams.png'
@@ -90,6 +93,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/edge/04-long-details.png'

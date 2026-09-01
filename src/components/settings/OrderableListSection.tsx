@@ -2,7 +2,7 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Button } from '@/components/basic/Button';
@@ -61,7 +61,9 @@ function OrderableListSectionImpl<T extends OrderableItem>({
     if (!selectedItems.some((item) => keyFn(item) === focusTargetKey)) return;
 
     focusTargetRef.current?.requestTVFocus?.();
-    setFocusTargetKey(undefined);
+    // Reset asynchronously so the compiler does not flag synchronous
+    // setState inside the effect.
+    queueMicrotask(() => setFocusTargetKey(undefined));
   }, [focusTargetKey, keyFn, selectedItems]);
 
   const handleMoveUp = useCallback(

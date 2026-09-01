@@ -296,7 +296,8 @@ export interface SearchCatalogResult {
 export function useSearchCatalogs(query: string, enabled: boolean = true) {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
-  const addons = useAddonStore((state) => state.getAddonsList());
+  const addonsMap = useAddonStore((state) => state.addons);
+  const addons = useMemo(() => Object.values(addonsMap), [addonsMap]);
 
   // Get all searchable catalogs from activated addons with useCatalogsInSearch enabled
   const searchableCatalogs = addons
@@ -395,7 +396,8 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
   const queryClient = useQueryClient();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
-  const addons = useAddonStore((state) => state.getAddonsList());
+  const addonsMap = useAddonStore((state) => state.addons);
+  const addons = useMemo(() => Object.values(addonsMap), [addonsMap]);
 
   // Find all activated addons that support this content
   const compatibleAddons = addons.filter((addon) => {
@@ -477,7 +479,8 @@ export function useStreams(
   const id = videoId ?? metaId;
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
-  const addons = useAddonStore((state) => state.getAddonsList());
+  const addonsMap = useAddonStore((state) => state.addons);
+  const addons = useMemo(() => Object.values(addonsMap), [addonsMap]);
 
   // Find all activated addons that support this content and have stream resource
   const compatibleAddons = addons.filter((addon) => {

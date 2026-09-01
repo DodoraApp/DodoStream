@@ -7,7 +7,10 @@ import { BackHandler, Platform } from 'react-native';
  */
 export function useTVBackButton(onBackPress?: () => boolean | null | undefined) {
   const onBackPressRef = useRef(onBackPress);
-  onBackPressRef.current = onBackPress;
+
+  useEffect(() => {
+    onBackPressRef.current = onBackPress;
+  }, [onBackPress]);
 
   useEffect(() => {
     if (!Platform.isTV) return;

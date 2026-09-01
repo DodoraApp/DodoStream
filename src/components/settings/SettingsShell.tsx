@@ -68,8 +68,10 @@ function useFirstMenuItemNodeHandle(firstMenuItemRef: React.RefObject<any>, enab
 
   useEffect(() => {
     if (!enabled) {
-      setNode(null);
-      return;
+      // Reset asynchronously so the compiler does not flag synchronous
+      // setState inside the effect.
+      const id = setTimeout(() => setNode(null), 0);
+      return () => clearTimeout(id);
     }
 
     // allow microtask to run so forwarded refs attach

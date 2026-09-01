@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { useProfileStore } from '@/store/profile.store';
 import { type AddonConfig } from '@/types/addon-config';
 import { InstalledAddon, Manifest } from '@/types/stremio';
+import { sortAddonsByOrder } from '@/utils/addons';
 import { moveItem } from '@/utils/array';
 import { createDebugLogger } from '@/utils/debug';
 
@@ -34,7 +35,6 @@ interface AddonState {
   hasAddons: () => boolean;
   hasAddon: (id: string) => boolean;
   getAddonConfig: (id: string, profileId?: string) => AddonConfig | undefined;
-  getAddonsList: () => InstalledAddon[];
   getOrderedAddonsList: (profileId?: string) => InstalledAddon[];
   setLoading: (isLoading: boolean) => void;
   setInitialized: (isInitialized: boolean) => void;
@@ -338,27 +338,11 @@ export const useAddonStore = create<AddonState>()(
           return undefined;
         },
 
-        getAddonsList: () => {
-          return Object.values(get().addons);
-        },
-
         getOrderedAddonsList: (profileId?: string) => {
           const { addons, addonOrderByProfile } = get();
           const targetProfileId = profileId || useProfileStore.getState().activeProfileId;
-          const allAddons = Object.values(addons);
-
-          if (!targetProfileId) return allAddons;
-
-          const order = addonOrderByProfile[targetProfileId];
-          if (!order || order.length === 0) return allAddons;
-
-          // Sort by order; addons not in order go to the end, with a stable tiebreaker.
-          const orderMap = new Map(order.map((id, index) => [id, index]));
-          return [...allAddons].sort((a, b) => {
-            const aIndex = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-            const bIndex = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-            return aIndex - bIndex || a.id.localeCompare(b.id);
-          });
+          if (!targetProfileId) return Object.values(addons);
+          return sortAddonsByOrder(Object.values(addons), addonOrderByProfile[targetProfileId]);
         },
 
         reorderAddon: (fromIndex: number, toIndex: number, profileId?: string) => {

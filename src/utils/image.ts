@@ -1,11 +1,11 @@
 import type { ImageRequireSource } from 'react-native';
 
-import type { Source } from '@d11/react-native-fast-image';
+import type { ImageSource } from 'expo-image';
 
 export const getImageSource = (
   uri?: string | null,
-  fallback?: Source | ImageRequireSource
-): Source | ImageRequireSource | undefined => {
+  fallback?: ImageSource | ImageRequireSource
+): ImageSource | ImageRequireSource | undefined => {
   if (uri) return { uri };
   return fallback;
 };

@@ -1,6 +1,9 @@
 import React, { forwardRef } from 'react';
 
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
+import MaterialCommunityIcons, {
+  MaterialDesignIconsIconName,
+} from '@react-native-vector-icons/material-design-icons/static';
 import {
   backgroundColor,
   BackgroundColorProps,
@@ -22,9 +25,9 @@ import { Box, Text, Theme } from '@/theme/theme';
 export type IconComponentType = typeof Ionicons | typeof MaterialCommunityIcons;
 
 type IconName<T extends IconComponentType> = T extends typeof Ionicons
-  ? keyof typeof Ionicons.glyphMap
+  ? IoniconsIconName
   : T extends typeof MaterialCommunityIcons
-    ? keyof typeof MaterialCommunityIcons.glyphMap
+    ? MaterialDesignIconsIconName
     : never;
 
 const ButtonContainer = createRestyleComponent<

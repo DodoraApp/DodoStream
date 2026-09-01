@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import { useRouter } from 'expo-router';
 import { MotiView } from 'moti';
@@ -55,7 +55,7 @@ export default function WelcomeStep() {
 }
 
 interface FeatureItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IoniconsIconName;
   title: string;
   delay?: number;
 }

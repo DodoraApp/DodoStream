@@ -65,7 +65,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
  */
 function Layout() {
   const didInitRef = useRef(false);
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Outfit_400Regular,
     Outfit_600SemiBold,
     Outfit_700Bold,
@@ -73,6 +73,7 @@ function Layout() {
     Poppins_600SemiBold,
     Poppins_700Bold,
   });
+  const fontsReady = fontsLoaded || fontError != null;
 
   const isAddonsInitialized = useAddonStore((state) => state.isInitialized);
   const isProfilesInitialized = useProfileStore((state) => state.isInitialized);
@@ -81,7 +82,7 @@ function Layout() {
   useDrizzleStudio(sqliteDb);
 
   useEffect(() => {
-    if (!fontsLoaded) return;
+    if (!fontsReady) return;
     if (didInitRef.current) return;
     didInitRef.current = true;
 
@@ -102,9 +103,9 @@ function Layout() {
       }
     };
     void init();
-  }, [fontsLoaded]);
+  }, [fontsReady]);
 
-  if (!fontsLoaded) {
+  if (!fontsReady) {
     return null;
   }
 

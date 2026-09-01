@@ -116,33 +116,6 @@ const withAndroidBuildOptimizations: ConfigPlugin = (config) => {
         fs.writeFileSync(buildGradlePath, buildGradleContent, 'utf8');
       }
 
-      // Fix duplicate androidsvg classes: substitute the JAR with the AAR variant globally.
-      // com.caverock:androidsvg (JAR) and com.caverock:androidsvg-aar (AAR) contain identical
-      // classes. A simple exclude breaks fast-image's compilation, so we substitute instead so
-      // every dependency that asks for the JAR transparently receives the AAR.
-      const rootBuildGradlePath = path.join(androidRoot, 'build.gradle');
-      if (fs.existsSync(rootBuildGradlePath)) {
-        let rootBuildGradle = fs.readFileSync(rootBuildGradlePath, 'utf8');
-        const substituteSnippet =
-          `  configurations.all {\n` +
-          `    resolutionStrategy.dependencySubstitution {\n` +
-          `      substitute module('com.caverock:androidsvg') using module('com.caverock:androidsvg-aar:1.4')\n` +
-          `    }\n` +
-          `  }`;
-
-        if (!rootBuildGradle.includes('com.caverock:androidsvg-aar')) {
-          // Insert inside allprojects block
-          rootBuildGradle = rootBuildGradle.replace(
-            /allprojects\s*\{/,
-            `allprojects {\n${substituteSnippet}`
-          );
-          fs.writeFileSync(rootBuildGradlePath, rootBuildGradle, 'utf8');
-          console.log('✅ Added androidsvg JAR → AAR substitution to root build.gradle');
-        } else {
-          console.log('ℹ️  androidsvg substitution already present in root build.gradle');
-        }
-      }
-
       // Step 4: Raise the Gradle daemon memory limits. The RN template default
       // (2GiB heap / 512MiB metaspace) is too small for this project: lint workers
       // run out of metaspace and fail `lintVitalAnalyzeRelease` (pre-existing,
@@ -161,6 +134,17 @@ const withAndroidBuildOptimizations: ConfigPlugin = (config) => {
           console.log('✅ Raised org.gradle.jvmargs in gradle.properties');
         } else {
           console.log('ℹ️  org.gradle.jvmargs already configured');
+        }
+
+        // Persistent task-output cache: without it every fresh checkout or
+        // regenerated android/ directory recompiles all native modules from
+        // scratch (E2E and EAS local runs rebuild the whole project).
+        if (!gradleProperties.includes('org.gradle.caching=true')) {
+          gradleProperties += `\norg.gradle.caching=true\n`;
+          fs.writeFileSync(gradlePropertiesPath, gradleProperties, 'utf8');
+          console.log('✅ Enabled org.gradle.caching in gradle.properties');
+        } else {
+          console.log('ℹ️  org.gradle.caching already enabled');
         }
       }
 

@@ -1,4 +1,6 @@
-// Register ts-node so Expo can evaluate this ESM config file at prebuild time.
+// tsx is registered for Node so the local TypeScript config plugins under
+// ./plugins resolve at prebuild time; SDK 55+ evaluates this config file
+// itself with the project TypeScript toolchain.
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 import packageJson from './package.json' with { type: 'json' };
@@ -28,7 +30,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: appName,
     slug: 'dodostream',
     version: packageJson.version,
-    newArchEnabled: true,
     scheme: 'dodostream',
     platforms: ['ios', 'android'],
     buildCacheProvider: {
@@ -49,6 +50,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       'expo-system-ui',
+      '@react-native-vector-icons/ionicons',
+      '@react-native-vector-icons/material-design-icons',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/app/splash-icon.png',
+          backgroundColor: appBackgroundColor,
+        },
+      ],
       [
         '@react-native-tvos/config-tv',
         {
@@ -76,7 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           enableNotificationControls: true,
           enableBackgroundAudio: false,
           enableADSExtension: false,
-          enablFeCacheExtension: true,
+          enableCacheExtension: true,
           enableAndroidPictureInPicture: true,
           androidExtensions: {
             useExoplayerRtsp: false,
@@ -102,11 +112,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: './assets/app/icon.png',
     backgroundColor: appBackgroundColor,
     userInterfaceStyle: 'dark',
-    splash: {
-      image: './assets/app/splash-icon.png',
-      resizeMode: 'contain',
-      backgroundColor: appBackgroundColor,
-    },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,

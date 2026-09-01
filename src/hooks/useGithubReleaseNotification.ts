@@ -119,10 +119,14 @@ export function useGithubReleaseNotification(params: { enabled: boolean }) {
     releaseStatus.latestVersion,
   ]);
 
-  useEffect(() => {
-    if (!shouldNotify) return;
-    setIsVisible(true);
-  }, [shouldNotify]);
+  // Sync visibility with shouldNotify via the derived-state pattern (the
+  // compiler forbids synchronous setState inside effects). remindLater and
+  // dismiss hide the popup by flipping a local flag instead.
+  const [prevShouldNotify, setPrevShouldNotify] = useState(shouldNotify);
+  if (shouldNotify !== prevShouldNotify) {
+    setPrevShouldNotify(shouldNotify);
+    if (shouldNotify) setIsVisible(true);
+  }
 
   const remindLater = useCallback(() => {
     setIsVisible(false);

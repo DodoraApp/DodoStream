@@ -7,6 +7,7 @@ import { useTheme } from '@shopify/restyle';
 import type { Href } from 'expo-router';
 import type { TFunction } from 'i18next';
 import { MotiView } from 'moti';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Container } from '@/components/basic/Container';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
@@ -35,14 +36,14 @@ import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useMyList } from '@/hooks/useMyListDb';
 import { type SyncProviderBadge, useSyncProviderBadges } from '@/hooks/useSyncProviderBadges';
 import { useAddonStore } from '@/store/addon.store';
-import { useHomeStore } from '@/store/home.store';
+import { DEFAULT_HOME_SETTINGS, useHomeStore } from '@/store/home.store';
 import { useProfileStore } from '@/store/profile.store';
 import { Box, Text, type Theme } from '@/theme/theme';
 import { MetaPreview } from '@/types/stremio';
+import { sortAddonsByOrder } from '@/utils/addons';
 import {
   getContinueWatchingSectionHeight,
   getMediaSectionHeight,
-  getSectionHeaderHeight,
   getVisibleCatalogCount,
 } from '@/utils/layout';
 
@@ -118,17 +119,28 @@ const HomeContent = () => {
   const { navigateToDetails } = useMediaNavigation();
   const addons = useAddonStore((state) => state.addons);
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
-  const orderedAddons = useAddonStore((state) =>
-    state.getOrderedAddonsList(activeProfileId ?? undefined)
+  const addonOrderByProfile = useAddonStore((state) => state.addonOrderByProfile);
+  const orderedAddons = useMemo(
+    () =>
+      sortAddonsByOrder(
+        Object.values(addons),
+        activeProfileId ? addonOrderByProfile[activeProfileId] : undefined
+      ),
+    [addons, addonOrderByProfile, activeProfileId]
   );
   const configsByProfile = useAddonStore((state) => state.configsByProfile);
   const hasAddons = useAddonStore((state) => state.hasAddons());
   const { heroEnabled, heroCatalogSources, continueWatchingEnabled, myListEnabled } = useHomeStore(
-    (state) => ({
-      heroEnabled: state.getActiveSettings().heroEnabled,
-      heroCatalogSources: state.getActiveSettings().heroCatalogSources,
-      continueWatchingEnabled: state.getActiveSettings().continueWatchingEnabled,
-      myListEnabled: state.getActiveSettings().myListEnabled,
+    useShallow((state) => {
+      const settings =
+        (state.activeProfileId ? state.byProfile[state.activeProfileId] : undefined) ??
+        DEFAULT_HOME_SETTINGS;
+      return {
+        heroEnabled: settings.heroEnabled,
+        heroCatalogSources: settings.heroCatalogSources,
+        continueWatchingEnabled: settings.continueWatchingEnabled,
+        myListEnabled: settings.myListEnabled,
+      };
     })
   );
   const continueWatching = useContinueWatching();
@@ -293,23 +305,8 @@ const HomeContent = () => {
 
   const getItemType = useCallback((item: HomeListItem): string => item.kind, []);
 
-  const getEstimatedItemSize = useCallback(
-    (item: HomeListItem) => {
-      switch (item.kind) {
-        case 'section-header':
-          return getSectionHeaderHeight(theme);
-        case 'continue-watching-row':
-          return getContinueWatchingSectionHeight(theme);
-        case 'my-list-row':
-          return getMediaSectionHeight(theme);
-        case 'catalog-row':
-          return getMediaSectionHeight(theme);
-        default:
-          return getMediaSectionHeight(theme);
-      }
-    },
-    [theme]
-  );
+  // 3.3.9 takes a single estimated item size; catalog rows dominate the list
+  const estimatedItemSize = useMemo(() => getMediaSectionHeight(theme), [theme]);
 
   const handleMediaPress = useCallback(
     (media: Pick<MetaPreview, 'id' | 'type'>) => {
@@ -407,7 +404,7 @@ const HomeContent = () => {
             renderItem={renderItem}
             keyExtractor={keyExtractor}
             getItemType={getItemType}
-            getEstimatedItemSize={getEstimatedItemSize}
+            estimatedItemSize={estimatedItemSize}
             ListHeaderComponent={
               heroEnabled ? <HeroSection hasTVPreferredFocus={isTVLayout} /> : null
             }

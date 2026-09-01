@@ -4,9 +4,13 @@
  *
  * A missing snapshot is captured once, then the flow is rerun with visual
  * assertions enabled. Existing snapshots are never overwritten.
+ *
+ * Screenshot assertions are `optional: true` in the flows so a visual
+ * mismatch never aborts a run; mismatches are detected in the run artifacts
+ * afterwards and fail the suite (after missing baselines are bootstrapped).
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +29,10 @@ const option = (name, fallback) => {
 const profile = option('--profile', 'phone');
 const flow = option('--flow', 'full-journey.yaml');
 const device = option('--device', process.env.DEVICE);
+const skipBuild = option('--skip-build', '0') === '1';
+// lintVitalRelease reruns on every release build and is slow; the repo's CI
+// test job runs lint separately. Set E2E_LINT=1 to keep it enabled.
+const skipLint = (process.env.E2E_LINT ?? '0') !== '1';
 const profiles = new Set(['phone', 'tablet', 'tv']);
 if (!profiles.has(profile))
   throw new Error(`unknown profile: ${profile} (expected phone|tablet|tv)`);
@@ -165,16 +173,62 @@ const maestroRun = async (name, assertScreenshots) => {
   return directory;
 };
 
+const findVisualFailures = (directory) => {
+  const failures = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.name === 'commands.json') {
+        const steps = JSON.parse(readFileSync(fullPath, 'utf8'));
+        for (const step of steps) {
+          const status = step?.metadata?.status;
+          if (!step?.command?.assertScreenshotCommand) continue;
+          if (status !== 'FAILED' && status !== 'WARNED') continue;
+          failures.push({
+            step: step.metadata?.sequenceNumber,
+            message: step.metadata?.error?.message ?? 'screenshot assertion failed',
+          });
+        }
+      }
+    }
+  };
+  walk(directory);
+  return failures;
+};
+
 const runVisualAssertions = async () => {
   while (true) {
+    let directory;
     try {
-      await maestroRun('assertion', assertScreenshots);
-      return;
+      directory = await maestroRun('assertion', assertScreenshots);
     } catch (error) {
+      // Functional failure (non-optional command): keep the bootstrap loop —
+      // copy any missing baselines and rerun once they exist.
       const created = addMissingSnapshots(path.join(outputDirectory, 'assertion'));
       if (created === 0) throw error;
       process.stdout.write(`[e2e] created ${created} missing snapshot(s) for ${profile}\n`);
+      continue;
     }
+
+    if (!assertScreenshots) return;
+
+    // Screenshot assertions are `optional: true` in the flows, so a mismatch
+    // no longer aborts the flow (the full file still runs) nor fails the
+    // maestro exit code. Detect them in the run artifacts and fail the suite
+    // here instead.
+    const failures = findVisualFailures(directory);
+    if (failures.length === 0) return;
+
+    const created = addMissingSnapshots(path.join(outputDirectory, 'assertion'));
+    if (created > 0) {
+      process.stdout.write(`[e2e] created ${created} missing snapshot(s) for ${profile}\n`);
+      continue;
+    }
+
+    const details = failures.map((failure) => `  step ${failure.step}: ${failure.message}`).join('\n');
+    throw new Error(`screenshot regression(s) for ${profile}:\n${details}`);
   }
 };
 
@@ -198,29 +252,37 @@ try {
   );
   await waitForManifest();
 
-  await runChecked('pnpm', ['exec', 'expo', 'prebuild', '--platform', 'android', '--no-install'], {
-    env: buildEnvironment,
-  });
-  await runChecked('./gradlew', ['assembleRelease'], {
-    cwd: path.join(ROOT, 'android'),
-    env: buildEnvironment,
-  });
+  if (!skipBuild) {
+    await runChecked(
+      'pnpm',
+      ['exec', 'expo', 'prebuild', '--platform', 'android', '--no-install'],
+      { env: buildEnvironment }
+    );
+    const gradleArgs = ['assembleRelease'];
+    if (skipLint) {
+      gradleArgs.push('-x', 'lintVitalRelease');
+    }
+    await runChecked('./gradlew', gradleArgs, {
+      cwd: path.join(ROOT, 'android'),
+      env: buildEnvironment,
+    });
 
-  const abiResult = spawnSync('adb', [...deviceArgs, 'shell', 'getprop', 'ro.product.cpu.abi'], {
-    encoding: 'utf8',
-  });
-  if (abiResult.error || abiResult.status !== 0) {
-    throw abiResult.error ?? new Error('could not determine the Android device ABI');
+    const abiResult = spawnSync('adb', [...deviceArgs, 'shell', 'getprop', 'ro.product.cpu.abi'], {
+      encoding: 'utf8',
+    });
+    if (abiResult.error || abiResult.status !== 0) {
+      throw abiResult.error ?? new Error('could not determine the Android device ABI');
+    }
+    const apkDirectory = path.join(ROOT, 'android', 'app', 'build', 'outputs', 'apk', 'release');
+    const abi = abiResult.stdout.trim();
+    const apk = existsSync(path.join(apkDirectory, `app-${abi}-release.apk`))
+      ? path.join(apkDirectory, `app-${abi}-release.apk`)
+      : path.join(apkDirectory, 'app-release.apk');
+    if (!existsSync(apk)) throw new Error(`release APK was not found in ${apkDirectory}`);
+
+    await waitForPackageManager();
+    await runChecked('adb', [...deviceArgs, 'install', '-r', apk]);
   }
-  const apkDirectory = path.join(ROOT, 'android', 'app', 'build', 'outputs', 'apk', 'release');
-  const abi = abiResult.stdout.trim();
-  const apk = existsSync(path.join(apkDirectory, `app-${abi}-release.apk`))
-    ? path.join(apkDirectory, `app-${abi}-release.apk`)
-    : path.join(apkDirectory, 'app-release.apk');
-  if (!existsSync(apk)) throw new Error(`release APK was not found in ${apkDirectory}`);
-
-  await waitForPackageManager();
-  await runChecked('adb', [...deviceArgs, 'install', '-r', apk]);
   await runChecked('bash', ['scripts/e2e/configure-device.sh', profile, ...deviceArgs]);
   await runVisualAssertions();
   process.stdout.write(`[e2e] ${profile} ${flow} passed\n`);

@@ -1,8 +1,8 @@
 import { memo } from 'react';
 
-import FastImage from '@d11/react-native-fast-image';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 
 import { Focusable } from '@/components/basic/Focusable';
 import type { Theme } from '@/theme/theme';
@@ -34,10 +34,10 @@ export const CastPersonCard = memo(({ person, onPress, recyclingKey }: CastPerso
           alignItems="center"
           justifyContent="center">
           {person.photo ? (
-            <FastImage
+            <Image
               source={{ uri: person.photo }}
               style={{ width: avatarSize, height: avatarSize }}
-              resizeMode={FastImage.resizeMode.cover}
+              contentFit="cover"
             />
           ) : (
             <Ionicons name="person" size={avatarSize / 2} color={theme.colors.textSecondary} />

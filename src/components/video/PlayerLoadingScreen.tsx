@@ -2,8 +2,8 @@ import { memo } from 'react';
 import { StyleSheet } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 import { MotiView } from 'moti';
 
 import { AppLogo } from '@/components/basic/AppLogo';
@@ -31,10 +31,10 @@ export const PlayerLoadingScreen = memo(
       <Box flex={1} backgroundColor="playerBackground" style={StyleSheet.absoluteFill}>
         {/* Background image */}
         {backgroundImage && (
-          <FastImage
+          <Image
             source={{ uri: backgroundImage }}
             style={StyleSheet.absoluteFill}
-            resizeMode={FastImage.resizeMode.cover}
+            contentFit="cover"
           />
         )}
 
@@ -50,13 +50,13 @@ export const PlayerLoadingScreen = memo(
               easing: Easing.inOut(Easing.ease),
             }}>
             {logoImage ? (
-              <FastImage
+              <Image
                 source={{ uri: logoImage }}
                 style={{
                   width: Math.min(theme.sizes.logoMaxWidth, 300),
                   height: theme.sizes.logoHeight,
                 }}
-                resizeMode={FastImage.resizeMode.contain}
+                contentFit="contain"
               />
             ) : (
               <AppLogo size={theme.sizes.loadingIndicatorLogoSizeLarge} />

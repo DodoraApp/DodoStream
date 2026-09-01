@@ -4,9 +4,12 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "strict": true,
-    "baseUrl": ".",
+    // TS 6 no longer auto-includes @types/*. Jest globals are needed by every
+    // test file; Node globals are referenced file-locally (app.config.ts gets
+    // `process` from expo/types; scripts/sync-e2e/* reference node explicitly).
+    "types": ["jest"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],

@@ -325,7 +325,7 @@ jobs:
           pnpm i -g eas-cli@latest
 
       - name: 🚀 Publish to Expo
-        run: eas update --auto
+        run: eas update --channel development --environment development
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Button } from '@/components/basic/Button';
@@ -18,7 +18,7 @@ import { Box, Text, Theme } from '@/theme/theme';
 
 export interface ModalProps {
   label?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IoniconsIconName;
   /** Whether the modal is visible */
   visible: boolean;
   /** Called when the modal should be closed (back button, backdrop press) */
@@ -66,7 +66,7 @@ export const Modal: FC<ModalProps> = ({
       onRequestClose={onClose}>
       <Pressable
         style={[
-          StyleSheet.absoluteFillObject,
+          StyleSheet.absoluteFill,
           {
             backgroundColor: theme.colors.overlayBackground,
             paddingTop: insets.top,

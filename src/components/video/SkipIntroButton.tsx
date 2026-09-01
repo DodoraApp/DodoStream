@@ -1,7 +1,7 @@
 import { FC, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Button } from '@/components/basic/Button';

@@ -4,6 +4,11 @@ import type { PlayerType } from '@/types/player';
 // Playback ratios
 export const PLAYBACK_FINISHED_RATIO = 0.9;
 
+// VLC emits an ambiguous stopped event for both natural end and teardown;
+// an end is only reported when the last observed time is within this distance
+// of the known duration.
+export const PLAYER_END_TOLERANCE_SECONDS = 1;
+
 // Up Next popup thresholds (shown earlier than continue watching threshold)
 export const UPNEXT_POPUP_SERIES_RATIO = 0.95;
 export const UPNEXT_POPUP_MOVIE_RATIO = 0.9;

@@ -2,7 +2,7 @@ import { FC, memo, useCallback, useEffect } from 'react';
 import { Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import * as Haptics from 'expo-haptics';
 import { AnimatePresence, MotiView } from 'moti';

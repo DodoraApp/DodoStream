@@ -1,9 +1,10 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import { FC, memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView } from 'react-native';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 
 import { stremioKeys } from '@/api/stremio';
 import { Button } from '@/components/basic/Button';
@@ -116,8 +117,8 @@ export const DataSettingsContent: FC<DataSettingsContentProps> = memo(({ scrolla
           text: t('common:clear'),
           style: 'destructive',
           onPress: async () => {
-            await FastImage.clearDiskCache();
-            await FastImage.clearMemoryCache();
+            await Image.clearDiskCache();
+            await Image.clearMemoryCache();
             invalidateCounts();
             addToast({
               title: t('data.poster_cache_cleared'),

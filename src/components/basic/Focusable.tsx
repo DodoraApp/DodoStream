@@ -1,4 +1,4 @@
-import { FC, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, ReactNode, RefObject, useCallback, useMemo, useRef, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -185,11 +185,14 @@ export const Focusable: FC<FocusableProps> = ({
   // State is only used for render-function children path
   const [standardIsFocused, setStandardIsFocused] = useState(false);
   const [recyclingIsFocused, setRecyclingIsFocused] = useState(false);
-
-  // Reset focus state when recyclingKey changes (item recycled in list)
-  useEffect(() => {
+  // Reset focus state when recyclingKey changes (item recycled in list).
+  // Adjusted during render (React's derived-state pattern) so the React
+  // Compiler can preserve memoization instead of bailing on an effect.
+  const [lastRecyclingKey, setLastRecyclingKey] = useState(recyclingKey);
+  if (recyclingKey !== lastRecyclingKey) {
+    setLastRecyclingKey(recyclingKey);
     setRecyclingIsFocused(false);
-  }, [recyclingKey]);
+  }
 
   const isFocused = recyclingKey !== undefined ? recyclingIsFocused : standardIsFocused;
 

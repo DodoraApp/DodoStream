@@ -1,9 +1,10 @@
+/* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import { FC, memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, TouchableOpacity } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';
@@ -41,82 +42,56 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
     const [showSubtitleLanguagePicker, setShowSubtitleLanguagePicker] = useState(false);
     const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
+    const profileSettings = usePlaybackStore((state) =>
+      activeProfileId ? state.byProfile[activeProfileId] : undefined
+    );
+    const setPlayerForProfile = usePlaybackStore((state) => state.setPlayerForProfile);
+    const setAutomaticFallbackForProfile = usePlaybackStore(
+      (state) => state.setAutomaticFallbackForProfile
+    );
+    const setAutoPlayFirstStreamForProfile = usePlaybackStore(
+      (state) => state.setAutoPlayFirstStreamForProfile
+    );
+    const setShowVideoStatisticsForProfile = usePlaybackStore(
+      (state) => state.setShowVideoStatisticsForProfile
+    );
+    const setPreferredAudioLanguagesForProfile = usePlaybackStore(
+      (state) => state.setPreferredAudioLanguagesForProfile
+    );
+    const setPreferredSubtitleLanguagesForProfile = usePlaybackStore(
+      (state) => state.setPreferredSubtitleLanguagesForProfile
+    );
+    const setTunneledForProfile = usePlaybackStore((state) => state.setTunneledForProfile);
+    const setAudioPassthroughForProfile = usePlaybackStore(
+      (state) => state.setAudioPassthroughForProfile
+    );
+    const setEnableWorkaroundsForProfile = usePlaybackStore(
+      (state) => state.setEnableWorkaroundsForProfile
+    );
+    const setMatchFrameRateForProfile = usePlaybackStore(
+      (state) => state.setMatchFrameRateForProfile
+    );
+    const setEnableVideoSoftwareDecodingForProfile = usePlaybackStore(
+      (state) => state.setEnableVideoSoftwareDecodingForProfile
+    );
+    const setSkipIntroEnabledForProfile = usePlaybackStore(
+      (state) => state.setSkipIntroEnabledForProfile
+    );
+
     const {
-      player,
-      automaticFallback,
-      autoPlayFirstStream,
-      showVideoStatistics,
-      preferredAudioLanguages,
-      preferredSubtitleLanguages,
-      tunneled,
-      audioPassthrough,
-      enableWorkarounds,
-      matchFrameRate,
-      enableVideoSoftwareDecoding,
-      skipIntroEnabled,
-      setPlayerForProfile,
-      setAutomaticFallbackForProfile,
-      setAutoPlayFirstStreamForProfile,
-      setShowVideoStatisticsForProfile,
-      setPreferredAudioLanguagesForProfile,
-      setPreferredSubtitleLanguagesForProfile,
-      setTunneledForProfile,
-      setAudioPassthroughForProfile,
-      setEnableWorkaroundsForProfile,
-      setMatchFrameRateForProfile,
-      setEnableVideoSoftwareDecodingForProfile,
-      setSkipIntroEnabledForProfile,
-    } = usePlaybackStore((state) => ({
-      player:
-        (activeProfileId ? state.byProfile[activeProfileId]?.player : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.player,
-      automaticFallback:
-        (activeProfileId ? state.byProfile[activeProfileId]?.automaticFallback : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.automaticFallback,
-      autoPlayFirstStream:
-        (activeProfileId ? state.byProfile[activeProfileId]?.autoPlayFirstStream : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.autoPlayFirstStream,
-      showVideoStatistics:
-        (activeProfileId ? state.byProfile[activeProfileId]?.showVideoStatistics : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
-      preferredAudioLanguages: activeProfileId
-        ? (state.byProfile[activeProfileId]?.preferredAudioLanguages ?? [])
-        : [],
-      preferredSubtitleLanguages: activeProfileId
-        ? (state.byProfile[activeProfileId]?.preferredSubtitleLanguages ?? [])
-        : [],
-      tunneled:
-        (activeProfileId ? state.byProfile[activeProfileId]?.tunneled : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
-      audioPassthrough:
-        (activeProfileId ? state.byProfile[activeProfileId]?.audioPassthrough : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough,
-      enableWorkarounds:
-        (activeProfileId ? state.byProfile[activeProfileId]?.enableWorkarounds : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
-      matchFrameRate:
-        (activeProfileId ? state.byProfile[activeProfileId]?.matchFrameRate : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
-      enableVideoSoftwareDecoding:
-        (activeProfileId
-          ? state.byProfile[activeProfileId]?.enableVideoSoftwareDecoding
-          : undefined) ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
-      skipIntroEnabled:
-        (activeProfileId ? state.byProfile[activeProfileId]?.skipIntroEnabled : undefined) ??
-        DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
-      setPlayerForProfile: state.setPlayerForProfile,
-      setAutomaticFallbackForProfile: state.setAutomaticFallbackForProfile,
-      setAutoPlayFirstStreamForProfile: state.setAutoPlayFirstStreamForProfile,
-      setShowVideoStatisticsForProfile: state.setShowVideoStatisticsForProfile,
-      setPreferredAudioLanguagesForProfile: state.setPreferredAudioLanguagesForProfile,
-      setPreferredSubtitleLanguagesForProfile: state.setPreferredSubtitleLanguagesForProfile,
-      setTunneledForProfile: state.setTunneledForProfile,
-      setAudioPassthroughForProfile: state.setAudioPassthroughForProfile,
-      setEnableWorkaroundsForProfile: state.setEnableWorkaroundsForProfile,
-      setMatchFrameRateForProfile: state.setMatchFrameRateForProfile,
-      setEnableVideoSoftwareDecodingForProfile: state.setEnableVideoSoftwareDecodingForProfile,
-      setSkipIntroEnabledForProfile: state.setSkipIntroEnabledForProfile,
-    }));
+      player = DEFAULT_PROFILE_PLAYBACK_SETTINGS.player,
+      automaticFallback = DEFAULT_PROFILE_PLAYBACK_SETTINGS.automaticFallback,
+      autoPlayFirstStream = DEFAULT_PROFILE_PLAYBACK_SETTINGS.autoPlayFirstStream,
+      showVideoStatistics = DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+      preferredAudioLanguages = [],
+      preferredSubtitleLanguages = [],
+      tunneled = DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
+      audioPassthrough = DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough,
+      enableWorkarounds = DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
+      matchFrameRate = DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
+      enableVideoSoftwareDecoding = DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
+      skipIntroEnabled = DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
+    } = profileSettings ?? {};
 
     const deviceLanguageCodes = getDevicePreferredLanguageCodes();
     const availableLanguageCodes = Array.from(

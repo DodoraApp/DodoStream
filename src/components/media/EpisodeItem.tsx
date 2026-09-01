@@ -1,8 +1,8 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import FastImage from '@d11/react-native-fast-image';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { CompletedBadge } from '@/components/basic/CompletedBadge';
@@ -59,10 +59,10 @@ export const EpisodeItem = memo(
             backgroundColor="cardBorder"
             position="relative">
             {imageSource ? (
-              <FastImage
+              <Image
                 source={imageSource}
                 style={{ width: '100%', height: '100%' }}
-                resizeMode={FastImage.resizeMode.cover}
+                contentFit="cover"
               />
             ) : null}
             <LinearGradient

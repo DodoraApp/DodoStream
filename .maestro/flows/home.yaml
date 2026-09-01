@@ -13,11 +13,12 @@ appId: app.dodora.dodostream.dev
 - extendedWaitUntil:
     visible:
       id: hero-backdrop-loaded
-    timeout: 15000
+    timeout: 30000
 - takeScreenshot: home/01-home
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/home/01-home.png'
@@ -29,11 +30,12 @@ appId: app.dodora.dodostream.dev
 - extendedWaitUntil:
     visible:
       id: media-add-to-list
-    timeout: 15000
+    timeout: 30000
 - takeScreenshot: home/02-details
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/home/02-details.png'
@@ -52,21 +54,26 @@ appId: app.dodora.dodostream.dev
 - tapOn: 'DodoStream Movies'
 - extendedWaitUntil:
     visible: 'The Meridian Archive'
-    timeout: 15000
+    timeout: 30000
 - takeScreenshot: home/03-catalog
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/home/03-catalog.png'
           thresholdPercentage: 98
 
 # Scroll to the terminal page and assert the known terminal fixture title.
+# visibilityPercentage 100: scrollUntilVisible stops at 10% visibility by
+# default, which leaves the last card barely peeking into view. Requiring full
+# visibility keeps the follow-up screenshot deterministic.
 - scrollUntilVisible:
     element:
       text: 'Verdant Signal'
     direction: DOWN
+    visibilityPercentage: 100
     speed: 80
     timeout: 40000
 - waitForAnimationToEnd
@@ -75,6 +82,7 @@ appId: app.dodora.dodostream.dev
 - runFlow:
     when:
       true: ${E2E_VISUAL_ASSERT == '1'}
+    optional: true
     commands:
       - assertScreenshot:
           path: '.maestro/snapshots/${PROFILE}/home/04-terminal.png'

@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 import { Easing } from 'react-native-reanimated';
@@ -23,7 +23,11 @@ interface ProfileSelectorProps {
 export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
   const { t } = useTranslation('profiles');
   const theme = useTheme<Theme>();
-  const profiles = useProfileStore((state) => state.getProfilesList());
+  const profilesMap = useProfileStore((state) => state.profiles);
+  const profiles = useMemo(
+    () => Object.values(profilesMap).sort((a, b) => b.lastUsedAt - a.lastUsedAt),
+    [profilesMap]
+  );
   const switchProfile = useProfileStore((state) => state.switchProfile);
   const [showEditor, setShowEditor] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | undefined>(undefined);

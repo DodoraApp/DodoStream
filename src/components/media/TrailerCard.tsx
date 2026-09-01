@@ -1,8 +1,8 @@
 import { memo, useState } from 'react';
 
-import FastImage from '@d11/react-native-fast-image';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
+import { Image } from 'expo-image';
 
 import { Focusable } from '@/components/basic/Focusable';
 import { NO_POSTER_LANDSCAPE } from '@/constants/images';
@@ -39,9 +39,9 @@ export const TrailerCard = memo(({ trailer, onPress, recyclingKey }: TrailerCard
           backgroundColor="cardBackground"
           position="relative"
           testID={thumbnailReady ? 'trailer-thumbnail-ready' : 'trailer-thumbnail-loading'}>
-          <FastImage
+          <Image
             source={{ uri: thumbnailUrl }}
-            defaultSource={NO_POSTER_LANDSCAPE}
+            placeholder={NO_POSTER_LANDSCAPE}
             onLoad={markThumbnailReady}
             onLoadEnd={markThumbnailReady}
             onError={markThumbnailReady}

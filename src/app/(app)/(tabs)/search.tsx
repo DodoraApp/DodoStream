@@ -1,9 +1,9 @@
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { findNodeHandle, Keyboard, Platform, TextInput, useTVEventHandler } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -55,12 +55,14 @@ function useSearchBar(initialQuery?: string): SearchBarApi {
   const exitEditMode = useCallback(() => setIsEditing(false), []);
 
   // Re-apply a new query param when navigated here (e.g. from a cast card).
-  useEffect(() => {
-    if (initialQuery) {
-      setSearchQuery(initialQuery);
-      setSubmittedQuery(initialQuery);
-    }
-  }, [initialQuery]);
+  // Adjusted during render (React's derived-state pattern) so the compiler
+  // can preserve memoization.
+  const [lastInitialQuery, setLastInitialQuery] = useState(initialQuery);
+  if (initialQuery && initialQuery !== lastInitialQuery) {
+    setLastInitialQuery(initialQuery);
+    setSearchQuery(initialQuery);
+    setSubmittedQuery(initialQuery);
+  }
 
   const handleSearch = useCallback(() => {
     const query = searchQuery.trim();

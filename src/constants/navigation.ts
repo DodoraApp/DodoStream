@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
+import type { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 
 export interface NavItem {
   id: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IoniconsIconName;
   route: string;
   screenName: string; // For tab navigator
   location: 'top' | 'bottom';

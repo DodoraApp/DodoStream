@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 import { useRouter } from 'expo-router';
 
