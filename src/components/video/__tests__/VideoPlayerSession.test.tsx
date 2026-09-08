@@ -68,6 +68,10 @@ jest.mock('@/db', () => ({
 }));
 
 let mockLastExoProps: any;
+type MockPlayerControlsProps = React.ComponentProps<typeof mockView> & {
+  onVisibilityChange?: (visible: boolean) => void;
+};
+let mockPlayerControlsProps: MockPlayerControlsProps | undefined;
 let mockLastVlcProps: any;
 const mockSeekTo = jest.fn();
 
@@ -92,7 +96,8 @@ jest.mock('../VLCPlayer', () => {
 });
 
 jest.mock('../PlayerControls', () => ({
-  PlayerControls: (props: any) => {
+  PlayerControls: (props: MockPlayerControlsProps) => {
+    mockPlayerControlsProps = props;
     return mockReact.createElement(mockView, props);
   },
 }));
@@ -118,6 +123,7 @@ describe('VideoPlayerSession', () => {
     jest.useFakeTimers();
     mockLastExoProps = undefined;
     mockLastVlcProps = undefined;
+    mockPlayerControlsProps = undefined;
     mockUpNextResolved = undefined;
     mockUpNextProps = undefined;
     mockSeekTo.mockReset();
@@ -175,6 +181,29 @@ describe('VideoPlayerSession', () => {
 
     // Assert
     expect(mockLastVlcProps).toBeTruthy();
+  });
+
+  it('shows a loading indicator while a hidden player is buffering', () => {
+    // Arrange
+    const { getByTestId, queryByTestId } = renderSession();
+    expect(queryByTestId('player-buffering-indicator')).toBeNull();
+
+    // Act
+    act(() => {
+      mockPlayerControlsProps?.onVisibilityChange?.(false);
+      mockLastExoProps.onBuffer(true);
+    });
+
+    // Assert
+    expect(getByTestId('player-buffering-indicator')).toBeTruthy();
+
+    // Act
+    act(() => {
+      mockLastExoProps.onBuffer(false);
+    });
+
+    // Assert
+    expect(queryByTestId('player-buffering-indicator')).toBeNull();
   });
 
   it('applies resume progress on load and seeks to resume time', () => {

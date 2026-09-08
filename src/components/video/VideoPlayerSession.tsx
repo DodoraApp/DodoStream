@@ -9,6 +9,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useIntro } from '@/api/introdb';
 import { useMeta, useSubtitles } from '@/api/stremio';
+import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import {
   PLAYBACK_RATIO_PERSIST_INTERVAL,
   SKIP_BACKWARD_SECONDS,
@@ -773,6 +774,16 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
         subtitleStyle={nativeSubtitleStyle}
       />
+      {isBuffering && !showCustomLoadingScreen && !controlsVisible && (
+        <Box
+          testID="player-buffering-indicator"
+          pointerEvents="none"
+          style={StyleSheet.absoluteFill}
+          justifyContent="center"
+          alignItems="center">
+          <LoadingIndicator noFlex />
+        </Box>
+      )}
 
       {showVideoStatistics && Object.keys(videoStatistics).length > 0 && (
         <Box
