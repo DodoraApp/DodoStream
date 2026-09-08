@@ -111,6 +111,23 @@ describe('VLCPlayer (expo-libvlc-player v8 adapter)', () => {
     expect(onError).toHaveBeenCalledWith('vlc decode failure');
   });
 
+  it('reports buffering even after playback has started', () => {
+    // Arrange
+    const onBuffer = jest.fn();
+    renderVLC({ onBuffer });
+    flushFocusRemount();
+
+    // Act
+    act(() => {
+      mockLastProps.onPlaying();
+      mockLastProps.onBuffering();
+    });
+
+    // Assert
+    expect(onBuffer).toHaveBeenNthCalledWith(1, false);
+    expect(onBuffer).toHaveBeenNthCalledWith(2, true);
+  });
+
   it('maps onESAdded audio and subtitle tracks', () => {
     const onAudioTracks = jest.fn();
     const onTextTracks = jest.fn();

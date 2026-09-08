@@ -19,6 +19,10 @@ jest.mock('@/components/video/controls/ControlButton', () => ({
     ),
 }));
 
+jest.mock('@/components/basic/LoadingIndicator', () => ({
+  LoadingIndicator: () => mockReact.createElement(mockView, { testID: 'player-loading-indicator' }),
+}));
+
 jest.mock('@/store/profile.store', () => ({
   useProfileStore: jest.fn((selector: any) => selector({ activeProfileId: 'p1' })),
 }));
@@ -106,6 +110,37 @@ describe('PlayerControls', () => {
 
     // Assert - controls are hidden again
     expect(queryByText('My Title')).toBeNull();
+  });
+
+  it('shows the loading indicator while controls are visible', () => {
+    // Arrange
+    const { getByTestId } = renderWithProviders(
+      <PlayerControls
+        paused={false}
+        currentTime={0}
+        duration={100}
+        showLoadingIndicator={true}
+        title="My Title"
+        audioTracks={[]}
+        textTracks={[]}
+        onPlayPause={() => {}}
+        onSeek={() => {}}
+        onSkipBackward={() => {}}
+        onSkipForward={() => {}}
+        onSelectAudioTrack={() => {}}
+        onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
+      />
+    );
+
+    // Act
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+
+    // Assert
+    expect(getByTestId('player-loading-indicator')).toBeTruthy();
   });
 
   it('displays subtitle items with correct labels', () => {

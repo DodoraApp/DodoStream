@@ -297,11 +297,8 @@ export const VLCPlayer = memo(
       }, [paused, isReady]);
 
       const handleBuffering = useCallback(() => {
-        debug('buffering', { isPlaying: isPlayingRef.current });
-        // Only show buffering indicator if not already playing
-        if (!isPlayingRef.current) {
-          onBuffer?.(true);
-        }
+        debug('buffering');
+        onBuffer?.(true);
       }, [onBuffer]);
 
       const handlePlaying = useCallback(() => {

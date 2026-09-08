@@ -2,6 +2,7 @@ import React, { forwardRef, memo, useCallback, useImperativeHandle, useRef } fro
 import { Platform } from 'react-native';
 import Video, {
   OnAudioTracksData,
+  OnBufferData,
   OnLoadData,
   OnProgressData,
   OnTextTracksData,
@@ -38,6 +39,7 @@ export const RNVideoPlayer = memo(
       source,
       paused,
       onProgress,
+      onBuffer,
       onLoad,
       onEnd,
       onError,
@@ -96,6 +98,13 @@ export const RNVideoPlayer = memo(
         });
       },
       [onProgress]
+    );
+    const handleBuffer = useCallback(
+      (data: OnBufferData) => {
+        debug('buffering', { buffering: data.isBuffering });
+        onBuffer?.(data.isBuffering);
+      },
+      [onBuffer]
     );
 
     const handleLoad = useCallback(
@@ -209,6 +218,7 @@ export const RNVideoPlayer = memo(
         subtitleStyle={subtitleStyle}
         // Event handlers
         onProgress={handleProgress}
+        onBuffer={handleBuffer}
         onLoad={handleLoad}
         onEnd={onEnd}
         onError={handleError}
