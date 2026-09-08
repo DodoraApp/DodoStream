@@ -233,13 +233,22 @@ useProfileStore.subscribe((state) => {
 
 // Initialize profiles system on app start
 export const initializeProfiles = async () => {
-  const { setInitialized, clearActiveProfile, isInitialized } = useProfileStore.getState();
+  const { profiles, setInitialized, clearActiveProfile, switchProfile, isInitialized } =
+    useProfileStore.getState();
 
   // IMPORTANT: initializeProfiles can be called more than once (e.g. remounts).
   // Never clear the active profile after the app has already initialized.
   if (isInitialized) return;
 
-  // Clear active profile on startup so user must select (or go through setup wizard if no profiles)
   clearActiveProfile();
+
+  // A single profile without a PIN needs no picker. Profiles with a PIN still
+  // go through ProfileSelector so startup never bypasses profile protection.
+  const profileIds = Object.keys(profiles);
+  const profileId = profileIds[0];
+  if (profileIds.length === 1 && profileId && !profiles[profileId].pin) {
+    switchProfile(profileId);
+  }
+
   setInitialized(true);
 };
