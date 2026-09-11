@@ -51,6 +51,13 @@ const journal = {
       tag: '0006_brief_hawkeye',
       breakpoints: true,
     },
+    {
+      idx: 7,
+      version: '6',
+      when: 1789158684439,
+      tag: '0007_great_guardsmen',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -172,6 +179,7 @@ const m0006 = `CREATE TABLE \`sync_log\` (
 );
 --> statement-breakpoint
 CREATE INDEX \`sync_log_profile_idx\` ON \`sync_log\` (\`profile_id\`,\`id\`);`;
+const m0007 = `ALTER TABLE \`watch_history\` ADD \`last_stream_id\` text;`;
 
 export default {
   journal,
@@ -183,5 +191,6 @@ export default {
     m0004,
     m0005,
     m0006,
+    m0007,
   },
 };

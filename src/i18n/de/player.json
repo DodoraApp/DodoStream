@@ -16,6 +16,8 @@
   "ends_at": "Endet um {{time}}",
   "audio": "Audio",
   "select_audio_track": "Tonspur auswählen",
+  "streams": "Streams",
+  "episodes": "Episoden",
   "play": "Abspielen",
   "pause": "Pause",
   "skip": "Überspringen",

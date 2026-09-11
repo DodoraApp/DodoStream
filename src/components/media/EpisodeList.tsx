@@ -14,11 +14,18 @@ import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
 import { Box } from '@/theme/theme';
 import { MetaVideo } from '@/types/stremio';
 
-interface EpisodeListProps {
+export interface EpisodeListProps {
   metaId: string;
   videos: MetaVideo[];
+  currentVideoId?: string;
   onEpisodePress: (video: MetaVideo) => void;
   onEpisodeLongPress?: (video: MetaVideo) => void;
+  /** When true, the list sizes to its content and centers vertically (overlay usage). */
+  centered?: boolean;
+  /** When false, the "Episodes" section title is hidden (overlay header already shows it). Default true. */
+  showTitle?: boolean;
+  /** Defaults to the platform layout. Player rails force a vertical list. */
+  layout?: 'auto' | 'horizontal' | 'vertical';
 }
 
 interface GroupedEpisodes {
@@ -28,12 +35,16 @@ interface GroupedEpisodes {
 export const EpisodeList: FC<EpisodeListProps> = ({
   metaId,
   videos,
+  currentVideoId,
   onEpisodePress,
   onEpisodeLongPress,
+  centered = false,
+  showTitle = true,
+  layout = 'auto',
 }) => {
   const { t } = useTranslation('media');
   const { isTVLayout } = useResponsiveLayout();
-  const isHorizontal = isTVLayout;
+  const isHorizontal = layout === 'auto' ? isTVLayout : layout === 'horizontal';
   const { entry: continueWatching } = useContinueWatchingForMeta(metaId, { videos });
 
   const getSeasonLabel = useCallback(
@@ -79,6 +90,11 @@ export const EpisodeList: FC<EpisodeListProps> = ({
       return userSelectedSeason;
     }
 
+    const currentEpisode = videos.find((video) => video.id === currentVideoId);
+    if (currentEpisode?.season !== undefined && seasons.includes(currentEpisode.season)) {
+      return currentEpisode.season;
+    }
+
     if (
       continueWatching?.video?.season !== undefined &&
       seasons.includes(continueWatching.video.season)
@@ -87,9 +103,12 @@ export const EpisodeList: FC<EpisodeListProps> = ({
     }
 
     return seasons[0] ?? 0;
-  }, [continueWatching, seasons, userSelectedSeason]);
+  }, [continueWatching, currentVideoId, seasons, userSelectedSeason, videos]);
 
-  const selectedSeasonEpisodes = groupedEpisodes[selectedSeason] ?? [];
+  const selectedSeasonEpisodes = useMemo(
+    () => groupedEpisodes[selectedSeason] ?? [],
+    [groupedEpisodes, selectedSeason]
+  );
 
   const seasonItems = useMemo<PickerItem<number>[]>(() => {
     return Array.isArray(seasons)
@@ -98,9 +117,12 @@ export const EpisodeList: FC<EpisodeListProps> = ({
   }, [getSeasonLabel, seasons]);
 
   const initialScrollIndex = useMemo(() => {
-    if (!continueWatching?.video?.episode) return 0;
-    return Math.max(continueWatching.video.episode - 1, 0);
-  }, [continueWatching]);
+    const targetVideoId = currentVideoId ?? continueWatching?.videoId;
+    if (!targetVideoId) return 0;
+
+    const index = selectedSeasonEpisodes.findIndex((video) => video.id === targetVideoId);
+    return Math.max(index, 0);
+  }, [continueWatching?.videoId, currentVideoId, selectedSeasonEpisodes]);
 
   const handleSeasonChange = useCallback((value: number) => {
     setUserSelectedSeason(value);
@@ -122,9 +144,11 @@ export const EpisodeList: FC<EpisodeListProps> = ({
         onLongPress={onEpisodeLongPress ? () => onEpisodeLongPress(item) : undefined}
         horizontal={isHorizontal}
         testID={`episode-${item.id}`}
+        hasTVPreferredFocus={item.id === currentVideoId}
+        isCurrentEpisode={item.id === currentVideoId}
       />
     ),
-    [metaId, handleEpisodePress, onEpisodeLongPress, isHorizontal]
+    [metaId, handleEpisodePress, onEpisodeLongPress, isHorizontal, currentVideoId]
   );
 
   const keyExtractor = useCallback((item: MetaVideo) => item.id, []);
@@ -136,28 +160,30 @@ export const EpisodeList: FC<EpisodeListProps> = ({
   }
 
   return (
-    <Box gap="m">
-      <FadeIn>
-        <Box
-          flexDirection="row"
-          gap="m"
-          justifyContent={isHorizontal ? undefined : 'space-between'}
-          alignItems="center">
-          <MediaSectionHeader title={t('episodes')} />
-          {seasons.length > 1 && (
-            <PickerInput
-              label={t('select_season')}
-              items={seasonItems}
-              selectedValue={selectedSeason}
-              onValueChange={handleSeasonChange}
-              selectedLabel={getSeasonLabel(selectedSeason)}
-              testID="settings-picker-season"
-            />
-          )}
-        </Box>
-      </FadeIn>
+    <Box flex={1} gap="m">
+      {(showTitle || seasons.length > 1) && (
+        <FadeIn>
+          <Box
+            flexDirection="row"
+            gap="m"
+            justifyContent={isHorizontal ? undefined : 'space-between'}
+            alignItems="center">
+            {showTitle && <MediaSectionHeader title={t('episodes')} />}
+            {seasons.length > 1 && (
+              <PickerInput
+                label={t('select_season')}
+                items={seasonItems}
+                selectedValue={selectedSeason}
+                onValueChange={handleSeasonChange}
+                selectedLabel={getSeasonLabel(selectedSeason)}
+                testID="settings-picker-season"
+              />
+            )}
+          </Box>
+        </FadeIn>
+      )}
 
-      <FadeIn>
+      <FadeIn style={centered ? { flex: 1, justifyContent: 'center' } : { flex: 1 }}>
         <LegendList<MetaVideo>
           data={selectedSeasonEpisodes}
           horizontal={isHorizontal}
@@ -166,6 +192,9 @@ export const EpisodeList: FC<EpisodeListProps> = ({
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           ItemSeparatorComponent={Separator}
+          // ScrollView grows by default (flexGrow: 1), which pins content to the
+          // top; in centered mode it must size to content so centering applies.
+          style={centered ? { flexGrow: 0, flexShrink: 1 } : undefined}
         />
       </FadeIn>
     </Box>

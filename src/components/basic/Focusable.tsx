@@ -12,6 +12,7 @@ import {
 import { useTheme } from '@shopify/restyle';
 
 import { Theme } from '@/theme/theme';
+import { createDebugLogger } from '@/utils/debug';
 
 /**
  * react-native-tvos extends PressableStateCallbackType with `focused`,
@@ -119,6 +120,7 @@ function computeFocusStyle(
   return variantStyle ?? focusedStyle;
 }
 
+const debug = createDebugLogger('Focusable');
 /**
  * A wrapper component for TV focus handling.
  * Provides consistent focus styling across the app using Pressable.
@@ -181,6 +183,9 @@ export const Focusable: FC<FocusableProps> = ({
 
   // Only use React state when children is a render function that needs isFocused
   const isRenderFunction = typeof children === 'function';
+  const focusDebugId = props.testID;
+  const preferredFocus = (props as PressableProps & { hasTVPreferredFocus?: boolean })
+    .hasTVPreferredFocus;
 
   // State is only used for render-function children path
   const [standardIsFocused, setStandardIsFocused] = useState(false);
@@ -237,6 +242,15 @@ export const Focusable: FC<FocusableProps> = ({
 
   const handleFocus = useCallback(
     (e: Parameters<NonNullable<PressableProps['onFocus']>>[0]) => {
+      if (focusDebugId || preferredFocus) {
+        debug('nativeFocus', {
+          focused: true,
+          testID: focusDebugId,
+          hasTVPreferredFocus: preferredFocus,
+          recyclingKey,
+        });
+      }
+
       // Only trigger React state update for render-function children
       if (isRenderFunction) {
         setStandardIsFocused(true);
@@ -246,11 +260,20 @@ export const Focusable: FC<FocusableProps> = ({
       onFocusChange?.(true);
       onFocus?.(e);
     },
-    [isRenderFunction, onFocusChange, onFocus]
+    [focusDebugId, isRenderFunction, onFocusChange, onFocus, preferredFocus, recyclingKey]
   );
 
   const handleBlur = useCallback(
     (e: Parameters<NonNullable<PressableProps['onBlur']>>[0]) => {
+      if (focusDebugId || preferredFocus) {
+        debug('nativeFocus', {
+          focused: false,
+          testID: focusDebugId,
+          hasTVPreferredFocus: preferredFocus,
+          recyclingKey,
+        });
+      }
+
       // Only trigger React state update for render-function children
       if (isRenderFunction) {
         setStandardIsFocused(false);
@@ -260,7 +283,7 @@ export const Focusable: FC<FocusableProps> = ({
       onFocusChange?.(false);
       onBlur?.(e);
     },
-    [isRenderFunction, onFocusChange, onBlur]
+    [focusDebugId, isRenderFunction, onBlur, onFocusChange, preferredFocus, recyclingKey]
   );
 
   // For render-function children: compute style with current isFocused state

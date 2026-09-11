@@ -11,11 +11,37 @@ import { showToast } from '@/store/toast.store';
 import { ContentType, Stream as StreamType } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { parseBooleanParam } from '@/utils/params';
-
+import { getStreamStableId, isStreamAvailable, normalizeStreamUrl } from '@/utils/stream';
 const debug = createDebugLogger('useAutoPlay');
 
-const isStreamAvailable = (stream: StreamType) =>
-  Boolean(stream.url || stream.externalUrl || stream.ytId);
+const findLastStream = (
+  streams: StreamType[] | undefined,
+  target: StreamTarget | undefined
+): StreamType | undefined => {
+  if (!streams || target?.type !== 'url') return undefined;
+
+  if (target.streamId) {
+    return streams.find((stream) => getStreamStableId(stream) === target.streamId);
+  }
+
+  const normalizedTargetUrl = normalizeStreamUrl(target.value);
+  return streams.find(
+    (stream) => !!stream.url && normalizeStreamUrl(stream.url) === normalizedTargetUrl
+  );
+};
+
+const resolveLastStreamTarget = (
+  target: StreamTarget | undefined,
+  stream: StreamType | undefined
+): StreamTarget | undefined => {
+  if (!target || target.type !== 'url' || !stream?.url) return target;
+
+  return {
+    type: 'url',
+    value: stream.url,
+    streamId: getStreamStableId(stream),
+  };
+};
 
 interface UseAutoPlayParams {
   metaId: string;
@@ -77,14 +103,21 @@ export const useAutoPlay = ({
   }, [metaId, videoId]);
   const { data: streams, isLoading } = useStreams(type, metaId, videoId, effectiveAutoPlay);
 
+  const lastStream = findLastStream(streams, lastStreamTarget);
+  const lastStreamTargetForPlayback = resolveLastStreamTarget(lastStreamTarget, lastStream);
+  const lastStreamId = lastStreamTargetForPlayback?.streamId;
   const { openStreamTarget, openStreamFromStream } = useMediaNavigation();
 
   useEffect(() => {
     if (!effectiveAutoPlay || didAutoNavigateRef.current || isLoading) return;
     didAutoNavigateRef.current = true;
 
-    if (lastStreamTarget) {
-      debug('autoPlayLastTarget', { lastStreamTarget });
+    if (lastStreamTargetForPlayback) {
+      debug('autoPlayLastTarget', {
+        lastStreamTarget: lastStreamTargetForPlayback,
+        lastStreamId,
+        matchedStreamUrl: lastStream?.url,
+      });
 
       openStreamTarget({
         metaId,
@@ -94,9 +127,10 @@ export const useAutoPlay = ({
         bingeGroup,
         backgroundImage,
         logoImage,
-        target: lastStreamTarget,
+        target: lastStreamTargetForPlayback,
+        streamId: lastStreamId,
         navigation: 'replace',
-        fromAutoPlay: lastStreamTarget.type === 'url',
+        fromAutoPlay: lastStreamTargetForPlayback.type === 'url',
         onExternalOpened: () => setAutoPlayFailed(true),
         onExternalOpenFailed: () => setAutoPlayFailed(true),
       });
@@ -152,7 +186,9 @@ export const useAutoPlay = ({
     videoId,
     type,
     bingeGroup,
-    lastStreamTarget,
+    lastStreamTargetForPlayback,
+    lastStream,
+    lastStreamId,
     openStreamFromStream,
     openStreamTarget,
     playerTitle,

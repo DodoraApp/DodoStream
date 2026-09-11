@@ -1,0 +1,1 @@
+ALTER TABLE `watch_history` ADD `last_stream_id` text;

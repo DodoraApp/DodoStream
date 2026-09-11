@@ -23,6 +23,8 @@ interface TagFiltersProps {
   allLabel?: string;
   /** testID for the "all" filter option */
   allTestID?: string;
+  /** Whether the "All" filter should claim initial TV focus. Default true. */
+  allHasTVPreferredFocus?: boolean;
   /** Size variant for tags: 'default' or 'large' */
   size?: TagSize;
 }
@@ -75,6 +77,7 @@ export const TagFilters = memo(
     includeAllOption = true,
     allLabel,
     allTestID,
+    allHasTVPreferredFocus = true,
     size = 'default',
   }: TagFiltersProps) => {
     const { t } = useTranslation('media');
@@ -89,7 +92,7 @@ export const TagFilters = memo(
               id={null}
               label={effectiveAllLabel}
               selected={allSelected}
-              hasTVPreferredFocus={true}
+              hasTVPreferredFocus={allHasTVPreferredFocus}
               size={size}
               testID={allTestID}
               onPress={onSelectId}

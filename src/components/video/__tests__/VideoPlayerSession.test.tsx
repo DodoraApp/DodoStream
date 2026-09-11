@@ -106,7 +106,7 @@ jest.mock('../UpNextPopup', () => ({
       if (mockUpNextResolved) {
         props.onUpNextResolved(mockUpNextResolved);
       }
-    }, [props]);
+    }, [props.onUpNextResolved]);
     return null;
   },
 }));
@@ -240,6 +240,19 @@ describe('VideoPlayerSession', () => {
         value: 'https://example.com/stream.m3u8',
       },
     });
+  });
+  it('persists the stable stream ID with the last stream target', () => {
+    renderSession({ streamId: 'addon-1::info-hash' });
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+    });
+
+    expect(mockSetLastStreamTarget).toHaveBeenCalledWith(
+      expect.objectContaining({
+        streamId: 'addon-1::info-hash',
+      })
+    );
   });
 
   it('attempts automatic fallback on error when enabled and user-selected player fails', () => {

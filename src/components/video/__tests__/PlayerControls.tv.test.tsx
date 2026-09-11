@@ -87,6 +87,8 @@ const renderHiddenControls = () =>
       title="My Title"
       audioTracks={[]}
       textTracks={[]}
+      mediaType="movie"
+      metaId="test-meta-id"
       onPlayPause={() => {}}
       onSeek={() => {}}
       onSkipBackward={() => {}}
@@ -97,6 +99,8 @@ const renderHiddenControls = () =>
       onSubtitleDelayChange={() => {}}
       fitMode="contain"
       onToggleFitMode={() => {}}
+      onStreamSelect={() => {}}
+      onEpisodeSelect={() => {}}
     />
   );
 

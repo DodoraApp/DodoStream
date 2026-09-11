@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CompletedBadge } from '@/components/basic/CompletedBadge';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
+import { PlayingIndicator } from '@/components/media/PlayingIndicator';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { getWatchProgressRatio, useWatchHistoryItem } from '@/hooks/useWatchHistoryDb';
 import type { Theme } from '@/theme/theme';
@@ -21,11 +22,22 @@ export interface EpisodeItemProps {
   horizontal: boolean;
   onPress: () => void;
   onLongPress?: () => void;
+  hasTVPreferredFocus?: boolean;
+  isCurrentEpisode?: boolean;
   testID?: string;
 }
 
 export const EpisodeItem = memo(
-  ({ video, metaId, horizontal, onPress, onLongPress, testID }: EpisodeItemProps) => {
+  ({
+    video,
+    metaId,
+    horizontal,
+    onPress,
+    onLongPress,
+    hasTVPreferredFocus,
+    isCurrentEpisode = false,
+    testID,
+  }: EpisodeItemProps) => {
     const { t } = useTranslation('media');
     const theme = useTheme<Theme>();
 
@@ -45,14 +57,16 @@ export const EpisodeItem = memo(
         onPress={onPress}
         onLongPress={onLongPress}
         recyclingKey={video.id}
-        variant="background"
+        hasTVPreferredFocus={hasTVPreferredFocus}
         testID={testID}
         style={{ backgroundColor: theme.colors.cardBackground, borderRadius: theme.borderRadii.m }}>
         <Box
           borderRadius="m"
           overflow="hidden"
           width={horizontal ? theme.cardSizes.episode.width : '100%'}
-          flexGrow={1}>
+          flexGrow={1}
+          position="relative">
+          {isCurrentEpisode && <PlayingIndicator placement="absolute-top-right" />}
           <Box
             height={theme.cardSizes.episode.imageHeight}
             width="100%"

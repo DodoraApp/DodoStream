@@ -62,6 +62,7 @@ export const VideoPlayer: FC<VideoPlayerProps> = (props) => {
       backgroundImage={props.backgroundImage}
       logoImage={props.logoImage}
       onStop={props.onStop}
+      streamId={props.streamId}
       onError={props.onError}
       usedPlayerType={usedPlayerType}
       setUsedPlayerType={setUsedPlayerType}

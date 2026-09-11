@@ -27,6 +27,7 @@ const Play = () => {
     fromAutoPlay,
     backgroundImage,
     logoImage,
+    streamId,
   } = useLocalSearchParams<{
     source: string;
     title?: string;
@@ -37,6 +38,7 @@ const Play = () => {
     fromAutoPlay?: string;
     backgroundImage?: string;
     logoImage?: string;
+    streamId?: string;
   }>();
   const router = useRouter();
   const { replaceToStreams } = useMediaNavigation();
@@ -119,6 +121,7 @@ const Play = () => {
         bingeGroup={bingeGroup}
         backgroundImage={backgroundImage}
         logoImage={logoImage}
+        streamId={streamId}
         onStop={handleStop}
         onError={handleError}
       />

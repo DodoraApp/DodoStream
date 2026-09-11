@@ -13,22 +13,30 @@ import { useShallow } from 'zustand/react/shallow';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { Modal } from '@/components/basic/Modal';
 import { PickerModal } from '@/components/basic/PickerModal';
+import { EpisodeList } from '@/components/media/EpisodeList';
+import { StreamList } from '@/components/media/StreamList';
 import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
 import { ControlButton } from '@/components/video/controls/ControlButton';
+import { PlayerMenuOverlay } from '@/components/video/PlayerMenuOverlay';
 import { SkipIntroButton } from '@/components/video/SkipIntroButton';
 import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
 import { TVSeekBar } from '@/components/video/TVSeekBar';
 import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
 import { useControlsVisibility } from '@/hooks/useControlsVisibility';
+import { usePlayerMenuController } from '@/hooks/usePlayerMenuController';
 import { usePlayerSeek } from '@/hooks/usePlayerSeek';
 import { usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
 import { Box, Text, Theme } from '@/theme/theme';
 import type { IntroData } from '@/types/introdb';
 import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
+import type { ContentType, MetaVideo, Stream } from '@/types/stremio';
+import { createDebugLogger } from '@/utils/debug';
 import { formatFitModeLabel, formatPlaybackTime, formatWallClock } from '@/utils/format';
 import { getLanguageDisplayName, getPreferredLanguageCodes } from '@/utils/languages';
+import { getStreamStableId, isStreamSelected } from '@/utils/stream';
 import { getTrackBadge, sortAudioTracksByPreference } from '@/utils/tracks';
+const debug = createDebugLogger('PlayerControls');
 
 // ============================================================================
 // Types
@@ -67,8 +75,21 @@ interface PlayerControlsProps {
   onSkipIntro?: () => void;
   /** When true, the invisible overlay Pressable will not claim TV preferred focus */
   suppressPreferredFocus?: boolean;
+  // Stream list and episode panel props
+  mediaType: ContentType;
+  metaId: string;
+  videoId?: string;
+  videos?: MetaVideo[];
+  backgroundImage?: string;
+  logoImage?: string;
+  /** URL of the currently playing stream; fallback identity for autoplay targets. */
+  currentStreamUrl?: string;
+  /** Stable ID of currently playing stream for highlighting. */
+  streamId?: string;
+  onStreamSelect: (stream: Stream) => void;
+  onEpisodeSelect: (video: MetaVideo) => void;
 }
-
+// ============================================================================
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -265,40 +286,56 @@ const SeekBar = memo<SeekBarProps>(
 SeekBar.displayName = 'SeekBar';
 
 interface LeftControlsProps {
-  showSkipEpisode: boolean;
-  skipEpisodeLabel?: string;
   showLoadingIndicator: boolean;
-  onSkipEpisode: () => void;
+  hasTextTracks: boolean;
+  selectedAudioLanguage?: string;
+  selectedTextLanguage?: string;
   fitMode: VideoFitMode;
   onToggleFitMode: () => void;
+  onToggleAudioTracks: () => void;
+  onToggleTextTracks: () => void;
   onFocusChange: () => void;
 }
 
 const LeftControls = memo<LeftControlsProps>(
   ({
-    showSkipEpisode,
-    skipEpisodeLabel,
     showLoadingIndicator,
-    onSkipEpisode,
+    hasTextTracks,
+    selectedAudioLanguage,
+    selectedTextLanguage,
     fitMode,
     onToggleFitMode,
+    onToggleAudioTracks,
+    onToggleTextTracks,
     onFocusChange,
   }) => {
     const { t } = useTranslation('player');
     return (
       <Box flexDirection="row" alignItems="center" gap="s">
-        {showSkipEpisode && (
+        {hasTextTracks && (
           <ControlButton
-            onPress={onSkipEpisode}
-            icon="skip-next"
+            onPress={onToggleTextTracks}
+            icon="subtitles"
             iconComponent={MaterialCommunityIcons}
             disabled={showLoadingIndicator}
-            label={t('skip')}
             onFocusChange={onFocusChange}
-            badge={skipEpisodeLabel}
+            label={t('subtitles')}
+            badge={getTrackBadge(selectedTextLanguage)}
             badgeVariant="tertiary"
+            testID="player-subtitles"
           />
         )}
+        <ControlButton
+          onPress={onToggleAudioTracks}
+          icon="globe"
+          iconComponent={Ionicons}
+          disabled={showLoadingIndicator}
+          onFocusChange={onFocusChange}
+          label={t('audio')}
+          badge={getTrackBadge(selectedAudioLanguage)}
+          badgeVariant="tertiary"
+          testID="player-audio"
+        />
         <ControlButton
           onPress={onToggleFitMode}
           icon={getFitModeIcon(fitMode)}
@@ -306,6 +343,7 @@ const LeftControls = memo<LeftControlsProps>(
           disabled={showLoadingIndicator}
           label={formatFitModeLabel(fitMode, t)}
           onFocusChange={onFocusChange}
+          testID="player-fit-mode"
         />
       </Box>
     );
@@ -369,52 +407,60 @@ const PlaybackControls = memo<PlaybackControlsProps>(
 PlaybackControls.displayName = 'PlaybackControls';
 
 interface RightControlsProps {
+  showSkipEpisode: boolean;
+  skipEpisodeLabel?: string;
   showLoadingIndicator: boolean;
-  hasTextTracks: boolean;
-  selectedAudioLanguage?: string;
-  selectedTextLanguage?: string;
-  onToggleAudioTracks: () => void;
-  onToggleTextTracks: () => void;
+  onSkipEpisode: () => void;
   onFocusChange: () => void;
+  onOpenStreams: () => void;
+  showEpisodes: boolean;
+  onOpenEpisodes: () => void;
 }
 
 const RightControls = memo<RightControlsProps>(
   ({
+    showSkipEpisode,
+    skipEpisodeLabel,
     showLoadingIndicator,
-    hasTextTracks,
-    selectedAudioLanguage,
-    selectedTextLanguage,
-    onToggleAudioTracks,
-    onToggleTextTracks,
+    onSkipEpisode,
     onFocusChange,
+    onOpenStreams,
+    showEpisodes,
+    onOpenEpisodes,
   }) => {
     const { t } = useTranslation('player');
     return (
       <Box flexDirection="row" alignItems="center" gap="s">
-        {hasTextTracks && (
+        {showEpisodes && (
           <ControlButton
-            onPress={onToggleTextTracks}
-            icon="subtitles"
+            onPress={onOpenEpisodes}
+            icon="playlist-play"
             iconComponent={MaterialCommunityIcons}
             disabled={showLoadingIndicator}
+            label={t('episodes')}
             onFocusChange={onFocusChange}
-            label={t('subtitles')}
-            badge={getTrackBadge(selectedTextLanguage)}
-            badgeVariant="tertiary"
-            testID="player-subtitles"
           />
         )}
         <ControlButton
-          onPress={onToggleAudioTracks}
-          icon="globe"
-          iconComponent={Ionicons}
+          onPress={onOpenStreams}
+          icon="layers"
+          iconComponent={MaterialCommunityIcons}
           disabled={showLoadingIndicator}
+          label={t('streams')}
           onFocusChange={onFocusChange}
-          label={t('audio')}
-          badge={getTrackBadge(selectedAudioLanguage)}
-          badgeVariant="tertiary"
-          testID="player-audio"
         />
+        {showSkipEpisode && (
+          <ControlButton
+            onPress={onSkipEpisode}
+            icon="skip-next"
+            iconComponent={MaterialCommunityIcons}
+            disabled={showLoadingIndicator}
+            label={t('skip')}
+            onFocusChange={onFocusChange}
+            badge={skipEpisodeLabel}
+            badgeVariant="tertiary"
+          />
+        )}
       </Box>
     );
   }
@@ -455,6 +501,16 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     introSkipped,
     onSkipIntro,
     suppressPreferredFocus = false,
+    mediaType,
+    metaId,
+    videoId,
+    videos,
+    backgroundImage,
+    logoImage,
+    currentStreamUrl,
+    streamId,
+    onStreamSelect,
+    onEpisodeSelect,
   }) => {
     const theme = useTheme<Theme>();
     const insets = useSafeAreaInsets();
@@ -472,12 +528,18 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       }))
     );
 
-    // Modal state
-    const [showAudioTracks, setShowAudioTracks] = useState(false);
-    const [showTextTracks, setShowTextTracks] = useState(false);
-    const [showSettingsModal, setShowSettingsModal] = useState(false);
-    const isModalOpen = showAudioTracks || showTextTracks || showSettingsModal;
-
+    const {
+      activeMenu,
+      closeSelectionMenu,
+      isModalOpen,
+      setActiveMenu,
+      showAudioTracks,
+      setShowAudioTracks,
+      showTextTracks,
+      setShowTextTracks,
+      showSettingsModal,
+      setShowSettingsModal,
+    } = usePlayerMenuController({ paused, onPlayPause });
     // Track which element should receive focus when controls become visible
     const [focusTarget, setFocusTarget] = useState<'play-pause' | 'seek' | null>(null);
 
@@ -502,11 +564,18 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       onSeek,
     });
 
+    const handleVisibilityChange = useCallback(
+      (newVisible: boolean) => {
+        onVisibilityChange?.(newVisible);
+      },
+      [onVisibilityChange]
+    );
+
     const { visible, registerInteraction, showControls, toggleControls } = useControlsVisibility({
       paused,
       isSeeking,
       isModalOpen,
-      onVisibilityChange,
+      onVisibilityChange: handleVisibilityChange,
     });
 
     const showSkipIntroButton = introData && !introSkipped;
@@ -674,12 +743,12 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     const handleToggleAudioTracks = useCallback(() => {
       registerInteraction();
       setShowAudioTracks((prev) => !prev);
-    }, [registerInteraction]);
+    }, [registerInteraction, setShowAudioTracks]);
 
     const handleToggleTextTracks = useCallback(() => {
       registerInteraction();
       setShowTextTracks((prev) => !prev);
-    }, [registerInteraction]);
+    }, [registerInteraction, setShowTextTracks]);
 
     const handleToggleFitMode = useCallback(() => {
       registerInteraction();
@@ -689,12 +758,12 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     const handleOpenSettings = useCallback(() => {
       registerInteraction();
       setShowSettingsModal(true);
-    }, [registerInteraction]);
+    }, [registerInteraction, setShowSettingsModal]);
 
     const handleCloseSettings = useCallback(() => {
       registerInteraction();
       setShowSettingsModal(false);
-    }, [registerInteraction]);
+    }, [registerInteraction, setShowSettingsModal]);
 
     const handleSelectAudioTrack = useCallback(
       (value: string | number) => {
@@ -710,6 +779,76 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
         onSelectTextTrack(index);
       },
       [onSelectTextTrack, registerInteraction]
+    );
+
+    const handleOpenStreams = useCallback(() => {
+      debug('openStreamsMenu', {
+        currentStreamUrl,
+        streamId,
+      });
+      registerInteraction();
+      setActiveMenu('streams');
+    }, [currentStreamUrl, registerInteraction, setActiveMenu, streamId]);
+
+    const handleCloseMenus = useCallback(() => {
+      debug('closeSelectionMenu', { activeMenu });
+      registerInteraction();
+      closeSelectionMenu();
+    }, [activeMenu, closeSelectionMenu, registerInteraction]);
+
+    const handleOpenEpisodes = useCallback(() => {
+      debug('openEpisodesMenu', { videoId });
+      registerInteraction();
+      setActiveMenu('episodes');
+    }, [registerInteraction, setActiveMenu, videoId]);
+
+    const handleStreamSelect = useCallback(
+      (stream: Stream) => {
+        const candidateStreamId = getStreamStableId(stream);
+        const isCurrentStream = isStreamSelected(stream, streamId, currentStreamUrl);
+        debug('streamSelect', {
+          activeMenu,
+          candidateStreamId,
+          candidateUrl: stream.url,
+          currentStreamUrl,
+          streamId,
+          isCurrentStream,
+        });
+
+        if (isCurrentStream) {
+          closeSelectionMenu();
+          return;
+        }
+
+        if (stream.url) {
+          closeSelectionMenu({ resumePlayback: false });
+        } else {
+          closeSelectionMenu();
+        }
+        onStreamSelect(stream);
+      },
+      [activeMenu, closeSelectionMenu, currentStreamUrl, onStreamSelect, streamId]
+    );
+
+    const handleEpisodeSelect = useCallback(
+      (video: MetaVideo) => {
+        const isCurrentEpisode = video.id === videoId;
+        debug('episodeSelect', {
+          activeMenu,
+          candidateVideoId: video.id,
+          currentVideoId: videoId,
+          isCurrentEpisode,
+        });
+
+        if (isCurrentEpisode) {
+          closeSelectionMenu();
+          return;
+        }
+
+        closeSelectionMenu({ resumePlayback: false });
+        onEpisodeSelect(video);
+      },
+      [activeMenu, closeSelectionMenu, onEpisodeSelect, videoId]
     );
 
     // When hidden, render minimal touchable area + skip intro button
@@ -737,43 +876,55 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     const displayedTime = isSeeking ? seekTime : currentTime;
 
     return (
-      <Pressable
-        testID="player-controls-overlay"
-        style={StyleSheet.absoluteFill}
-        onPress={toggleControls}>
-        <Box flex={1} justifyContent="space-between">
-          <TopBar
-            title={title}
-            onBack={handleBack}
-            onOpenSettings={handleOpenSettings}
-            currentTime={currentTime}
-            duration={duration}
-          />
+      <>
+        <Pressable
+          testID="player-controls-overlay"
+          style={StyleSheet.absoluteFill}
+          onPress={toggleControls}>
+          <Box flex={1} justifyContent="space-between">
+            <TopBar
+              title={title}
+              onBack={handleBack}
+              onOpenSettings={handleOpenSettings}
+              currentTime={currentTime}
+              duration={duration}
+            />
 
-          {showLoadingIndicator && (
-            <Box width="100%" alignItems="center" justifyContent="center">
-              <LoadingIndicator />
-            </Box>
-          )}
-
-          {/* Center area - contains Skip Intro button */}
-          <Box flex={1}>
-            {showSkipIntroButton && (
-              <SkipIntroButton
-                introData={introData}
-                currentTime={currentTime}
-                onSkipIntro={handleSkipIntro}
-              />
+            {showLoadingIndicator && (
+              <Box width="100%" alignItems="center" justifyContent="center">
+                <LoadingIndicator />
+              </Box>
             )}
-          </Box>
 
-          {/* Bottom Controls */}
+            {/* Center area - contains Skip Intro button */}
+            <Box flex={1}>
+              {showSkipIntroButton && (
+                <SkipIntroButton
+                  introData={introData}
+                  currentTime={currentTime}
+                  onSkipIntro={handleSkipIntro}
+                />
+              )}
+            </Box>
+          </Box>
+        </Pressable>
+
+        {/* Bottom Controls */}
+        <Box
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: theme.colors.semiTransparentBackground,
+          }}
+          pointerEvents="box-none">
           <Box
+            pointerEvents="box-none"
             paddingHorizontal="m"
             paddingTop="m"
             gap="s"
             style={{
-              backgroundColor: theme.colors.semiTransparentBackground,
               paddingBottom: insets.bottom > 0 ? insets.bottom + theme.spacing.m : theme.spacing.m,
             }}>
             {/* Time Display + Seek Bar */}
@@ -798,69 +949,124 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
 
             {/* Control Buttons */}
             <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-              <RightControls
-                showLoadingIndicator={showLoadingIndicator}
-                hasTextTracks={textTracks.length > 0}
-                selectedAudioLanguage={selectedAudioTrack?.language}
-                selectedTextLanguage={selectedTextTrack?.language}
-                onToggleAudioTracks={handleToggleAudioTracks}
-                onToggleTextTracks={handleToggleTextTracks}
-                onFocusChange={handleButtonFocusChange}
-              />
+              {/* Left controls - flex: 1, justify start */}
+              <Box flex={1} flexDirection="row" justifyContent="flex-start">
+                <LeftControls
+                  showLoadingIndicator={showLoadingIndicator}
+                  hasTextTracks={textTracks.length > 0}
+                  selectedAudioLanguage={selectedAudioTrack?.language}
+                  selectedTextLanguage={selectedTextTrack?.language}
+                  fitMode={fitMode}
+                  onToggleFitMode={handleToggleFitMode}
+                  onToggleAudioTracks={handleToggleAudioTracks}
+                  onToggleTextTracks={handleToggleTextTracks}
+                  onFocusChange={handleButtonFocusChange}
+                />
+              </Box>
 
-              <PlaybackControls
-                paused={paused}
-                showLoadingIndicator={showLoadingIndicator}
-                onPlayPause={handlePlayPause}
-                onSkipBackward={handleSkipBackward}
-                onSkipForward={handleSkipForward}
-                onFocusChange={handleButtonFocusChange}
-                hasTVPreferredFocus={focusTarget === 'play-pause'}
-              />
+              {/* Center controls - flex to be pushed to center */}
+              <Box flex={1} flexDirection="row" justifyContent="center">
+                <PlaybackControls
+                  paused={paused}
+                  showLoadingIndicator={showLoadingIndicator}
+                  onPlayPause={handlePlayPause}
+                  onSkipBackward={handleSkipBackward}
+                  onSkipForward={handleSkipForward}
+                  onFocusChange={handleButtonFocusChange}
+                  hasTVPreferredFocus={focusTarget === 'play-pause'}
+                />
+              </Box>
 
-              <LeftControls
-                showSkipEpisode={showSkipEpisode}
-                skipEpisodeLabel={skipEpisodeLabel}
-                showLoadingIndicator={showLoadingIndicator}
-                onSkipEpisode={handleSkipEpisode}
-                fitMode={fitMode}
-                onToggleFitMode={handleToggleFitMode}
-                onFocusChange={handleButtonFocusChange}
-              />
+              {/* Right controls - flex: 1, justify end */}
+              <Box flex={1} flexDirection="row" justifyContent="flex-end">
+                <RightControls
+                  showSkipEpisode={showSkipEpisode}
+                  skipEpisodeLabel={skipEpisodeLabel}
+                  showLoadingIndicator={showLoadingIndicator}
+                  onSkipEpisode={handleSkipEpisode}
+                  onFocusChange={handleButtonFocusChange}
+                  onOpenEpisodes={handleOpenEpisodes}
+                  showEpisodes={mediaType === 'series' && (videos?.length ?? 0) > 1}
+                  onOpenStreams={handleOpenStreams}
+                />
+              </Box>
             </Box>
           </Box>
-
-          {/* Modals */}
-          <PickerModal
-            visible={showAudioTracks}
-            onClose={() => setShowAudioTracks(false)}
-            label={t('select_audio_track')}
-            icon="language"
-            items={audioTrackItems}
-            selectedValue={selectedAudioTrack?.index}
-            onValueChange={handleSelectAudioTrack}
-            getItemGroupId={(item) => item.groupId ?? null}
-            getGroupLabel={(id) => getLanguageDisplayName(id)}
-            preferredGroupIds={getPreferredLanguageCodes(preferredAudioLanguages)}
-          />
-
-          <SubtitlePickerModal
-            visible={showTextTracks}
-            onClose={() => setShowTextTracks(false)}
-            tracks={textTracks}
-            selectedTrack={selectedTextTrack}
-            onSelectTrack={handleSelectTextTrack}
-            preferredLanguages={preferredSubtitleLanguages}
-            currentTime={currentTime}
-            delay={subtitleDelay}
-            onDelayChange={onSubtitleDelayChange}
-          />
-
-          <Modal visible={showSettingsModal} onClose={handleCloseSettings} disablePadding>
-            <PlaybackSettingsContent />
-          </Modal>
         </Box>
-      </Pressable>
+
+        {/* Modals */}
+        <PickerModal
+          visible={showAudioTracks}
+          onClose={() => setShowAudioTracks(false)}
+          label={t('select_audio_track')}
+          icon="language"
+          items={audioTrackItems}
+          selectedValue={selectedAudioTrack?.index}
+          onValueChange={handleSelectAudioTrack}
+          getItemGroupId={(item) => item.groupId ?? null}
+          getGroupLabel={(id) => getLanguageDisplayName(id)}
+          preferredGroupIds={getPreferredLanguageCodes(preferredAudioLanguages)}
+        />
+
+        <SubtitlePickerModal
+          visible={showTextTracks}
+          onClose={() => setShowTextTracks(false)}
+          tracks={textTracks}
+          selectedTrack={selectedTextTrack}
+          onSelectTrack={handleSelectTextTrack}
+          preferredLanguages={preferredSubtitleLanguages}
+          currentTime={currentTime}
+          delay={subtitleDelay}
+          onDelayChange={onSubtitleDelayChange}
+        />
+
+        <Modal visible={showSettingsModal} onClose={handleCloseSettings} disablePadding>
+          <PlaybackSettingsContent />
+        </Modal>
+
+        {activeMenu === 'streams' && (
+          <PlayerMenuOverlay
+            visible
+            onClose={handleCloseMenus}
+            title={t('streams')}
+            icon="layers"
+            autoFocus={false}>
+            <StreamList
+              type={mediaType}
+              id={metaId}
+              videoId={videoId}
+              title={title}
+              backgroundImage={backgroundImage}
+              logoImage={logoImage}
+              onSelectOverride={handleStreamSelect}
+              selectedStreamId={streamId}
+              selectedStreamUrl={currentStreamUrl}
+              centered
+              layout="vertical"
+              autoFocus={false}
+            />
+          </PlayerMenuOverlay>
+        )}
+
+        {activeMenu === 'episodes' && (
+          <PlayerMenuOverlay
+            visible
+            onClose={handleCloseMenus}
+            title={t('episodes')}
+            icon="albums"
+            autoFocus={false}>
+            <EpisodeList
+              metaId={metaId}
+              videos={videos ?? []}
+              currentVideoId={videoId}
+              onEpisodePress={handleEpisodeSelect}
+              centered
+              showTitle={false}
+              layout="vertical"
+            />
+          </PlayerMenuOverlay>
+        )}
+      </>
     );
   }
 );

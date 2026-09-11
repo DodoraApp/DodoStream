@@ -169,6 +169,46 @@ describe('useAutoPlay', () => {
     // Ensure openStreamFromStream is NOT called
     expect(openStreamFromStream).not.toHaveBeenCalled();
   });
+  it('uses the refreshed URL when a persisted stream ID matches', async () => {
+    profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
+    mockStreams = [
+      {
+        addonId: 'addon-1',
+        infoHash: 'info-hash',
+        url: 'http://newstream.com',
+        name: 'Refreshed stream',
+      },
+    ];
+    (streamsApi.useStreams as jest.Mock)
+      .mockImplementationOnce(() => ({
+        data: [],
+        isLoading: true,
+      }))
+      .mockImplementation(() => ({
+        data: mockStreams,
+        isLoading: false,
+      }));
+    (db.getLastStreamTarget as jest.Mock).mockResolvedValue({
+      type: 'url',
+      value: 'http://oldstream.com',
+      streamId: 'addon-1::info-hash',
+    });
+
+    renderHook(() => useAutoPlay(defaultProps));
+
+    await waitFor(() => {
+      expect(openStreamTarget).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target: {
+            type: 'url',
+            value: 'http://newstream.com',
+            streamId: 'addon-1::info-hash',
+          },
+          streamId: 'addon-1::info-hash',
+        })
+      );
+    });
+  });
   it('cancels autoplay when manual stream selection is requested', () => {
     const { result } = renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1' }));
 

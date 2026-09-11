@@ -159,6 +159,8 @@ describe('useMediaNavigation', () => {
       navigation: 'replace',
       fromAutoPlay: true,
       stream: {
+        addonId: 'addon-1',
+        infoHash: 'info-hash',
         url: 'https://example.com/video.mp4',
         behaviorHints: { group: 'bg2' },
       } as any,
@@ -175,6 +177,9 @@ describe('useMediaNavigation', () => {
         videoId: 'v1',
         bingeGroup: 'bg2',
         fromAutoPlay: '1',
+        backgroundImage: undefined,
+        logoImage: undefined,
+        streamId: 'addon-1::info-hash',
       },
     });
   });

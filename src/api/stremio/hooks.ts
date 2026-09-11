@@ -452,9 +452,12 @@ export function useMeta(type: ContentType, id: string, enabled: boolean = true) 
   const successfulResult = results.find((result) => result.isSuccess && result.data);
   const rawError = results.find((result) => result.error)?.error as unknown;
 
-  // Sort videos with season 0 (Specials) last
+  // Sort videos with season 0 (Specials) last and preserve the result reference.
   const meta = successfulResult?.data?.meta;
-  const sortedMeta = meta ? { ...meta, videos: sortVideosBySeason(meta.videos) } : undefined;
+  const sortedMeta = useMemo(() => {
+    if (!meta) return undefined;
+    return { ...meta, videos: sortVideosBySeason(meta.videos) };
+  }, [meta]);
 
   return {
     data: sortedMeta,
