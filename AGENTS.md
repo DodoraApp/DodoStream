@@ -37,6 +37,8 @@ EXPO_TV=1 pnpm start                # Enable TV mode
 ### Simulators & Emulators
 
 - **NEVER boot, launch, build for, or drive iOS simulators / Android emulators on your own** (this includes `pnpm ios`, `pnpm android`, `xcrun simctl`, `adb`, etc.).
+- **NEVER start the Metro bundler or another development server on your own** (this includes `pnpm start`); ask the user for explicit instruction first.
+- **NEVER invoke `adb` or otherwise interact with Android devices/emulators without the user's explicit instruction**.
 - If a simulator/emulator run is needed, stop and ask the user first — they will run it or explicitly approve.
 - **NEVER use Expo web preview (`expo start --web`) for verification**; this TV/mobile app does not support the web platform.
 

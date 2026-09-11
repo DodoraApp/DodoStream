@@ -1,6 +1,6 @@
 import { FC, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView } from 'react-native';
+import { ScrollView, TVFocusGuideView } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -143,24 +143,31 @@ export const ProfileSelector: FC<ProfileSelectorProps> = ({ onSelect }) => {
               </Text>
             </Box>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                gap: theme.spacing.l,
-                paddingVertical: theme.spacing.m,
-              }}>
-              {profiles.map((profile) => (
+            <TVFocusGuideView autoFocus>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  gap: theme.spacing.l,
+                  paddingVertical: theme.spacing.m,
+                }}>
+                {profiles.map((profile, index) => (
+                  <ProfileCard
+                    key={profile.id}
+                    profile={profile}
+                    onPress={() => handleProfileSelect(profile.id)}
+                    hasTVPreferredFocus={index === 0}
+                  />
+                ))}
                 <ProfileCard
-                  key={profile.id}
-                  profile={profile}
-                  onPress={() => handleProfileSelect(profile.id)}
+                  isAddCard
+                  onPress={handleAddProfile}
+                  hasTVPreferredFocus={profiles.length === 0}
                 />
-              ))}
-              <ProfileCard isAddCard onPress={handleAddProfile} />
-            </ScrollView>
+              </ScrollView>
+            </TVFocusGuideView>
           </Box>
         </Box>
       </MotiView>
