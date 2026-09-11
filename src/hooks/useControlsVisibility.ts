@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { PLAYER_CONTROLS_AUTO_HIDE_MS } from '@/constants/playback';
+import { createDebugLogger } from '@/utils/debug';
+
+const debug = createDebugLogger('useControlsVisibility');
+
+type TimeoutHandle = number | NodeJS.Timeout;
 
 export interface UseControlsVisibilityOptions {
   /** Whether playback is paused - controls stay visible when paused */
@@ -45,18 +50,35 @@ export const useControlsVisibility = ({
   autoHideDelayMs = PLAYER_CONTROLS_AUTO_HIDE_MS,
 }: UseControlsVisibilityOptions): UseControlsVisibilityResult => {
   const [visible, setVisible] = useState(false);
-  // Interaction counter to trigger auto-hide timer reset
+  // Interaction counter to trigger auto-hide timer reset. The refs are updated
+  // synchronously by commands so a native event cannot observe stale visibility
+  // while React is batching state updates.
   const [interactionId, setInteractionId] = useState(0);
-  const autoHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibleRef = useRef(false);
+  const interactionIdRef = useRef(0);
+  const autoHideTimeoutRef = useRef<TimeoutHandle | null>(null);
+  const pausedRef = useRef(paused);
+  const isSeekingRef = useRef(isSeeking);
+  const isModalOpenRef = useRef(isModalOpen);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+    isSeekingRef.current = isSeeking;
+    isModalOpenRef.current = isModalOpen;
+  }, [paused, isSeeking, isModalOpen]);
+
+  const clearAutoHideTimeout = useCallback(() => {
+    const timeout = autoHideTimeoutRef.current;
+    autoHideTimeoutRef.current = null;
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+  }, []);
 
   // Clear auto-hide timeout on unmount
   useEffect(() => {
-    return () => {
-      if (autoHideTimeoutRef.current) {
-        clearTimeout(autoHideTimeoutRef.current);
-      }
-    };
-  }, []);
+    return clearAutoHideTimeout;
+  }, [clearAutoHideTimeout]);
 
   // Notify parent when visibility changes
   useEffect(() => {
@@ -65,11 +87,7 @@ export const useControlsVisibility = ({
 
   // Auto-hide logic
   useEffect(() => {
-    // Clear any existing timeout
-    if (autoHideTimeoutRef.current) {
-      clearTimeout(autoHideTimeoutRef.current);
-      autoHideTimeoutRef.current = null;
-    }
+    clearAutoHideTimeout();
 
     // Don't auto-hide if:
     // - Controls are not visible
@@ -79,21 +97,51 @@ export const useControlsVisibility = ({
     const shouldAutoHide = visible && !paused && !isSeeking && !isModalOpen;
 
     if (shouldAutoHide) {
+      const scheduledInteractionId = interactionIdRef.current;
       autoHideTimeoutRef.current = setTimeout(() => {
+        // A timeout that was queued before the latest interaction can still
+        // fire after clearTimeout on native platforms. Never let it hide
+        // controls after a newer interaction has reset the timer.
+        if (interactionIdRef.current !== scheduledInteractionId) {
+          debug('ignoreStaleAutoHide', {
+            scheduledInteractionId,
+            currentInteractionId: interactionIdRef.current,
+          });
+          return;
+        }
+
+        if (
+          !visibleRef.current ||
+          pausedRef.current ||
+          isSeekingRef.current ||
+          isModalOpenRef.current
+        ) {
+          return;
+        }
+
+        autoHideTimeoutRef.current = null;
+        visibleRef.current = false;
+        debug('autoHide', { interactionId: scheduledInteractionId });
         setVisible(false);
       }, autoHideDelayMs);
     }
 
-    return () => {
-      if (autoHideTimeoutRef.current) {
-        clearTimeout(autoHideTimeoutRef.current);
-        autoHideTimeoutRef.current = null;
-      }
-    };
-  }, [visible, paused, isSeeking, isModalOpen, interactionId, autoHideDelayMs]);
+    return clearAutoHideTimeout;
+  }, [
+    visible,
+    paused,
+    isSeeking,
+    isModalOpen,
+    interactionId,
+    autoHideDelayMs,
+    clearAutoHideTimeout,
+  ]);
 
   const registerInteraction = useCallback(() => {
-    setInteractionId((prev) => prev + 1);
+    const nextInteractionId = interactionIdRef.current + 1;
+    interactionIdRef.current = nextInteractionId;
+    visibleRef.current = true;
+    setInteractionId(nextInteractionId);
     setVisible(true);
   }, []);
 
@@ -101,17 +149,19 @@ export const useControlsVisibility = ({
     registerInteraction();
   }, [registerInteraction]);
 
+  const hideControls = useCallback(() => {
+    interactionIdRef.current += 1;
+    visibleRef.current = false;
+    setVisible(false);
+  }, []);
+
   const toggleControls = useCallback(() => {
-    if (visible) {
-      setVisible(false);
+    if (visibleRef.current) {
+      hideControls();
     } else {
       registerInteraction();
     }
-  }, [visible, registerInteraction]);
-
-  const hideControls = useCallback(() => {
-    setVisible(false);
-  }, []);
+  }, [hideControls, registerInteraction]);
 
   return {
     visible,
