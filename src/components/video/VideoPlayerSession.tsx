@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useIntro } from '@/api/introdb';
-import { useSubtitles } from '@/api/stremio';
+import { useMeta, useSubtitles } from '@/api/stremio';
 import {
   PLAYBACK_RATIO_PERSIST_INTERVAL,
   SKIP_BACKWARD_SECONDS,
@@ -30,7 +30,7 @@ import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
 import { Box, Text, Theme } from '@/theme/theme';
 import { AudioTrack, PlayerRef, PlayerType, TextTrack, VideoFitMode } from '@/types/player';
-import type { ContentType } from '@/types/stremio';
+import type { ContentType, MetaVideo, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { formatFitModeLabel } from '@/utils/format';
 import {
@@ -39,7 +39,7 @@ import {
   normalizeLanguageCode,
 } from '@/utils/languages';
 import { classifyPlayerError } from '@/utils/player-errors';
-import { getVideoSessionId } from '@/utils/stream';
+import { getStreamStableId, getVideoSessionId } from '@/utils/stream';
 import { combineSubtitles } from '@/utils/subtitles';
 
 import { CustomSubtitles } from './CustomSubtitles';
@@ -63,6 +63,8 @@ export interface VideoPlayerProps {
   backgroundImage?: string;
   /** Logo image URL for initial loading screen. */
   logoImage?: string;
+  /** Stable ID of the currently playing stream for highlighting in StreamList */
+  streamId?: string;
   onStop?: () => void;
   onError?: (message: string) => void;
 }
@@ -126,6 +128,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   bingeGroup,
   backgroundImage,
   logoImage,
+  streamId,
   onStop,
   onError,
   usedPlayerType,
@@ -138,12 +141,21 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const queryClient = useQueryClient();
 
   const playerRef = useRef<PlayerRef>(null);
-  const { replaceToStreams } = useMediaNavigation();
+  const { replaceToStreams, openStreamFromStream } = useMediaNavigation();
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
 
   // Track if this is the first load (for showing custom loading screen)
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const hasBackgroundOrLogo = !!(backgroundImage || logoImage);
+  useEffect(() => {
+    debug('sessionIdentity', {
+      source,
+      streamId,
+      mediaType,
+      metaId,
+      videoId,
+    });
+  }, [mediaType, metaId, source, streamId, videoId]);
 
   const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } = usePlaybackStore(
     useShallow((state) => ({
@@ -233,6 +245,12 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     enabled: skipIntroEnabled,
   });
 
+  // Episodes and Up Next share one metadata query. Movies have no episode queue,
+  // so skip the query entirely for them.
+  const shouldLoadSeriesMeta = mediaType === 'series' && !!videoId;
+  const { data: meta } = useMeta(mediaType, metaId, shouldLoadSeriesMeta);
+  const videos = meta?.videos;
+  const mediaImageUrl = meta?.background ?? meta?.poster;
   const lastPersistAtRef = useRef(0);
   const lastKnownTimeRef = useRef(0);
   const lastKnownDurationRef = useRef(0);
@@ -368,6 +386,48 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     );
   }, [bingeGroup, didStartNext, mediaType, metaId, persistProgress, replaceToStreams, videoId]);
 
+  const handleStreamSelect = useCallback(
+    (stream: Stream) => {
+      debug('handleStreamSelect', {
+        streamId: getStreamStableId(stream),
+        streamName: stream.name,
+        streamUrl: stream.url,
+        currentStreamId: streamId,
+        currentSource: source,
+        metaId,
+        videoId,
+      });
+      openStreamFromStream({
+        metaId,
+        videoId,
+        type: mediaType,
+        title,
+        backgroundImage,
+        logoImage,
+        stream,
+        navigation: 'replace',
+      });
+    },
+    [
+      backgroundImage,
+      logoImage,
+      mediaType,
+      metaId,
+      openStreamFromStream,
+      source,
+      streamId,
+      title,
+      videoId,
+    ]
+  );
+
+  const handleEpisodeSelect = useCallback(
+    (video: MetaVideo) => {
+      debug('handleEpisodeSelect', { videoId: video.id, metaId });
+      replaceToStreams({ metaId, videoId: video.id, type: mediaType }, { bingeGroup });
+    },
+    [bingeGroup, mediaType, metaId, replaceToStreams]
+  );
   const handleProgress = useCallback(
     (data: { currentTime: number; duration?: number }) => {
       setCurrentTime(data.currentTime);
@@ -435,6 +495,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
             videoId,
             type: mediaType,
             target: { type: 'url', value: source },
+            ...(streamId ? { streamId } : {}),
           })
             .then(() =>
               queryClient.invalidateQueries({
@@ -487,6 +548,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       queryClient,
       resumeHistoryItem?.progressSeconds,
       source,
+      streamId,
       updateThrottledProgressRatio,
       usedPlayerType,
       videoId,
@@ -797,6 +859,16 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         introSkipped={introSkipped}
         onSkipIntro={handleSkipIntro}
         suppressPreferredFocus={upNextVisible}
+        mediaType={mediaType}
+        metaId={metaId}
+        videoId={videoId}
+        videos={videos}
+        backgroundImage={backgroundImage}
+        logoImage={logoImage}
+        currentStreamUrl={source}
+        streamId={streamId}
+        onStreamSelect={handleStreamSelect}
+        onEpisodeSelect={handleEpisodeSelect}
       />
 
       <UpNextPopup
@@ -804,6 +876,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         metaId={metaId}
         mediaType={mediaType}
         videoId={videoId}
+        videos={videos}
+        mediaImageUrl={mediaImageUrl}
+        mediaTitle={title}
         progressRatio={throttledProgressRatio}
         dismissed={upNextDismissed}
         autoplayCancelled={autoplayCancelled}

@@ -1148,6 +1148,24 @@ describe('setLastStreamTarget (integration)', () => {
     expect(result.lastStreamTargetType).toBe('url');
     expect(result.lastStreamTargetValue).toBe('https://stream.example.com/movie');
   });
+  it('stores and returns the stable stream ID', async () => {
+    await setLastStreamTarget({
+      profileId: testProfileId,
+      metaId: 'tt-stable-stream',
+      videoId: undefined,
+      type: 'movie',
+      target: { type: 'url', value: 'https://stream.example.com/movie' },
+      streamId: 'addon-1::info-hash',
+    });
+
+    const result = await getLastStreamTarget(testProfileId, 'tt-stable-stream');
+
+    expect(result).toEqual({
+      type: 'url',
+      value: 'https://stream.example.com/movie',
+      streamId: 'addon-1::info-hash',
+    });
+  });
 
   it('updates existing entry stream target without changing progress', async () => {
     await upsertWatchProgress({
@@ -1157,6 +1175,14 @@ describe('setLastStreamTarget (integration)', () => {
       type: 'movie',
       progressSeconds: 500,
       durationSeconds: 1000,
+    });
+    await setLastStreamTarget({
+      profileId: testProfileId,
+      metaId: 'tt-existing-target',
+      videoId: undefined,
+      type: 'movie',
+      target: { type: 'url', value: 'https://old-stream.example.com' },
+      streamId: 'stale-stream-id',
     });
 
     await setLastStreamTarget({
@@ -1180,6 +1206,7 @@ describe('setLastStreamTarget (integration)', () => {
     // Stream target updated
     expect(result.lastStreamTargetType).toBe('external');
     expect(result.lastStreamTargetValue).toBe('com.example.player');
+    expect(result.lastStreamId).toBeNull();
     // Progress preserved
     expect(result.progressSeconds).toBe(500);
     expect(result.durationSeconds).toBe(1000);

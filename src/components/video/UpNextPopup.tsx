@@ -3,7 +3,6 @@ import { FC, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@shopify/restyle';
 import { MotiView } from 'moti';
 
-import { useMeta } from '@/api/stremio';
 import { Button } from '@/components/basic/Button';
 import { ContinueWatchingCard } from '@/components/media/ContinueWatchingCard';
 import {
@@ -13,7 +12,7 @@ import {
 } from '@/constants/playback';
 import { type ContinueWatchingEntry, useNextVideo } from '@/hooks/useContinueWatching';
 import type { Theme } from '@/theme/theme';
-import type { ContentType } from '@/types/stremio';
+import type { ContentType, MetaVideo } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { formatSeasonEpisodeLabel } from '@/utils/format';
 
@@ -31,6 +30,9 @@ export interface UpNextPopupProps {
   metaId: string;
   mediaType: ContentType;
   videoId?: string;
+  videos?: MetaVideo[];
+  mediaImageUrl?: string;
+  mediaTitle?: string;
   progressRatio: number;
   dismissed: boolean;
   autoplayCancelled: boolean;
@@ -48,6 +50,9 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
     metaId,
     mediaType,
     videoId,
+    videos,
+    mediaImageUrl,
+    mediaTitle,
     progressRatio,
     dismissed,
     autoplayCancelled,
@@ -64,11 +69,9 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
     const showThreshold =
       mediaType === 'series' ? UPNEXT_POPUP_SERIES_RATIO : UPNEXT_POPUP_MOVIE_RATIO;
 
-    const shouldLoadMeta = enabled && !!videoId;
-    const { data: meta } = useMeta(mediaType, metaId, shouldLoadMeta);
-
-    // Use the simple next video hook - just finds next in sequence
-    const upNextVideo = useNextVideo(meta?.videos, videoId);
+    // The player session owns this query so Episodes and Up Next consume one
+    // cached metadata result rather than maintaining independent observers.
+    const upNextVideo = useNextVideo(videos, videoId);
 
     const resolved = useMemo<UpNextResolved | undefined>(() => {
       if (!enabled) return undefined;
@@ -77,9 +80,9 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
         videoId: upNextVideo.id,
         title: upNextVideo.title,
         episodeLabel: formatSeasonEpisodeLabel(upNextVideo),
-        imageUrl: meta?.background ?? meta?.poster,
+        imageUrl: mediaImageUrl,
       };
-    }, [enabled, meta?.background, meta?.poster, upNextVideo]);
+    }, [enabled, mediaImageUrl, upNextVideo]);
 
     const resolvedKey = useMemo(() => {
       return resolved
@@ -96,8 +99,7 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
       if (__DEV__) {
         debug('nextEpisodeResolved', {
           enabled,
-          shouldLoadMeta,
-          metaLoaded: !!meta,
+          metaLoaded: !!videos,
           metaId,
           mediaType,
           videoId,
@@ -106,19 +108,9 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
       }
 
       onUpNextResolved(resolved);
-    }, [
-      enabled,
-      mediaType,
-      meta,
-      metaId,
-      onUpNextResolved,
-      resolved,
-      resolvedKey,
-      shouldLoadMeta,
-      videoId,
-    ]);
+    }, [enabled, mediaType, metaId, onUpNextResolved, resolved, resolvedKey, videoId, videos]);
 
-    const upNextImageUrl = meta?.background ?? meta?.poster;
+    const upNextImageUrl = mediaImageUrl;
 
     // Build a ContinueWatchingEntry for the card
     const upNextEntry = useMemo((): ContinueWatchingEntry | undefined => {
@@ -134,10 +126,10 @@ export const UpNextPopup: FC<UpNextPopupProps> = memo(
         lastWatchedAt: Date.now(),
         isUpNext: true,
         video: upNextVideo,
-        metaName: meta?.name,
+        metaName: mediaTitle,
         imageUrl: upNextImageUrl,
       };
-    }, [metaId, mediaType, upNextVideo, meta?.name, upNextImageUrl]);
+    }, [metaId, mediaType, mediaTitle, upNextImageUrl, upNextVideo]);
 
     const shouldShow =
       enabled &&

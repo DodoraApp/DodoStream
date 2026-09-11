@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from 'react';
+import React, { FC, ReactNode, useEffect } from 'react';
 import {
   Modal as RNModal,
   type ModalProps as RNModalProps,
@@ -15,6 +15,7 @@ import { useTheme } from '@shopify/restyle';
 import { Button } from '@/components/basic/Button';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { Box, Text, Theme } from '@/theme/theme';
+import { createDebugLogger } from '@/utils/debug';
 
 export interface ModalProps {
   label?: string;
@@ -34,7 +35,12 @@ export interface ModalProps {
   disablePadding?: boolean;
   /** Use wider modal size for two-panel layouts (default: false) */
   wide?: boolean;
+  /** Whether the TV focus guide auto-focuses its first item (default: true). Set false when a child claims preferred focus. */
+  autoFocus?: boolean;
+  /** Horizontal placement for the modal surface. */
+  contentAlignment?: 'center' | 'right';
 }
+const debug = createDebugLogger('Modal');
 
 /**
  * Reusable modal wrapper with consistent styling across the app.
@@ -51,11 +57,22 @@ export const Modal: FC<ModalProps> = ({
   closeOnBackdropPress = true,
   disablePadding = false,
   wide = false,
+  autoFocus = true,
+  contentAlignment = 'center',
 }) => {
+  useEffect(() => {
+    debug('visibility', {
+      label,
+      visible,
+      autoFocus,
+      contentAlignment,
+    });
+  }, [autoFocus, contentAlignment, label, visible]);
   const theme = useTheme<Theme>();
   const insets = useSafeAreaInsets();
   const { breakpoint } = useResponsiveLayout();
   const { height: windowHeight } = useWindowDimensions();
+  const alignItems = contentAlignment === 'right' ? 'flex-end' : 'center';
 
   return (
     <RNModal
@@ -74,19 +91,19 @@ export const Modal: FC<ModalProps> = ({
             paddingLeft: insets.left,
             paddingRight: insets.right,
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems,
           },
         ]}
         onPress={closeOnBackdropPress ? onClose : undefined}
         focusable={false}>
-        <Box flex={1} justifyContent="center" alignItems="center" pointerEvents="box-none">
+        <Box flex={1} justifyContent="center" alignItems={alignItems} pointerEvents="box-none">
           <TVFocusGuideView
-            autoFocus
+            autoFocus={autoFocus}
             trapFocusUp
             trapFocusDown
             trapFocusLeft
             trapFocusRight
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            style={{ flex: 1, alignItems, justifyContent: 'center' }}>
             <Pressable onPress={() => {}} focusable={false} style={{ flex: 1 }}>
               <Box
                 flex={1}

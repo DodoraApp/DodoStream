@@ -49,6 +49,9 @@ export const WIZARD_CONTENT_FADE_MS = 250;
 // TV Focus animation timing
 export const TV_FOCUS_ANIMATION_MS = 150;
 
+// Playing indicator entrance animation
+export const PLAYING_INDICATOR_INITIAL_SCALE = 0.9;
+
 // Details backdrop gradient stops (0–1 proportional values)
 // Three-stop fade: fully transparent at top → semi-dark at ⅓ → solid background before content area
 // The third stop must land above ~0.72 so the cast/episodes section always sits on a solid background.

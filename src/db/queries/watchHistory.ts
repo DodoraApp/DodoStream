@@ -18,6 +18,7 @@ export type DbWatchHistoryItem = {
   durationSeconds: number;
   lastStreamTargetType?: StreamTargetType;
   lastStreamTargetValue?: string;
+  lastStreamId?: string;
   lastWatchedAt: number;
 };
 
@@ -50,6 +51,7 @@ export async function listWatchHistoryForProfile(profileId: string): Promise<DbW
       durationSeconds: watchHistory.durationSeconds,
       lastStreamTargetType: watchHistory.lastStreamTargetType,
       lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+      lastStreamId: watchHistory.lastStreamId,
       lastWatchedAt: watchHistory.lastWatchedAt,
     })
     .from(watchHistory)
@@ -66,6 +68,7 @@ export async function listWatchHistoryForProfile(profileId: string): Promise<DbW
     durationSeconds: Number(row.durationSeconds ?? 0),
     lastStreamTargetType: row.lastStreamTargetType ?? undefined,
     lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+    lastStreamId: row.lastStreamId ?? undefined,
     lastWatchedAt: Number(row.lastWatchedAt ?? 0),
   }));
 }
@@ -91,6 +94,7 @@ export async function listExportableWatchHistoryForProfile(
       durationSeconds: watchHistory.durationSeconds,
       lastStreamTargetType: watchHistory.lastStreamTargetType,
       lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+      lastStreamId: watchHistory.lastStreamId,
       lastWatchedAt: watchHistory.lastWatchedAt,
     })
     .from(watchHistory)
@@ -114,6 +118,7 @@ export async function listExportableWatchHistoryForProfile(
     durationSeconds: Number(row.durationSeconds ?? 0),
     lastStreamTargetType: row.lastStreamTargetType ?? undefined,
     lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+    lastStreamId: row.lastStreamId ?? undefined,
     lastWatchedAt: Number(row.lastWatchedAt ?? 0),
   }));
 }
@@ -139,6 +144,7 @@ export async function listWatchHistoryForMeta(
       durationSeconds: watchHistory.durationSeconds,
       lastStreamTargetType: watchHistory.lastStreamTargetType,
       lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+      lastStreamId: watchHistory.lastStreamId,
       lastWatchedAt: watchHistory.lastWatchedAt,
     })
     .from(watchHistory)
@@ -160,6 +166,7 @@ export async function listWatchHistoryForMeta(
     durationSeconds: Number(row.durationSeconds ?? 0),
     lastStreamTargetType: row.lastStreamTargetType ?? undefined,
     lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+    lastStreamId: row.lastStreamId ?? undefined,
     lastWatchedAt: Number(row.lastWatchedAt ?? 0),
   }));
 }
@@ -243,6 +250,7 @@ export async function setLastStreamTarget(params: {
   videoId?: string;
   type: ContentType;
   target: { type: StreamTargetType; value: string };
+  streamId?: string;
 }): Promise<void> {
   await initializeDatabase();
 
@@ -257,6 +265,7 @@ export async function setLastStreamTarget(params: {
       durationSeconds: 0,
       lastStreamTargetType: params.target.type,
       lastStreamTargetValue: params.target.value,
+      lastStreamId: params.streamId ?? null,
       status: 'watching',
       lastWatchedAt: now,
       createdAt: now,
@@ -267,6 +276,7 @@ export async function setLastStreamTarget(params: {
       set: {
         lastStreamTargetType: params.target.type,
         lastStreamTargetValue: params.target.value,
+        lastStreamId: params.streamId ?? null,
         updatedAt: now,
       },
     });
@@ -400,6 +410,7 @@ export async function getWatchHistoryItem(
       durationSeconds: watchHistory.durationSeconds,
       lastStreamTargetType: watchHistory.lastStreamTargetType,
       lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+      lastStreamId: watchHistory.lastStreamId,
       lastWatchedAt: watchHistory.lastWatchedAt,
     })
     .from(watchHistory)
@@ -424,6 +435,7 @@ export async function getWatchHistoryItem(
     durationSeconds: Number(row[0].durationSeconds ?? 0),
     lastStreamTargetType: row[0].lastStreamTargetType ?? undefined,
     lastStreamTargetValue: row[0].lastStreamTargetValue ?? undefined,
+    lastStreamId: row[0].lastStreamId ?? undefined,
     lastWatchedAt: Number(row[0].lastWatchedAt ?? 0),
   };
 }
@@ -432,7 +444,7 @@ export async function getLastStreamTarget(
   profileId: string,
   metaId: string,
   videoId?: string
-): Promise<{ type: StreamTargetType; value: string } | undefined> {
+): Promise<{ type: StreamTargetType; value: string; streamId?: string } | undefined> {
   await initializeDatabase();
 
   // Fetch both video-level and meta-level rows, preferring the exact video match.
@@ -441,6 +453,7 @@ export async function getLastStreamTarget(
     .select({
       lastStreamTargetType: watchHistory.lastStreamTargetType,
       lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+      lastStreamId: watchHistory.lastStreamId,
     })
     .from(watchHistory)
     .where(
@@ -463,6 +476,7 @@ export async function getLastStreamTarget(
   return {
     type: rows[0].lastStreamTargetType!,
     value: rows[0].lastStreamTargetValue!,
+    streamId: rows[0].lastStreamId ?? undefined,
   };
 }
 
@@ -484,6 +498,7 @@ export async function listWatchedMetaSummaries(
         durationSeconds: watchHistory.durationSeconds,
         lastStreamTargetType: watchHistory.lastStreamTargetType,
         lastStreamTargetValue: watchHistory.lastStreamTargetValue,
+        lastStreamId: watchHistory.lastStreamId,
         lastWatchedAt: watchHistory.lastWatchedAt,
         rank: sql<number>`row_number() over (
           partition by ${watchHistory.metaId}
@@ -506,6 +521,7 @@ export async function listWatchedMetaSummaries(
       durationSeconds: rankedWatchHistory.durationSeconds,
       lastStreamTargetType: rankedWatchHistory.lastStreamTargetType,
       lastStreamTargetValue: rankedWatchHistory.lastStreamTargetValue,
+      lastStreamId: rankedWatchHistory.lastStreamId,
       lastWatchedAt: rankedWatchHistory.lastWatchedAt,
       metaName: metaCache.name,
       poster: metaCache.poster,
@@ -541,6 +557,7 @@ export async function listWatchedMetaSummaries(
           durationSeconds,
           lastStreamTargetType: row.lastStreamTargetType ?? undefined,
           lastStreamTargetValue: row.lastStreamTargetValue ?? undefined,
+          lastStreamId: row.lastStreamId ?? undefined,
           lastWatchedAt: Number(row.lastWatchedAt ?? 0),
         }
       : undefined;

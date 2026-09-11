@@ -43,6 +43,13 @@
       "when": 1787856392537,
       "tag": "0006_brief_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789158684439,
+      "tag": "0007_great_guardsmen",
+      "breakpoints": true
     }
   ]
 }

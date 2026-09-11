@@ -16,6 +16,8 @@
   "ends_at": "Termina às {{time}}",
   "audio": "Áudio",
   "select_audio_track": "Selecionar Faixa de Áudio",
+  "streams": "Streams",
+  "episodes": "Episódios",
   "play": "Reproduzir",
   "pause": "Pausar",
   "skip": "Saltar",

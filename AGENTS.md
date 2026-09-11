@@ -38,6 +38,7 @@ EXPO_TV=1 pnpm start                # Enable TV mode
 
 - **NEVER boot, launch, build for, or drive iOS simulators / Android emulators on your own** (this includes `pnpm ios`, `pnpm android`, `xcrun simctl`, `adb`, etc.).
 - If a simulator/emulator run is needed, stop and ask the user first — they will run it or explicitly approve.
+- **NEVER use Expo web preview (`expo start --web`) for verification**; this TV/mobile app does not support the web platform.
 
 > CI order: `expo install --check` → `pnpm tsc` → `pnpm lint` → `pnpm test`
 
@@ -106,6 +107,7 @@ Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`).
   // Avoid
   const groupIdBad = typeof getItemGroupId === 'function' ? getItemGroupId(item) : item.groupId;
   ```
+- Prefer file-local helper functions with early returns over nested ternary operators.
 
 ## 5. Styling (Shopify Restyle)
 

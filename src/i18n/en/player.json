@@ -16,6 +16,8 @@
   "ends_at": "Ends at {{time}}",
   "audio": "Audio",
   "select_audio_track": "Select Audio Track",
+  "streams": "Streams",
+  "episodes": "Episodes",
   "play": "Play",
   "pause": "Pause",
   "skip": "Skip",

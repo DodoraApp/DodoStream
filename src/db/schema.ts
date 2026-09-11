@@ -48,6 +48,7 @@ export const watchHistory = sqliteTable(
     durationSeconds: real('duration_seconds').notNull().default(0),
     lastStreamTargetType: streamTargetTypeColumn('last_stream_target_type'),
     lastStreamTargetValue: text('last_stream_target_value'),
+    lastStreamId: text('last_stream_id'),
     status: watchStatusColumn('status').notNull().default('watching'),
     source: text('source', { enum: ['internal', 'simkl', 'trakt'] as const })
       .notNull()

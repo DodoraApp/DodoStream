@@ -10,7 +10,9 @@ import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
 import type { ContentType, Stream } from '@/types/stremio';
 import { IS_E2E } from '@/utils/e2e';
+import { getStreamStableId } from '@/utils/stream';
 
+export type StreamTarget = { type: StreamTargetType; value: string; streamId?: string };
 type StreamsBaseParams = {
   metaId: string;
   videoId: string;
@@ -18,8 +20,6 @@ type StreamsBaseParams = {
 };
 
 type StreamsExtraParams = Record<string, string | undefined>;
-
-export type StreamTarget = { type: StreamTargetType; value: string };
 
 type OpenStreamTargetArgs = {
   metaId: string;
@@ -34,6 +34,7 @@ type OpenStreamTargetArgs = {
   fromAutoPlay?: boolean;
   onExternalOpened?: () => void;
   onExternalOpenFailed?: () => void;
+  streamId?: string;
 };
 
 type OpenStreamFromStreamArgs = {
@@ -111,6 +112,7 @@ export const useMediaNavigation = () => {
       fromAutoPlay,
       onExternalOpened,
       onExternalOpenFailed,
+      streamId,
     }: OpenStreamTargetArgs): Promise<boolean> => {
       if (target.type === 'url') {
         const nav = navigation === 'replace' ? router.replace : router.push;
@@ -126,6 +128,7 @@ export const useMediaNavigation = () => {
             backgroundImage,
             logoImage,
             fromAutoPlay: fromAutoPlay ? '1' : undefined,
+            streamId: streamId ?? target.streamId,
           },
         });
         return true;
@@ -142,7 +145,8 @@ export const useMediaNavigation = () => {
             metaId,
             videoId,
             type,
-            target,
+            target: { type: target.type, value: target.value },
+            ...((streamId ?? target.streamId) ? { streamId: streamId ?? target.streamId } : {}),
           });
         }
         onExternalOpened?.();
@@ -187,6 +191,7 @@ export const useMediaNavigation = () => {
           target: { type: 'url', value: stream.url },
           navigation,
           fromAutoPlay,
+          streamId: getStreamStableId(stream),
         });
       }
 
@@ -194,9 +199,10 @@ export const useMediaNavigation = () => {
         return openStreamTarget({
           metaId,
           videoId,
+          target: { type: 'external', value: stream.externalUrl },
           type,
           title,
-          target: { type: 'external', value: stream.externalUrl },
+          streamId: getStreamStableId(stream),
           navigation,
           onExternalOpened,
           onExternalOpenFailed,
@@ -207,9 +213,10 @@ export const useMediaNavigation = () => {
         return openStreamTarget({
           metaId,
           videoId,
+          target: { type: 'yt', value: stream.ytId },
           type,
           title,
-          target: { type: 'yt', value: stream.ytId },
+          streamId: getStreamStableId(stream),
           navigation,
           onExternalOpened,
           onExternalOpenFailed,
