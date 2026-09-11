@@ -48,7 +48,6 @@ export const ProfileSwitcherCard = forwardRef<any, ProfileSwitcherCardProps>(({ 
           </Text>
         </Box>
       </Box>
-
       {canSwitch && (
         <Button
           ref={ref}
@@ -56,6 +55,7 @@ export const ProfileSwitcherCard = forwardRef<any, ProfileSwitcherCardProps>(({ 
           variant="primary"
           icon="swap-horizontal"
           onPress={handleSwitchProfile}
+          hasTVPreferredFocus
         />
       )}
     </Box>
