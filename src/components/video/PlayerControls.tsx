@@ -378,10 +378,10 @@ const PlaybackControls = memo<PlaybackControlsProps>(
           onPress={onSkipBackward}
           icon="rotate-left"
           iconComponent={MaterialCommunityIcons}
-          disabled={showLoadingIndicator}
           label={`-${SKIP_BACKWARD_SECONDS}s`}
           onFocusChange={onFocusChange}
         />
+
         <ControlButton
           onPress={onPlayPause}
           icon={paused ? 'play' : 'pause'}
@@ -396,7 +396,6 @@ const PlaybackControls = memo<PlaybackControlsProps>(
           onPress={onSkipForward}
           icon="rotate-right"
           iconComponent={MaterialCommunityIcons}
-          disabled={showLoadingIndicator}
           label={`+${SKIP_FORWARD_SECONDS}s`}
           onFocusChange={onFocusChange}
         />
@@ -876,6 +875,8 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
         <Pressable
           testID="player-controls-overlay"
           style={StyleSheet.absoluteFill}
+          focusable={false}
+          isTVSelectable={false}
           onPress={toggleControls}>
           <Box flex={1} justifyContent="space-between">
             <TopBar

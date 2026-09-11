@@ -213,17 +213,24 @@ describe('useControlsVisibility', () => {
       expect(result.current.visible).toBe(false);
     });
 
-    it('shows controls when hidden', () => {
+    it('uses the latest visibility when a toggle callback outlives a render', () => {
       const options = createDefaultOptions();
       const { result } = renderHook(() => useControlsVisibility(options));
 
-      // Already hidden by default
+      act(() => {
+        result.current.showControls();
+      });
+      const toggleWhileVisible = result.current.toggleControls;
+
+      act(() => {
+        result.current.hideControls();
+      });
       expect(result.current.visible).toBe(false);
 
-      // Toggle to show
       act(() => {
-        result.current.toggleControls();
+        toggleWhileVisible();
       });
+
       expect(result.current.visible).toBe(true);
     });
   });

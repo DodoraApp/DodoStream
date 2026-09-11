@@ -47,15 +47,6 @@ jest.mock('@/hooks/useControlsVisibility', () => ({
   }),
 }));
 
-jest.mock('@/components/video/controls/ControlButton', () => ({
-  ControlButton: (props: any) =>
-    mockReact.createElement(
-      mockView,
-      props,
-      props.label ? mockReact.createElement('Text', null, props.label) : null
-    ),
-}));
-
 jest.mock('@/store/profile.store', () => ({
   useProfileStore: jest.fn((selector: any) => selector({ activeProfileId: 'p1' })),
 }));

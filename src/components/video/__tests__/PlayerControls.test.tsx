@@ -6,6 +6,7 @@ import { act, fireEvent } from '@testing-library/react-native';
 
 import type { EpisodeListProps } from '@/components/media/EpisodeList';
 import type { StreamListProps } from '@/components/media/StreamList';
+import { SKIP_FORWARD_SECONDS } from '@/constants/playback';
 import { renderWithProviders } from '@/utils/test-utils';
 
 import { PlayerControls } from '../PlayerControls';
@@ -112,9 +113,40 @@ describe('PlayerControls', () => {
     expect(queryByText('My Title')).toBeNull();
   });
 
+  it('keeps controls visible after skip-forward', () => {
+    const onSkipForward = jest.fn();
+    const playbackProps = {
+      paused: true,
+      currentTime: 0,
+      duration: 100,
+      showLoadingIndicator: false,
+      title: 'My Title',
+      audioTracks: [],
+      textTracks: [],
+      onPlayPause: () => {},
+      onSeek: () => {},
+      onSkipBackward: () => {},
+      onSkipForward,
+      onSelectAudioTrack: () => {},
+      onSelectTextTrack: () => {},
+      subtitleDelay: 0,
+      onSubtitleDelayChange: () => {},
+      fitMode: 'contain' as const,
+      onToggleFitMode: () => {},
+    } satisfies React.ComponentProps<typeof PlayerControls>;
+    const { getByText, getByTestId } = renderWithProviders(<PlayerControls {...playbackProps} />);
+
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+    fireEvent.press(getByText(`+${SKIP_FORWARD_SECONDS}s`));
+
+    expect(onSkipForward).toHaveBeenCalledTimes(1);
+    expect(getByText('My Title')).toBeTruthy();
+    expect(getByTestId('player-controls-overlay').props.focusable).toBe(false);
+  });
+
   it('shows the loading indicator while controls are visible', () => {
     // Arrange
-    const { getByTestId } = renderWithProviders(
+    const { getByText, getByTestId } = renderWithProviders(
       <PlayerControls
         paused={false}
         currentTime={0}
@@ -139,8 +171,8 @@ describe('PlayerControls', () => {
     // Act
     fireEvent.press(getByTestId('player-controls-invisible-area'));
 
-    // Assert
     expect(getByTestId('player-loading-indicator')).toBeTruthy();
+    expect(getByText(`+${SKIP_FORWARD_SECONDS}s`).parent?.props.disabled).toBeFalsy();
   });
 
   it('displays subtitle items with correct labels', () => {
