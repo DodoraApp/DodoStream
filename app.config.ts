@@ -49,6 +49,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           },
         },
       ],
+      'expo-asset',
+      'expo-image',
       'expo-system-ui',
       '@react-native-vector-icons/ionicons',
       '@react-native-vector-icons/material-design-icons',
