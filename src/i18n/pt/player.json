@@ -1,6 +1,11 @@
 {
   "skip_intro": "Saltar Introdução",
-  "stretch": "Esticar",
+  "skip_credits": "Saltar Créditos",
+  "chapter_intro": "Introdução",
+  "chapter_credits": "Créditos",
+  "chapter_recap": "Recapitulação",
+  "chapter_preview": "Pré-visualização",
+  "chapter_unknown": "Capítulo",
   "cover": "Cobrir",
   "contain": "Conter",
   "subtitles": "Legendas",

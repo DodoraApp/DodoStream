@@ -2,7 +2,7 @@ import * as mockReact from 'react';
 import React from 'react';
 import { View as mockView } from 'react-native';
 
-import { act, fireEvent } from '@testing-library/react-native';
+import { act, fireEvent, within } from '@testing-library/react-native';
 
 import type { EpisodeListProps } from '@/components/media/EpisodeList';
 import type { StreamListProps } from '@/components/media/StreamList';
@@ -267,6 +267,44 @@ describe('PlayerControls basic interactions', () => {
     expect(getByText(/Video EN \| English/)).toBeTruthy();
     expect(getByText(/Video ES \| Spanish/)).toBeTruthy();
   });
+  it('shows and handles a generic skip credits button', () => {
+    const onSkipChapter = jest.fn();
+    const { getByTestId, getByText } = renderWithProviders(
+      <PlayerControls
+        paused={true}
+        currentTime={90}
+        duration={100}
+        showLoadingIndicator={false}
+        audioTracks={[]}
+        textTracks={[]}
+        skipTargets={[{ type: 'CREDITS', startTime: 80, endTime: 100 }]}
+        onSkipChapter={onSkipChapter}
+        mediaType="movie"
+        metaId="test-meta-id"
+        onPlayPause={() => {}}
+        onSeek={() => {}}
+        onSkipBackward={() => {}}
+        onSkipForward={() => {}}
+        onSelectAudioTrack={() => {}}
+        onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
+        onStreamSelect={() => {}}
+        onEpisodeSelect={() => {}}
+      />
+    );
+
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+    fireEvent.press(getByText('skip_credits'));
+
+    expect(onSkipChapter).toHaveBeenCalledWith({
+      type: 'CREDITS',
+      startTime: 80,
+      endTime: 100,
+    });
+  });
 });
 
 describe('PlayerControls episode selection', () => {
@@ -515,5 +553,59 @@ describe('PlayerControls stream selection', () => {
 
     expect(onStreamSelect).toHaveBeenCalledWith(externalStream);
     expect(onPlayPause).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('PlayerControls chapters', () => {
+  const renderWithChapters = (currentTime: number) =>
+    renderWithProviders(
+      <PlayerControls
+        paused={true}
+        currentTime={currentTime}
+        duration={100}
+        showLoadingIndicator={false}
+        audioTracks={[]}
+        textTracks={[]}
+        chapters={
+          [
+            { startTime: 0, endTime: 20, type: 'INTRO' },
+            { title: 'Main', startTime: 20, endTime: 100 },
+          ] as any
+        }
+        mediaType="movie"
+        metaId="test-meta-id"
+        onPlayPause={() => {}}
+        onSeek={() => {}}
+        onSkipBackward={() => {}}
+        onSkipForward={() => {}}
+        onSelectAudioTrack={() => {}}
+        onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
+        onStreamSelect={() => {}}
+        onEpisodeSelect={() => {}}
+      />
+    );
+
+  it('renders every chapter label above its segment and marks the active one', () => {
+    const { getByTestId, getByText } = renderWithChapters(5);
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+
+    expect(getByTestId('chapter-label-0')).toBeTruthy();
+    expect(getByTestId('chapter-label-1')).toBeTruthy();
+    expect(within(getByTestId('chapter-label-0')).getByTestId('chapter-label-active')).toBeTruthy();
+    expect(within(getByTestId('chapter-label-1')).queryByTestId('chapter-label-active')).toBeNull();
+    expect(getByText('chapter_intro')).toBeTruthy();
+    expect(getByText('Main')).toBeTruthy();
+  });
+
+  it('moves the active chapter marker as playback advances', () => {
+    const { getByTestId } = renderWithChapters(50);
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+
+    expect(within(getByTestId('chapter-label-1')).getByTestId('chapter-label-active')).toBeTruthy();
+    expect(within(getByTestId('chapter-label-0')).queryByTestId('chapter-label-active')).toBeNull();
   });
 });
