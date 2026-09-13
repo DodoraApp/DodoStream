@@ -283,6 +283,7 @@ describe('PlayerControls', () => {
 
   it('closes the streams overlay without redirecting when the current stream is selected', () => {
     const currentStreamUrl = 'https://example.com/current.m3u8';
+    const currentStreamId = `unknown::${currentStreamUrl}`;
     const onStreamSelect = jest.fn();
     const { getByText, getByTestId, queryByTestId } = renderWithProviders(
       <PlayerControls
@@ -296,7 +297,7 @@ describe('PlayerControls', () => {
         mediaType="movie"
         metaId="test-meta-id"
         currentStreamUrl={currentStreamUrl}
-        streamId="active-stream"
+        streamId={currentStreamId}
         onPlayPause={() => {}}
         onSeek={() => {}}
         onSkipBackward={() => {}}
@@ -315,14 +316,17 @@ describe('PlayerControls', () => {
     fireEvent.press(getByTestId('player-controls-invisible-area'));
     fireEvent.press(getByText('streams'));
 
-    expect(getByTestId('stream-list-mock').props.selectedStreamId).toBe('active-stream');
+    expect(getByTestId('stream-list-mock').props.selectedStreamId).toBe(currentStreamId);
     expect(getByTestId('stream-list-mock').props.selectedStreamUrl).toBe(currentStreamUrl);
 
     expect(getByTestId('player-menu-overlay').props.autoFocus).toBe(false);
     expect(getByTestId('stream-list-mock').props.autoFocus).toBe(false);
 
     act(() => {
-      getByTestId('stream-list-mock').props.onSelectOverride({ url: currentStreamUrl });
+      getByTestId('stream-list-mock').props.onSelectOverride({
+        addonId: 'unknown',
+        url: currentStreamUrl,
+      });
     });
 
     expect(onStreamSelect).not.toHaveBeenCalled();
@@ -371,5 +375,50 @@ describe('PlayerControls', () => {
     expect(onStreamSelect).toHaveBeenCalledWith(nextStream);
     expect(onPlayPause).toHaveBeenCalledTimes(1);
     expect(queryByTestId('stream-list-mock')).toBeNull();
+  });
+
+  it.each([
+    ['an external URL', { externalUrl: 'https://external.example/movie' }],
+    ['a YouTube stream', { ytId: 'youtube-video-id' }],
+  ])('does not resume playback when selecting %s', (_label, externalStream) => {
+    const onPlayPause = jest.fn();
+    const onStreamSelect = jest.fn();
+    const { getByText, getByTestId } = renderWithProviders(
+      <PlayerControls
+        paused={false}
+        currentTime={0}
+        duration={100}
+        showLoadingIndicator={false}
+        title="My Title"
+        audioTracks={[]}
+        textTracks={[]}
+        mediaType="movie"
+        metaId="test-meta-id"
+        currentStreamUrl="https://example.com/current.m3u8"
+        onPlayPause={onPlayPause}
+        onSeek={() => {}}
+        onSkipBackward={() => {}}
+        onSkipForward={() => {}}
+        onSelectAudioTrack={() => {}}
+        onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
+        onStreamSelect={onStreamSelect}
+        onEpisodeSelect={() => {}}
+      />
+    );
+
+    fireEvent.press(getByTestId('player-controls-invisible-area'));
+    fireEvent.press(getByText('streams'));
+    expect(onPlayPause).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      getByTestId('stream-list-mock').props.onSelectOverride(externalStream);
+    });
+
+    expect(onStreamSelect).toHaveBeenCalledWith(externalStream);
+    expect(onPlayPause).toHaveBeenCalledTimes(1);
   });
 });

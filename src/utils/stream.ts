@@ -36,16 +36,22 @@ export const getStreamStableId = (stream: Stream): string => {
   return `${addonId}::${core}`;
 };
 
-/** Matches the active stream by stable ID, with URL fallback for autoplay sessions. */
+/** Matches the active stream by stable ID, with URL fallback only when no ID is available. */
 export const isStreamSelected = (
   stream: Stream,
   selectedStreamId?: string,
   selectedStreamUrl?: string
-): boolean =>
-  selectedStreamId === getStreamStableId(stream) ||
-  (!!selectedStreamUrl &&
+): boolean => {
+  if (selectedStreamId !== undefined) {
+    return selectedStreamId === getStreamStableId(stream);
+  }
+
+  return (
+    !!selectedStreamUrl &&
     !!stream.url &&
-    normalizeStreamUrl(stream.url) === normalizeStreamUrl(selectedStreamUrl));
+    normalizeStreamUrl(stream.url) === normalizeStreamUrl(selectedStreamUrl)
+  );
+};
 
 export const getVideoSessionId = (
   source: string,
