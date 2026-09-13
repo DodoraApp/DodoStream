@@ -21,7 +21,8 @@ jest.mock('@/components/video/controls/ControlButton', () => ({
 }));
 
 jest.mock('@/components/basic/LoadingIndicator', () => ({
-  LoadingIndicator: () => mockReact.createElement(mockView, { testID: 'player-loading-indicator' }),
+  LoadingIndicator: (props: object) =>
+    mockReact.createElement(mockView, { ...props, testID: 'player-loading-indicator' }),
 }));
 
 jest.mock('@/store/profile.store', () => ({
@@ -180,7 +181,20 @@ describe('PlayerControls basic interactions', () => {
     // Act
     fireEvent.press(getByTestId('player-controls-invisible-area'));
 
-    expect(getByTestId('player-loading-indicator')).toBeTruthy();
+    const loadingOverlay = getByTestId('player-loading-indicator-overlay');
+    expect(loadingOverlay.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+        }),
+        expect.objectContaining({ justifyContent: 'center', alignItems: 'center' }),
+      ])
+    );
+    expect(getByTestId('player-loading-indicator').props.noFlex).toBe(true);
     expect(getByText(`+${SKIP_FORWARD_SECONDS}s`).parent?.props.disabled).toBeFalsy();
     expect(getByText('pause').parent?.props.disabled).toBeFalsy();
   });
