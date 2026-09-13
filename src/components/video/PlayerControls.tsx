@@ -890,12 +890,6 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
               duration={duration}
             />
 
-            {showLoadingIndicator && (
-              <Box width="100%" alignItems="center" justifyContent="center">
-                <LoadingIndicator />
-              </Box>
-            )}
-
             {/* Center area - contains Skip Intro button */}
             <Box flex={1}>
               {showSkipIntroButton && (
@@ -907,6 +901,16 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
               )}
             </Box>
           </Box>
+          {showLoadingIndicator && (
+            <Box
+              testID="player-loading-indicator-overlay"
+              pointerEvents="none"
+              style={StyleSheet.absoluteFill}
+              justifyContent="center"
+              alignItems="center">
+              <LoadingIndicator noFlex />
+            </Box>
+          )}
         </Pressable>
 
         {/* Bottom Controls */}
