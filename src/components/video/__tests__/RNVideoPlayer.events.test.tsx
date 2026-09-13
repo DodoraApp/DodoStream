@@ -39,7 +39,15 @@ jest.mock('@/store/playback.store', () => ({
   usePlaybackStore: jest.fn((selector: any) => selector(mockPlaybackState)),
 }));
 
-jest.mock('@/utils/debug', () => ({ createDebugLogger: () => jest.fn() }));
+jest.mock('@/utils/debug', () => {
+  const debug = jest.fn();
+  (globalThis as typeof globalThis & { __rnVideoPlayerDebug: jest.Mock }).__rnVideoPlayerDebug =
+    debug;
+  return { createDebugLogger: () => debug };
+});
+
+const getMockDebug = () =>
+  (globalThis as typeof globalThis & { __rnVideoPlayerDebug: jest.Mock }).__rnVideoPlayerDebug;
 
 const getNativeCallback = <T extends (...args: any[]) => any>(name: string): T => {
   const callback = mockNativeVideoProps?.[name];
@@ -51,6 +59,7 @@ describe('RNVideoPlayer native adapter', () => {
   beforeEach(() => {
     mockNativeVideoProps = undefined;
     mockNativeSeek.mockReset();
+    getMockDebug().mockReset();
     mockPlaybackState = {
       byProfile: {
         'profile-1': {
@@ -100,6 +109,28 @@ describe('RNVideoPlayer native adapter', () => {
     expect(onBuffer).toHaveBeenNthCalledWith(2, false);
     expect(onEnd).toHaveBeenCalledTimes(1);
     expect(onStatistics).toHaveBeenCalledWith({ bitrate: 4_000_000, droppedFrames: 2 });
+  });
+
+  it('forwards chapter metadata emitted by react-native-video', () => {
+    const chapters = [
+      { title: 'Intro', startTime: 0, endTime: 62.5, type: 'INTRO' },
+      { title: 'Main', startTime: 62.5, endTime: 120 },
+    ];
+    const onChapters = jest.fn();
+    render(
+      <RNVideoPlayer
+        source="https://cdn.example/video.m3u8"
+        paused={false}
+        onChapters={onChapters}
+      />
+    );
+
+    act(() => {
+      getNativeCallback('onChapters')({ chapters });
+    });
+
+    expect(getMockDebug()).toHaveBeenCalledWith('chapters', { count: chapters.length, chapters });
+    expect(onChapters).toHaveBeenCalledWith(chapters);
   });
 
   it('maps native tracks to stable app tracks and preserves the native subtitle index', () => {

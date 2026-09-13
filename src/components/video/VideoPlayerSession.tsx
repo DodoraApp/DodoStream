@@ -35,7 +35,9 @@ import {
   PLAYER_CAPABILITIES,
   PlayerRef,
   PlayerType,
+  SkipTarget,
   TextTrack,
+  VideoChapter,
   VideoFitMode,
 } from '@/types/player';
 import type { ContentType, MetaVideo, Stream } from '@/types/stremio';
@@ -58,6 +60,7 @@ import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
 import { VLCPlayer } from './VLCPlayer';
 
 const debug = createDebugLogger('VideoPlayer');
+const EMPTY_CHAPTERS: VideoChapter[] = [];
 
 export interface VideoPlayerProps {
   source: string;
@@ -165,7 +168,12 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     });
   }, [mediaType, metaId, source, streamId, videoId]);
 
-  const { preferredAudioLanguages, showVideoStatistics, skipIntroEnabled } = usePlaybackStore(
+  const {
+    preferredAudioLanguages,
+    showVideoStatistics,
+    skipIntroEnabled,
+    skipTimestampProvidersEnabled,
+  } = usePlaybackStore(
     useShallow((state) => ({
       preferredAudioLanguages: activeProfileId
         ? state.byProfile[activeProfileId]?.preferredAudioLanguages
@@ -178,6 +186,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         ? (state.byProfile[activeProfileId]?.skipIntroEnabled ??
           DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled)
         : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
+      skipTimestampProvidersEnabled: activeProfileId
+        ? (state.byProfile[activeProfileId]?.skipTimestampProvidersEnabled ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipTimestampProvidersEnabled)
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipTimestampProvidersEnabled,
     }))
   );
 
@@ -239,6 +251,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
   const [selectedTextTrack, setSelectedTextTrack] = useState<TextTrack>();
+  const [chapterState, setChapterState] = useState<{
+    sessionKey: string;
+    chapters: VideoChapter[];
+  }>({ sessionKey: '', chapters: [] });
   const [videoStatistics, setVideoStatistics] = useState<
     Record<string, string | number | object | undefined>
   >({});
@@ -248,10 +264,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     metaId,
     videoId
   );
-
-  // Fetch intro data from IntroDB (only for series)
+  // Fetch external intro timestamps only when timestamp providers are enabled.
   const { data: introData } = useIntro(metaId, videoId, mediaType, {
-    enabled: skipIntroEnabled,
+    enabled: skipIntroEnabled && skipTimestampProvidersEnabled,
   });
 
   // Episodes and Up Next share one metadata query. Movies have no episode queue,
@@ -269,7 +284,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const didPersistLastTargetRef = useRef(false);
   const subtitlePreferenceAppliedRef = useRef(false);
 
-  // Keep intro controls hidden until the native player reports the resumed position.
+  // Keep skip chapter controls hidden until the native player reports the resumed position.
   // Native players can emit an initial 0-second progress event after onLoad.
   const [isResumePending, setIsResumePending] = useState(false);
   useEffect(() => {
@@ -352,7 +367,45 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [upNextDismissed, setUpNextDismissed] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [upNextVisible, setUpNextVisible] = useState(false);
-  const [introSkipped, setIntroSkipped] = useState(false);
+  const [skippedChapterState, setSkippedChapterState] = useState<{
+    sessionKey: string;
+    types: Partial<Record<SkipTarget['type'], boolean>>;
+  }>({ sessionKey: '', types: {} });
+  const chapters = chapterState.sessionKey === sessionKey ? chapterState.chapters : EMPTY_CHAPTERS;
+  const skippedChapterTypes =
+    skippedChapterState.sessionKey === sessionKey ? skippedChapterState.types : {};
+
+  const skipTargets = useMemo<SkipTarget[]>(() => {
+    if (!skipIntroEnabled) return [];
+
+    const introChapter = chapters.find((chapter) => String(chapter.type) === 'INTRO');
+    const creditsChapter = chapters.find((chapter) => String(chapter.type) === 'CREDITS');
+    const targets: SkipTarget[] = [];
+
+    if (introData && skipTimestampProvidersEnabled) {
+      targets.push({
+        type: 'INTRO' as SkipTarget['type'],
+        startTime: introData.start_ms / 1000,
+        endTime: introData.end_ms / 1000,
+      });
+    } else if (introChapter) {
+      targets.push({
+        type: introChapter.type as SkipTarget['type'],
+        startTime: introChapter.startTime,
+        endTime: introChapter.endTime,
+      });
+    }
+
+    if (creditsChapter) {
+      targets.push({
+        type: creditsChapter.type as SkipTarget['type'],
+        startTime: creditsChapter.startTime,
+        endTime: creditsChapter.endTime,
+      });
+    }
+
+    return targets;
+  }, [chapters, introData, skipIntroEnabled, skipTimestampProvidersEnabled]);
 
   const upNextVideoIdRef = useRef<string | undefined>(undefined);
   const [upNextResolved, setUpNextResolved] = useState<UpNextResolved | undefined>(undefined);
@@ -731,13 +784,24 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     handleSeek(newTime);
   }, [handleSeek]);
 
-  const handleSkipIntro = useCallback(() => {
-    if (!introData) return;
-    const introEndSec = introData.end_ms / 1000;
-    debug('skipIntro', { from: lastKnownTimeRef.current, to: introEndSec });
-    setIntroSkipped(true);
-    handleSeek(introEndSec);
-  }, [handleSeek, introData]);
+  const handleSkipChapter = useCallback(
+    (target: SkipTarget) => {
+      debug('skipChapter', {
+        type: String(target.type),
+        from: lastKnownTimeRef.current,
+        to: target.endTime,
+      });
+      setSkippedChapterState((previous) => ({
+        sessionKey,
+        types: {
+          ...(previous.sessionKey === sessionKey ? previous.types : {}),
+          [target.type]: true,
+        },
+      }));
+      handleSeek(target.endTime);
+    },
+    [handleSeek, sessionKey]
+  );
 
   const handleAudioTracksLoaded = useCallback(
     (tracks: AudioTrack[]) => {
@@ -759,6 +823,13 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       setVideoSubtitles(tracks);
     },
     [setVideoSubtitles]
+  );
+  const handleChapters = useCallback(
+    (nextChapters: VideoChapter[]) => {
+      debug('chapters', { count: nextChapters.length, chapters: nextChapters });
+      setChapterState({ sessionKey, chapters: nextChapters });
+    },
+    [sessionKey]
   );
 
   const handleSelectAudioTrack = useCallback(
@@ -844,6 +915,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onError={handleError}
         onAudioTracks={handleAudioTracksLoaded}
         onTextTracks={handleTextTracksLoaded}
+        onChapters={handleChapters}
         onStatistics={handleStatistics}
         selectedAudioTrack={selectedAudioTrack}
         selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
@@ -942,17 +1014,13 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         fitMode={fitMode}
         onToggleFitMode={handleCycleFitMode}
         onVisibilityChange={setControlsVisible}
-        introData={
-          skipIntroEnabled &&
-          introData &&
-          !showCustomLoadingScreen &&
-          !isVideoLoading &&
-          !isResumePending
-            ? introData
-            : undefined
+        chapters={chapters}
+        skipTargets={
+          showCustomLoadingScreen || isVideoLoading || isResumePending
+            ? []
+            : skipTargets.filter((target) => !skippedChapterTypes[target.type])
         }
-        introSkipped={introSkipped}
-        onSkipIntro={handleSkipIntro}
+        onSkipChapter={handleSkipChapter}
         suppressPreferredFocus={upNextVisible}
         mediaType={mediaType}
         metaId={metaId}

@@ -1,6 +1,11 @@
 {
   "skip_intro": "Intro überspringen",
-  "stretch": "Strecken",
+  "skip_credits": "Abspann überspringen",
+  "chapter_intro": "Intro",
+  "chapter_credits": "Abspann",
+  "chapter_recap": "Rückblick",
+  "chapter_preview": "Vorschau",
+  "chapter_unknown": "Kapitel",
   "cover": "Abdecken",
   "contain": "Einpassen",
   "subtitles": "Untertitel",

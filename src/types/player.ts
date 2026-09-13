@@ -1,3 +1,6 @@
+import type { ChapterType as NativeChapterType } from 'react-native-video';
+
+export type ChapterType = NativeChapterType;
 export type PlayerType = 'vlc' | 'exoplayer';
 
 export interface PlayerCapabilities {
@@ -13,6 +16,21 @@ export const PLAYER_CAPABILITIES = {
 export type TextTrackSource = 'video' | 'addon';
 
 export type VideoFitMode = 'contain' | 'cover' | 'stretch';
+
+export interface VideoChapter {
+  title?: string;
+  startTime: number;
+  endTime: number;
+  type?: ChapterType;
+}
+
+export type SkipChapterType = 'INTRO' | 'CREDITS';
+
+export interface SkipTarget {
+  type: SkipChapterType;
+  startTime: number;
+  endTime: number;
+}
 
 export interface PlayerRef {
   seekTo: (time: number, duration: number) => void;
@@ -98,6 +116,7 @@ export interface PlayerProps {
   onError?: (message: string) => void;
   onAudioTracks?: (tracks: AudioTrack[]) => void;
   onTextTracks?: (tracks: TextTrack[]) => void;
+  onChapters?: (chapters: VideoChapter[]) => void;
   onStatistics?: (statistics: Record<string, string | number | object | undefined>) => void;
   selectedAudioTrack?: AudioTrack;
   selectedTextTrack?: TextTrack;

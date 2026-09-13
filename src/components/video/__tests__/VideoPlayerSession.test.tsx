@@ -35,6 +35,7 @@ jest.mock('@/store/playback.store', () => ({
     tunneled: false,
     audioPassthrough: false,
     enableWorkarounds: true,
+    skipTimestampProvidersEnabled: true,
   },
   usePlaybackStore: jest.fn((selector: any) =>
     selector({
@@ -43,6 +44,7 @@ jest.mock('@/store/playback.store', () => ({
           preferredAudioLanguages: mockPreferredAudioLanguages,
           preferredSubtitleLanguages: undefined,
           skipIntroEnabled: true,
+          skipTimestampProvidersEnabled: true,
         },
       },
     })
@@ -78,8 +80,8 @@ let mockLastExoProps: any;
 type MockPlayerControlsProps = React.ComponentProps<typeof mockView> & {
   currentTime?: number;
   disableControls?: boolean;
+  skipTargets?: unknown[];
   showLoadingIndicator?: boolean;
-  introData?: unknown;
   onPlayPause?: () => void;
   onVisibilityChange?: (visible: boolean) => void;
   selectedAudioTrack?: { index: number };
@@ -296,15 +298,35 @@ describe('VideoPlayerSession', () => {
       mockLastExoProps.onLoad({ duration: 100 });
       mockLastExoProps.onProgress({ currentTime: 0 });
     });
-    expect(mockPlayerControlsProps?.introData).toBeUndefined();
+    expect(mockPlayerControlsProps?.skipTargets).toEqual([]);
     expect(mockPlayerControlsProps?.currentTime).toBe(30);
     expect(mockUpsertItem).toHaveBeenCalledTimes(1);
     expect(mockUpsertItem).toHaveBeenCalledWith(
       expect.objectContaining({ progressSeconds: 30, durationSeconds: 100 })
     );
     act(() => mockLastExoProps.onProgress({ currentTime: 30 }));
-    expect(mockPlayerControlsProps?.introData).toEqual(mockIntroData);
+    expect(mockPlayerControlsProps?.skipTargets).toEqual([
+      { type: 'INTRO', startTime: 0, endTime: 60 },
+    ]);
     expect(mockPlayerControlsProps?.currentTime).toBe(30);
+  });
+  it('prefers external intro timestamps and keeps chapter credits skippable', () => {
+    mockIntroData = { start_ms: 1_000, end_ms: 61_000 };
+    renderSession({ mediaType: 'series' as any, metaId: 'tt1234567', videoId: 'tt1234567:1:1' });
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+      mockLastExoProps.onChapters([
+        { title: 'Video Intro', startTime: 0, endTime: 10, type: 'INTRO' },
+        { title: 'Episode', startTime: 10, endTime: 90 },
+        { title: 'Video Credits', startTime: 90, endTime: 100, type: 'CREDITS' },
+      ]);
+    });
+
+    expect(mockPlayerControlsProps?.skipTargets).toEqual([
+      { type: 'INTRO', startTime: 1, endTime: 61 },
+      { type: 'CREDITS', startTime: 90, endTime: 100 },
+    ]);
   });
 
   it('persists last stream target on successful load (duration > 0) only once', () => {

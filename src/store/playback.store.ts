@@ -35,9 +35,9 @@ export interface ProfilePlaybackSettings {
   enableWorkarounds: boolean;
   matchFrameRate: boolean;
   enableVideoSoftwareDecoding: boolean;
-  // Skip intro feature (IntroDB)
+  // Skip chapter feature
   skipIntroEnabled: boolean;
-  // Previously from playback.store.ts
+  skipTimestampProvidersEnabled: boolean;
   subtitlePreference?: SubtitlePreference;
 }
 
@@ -52,6 +52,40 @@ export const DEFAULT_PROFILE_PLAYBACK_SETTINGS: ProfilePlaybackSettings = {
   matchFrameRate: false,
   enableVideoSoftwareDecoding: false,
   skipIntroEnabled: false,
+  skipTimestampProvidersEnabled: true,
+};
+
+/**
+ * Migrates persisted playback settings between storage versions.
+ *
+ * Version 2 introduces `skipTimestampProvidersEnabled`, which gates external
+ * timestamp providers such as IntroDB. It is derived from the previous
+ * `skipIntroEnabled` choice: users who opted into skip intro keep provider
+ * lookups, everyone else does not get external lookups enabled implicitly.
+ * `skipIntroEnabled` and all other profile settings pass through untouched.
+ */
+export const migratePersistedPlaybackState = (
+  persistedState: unknown,
+  version: number
+): PlaybackState => {
+  const state = persistedState as PlaybackState;
+
+  if (version >= 2) {
+    return state;
+  }
+
+  return {
+    ...state,
+    byProfile: Object.fromEntries(
+      Object.entries(state.byProfile ?? {}).map(([profileId, profile]) => [
+        profileId,
+        {
+          ...profile,
+          skipTimestampProvidersEnabled: profile.skipIntroEnabled === true,
+        },
+      ])
+    ),
+  };
 };
 
 interface PlaybackState {
@@ -78,6 +112,7 @@ interface PlaybackState {
   setMatchFrameRate: (matchFrameRate: boolean) => void;
   setEnableVideoSoftwareDecoding: (enableVideoSoftwareDecoding: boolean) => void;
   setSkipIntroEnabled: (skipIntroEnabled: boolean) => void;
+  setSkipTimestampProvidersEnabled: (enabled: boolean) => void;
   setSubtitlePreference: (preference: SubtitlePreference) => void;
   clearSubtitlePreference: () => void;
 
@@ -98,6 +133,7 @@ interface PlaybackState {
     enableVideoSoftwareDecoding: boolean
   ) => void;
   setSkipIntroEnabledForProfile: (profileId: string, skipIntroEnabled: boolean) => void;
+  setSkipTimestampProvidersEnabledForProfile: (profileId: string, enabled: boolean) => void;
   setSubtitlePreferenceForProfile: (profileId: string, preference: SubtitlePreference) => void;
   clearSubtitlePreferenceForProfile: (profileId: string) => void;
 }
@@ -197,6 +233,11 @@ export const usePlaybackStore = create<PlaybackState>()(
         const profileId = get().activeProfileId;
         if (!profileId) return;
         get().setSkipIntroEnabledForProfile(profileId, skipIntroEnabled);
+      },
+      setSkipTimestampProvidersEnabled: (enabled) => {
+        const profileId = get().activeProfileId;
+        if (!profileId) return;
+        get().setSkipTimestampProvidersEnabledForProfile(profileId, enabled);
       },
 
       setSubtitlePreference: (preference) => {
@@ -366,6 +407,17 @@ export const usePlaybackStore = create<PlaybackState>()(
           },
         }));
       },
+      setSkipTimestampProvidersEnabledForProfile: (profileId, enabled) => {
+        set((state) => ({
+          byProfile: {
+            ...state.byProfile,
+            [profileId]: {
+              ...(state.byProfile[profileId] ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS),
+              skipTimestampProvidersEnabled: enabled,
+            },
+          },
+        }));
+      },
 
       setSubtitlePreferenceForProfile: (profileId, subtitlePreference) => {
         set((state) => ({
@@ -394,7 +446,8 @@ export const usePlaybackStore = create<PlaybackState>()(
     {
       name: 'playback-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
+      migrate: migratePersistedPlaybackState,
     }
   )
 );

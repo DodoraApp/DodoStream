@@ -1,13 +1,22 @@
 /* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
 import React, { FC, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HWEvent, Platform, Pressable, StyleSheet, useTVEventHandler } from 'react-native';
+import {
+  findNodeHandle,
+  HWEvent,
+  Platform,
+  Pressable,
+  StyleSheet,
+  useTVEventHandler,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Slider from '@react-native-community/slider';
 import Ionicons from '@react-native-vector-icons/ionicons/static';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static';
 import { useTheme } from '@shopify/restyle';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useShallow } from 'zustand/react/shallow';
 
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
@@ -16,9 +25,10 @@ import { PickerModal } from '@/components/basic/PickerModal';
 import { EpisodeList } from '@/components/media/EpisodeList';
 import { StreamList } from '@/components/media/StreamList';
 import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
+import { ChapterLabels } from '@/components/video/ChapterLabel';
 import { ControlButton } from '@/components/video/controls/ControlButton';
 import { PlayerMenuOverlay } from '@/components/video/PlayerMenuOverlay';
-import { SkipIntroButton } from '@/components/video/SkipIntroButton';
+import { SkipChapterButton } from '@/components/video/SkipChapterButton';
 import { SubtitlePickerModal } from '@/components/video/SubtitlePickerModal';
 import { TVSeekBar } from '@/components/video/TVSeekBar';
 import { SKIP_BACKWARD_SECONDS, SKIP_FORWARD_SECONDS } from '@/constants/playback';
@@ -28,8 +38,7 @@ import { usePlayerSeek } from '@/hooks/usePlayerSeek';
 import { usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
 import { Box, Text, Theme } from '@/theme/theme';
-import type { IntroData } from '@/types/introdb';
-import { AudioTrack, TextTrack, VideoFitMode } from '@/types/player';
+import type { AudioTrack, SkipTarget, TextTrack, VideoChapter, VideoFitMode } from '@/types/player';
 import type { ContentType, MetaVideo, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { formatFitModeLabel, formatPlaybackTime, formatWallClock } from '@/utils/format';
@@ -38,6 +47,7 @@ import { getStreamStableId, isStreamSelected } from '@/utils/stream';
 import { getTrackBadge, sortAudioTracksByPreference } from '@/utils/tracks';
 const debug = createDebugLogger('PlayerControls');
 
+const EMPTY_CHAPTERS: VideoChapter[] = [];
 // ============================================================================
 // Types
 // ============================================================================
@@ -69,12 +79,12 @@ interface PlayerControlsProps {
   fitMode: VideoFitMode;
   onToggleFitMode: () => void;
   onVisibilityChange?: (visible: boolean) => void;
-  /** Intro data for skip intro feature */
-  introData?: IntroData;
-  /** Whether the intro was already skipped */
-  introSkipped?: boolean;
-  /** Called when skip intro button is pressed */
-  onSkipIntro?: () => void;
+  /** Chapter metadata reported by the video source. */
+  chapters?: VideoChapter[];
+  /** External timestamp/chapter targets available for skipping. */
+  skipTargets?: SkipTarget[];
+  /** Called when a skippable chapter is skipped. */
+  onSkipChapter?: (target: SkipTarget) => void;
   /** When true, the invisible overlay Pressable will not claim TV preferred focus */
   suppressPreferredFocus?: boolean;
   // Stream list and episode panel props
@@ -198,22 +208,34 @@ interface TimeDisplayProps {
   duration: number;
 }
 
-const TimeDisplay = memo<TimeDisplayProps>(({ displayedTime, duration }) => (
-  <Box flexDirection="row" alignItems="center" justifyContent="space-between" paddingHorizontal="s">
-    <Text variant="body" color="mainForeground">
-      {formatPlaybackTime(displayedTime)}
-    </Text>
-    <Text variant="body" color="mainForeground">
-      {formatPlaybackTime(duration)}
-    </Text>
-  </Box>
-));
+const TimeDisplay = memo<TimeDisplayProps>(({ displayedTime, duration }) => {
+  const theme = useTheme<Theme>();
+  return (
+    <Box
+      flexDirection="row"
+      alignItems="center"
+      justifyContent="space-between"
+      paddingHorizontal="s"
+      // Pull the time row into the seek bar's lower breathing room so it sits
+      // directly beneath the track instead of a full box-height below it.
+      style={{ marginTop: -theme.spacing.m }}>
+      <Text variant="body" color="mainForeground">
+        {formatPlaybackTime(displayedTime)}
+      </Text>
+      <Text variant="body" color="textSecondary">
+        {formatPlaybackTime(duration)}
+      </Text>
+    </Box>
+  );
+});
 TimeDisplay.displayName = 'TimeDisplay';
 
 interface SeekBarProps {
   sliderValue: number;
   sliderMaximumValue: number;
   effectiveDuration: number;
+  displayedTime: number;
+  chapters?: VideoChapter[];
   isSeekFocused: boolean;
   onSlidingStart: () => void;
   onValueChange: (value: number) => void;
@@ -225,13 +247,18 @@ interface SeekBarProps {
   onTVSeekComplete?: (value: number) => void;
   onTVValueChange?: (value: number) => void;
   hasTVPreferredFocus?: boolean;
+  /** Reports the native focusable seek-bar node for focus coordination. */
+  onSeekBarRef?: (node: View | null) => void;
+  /** Node handle that receives focus when the user presses up from the bar. */
+  nextFocusUpId?: number | null;
 }
-
 const SeekBar = memo<SeekBarProps>(
   ({
     sliderValue,
     sliderMaximumValue,
     effectiveDuration,
+    displayedTime,
+    chapters = [],
     isSeekFocused,
     onSlidingStart,
     onValueChange,
@@ -242,46 +269,51 @@ const SeekBar = memo<SeekBarProps>(
     onTVSeekComplete,
     onTVValueChange,
     hasTVPreferredFocus,
+    onSeekBarRef,
+    nextFocusUpId,
   }) => {
     const theme = useTheme<Theme>();
 
-    // Use custom TVSeekBar on TV platforms for better D-pad handling
-    if (Platform.isTV) {
-      return (
-        <TVSeekBar
-          value={sliderValue}
-          maximumValue={sliderMaximumValue}
-          disabled={effectiveDuration <= 0}
-          onValueChange={onTVValueChange}
-          onSeekStart={onTVSeekStart}
-          onSeekComplete={onTVSeekComplete}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          hasTVPreferredFocus={hasTVPreferredFocus}
-        />
-      );
-    }
-
     return (
-      <Slider
-        style={{ width: '100%', height: theme.sizes.inputHeight }}
-        minimumValue={0}
-        maximumValue={sliderMaximumValue}
-        value={sliderValue}
-        onSlidingStart={onSlidingStart}
-        onValueChange={onValueChange}
-        onSlidingComplete={onSlidingComplete}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        minimumTrackTintColor={
-          isSeekFocused ? theme.colors.focusBackgroundPrimary : theme.colors.primaryBackground
-        }
-        maximumTrackTintColor={theme.colors.secondaryBackground}
-        thumbTintColor={
-          isSeekFocused ? theme.colors.focusBackgroundPrimary : theme.colors.primaryBackground
-        }
-        disabled={effectiveDuration <= 0}
-      />
+      <Box>
+        {Platform.isTV ? (
+          <TVSeekBar
+            value={sliderValue}
+            maximumValue={sliderMaximumValue}
+            disabled={effectiveDuration <= 0}
+            chapters={chapters}
+            nextFocusUpId={nextFocusUpId}
+            onValueChange={onTVValueChange}
+            onSeekStart={onTVSeekStart}
+            onSeekComplete={onTVSeekComplete}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onRef={onSeekBarRef}
+            hasTVPreferredFocus={hasTVPreferredFocus}
+          />
+        ) : (
+          <Slider
+            style={{ width: '100%', height: theme.sizes.inputHeight }}
+            minimumValue={0}
+            maximumValue={sliderMaximumValue}
+            value={sliderValue}
+            onSlidingStart={onSlidingStart}
+            onValueChange={onValueChange}
+            onSlidingComplete={onSlidingComplete}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            minimumTrackTintColor={
+              isSeekFocused ? theme.colors.focusBackgroundPrimary : theme.colors.primaryBackground
+            }
+            maximumTrackTintColor={theme.colors.secondaryBackground}
+            thumbTintColor={
+              isSeekFocused ? theme.colors.focusBackgroundPrimary : theme.colors.primaryBackground
+            }
+            disabled={effectiveDuration <= 0}
+          />
+        )}
+        <TimeDisplay displayedTime={displayedTime} duration={effectiveDuration} />
+      </Box>
     );
   }
 );
@@ -499,9 +531,9 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     fitMode,
     onToggleFitMode,
     onVisibilityChange,
-    introData,
-    introSkipped,
-    onSkipIntro,
+    chapters = EMPTY_CHAPTERS,
+    skipTargets = [],
+    onSkipChapter,
     suppressPreferredFocus = false,
     mediaType,
     metaId,
@@ -566,6 +598,19 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       onSeek,
     });
 
+    // Node handles coordinating focus between the seek bar and the chapter labels:
+    // up from the bar targets the active chapter's label, down from any label
+    // returns to the bar.
+    const [seekBarNodeHandle, setSeekBarNodeHandle] = useState<number | null>(null);
+    const [activeChapterLabelHandle, setActiveChapterLabelHandle] = useState<number | null>(null);
+    const handleSeekBarNodeRef = useCallback((node: View | null) => {
+      const nodeHandle = node ? findNodeHandle(node) : null;
+      setSeekBarNodeHandle((previous) => (previous === nodeHandle ? previous : nodeHandle));
+    }, []);
+    const handleActiveChapterLabelHandle = useCallback((handle: number | null) => {
+      setActiveChapterLabelHandle((previous) => (previous === handle ? previous : handle));
+    }, []);
+
     const handleVisibilityChange = useCallback(
       (newVisible: boolean) => {
         onVisibilityChange?.(newVisible);
@@ -580,17 +625,8 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       onVisibilityChange: handleVisibilityChange,
     });
 
-    const showSkipIntroButton = introData && !introSkipped;
-
-    // Whether the Skip Intro button is actually rendered and visible right now.
-    // introData exists and current time is within the intro range.
-    // This is distinct from showSkipIntroButton, which is true whenever intro data is loaded
-    // (even when the current time is outside the intro range and SkipIntroButton returns null).
-    const isSkipIntroVisible = !!(
-      showSkipIntroButton &&
-      introData &&
-      currentTime >= introData.start_ms / 1000 &&
-      currentTime < introData.end_ms / 1000
+    const isSkipChapterVisible = skipTargets.some(
+      (target) => currentTime >= target.startTime && currentTime < target.endTime
     );
 
     // Refs so the TV event handler always reads fresh values without stale closures.
@@ -598,8 +634,8 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     // where the old callback still captures visible=true and ignores the select press.
     const visibleRef = useRef(visible);
     visibleRef.current = visible;
-    const isSkipIntroVisibleRef = useRef(isSkipIntroVisible);
-    isSkipIntroVisibleRef.current = isSkipIntroVisible;
+    const isSkipChapterVisibleRef = useRef(isSkipChapterVisible);
+    isSkipChapterVisibleRef.current = isSkipChapterVisible;
     const suppressPreferredFocusRef = useRef(suppressPreferredFocus);
     suppressPreferredFocusRef.current = suppressPreferredFocus;
 
@@ -614,8 +650,8 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           setFocusTarget('seek');
           showControls();
         } else if (event.eventType === 'select') {
-          // Don't intercept select if Skip Intro button is actually visible - let it handle the press
-          if (!isSkipIntroVisibleRef.current) {
+          // Don't intercept select if a skip chapter button is visible - let it handle the press
+          if (!isSkipChapterVisibleRef.current) {
             // Record the destination focus target only. When controls are hidden the
             // full-screen Pressable owns focus, so the native center/select press
             // already invokes its onPress={showControls}; revealing here as well
@@ -737,10 +773,51 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       onSkipEpisode();
     }, [onSkipEpisode, registerInteraction]);
 
-    const handleSkipIntro = useCallback(() => {
-      if (!onSkipIntro) return;
-      onSkipIntro();
-    }, [onSkipIntro]);
+    const handleChapterPress = useCallback(
+      (chapter: VideoChapter) => {
+        registerInteraction();
+        onSeek(chapter.startTime);
+      },
+      [onSeek, registerInteraction]
+    );
+
+    const handleChapterNavigate = useCallback(
+      (direction: 'left' | 'right', currentChapter: VideoChapter) => {
+        const chapterIndex = chapters?.findIndex(
+          (chapter) =>
+            chapter.startTime === currentChapter.startTime &&
+            chapter.endTime === currentChapter.endTime
+        );
+        if (chapterIndex === undefined || chapterIndex < 0) return;
+
+        const nextChapterIndex = chapterIndex + (direction === 'right' ? 1 : -1);
+        const nextChapter = chapters?.[nextChapterIndex];
+        if (!nextChapter) return;
+
+        registerInteraction();
+        onSeek(nextChapter.startTime);
+      },
+      [chapters, onSeek, registerInteraction]
+    );
+
+    const handleSkipChapter = useCallback(
+      (target: SkipTarget) => {
+        if (!onSkipChapter) return;
+        registerInteraction();
+        onSkipChapter(target);
+      },
+      [onSkipChapter, registerInteraction]
+    );
+
+    const skipChapterButtons = skipTargets.map((target) => (
+      <SkipChapterButton
+        key={`${target.type}-${target.startTime}-${target.endTime}`}
+        target={target}
+        currentTime={currentTime}
+        onSkip={() => handleSkipChapter(target)}
+        hasTVPreferredFocus={!suppressPreferredFocus}
+      />
+    ));
 
     const handleToggleAudioTracks = useCallback(() => {
       registerInteraction();
@@ -849,7 +926,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       [activeMenu, closeSelectionMenu, onEpisodeSelect, videoId]
     );
 
-    // When hidden, render minimal touchable area + skip intro button
+    // When hidden, render minimal touchable area and skip chapter buttons
     if (!visible) {
       return (
         <>
@@ -857,16 +934,9 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
             testID="player-controls-invisible-area"
             style={StyleSheet.absoluteFill}
             onPress={showControls}
-            hasTVPreferredFocus={!isSkipIntroVisible && !suppressPreferredFocus}
+            hasTVPreferredFocus={!isSkipChapterVisible && !suppressPreferredFocus}
           />
-          {/* Skip Intro button shown even when controls are hidden */}
-          {showSkipIntroButton && (
-            <SkipIntroButton
-              introData={introData}
-              currentTime={currentTime}
-              onSkipIntro={handleSkipIntro}
-            />
-          )}
+          {skipChapterButtons}
         </>
       );
     }
@@ -890,16 +960,8 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
               duration={duration}
             />
 
-            {/* Center area - contains Skip Intro button */}
-            <Box flex={1}>
-              {showSkipIntroButton && (
-                <SkipIntroButton
-                  introData={introData}
-                  currentTime={currentTime}
-                  onSkipIntro={handleSkipIntro}
-                />
-              )}
-            </Box>
+            {/* Center area - contains skip chapter buttons */}
+            <Box flex={1}>{skipChapterButtons}</Box>
           </Box>
           {showLoadingIndicator && (
             <Box
@@ -913,89 +975,110 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           )}
         </Pressable>
 
-        {/* Bottom Controls */}
+        {/* Bottom Controls: gradient fades out towards the top, chapter labels sit
+            on its transparent upper region */}
         <Box
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: theme.colors.semiTransparentBackground,
           }}
           pointerEvents="box-none">
-          <Box
-            pointerEvents="box-none"
-            paddingHorizontal="m"
-            paddingTop="m"
-            gap="s"
-            style={{
-              paddingBottom: insets.bottom > 0 ? insets.bottom + theme.spacing.m : theme.spacing.m,
-            }}>
-            {/* Time Display + Seek Bar */}
-            <Box>
-              <TimeDisplay displayedTime={displayedTime} duration={duration} />
-              <SeekBar
-                sliderValue={sliderValue}
-                sliderMaximumValue={sliderMaximumValue}
-                effectiveDuration={effectiveDuration}
-                isSeekFocused={isSeekFocused}
-                onSlidingStart={handleSeekStartWithInteraction}
-                onValueChange={handleSeekChangeWithInteraction}
-                onSlidingComplete={Platform.isTV ? undefined : handleSeekEndWithInteraction}
-                onFocus={handleSeekFocus}
-                onBlur={handleSeekBlur}
-                onTVSeekStart={handleTVSeekStart}
-                onTVSeekComplete={handleTVSeekComplete}
-                onTVValueChange={handleTVValueChange}
-                hasTVPreferredFocus={focusTarget === 'seek'}
-              />
+          <LinearGradient
+            colors={[
+              theme.colors.transparent,
+              theme.colors.semiTransparentBackground,
+              theme.colors.secondaryBackground,
+            ]}
+            locations={[0, 0.4, 1]}
+            pointerEvents="box-none">
+            <Box
+              pointerEvents="box-none"
+              paddingHorizontal="m"
+              gap="s"
+              style={{
+                paddingBottom:
+                  insets.bottom > 0 ? insets.bottom + theme.spacing.m : theme.spacing.m,
+              }}>
+              {/* Segmented seek bar + time display */}
+              <Box>
+                <ChapterLabels
+                  chapters={chapters}
+                  currentTime={sliderValue}
+                  duration={effectiveDuration}
+                  nextFocusDownId={seekBarNodeHandle}
+                  onActiveLabelNodeHandle={handleActiveChapterLabelHandle}
+                  onChapterPress={handleChapterPress}
+                  onChapterNavigate={handleChapterNavigate}
+                />
+                <SeekBar
+                  displayedTime={displayedTime}
+                  sliderValue={sliderValue}
+                  sliderMaximumValue={sliderMaximumValue}
+                  effectiveDuration={effectiveDuration}
+                  chapters={chapters}
+                  isSeekFocused={isSeekFocused}
+                  onSlidingStart={handleSeekStartWithInteraction}
+                  onValueChange={handleSeekChangeWithInteraction}
+                  onSlidingComplete={Platform.isTV ? undefined : handleSeekEndWithInteraction}
+                  onFocus={handleSeekFocus}
+                  onBlur={handleSeekBlur}
+                  onTVSeekStart={handleTVSeekStart}
+                  onTVSeekComplete={handleTVSeekComplete}
+                  onTVValueChange={handleTVValueChange}
+                  hasTVPreferredFocus={focusTarget === 'seek'}
+                  onSeekBarRef={handleSeekBarNodeRef}
+                  nextFocusUpId={activeChapterLabelHandle}
+                />
+              </Box>
+
+              {/* Control Buttons */}
+              <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+                {/* Left controls - flex: 1, justify start */}
+                <Box flex={1} flexDirection="row" justifyContent="flex-start">
+                  <LeftControls
+                    disableControls={disableControls}
+                    hasTextTracks={textTracks.length > 0}
+                    selectedAudioLanguage={selectedAudioTrack?.language}
+                    selectedTextLanguage={selectedTextTrack?.language}
+                    fitMode={fitMode}
+                    onToggleFitMode={handleToggleFitMode}
+                    onToggleAudioTracks={handleToggleAudioTracks}
+                    onToggleTextTracks={handleToggleTextTracks}
+                    onFocusChange={handleButtonFocusChange}
+                  />
+                </Box>
+
+                {/* Center controls - flex to be pushed to center */}
+                <Box flex={1} flexDirection="row" justifyContent="center">
+                  <PlaybackControls
+                    paused={paused}
+                    disableControls={disableControls}
+                    onPlayPause={handlePlayPause}
+                    onSkipBackward={handleSkipBackward}
+                    onSkipForward={handleSkipForward}
+                    onFocusChange={handleButtonFocusChange}
+                    hasTVPreferredFocus={focusTarget === 'play-pause'}
+                  />
+                </Box>
+
+                {/* Right controls - flex: 1, justify end */}
+                <Box flex={1} flexDirection="row" justifyContent="flex-end">
+                  <RightControls
+                    showSkipEpisode={showSkipEpisode}
+                    skipEpisodeLabel={skipEpisodeLabel}
+                    disableControls={disableControls}
+                    onSkipEpisode={handleSkipEpisode}
+                    onFocusChange={handleButtonFocusChange}
+                    onOpenEpisodes={handleOpenEpisodes}
+                    showEpisodes={mediaType === 'series' && (videos?.length ?? 0) > 1}
+                    onOpenStreams={handleOpenStreams}
+                  />
+                </Box>
+              </Box>
             </Box>
-
-            {/* Control Buttons */}
-            <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-              {/* Left controls - flex: 1, justify start */}
-              <Box flex={1} flexDirection="row" justifyContent="flex-start">
-                <LeftControls
-                  disableControls={disableControls}
-                  hasTextTracks={textTracks.length > 0}
-                  selectedAudioLanguage={selectedAudioTrack?.language}
-                  selectedTextLanguage={selectedTextTrack?.language}
-                  fitMode={fitMode}
-                  onToggleFitMode={handleToggleFitMode}
-                  onToggleAudioTracks={handleToggleAudioTracks}
-                  onToggleTextTracks={handleToggleTextTracks}
-                  onFocusChange={handleButtonFocusChange}
-                />
-              </Box>
-
-              {/* Center controls - flex to be pushed to center */}
-              <Box flex={1} flexDirection="row" justifyContent="center">
-                <PlaybackControls
-                  paused={paused}
-                  disableControls={disableControls}
-                  onPlayPause={handlePlayPause}
-                  onSkipBackward={handleSkipBackward}
-                  onSkipForward={handleSkipForward}
-                  onFocusChange={handleButtonFocusChange}
-                  hasTVPreferredFocus={focusTarget === 'play-pause'}
-                />
-              </Box>
-
-              {/* Right controls - flex: 1, justify end */}
-              <Box flex={1} flexDirection="row" justifyContent="flex-end">
-                <RightControls
-                  showSkipEpisode={showSkipEpisode}
-                  skipEpisodeLabel={skipEpisodeLabel}
-                  disableControls={disableControls}
-                  onSkipEpisode={handleSkipEpisode}
-                  onFocusChange={handleButtonFocusChange}
-                  onOpenEpisodes={handleOpenEpisodes}
-                  showEpisodes={mediaType === 'series' && (videos?.length ?? 0) > 1}
-                  onOpenStreams={handleOpenStreams}
-                />
-              </Box>
-            </Box>
-          </Box>
+          </LinearGradient>
         </Box>
 
         {/* Modals */}

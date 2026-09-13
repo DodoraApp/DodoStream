@@ -35,6 +35,9 @@ export const HERO_CONTENT_SLIDE_DELAY_MS = 150;
 export const HERO_DOT_ANIMATION_MS = 300;
 export const HERO_CONTENT_REFRESH_MS = 1000 * 60 * 30; // 30 minutes - how often to pick new random items
 
+// Player chapter label connector slide timing
+export const PLAYER_CHAPTER_CONNECTOR_SLIDE_MS = 250;
+
 // Landscape media proportions
 export const LANDSCAPE_HERO_HEIGHT_FACTOR = 0.7;
 export const LANDSCAPE_COVER_HEIGHT_FACTOR = 0.5;

@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import Video, {
   OnAudioTracksData,
   OnBufferData,
+  OnChaptersData,
   OnLoadData,
   OnProgressData,
   OnTextTracksData,
@@ -17,7 +18,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
-import { AudioTrack, PlayerProps, PlayerRef, TextTrack } from '@/types/player';
+import { AudioTrack, PlayerProps, PlayerRef, TextTrack, VideoChapter } from '@/types/player';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('RNVideoPlayer');
@@ -47,6 +48,7 @@ export const RNVideoPlayer = memo(
       onError,
       onAudioTracks,
       onTextTracks,
+      onChapters,
       onStatistics,
       selectedAudioTrack,
       selectedTextTrack,
@@ -158,6 +160,22 @@ export const RNVideoPlayer = memo(
       [onTextTracks]
     );
 
+    const handleChapters = useCallback(
+      (data: OnChaptersData) => {
+        const chapters: VideoChapter[] = Array.isArray(data?.chapters)
+          ? data.chapters.map(({ title, startTime, endTime, type }) => ({
+              title,
+              startTime,
+              endTime,
+              ...(type ? { type: type as VideoChapter['type'] } : {}),
+            }))
+          : [];
+        debug('chapters', { count: chapters.length, chapters });
+        onChapters?.(chapters);
+      },
+      [onChapters]
+    );
+
     const handleVideoStatistics = useCallback(
       (data: OnVideoStatisticsData) => {
         onStatistics?.(data);
@@ -230,6 +248,7 @@ export const RNVideoPlayer = memo(
         onError={handleError}
         onAudioTracks={handleAudioTracks}
         onTextTracks={handleTextTracks}
+        onChapters={handleChapters}
         // TV support
         hasTVPreferredFocus={false}
         focusable={false}
