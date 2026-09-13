@@ -111,10 +111,11 @@ describe('VLCPlayer (expo-libvlc-player v8 adapter)', () => {
     expect(onError).toHaveBeenCalledWith('vlc decode failure');
   });
 
-  it('reports buffering even after playback has started', () => {
+  it('reports playing and buffering events after playback has started', () => {
     // Arrange
     const onBuffer = jest.fn();
-    renderVLC({ onBuffer });
+    const onPlaying = jest.fn();
+    renderVLC({ onBuffer, onPlaying });
     flushFocusRemount();
 
     // Act
@@ -124,6 +125,7 @@ describe('VLCPlayer (expo-libvlc-player v8 adapter)', () => {
     });
 
     // Assert
+    expect(onPlaying).toHaveBeenCalledTimes(1);
     expect(onBuffer).toHaveBeenNthCalledWith(1, false);
     expect(onBuffer).toHaveBeenNthCalledWith(2, true);
   });

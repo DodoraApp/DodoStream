@@ -186,6 +186,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [fitMode, setFitMode] = useState<VideoFitMode>('contain');
   // VLC only supports contain/stretch
@@ -256,8 +257,13 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const lastKnownTimeRef = useRef(0);
   const lastKnownDurationRef = useRef(0);
   const resumeAppliedKeyRef = useRef<string | null>(null);
+  const pendingResumeTimeRef = useRef<number | null>(null);
   const didPersistLastTargetRef = useRef(false);
   const subtitlePreferenceAppliedRef = useRef(false);
+
+  // Keep intro controls hidden until the native player reports the resumed position.
+  // Native players can emit an initial 0-second progress event after onLoad.
+  const [isResumePending, setIsResumePending] = useState(false);
 
   // Auto-apply saved subtitle preference when subtitles are loaded
   useEffect(() => {
@@ -431,6 +437,21 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
   const handleProgress = useCallback(
     (data: { currentTime: number; duration?: number }) => {
+      const pendingResumeTime = pendingResumeTimeRef.current;
+      if (pendingResumeTime !== null && data.currentTime < pendingResumeTime) {
+        debug('progressBeforeResumeSeek', {
+          currentTime: data.currentTime,
+          resumeTime: pendingResumeTime,
+        });
+        return;
+      }
+
+      if (pendingResumeTime !== null) {
+        debug('resumeSeekReady', { currentTime: data.currentTime, resumeTime: pendingResumeTime });
+        pendingResumeTimeRef.current = null;
+        setIsResumePending(false);
+      }
+
       setCurrentTime(data.currentTime);
       lastKnownTimeRef.current = data.currentTime;
       // Only update duration state when it actually changes to avoid unnecessary re-renders
@@ -447,6 +468,11 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     },
     [persistProgress, updateThrottledProgressRatio]
   );
+
+  const handlePlaying = useCallback(() => {
+    debug('playing');
+    setIsPlaying(true);
+  }, []);
 
   const handleBuffering = useCallback((buffering: boolean) => {
     debug('buffering', { buffering });
@@ -525,10 +551,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
       setDuration(data.duration);
       setIsVideoLoading(false);
+      setIsPlaying(false);
+      setIsBuffering(false);
       setPaused(false);
       lastKnownDurationRef.current = data.duration;
 
       if (resumeSeconds > 0) {
+        pendingResumeTimeRef.current = resumeSeconds;
+        setIsResumePending(true);
         lastKnownTimeRef.current = resumeSeconds;
         setCurrentTime(resumeSeconds);
         setTimeout(() => {
@@ -536,6 +566,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         }, 0);
         persistProgress(resumeSeconds, durationSeconds, true);
       } else {
+        pendingResumeTimeRef.current = null;
+        setIsResumePending(false);
         persistProgress(lastKnownTimeRef.current, durationSeconds, true);
       }
     },
@@ -630,13 +662,19 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
   const handlePlayPause = useCallback(() => {
     debug('togglePlayPause');
+    if (!paused) {
+      setIsPlaying(false);
+      setIsBuffering(false);
+    }
     setPaused((prev) => !prev);
-  }, []);
+  }, [paused]);
 
   const handleSeek = useCallback(
     (time: number) => {
       const dur = lastKnownDurationRef.current;
       debug('seek', { time, duration: dur });
+      pendingResumeTimeRef.current = null;
+      setIsResumePending(false);
       playerRef.current?.seekTo(time, dur);
       setCurrentTime(time);
       updateThrottledProgressRatio(time, dur);
@@ -754,6 +792,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
   // Show custom loading screen on first load if background/logo is available
   const showCustomLoadingScreen = isVideoLoading && isFirstLoad && hasBackgroundOrLogo;
+  const showBufferingIndicator = isBuffering && !isPlaying && !paused;
   return (
     <Box flex={1} backgroundColor="playerBackground">
       <PlayerComponent
@@ -765,6 +804,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onProgress={handleProgress}
         onLoad={handleLoad}
         onBuffer={handleBuffering}
+        onPlaying={handlePlaying}
         onEnd={handleEnd}
         onError={handleError}
         onAudioTracks={handleAudioTracksLoaded}
@@ -774,7 +814,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
         subtitleStyle={nativeSubtitleStyle}
       />
-      {isBuffering && !showCustomLoadingScreen && !controlsVisible && (
+      {showBufferingIndicator && !showCustomLoadingScreen && !controlsVisible && (
         <Box
           testID="player-buffering-indicator"
           pointerEvents="none"
@@ -843,7 +883,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         paused={paused}
         currentTime={currentTime}
         duration={duration}
-        showLoadingIndicator={!showCustomLoadingScreen && (isVideoLoading || isBuffering)}
+        showLoadingIndicator={
+          !showCustomLoadingScreen && (isVideoLoading || showBufferingIndicator)
+        }
+        disableControls={isVideoLoading}
         title={title}
         audioTracks={audioTracks}
         textTracks={combinedSubtitles}
@@ -865,7 +908,13 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onToggleFitMode={handleCycleFitMode}
         onVisibilityChange={setControlsVisible}
         introData={
-          skipIntroEnabled && introData && !showCustomLoadingScreen ? introData : undefined
+          skipIntroEnabled &&
+          introData &&
+          !showCustomLoadingScreen &&
+          !isVideoLoading &&
+          !isResumePending
+            ? introData
+            : undefined
         }
         introSkipped={introSkipped}
         onSkipIntro={handleSkipIntro}
