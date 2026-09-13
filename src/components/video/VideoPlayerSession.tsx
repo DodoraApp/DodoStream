@@ -258,12 +258,21 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const lastKnownDurationRef = useRef(0);
   const resumeAppliedKeyRef = useRef<string | null>(null);
   const pendingResumeTimeRef = useRef<number | null>(null);
+  const resumeSeekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didPersistLastTargetRef = useRef(false);
   const subtitlePreferenceAppliedRef = useRef(false);
 
   // Keep intro controls hidden until the native player reports the resumed position.
   // Native players can emit an initial 0-second progress event after onLoad.
   const [isResumePending, setIsResumePending] = useState(false);
+  useEffect(() => {
+    return () => {
+      if (resumeSeekTimeoutRef.current !== null) {
+        clearTimeout(resumeSeekTimeoutRef.current);
+        resumeSeekTimeoutRef.current = null;
+      }
+    };
+  }, [metaId, source, usedPlayerType, videoId]);
 
   // Auto-apply saved subtitle preference when subtitles are loaded
   useEffect(() => {
@@ -325,8 +334,14 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     }
   }, [activeProfileId, areSubtitlesLoading, combinedSubtitles, selectedTextTrack]);
 
-  const [didStartNext, setDidStartNext] = useState(false);
-  const [autoplayCancelled, setAutoplayCancelled] = useState(false);
+  const sessionKey = getVideoSessionId(source, metaId, videoId, usedPlayerType);
+  const didStartNextKeyRef = useRef<string | null>(null);
+  const autoplayCancelledKeyRef = useRef<string | null>(null);
+  const didHandleEndKeyRef = useRef<string | null>(null);
+  const [didStartNextKey, setDidStartNextKey] = useState<string | null>(null);
+  const [autoplayCancelledKey, setAutoplayCancelledKey] = useState<string | null>(null);
+  const didStartNext = didStartNextKey === sessionKey;
+  const autoplayCancelled = autoplayCancelledKey === sessionKey;
   const [upNextDismissed, setUpNextDismissed] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [upNextVisible, setUpNextVisible] = useState(false);
@@ -371,10 +386,11 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   );
 
   const startNextEpisode = useCallback(() => {
-    if (didStartNext) return;
+    if (didStartNextKeyRef.current === sessionKey) return;
     const nextVideoId = upNextVideoIdRef.current;
     if (!nextVideoId) return;
 
+    didStartNextKeyRef.current = sessionKey;
     debug('startNextEpisode', {
       metaId,
       fromVideoId: videoId,
@@ -383,7 +399,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       bingeGroup,
     });
 
-    setDidStartNext(true);
+    setDidStartNextKey(sessionKey);
     setUpNextDismissed(true);
     persistProgress(lastKnownTimeRef.current, lastKnownDurationRef.current, true);
 
@@ -391,7 +407,12 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       { metaId, videoId: nextVideoId, type: mediaType },
       { autoPlay: '1', bingeGroup }
     );
-  }, [bingeGroup, didStartNext, mediaType, metaId, persistProgress, replaceToStreams, videoId]);
+  }, [bingeGroup, mediaType, metaId, persistProgress, replaceToStreams, sessionKey, videoId]);
+
+  const handleCancelAutoplay = useCallback(() => {
+    autoplayCancelledKeyRef.current = sessionKey;
+    setAutoplayCancelledKey(sessionKey);
+  }, [sessionKey]);
 
   const handleStreamSelect = useCallback(
     (stream: Stream) => {
@@ -561,7 +582,8 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         setIsResumePending(true);
         lastKnownTimeRef.current = resumeSeconds;
         setCurrentTime(resumeSeconds);
-        setTimeout(() => {
+        resumeSeekTimeoutRef.current = setTimeout(() => {
+          resumeSeekTimeoutRef.current = null;
           playerRef.current?.seekTo(resumeSeconds, durationSeconds);
         }, 0);
         persistProgress(resumeSeconds, durationSeconds, true);
@@ -590,19 +612,22 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
   const handleEnd = useCallback(() => {
     debug('end');
+    if (didHandleEndKeyRef.current === sessionKey) return;
+    didHandleEndKeyRef.current = sessionKey;
     persistProgress(lastKnownDurationRef.current, lastKnownDurationRef.current, true);
-    if (!autoplayCancelled && !!upNextVideoIdRef.current) {
+    const isAutoplayCancelled = autoplayCancelledKeyRef.current === sessionKey;
+    if (!isAutoplayCancelled && !!upNextVideoIdRef.current) {
       debug('autoStartNextOnEnd', {
         metaId,
         videoId,
         nextVideoId: upNextVideoIdRef.current,
-        autoplayCancelled,
+        autoplayCancelled: isAutoplayCancelled,
       });
       startNextEpisode();
       return;
     }
     onStop?.();
-  }, [autoplayCancelled, metaId, onStop, persistProgress, startNextEpisode, videoId]);
+  }, [metaId, onStop, persistProgress, sessionKey, startNextEpisode, videoId]);
 
   const handleError = useCallback(
     (message: string) => {
@@ -943,7 +968,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         dismissed={upNextDismissed}
         autoplayCancelled={autoplayCancelled}
         controlsVisible={controlsVisible}
-        onCancelAutoplay={() => setAutoplayCancelled(true)}
+        onCancelAutoplay={handleCancelAutoplay}
         onDismiss={() => setUpNextDismissed(true)}
         onPlayNext={startNextEpisode}
         onUpNextResolved={handleUpNextResolved}

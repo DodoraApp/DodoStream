@@ -66,7 +66,7 @@ jest.mock('@/components/video/PlayerMenuOverlay', () => ({
       : null,
 }));
 
-describe('PlayerControls', () => {
+describe('PlayerControls basic interactions', () => {
   it('renders title and toggles visibility on press', () => {
     // Arrange
     const { getByText, queryByText, getByTestId } = renderWithProviders(
@@ -133,6 +133,10 @@ describe('PlayerControls', () => {
       onSubtitleDelayChange: () => {},
       fitMode: 'contain' as const,
       onToggleFitMode: () => {},
+      mediaType: 'movie',
+      metaId: 'movie-1',
+      onStreamSelect: () => {},
+      onEpisodeSelect: () => {},
     } satisfies React.ComponentProps<typeof PlayerControls>;
     const { getByText, getByTestId } = renderWithProviders(<PlayerControls {...playbackProps} />);
 
@@ -166,6 +170,10 @@ describe('PlayerControls', () => {
         onSubtitleDelayChange={() => {}}
         fitMode="contain"
         onToggleFitMode={() => {}}
+        mediaType="movie"
+        metaId="movie-1"
+        onStreamSelect={() => {}}
+        onEpisodeSelect={() => {}}
       />
     );
 
@@ -245,7 +253,9 @@ describe('PlayerControls', () => {
     expect(getByText(/Video EN \| English/)).toBeTruthy();
     expect(getByText(/Video ES \| Spanish/)).toBeTruthy();
   });
+});
 
+describe('PlayerControls episode selection', () => {
   it('closes the episodes overlay without redirecting when the current episode is selected', () => {
     const videos = [
       { id: 'e1', title: 'Episode 1', released: '2020-01-01T00:00:00.000Z', season: 1, episode: 1 },
@@ -349,7 +359,9 @@ describe('PlayerControls', () => {
     expect(onEpisodeSelect).toHaveBeenCalledWith(videos[1]);
     expect(onPlayPause).toHaveBeenCalledTimes(1);
   });
+});
 
+describe('PlayerControls stream selection', () => {
   it('closes the streams overlay without redirecting when the current stream is selected', () => {
     const currentStreamUrl = 'https://example.com/current.m3u8';
     const currentStreamId = `unknown::${currentStreamUrl}`;

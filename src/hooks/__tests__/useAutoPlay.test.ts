@@ -35,6 +35,11 @@ const defaultProps = {
   type: 'movie' as const,
   playerTitle: 'My Movie',
 };
+const flushPromiseQueue = async () => {
+  await act(async () => {
+    await Promise.resolve();
+  });
+};
 
 describe('useAutoPlay', () => {
   let mockStreams: any[];
@@ -82,20 +87,26 @@ describe('useAutoPlay', () => {
     profileSettingsState.byProfile.profile1.autoPlayFirstStream = false;
 
     renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1' }));
+    await flushPromiseQueue();
 
-    expect(openStreamFromStream).toHaveBeenCalledWith(
-      expect.objectContaining({ stream: mockStreams[0] })
-    );
+    await waitFor(() => {
+      expect(openStreamFromStream).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: mockStreams[0] })
+      );
+    });
   });
 
   it('auto plays when the setting is on and the param is not passed', async () => {
     profileSettingsState.byProfile.profile1.autoPlayFirstStream = true;
 
     renderHook(() => useAutoPlay(defaultProps));
+    await flushPromiseQueue();
 
-    expect(openStreamFromStream).toHaveBeenCalledWith(
-      expect.objectContaining({ stream: mockStreams[0] })
-    );
+    await waitFor(() => {
+      expect(openStreamFromStream).toHaveBeenCalledWith(
+        expect.objectContaining({ stream: mockStreams[0] })
+      );
+    });
   });
 
   it('does not auto play if the param is not passed and the setting is off', async () => {
@@ -117,6 +128,7 @@ describe('useAutoPlay', () => {
     });
 
     renderHook(() => useAutoPlay(defaultProps));
+    await flushPromiseQueue();
 
     await waitFor(() => {
       expect(toastStore.showToast).toHaveBeenCalledWith(
@@ -154,6 +166,7 @@ describe('useAutoPlay', () => {
     });
 
     renderHook(() => useAutoPlay(defaultProps));
+    await flushPromiseQueue();
 
     await waitFor(() => {
       expect(openStreamTarget).toHaveBeenCalledWith(
@@ -195,6 +208,7 @@ describe('useAutoPlay', () => {
     });
 
     renderHook(() => useAutoPlay(defaultProps));
+    await flushPromiseQueue();
 
     await waitFor(() => {
       expect(openStreamTarget).toHaveBeenCalledWith(
@@ -209,7 +223,7 @@ describe('useAutoPlay', () => {
       );
     });
   });
-  it('cancels autoplay when manual stream selection is requested', () => {
+  it('cancels autoplay when manual stream selection is requested', async () => {
     const { result } = renderHook(() => useAutoPlay({ ...defaultProps, autoPlay: '1' }));
 
     expect(result.current.effectiveAutoPlay).toBe(true);
@@ -218,6 +232,9 @@ describe('useAutoPlay', () => {
       result.current.cancelAutoPlay();
     });
 
+    await flushPromiseQueue();
+
     expect(result.current.effectiveAutoPlay).toBe(false);
+    expect(openStreamFromStream).not.toHaveBeenCalled();
   });
 });
