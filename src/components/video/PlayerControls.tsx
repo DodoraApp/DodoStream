@@ -47,6 +47,8 @@ interface PlayerControlsProps {
   currentTime: number;
   duration: number;
   showLoadingIndicator: boolean;
+  /** Whether playback controls should be disabled while the player is loading. */
+  disableControls?: boolean;
   title?: string;
   audioTracks: AudioTrack[];
   textTracks: TextTrack[];
@@ -286,7 +288,7 @@ const SeekBar = memo<SeekBarProps>(
 SeekBar.displayName = 'SeekBar';
 
 interface LeftControlsProps {
-  showLoadingIndicator: boolean;
+  disableControls: boolean;
   hasTextTracks: boolean;
   selectedAudioLanguage?: string;
   selectedTextLanguage?: string;
@@ -299,7 +301,7 @@ interface LeftControlsProps {
 
 const LeftControls = memo<LeftControlsProps>(
   ({
-    showLoadingIndicator,
+    disableControls,
     hasTextTracks,
     selectedAudioLanguage,
     selectedTextLanguage,
@@ -317,7 +319,7 @@ const LeftControls = memo<LeftControlsProps>(
             onPress={onToggleTextTracks}
             icon="subtitles"
             iconComponent={MaterialCommunityIcons}
-            disabled={showLoadingIndicator}
+            disabled={disableControls}
             onFocusChange={onFocusChange}
             label={t('subtitles')}
             badge={getTrackBadge(selectedTextLanguage)}
@@ -329,7 +331,7 @@ const LeftControls = memo<LeftControlsProps>(
           onPress={onToggleAudioTracks}
           icon="globe"
           iconComponent={Ionicons}
-          disabled={showLoadingIndicator}
+          disabled={disableControls}
           onFocusChange={onFocusChange}
           label={t('audio')}
           badge={getTrackBadge(selectedAudioLanguage)}
@@ -340,7 +342,7 @@ const LeftControls = memo<LeftControlsProps>(
           onPress={onToggleFitMode}
           icon={getFitModeIcon(fitMode)}
           iconComponent={MaterialCommunityIcons}
-          disabled={showLoadingIndicator}
+          disabled={disableControls}
           label={formatFitModeLabel(fitMode, t)}
           onFocusChange={onFocusChange}
           testID="player-fit-mode"
@@ -353,7 +355,7 @@ LeftControls.displayName = 'LeftControls';
 
 interface PlaybackControlsProps {
   paused: boolean;
-  showLoadingIndicator: boolean;
+  disableControls: boolean;
   onPlayPause: () => void;
   onSkipBackward: () => void;
   onSkipForward: () => void;
@@ -364,7 +366,7 @@ interface PlaybackControlsProps {
 const PlaybackControls = memo<PlaybackControlsProps>(
   ({
     paused,
-    showLoadingIndicator,
+    disableControls,
     onPlayPause,
     onSkipBackward,
     onSkipForward,
@@ -386,7 +388,7 @@ const PlaybackControls = memo<PlaybackControlsProps>(
           onPress={onPlayPause}
           icon={paused ? 'play' : 'pause'}
           iconComponent={Ionicons}
-          disabled={showLoadingIndicator}
+          disabled={disableControls}
           hasTVPreferredFocus={hasTVPreferredFocus}
           onFocusChange={onFocusChange}
           variant="primary"
@@ -408,7 +410,7 @@ PlaybackControls.displayName = 'PlaybackControls';
 interface RightControlsProps {
   showSkipEpisode: boolean;
   skipEpisodeLabel?: string;
-  showLoadingIndicator: boolean;
+  disableControls: boolean;
   onSkipEpisode: () => void;
   onFocusChange: () => void;
   onOpenStreams: () => void;
@@ -420,7 +422,7 @@ const RightControls = memo<RightControlsProps>(
   ({
     showSkipEpisode,
     skipEpisodeLabel,
-    showLoadingIndicator,
+    disableControls,
     onSkipEpisode,
     onFocusChange,
     onOpenStreams,
@@ -435,7 +437,7 @@ const RightControls = memo<RightControlsProps>(
             onPress={onOpenEpisodes}
             icon="playlist-play"
             iconComponent={MaterialCommunityIcons}
-            disabled={showLoadingIndicator}
+            disabled={disableControls}
             label={t('episodes')}
             onFocusChange={onFocusChange}
           />
@@ -444,7 +446,7 @@ const RightControls = memo<RightControlsProps>(
           onPress={onOpenStreams}
           icon="layers"
           iconComponent={MaterialCommunityIcons}
-          disabled={showLoadingIndicator}
+          disabled={disableControls}
           label={t('streams')}
           onFocusChange={onFocusChange}
         />
@@ -453,7 +455,7 @@ const RightControls = memo<RightControlsProps>(
             onPress={onSkipEpisode}
             icon="skip-next"
             iconComponent={MaterialCommunityIcons}
-            disabled={showLoadingIndicator}
+            disabled={disableControls}
             label={t('skip')}
             onFocusChange={onFocusChange}
             badge={skipEpisodeLabel}
@@ -476,6 +478,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
     currentTime,
     duration,
     showLoadingIndicator,
+    disableControls = showLoadingIndicator,
     title,
     audioTracks,
     textTracks,
@@ -949,7 +952,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
               {/* Left controls - flex: 1, justify start */}
               <Box flex={1} flexDirection="row" justifyContent="flex-start">
                 <LeftControls
-                  showLoadingIndicator={showLoadingIndicator}
+                  disableControls={disableControls}
                   hasTextTracks={textTracks.length > 0}
                   selectedAudioLanguage={selectedAudioTrack?.language}
                   selectedTextLanguage={selectedTextTrack?.language}
@@ -965,7 +968,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
               <Box flex={1} flexDirection="row" justifyContent="center">
                 <PlaybackControls
                   paused={paused}
-                  showLoadingIndicator={showLoadingIndicator}
+                  disableControls={disableControls}
                   onPlayPause={handlePlayPause}
                   onSkipBackward={handleSkipBackward}
                   onSkipForward={handleSkipForward}
@@ -979,7 +982,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
                 <RightControls
                   showSkipEpisode={showSkipEpisode}
                   skipEpisodeLabel={skipEpisodeLabel}
-                  showLoadingIndicator={showLoadingIndicator}
+                  disableControls={disableControls}
                   onSkipEpisode={handleSkipEpisode}
                   onFocusChange={handleButtonFocusChange}
                   onOpenEpisodes={handleOpenEpisodes}

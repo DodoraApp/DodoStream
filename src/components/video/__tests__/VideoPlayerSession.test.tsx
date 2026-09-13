@@ -20,6 +20,11 @@ jest.mock('@/store/profile.store', () => ({
   useProfileStore: jest.fn((selector: any) => selector({ activeProfileId: 'p1' })),
 }));
 
+let mockIntroData: any;
+jest.mock('@/api/introdb', () => ({
+  useIntro: () => ({ data: mockIntroData }),
+}));
+
 jest.mock('@/store/playback.store', () => ({
   DEFAULT_PROFILE_PLAYBACK_SETTINGS: {
     player: 'exoplayer',
@@ -36,6 +41,7 @@ jest.mock('@/store/playback.store', () => ({
         p1: {
           preferredAudioLanguages: undefined,
           preferredSubtitleLanguages: undefined,
+          skipIntroEnabled: true,
         },
       },
     })
@@ -69,6 +75,11 @@ jest.mock('@/db', () => ({
 
 let mockLastExoProps: any;
 type MockPlayerControlsProps = React.ComponentProps<typeof mockView> & {
+  currentTime?: number;
+  disableControls?: boolean;
+  showLoadingIndicator?: boolean;
+  introData?: unknown;
+  onPlayPause?: () => void;
   onVisibilityChange?: (visible: boolean) => void;
 };
 let mockPlayerControlsProps: MockPlayerControlsProps | undefined;
@@ -115,6 +126,13 @@ jest.mock('../UpNextPopup', () => ({
     return null;
   },
 }));
+const triggerBuffering = (playerProps: any) => {
+  act(() => {
+    playerProps.onLoad({ duration: 100 });
+    mockPlayerControlsProps?.onVisibilityChange?.(false);
+    playerProps.onBuffer(true);
+  });
+};
 
 describe('VideoPlayerSession', () => {
   let dateNowSpy: jest.SpyInstance<number, []>;
@@ -130,6 +148,7 @@ describe('VideoPlayerSession', () => {
     mockUpsertItem.mockReset();
     mockSetLastStreamTarget.mockReset().mockResolvedValue(undefined);
     mockResumeHistoryItem = undefined;
+    mockIntroData = undefined;
     mockShowToast.mockReset();
     mockReplaceToStreams.mockReset();
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
@@ -169,52 +188,42 @@ describe('VideoPlayerSession', () => {
   };
 
   it('renders the correct player component based on usedPlayerType', () => {
-    // Arrange / Act
     renderSession({ usedPlayerType: 'exoplayer' });
 
-    // Assert
     expect(mockLastExoProps).toBeTruthy();
     expect(mockLastVlcProps).toBeUndefined();
 
-    // Arrange / Act
     renderSession({ usedPlayerType: 'vlc' });
-
-    // Assert
     expect(mockLastVlcProps).toBeTruthy();
   });
-
-  it('shows a loading indicator while a hidden player is buffering', () => {
-    // Arrange
+  it('shows buffering only until playback starts', () => {
     const { getByTestId, queryByTestId } = renderSession();
-    expect(queryByTestId('player-buffering-indicator')).toBeNull();
-
-    // Act
-    act(() => {
-      mockPlayerControlsProps?.onVisibilityChange?.(false);
-      mockLastExoProps.onBuffer(true);
-    });
-
-    // Assert
+    triggerBuffering(mockLastExoProps);
+    expect(mockPlayerControlsProps?.disableControls).toBe(false);
     expect(getByTestId('player-buffering-indicator')).toBeTruthy();
-
-    // Act
-    act(() => {
-      mockLastExoProps.onBuffer(false);
-    });
-
-    // Assert
+    act(() => mockLastExoProps.onBuffer(false));
     expect(queryByTestId('player-buffering-indicator')).toBeNull();
-  });
 
+    const vlcSession = renderSession({ usedPlayerType: 'vlc', playerType: 'vlc' });
+    triggerBuffering(mockLastVlcProps);
+    expect(vlcSession.queryByTestId('player-buffering-indicator')).toBeTruthy();
+    expect(mockPlayerControlsProps?.showLoadingIndicator).toBe(true);
+    act(() => {
+      mockLastVlcProps.onPlaying();
+      mockLastVlcProps.onBuffer(true);
+    });
+    expect(vlcSession.queryByTestId('player-buffering-indicator')).toBeNull();
+    expect(mockPlayerControlsProps?.showLoadingIndicator).toBe(false);
+
+    act(() => {
+      mockPlayerControlsProps?.onPlayPause?.();
+      mockLastVlcProps.onBuffer(true);
+    });
+    expect(vlcSession.queryByTestId('player-buffering-indicator')).toBeNull();
+  });
   it('applies resume progress on load and seeks to resume time', () => {
     // Arrange
-    mockResumeHistoryItem = {
-      id: 'm1',
-      type: 'movie',
-      progressSeconds: 30,
-      durationSeconds: 100,
-      lastWatchedAt: 1,
-    };
+    mockResumeHistoryItem = { progressSeconds: 30 };
 
     renderSession({
       usedPlayerType: 'exoplayer',
@@ -223,9 +232,7 @@ describe('VideoPlayerSession', () => {
     });
 
     // Act
-    act(() => {
-      mockLastExoProps.onLoad({ duration: 100 });
-    });
+    act(() => mockLastExoProps.onLoad({ duration: 100 }));
 
     act(() => {
       jest.runOnlyPendingTimers();
@@ -236,6 +243,25 @@ describe('VideoPlayerSession', () => {
     expect(mockUpsertItem).toHaveBeenCalledWith(
       expect.objectContaining({ metaId: 'm1', progressSeconds: 30, durationSeconds: 100 })
     );
+  });
+  it('keeps skip intro hidden until the resumed position is reported', () => {
+    mockResumeHistoryItem = { type: 'series', progressSeconds: 30 };
+    mockIntroData = { start_ms: 0, end_ms: 60_000 };
+    renderSession({ mediaType: 'series' as any, metaId: 'tt1234567', videoId: 'tt1234567:1:1' });
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+      mockLastExoProps.onProgress({ currentTime: 0 });
+    });
+    expect(mockPlayerControlsProps?.introData).toBeUndefined();
+    expect(mockPlayerControlsProps?.currentTime).toBe(30);
+    expect(mockUpsertItem).toHaveBeenCalledTimes(1);
+    expect(mockUpsertItem).toHaveBeenCalledWith(
+      expect.objectContaining({ progressSeconds: 30, durationSeconds: 100 })
+    );
+    act(() => mockLastExoProps.onProgress({ currentTime: 30 }));
+    expect(mockPlayerControlsProps?.introData).toEqual(mockIntroData);
+    expect(mockPlayerControlsProps?.currentTime).toBe(30);
   });
 
   it('persists last stream target on successful load (duration > 0) only once', () => {

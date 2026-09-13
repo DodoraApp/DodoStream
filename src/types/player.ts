@@ -83,6 +83,7 @@ export interface PlayerProps {
   onProgress?: (data: { currentTime: number; duration?: number }) => void;
   onLoad?: (data: { duration: number }) => void;
   onBuffer?: (buffering: boolean) => void;
+  onPlaying?: () => void;
   onEnd?: () => void;
   onError?: (message: string) => void;
   onAudioTracks?: (tracks: AudioTrack[]) => void;

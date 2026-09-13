@@ -40,6 +40,7 @@ export const RNVideoPlayer = memo(
       paused,
       onProgress,
       onBuffer,
+      onPlaying,
       onLoad,
       onEnd,
       onError,
@@ -92,12 +93,13 @@ export const RNVideoPlayer = memo(
 
     const handleProgress = useCallback(
       (data: OnProgressData) => {
+        if (!paused) onPlaying?.();
         onProgress?.({
           currentTime: data.currentTime,
           duration: data.seekableDuration || 0,
         });
       },
-      [onProgress]
+      [onPlaying, onProgress, paused]
     );
     const handleBuffer = useCallback(
       (data: OnBufferData) => {

@@ -144,7 +144,7 @@ describe('PlayerControls', () => {
     expect(getByTestId('player-controls-overlay').props.focusable).toBe(false);
   });
 
-  it('shows the loading indicator while controls are visible', () => {
+  it('shows the loading indicator without disabling controls during buffering', () => {
     // Arrange
     const { getByText, getByTestId } = renderWithProviders(
       <PlayerControls
@@ -152,6 +152,7 @@ describe('PlayerControls', () => {
         currentTime={0}
         duration={100}
         showLoadingIndicator={true}
+        disableControls={false}
         title="My Title"
         audioTracks={[]}
         textTracks={[]}
@@ -173,6 +174,7 @@ describe('PlayerControls', () => {
 
     expect(getByTestId('player-loading-indicator')).toBeTruthy();
     expect(getByText(`+${SKIP_FORWARD_SECONDS}s`).parent?.props.disabled).toBeFalsy();
+    expect(getByText('pause').parent?.props.disabled).toBeFalsy();
   });
 
   it('displays subtitle items with correct labels', () => {

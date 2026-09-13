@@ -122,6 +122,7 @@ export const VLCPlayer = memo(
         onProgress,
         onLoad,
         onBuffer,
+        onPlaying,
         onEnd,
         onError,
         onAudioTracks,
@@ -168,8 +169,6 @@ export const VLCPlayer = memo(
         return screenAspectRatio ?? undefined;
       }, [effectiveFitMode, screenAspectRatio]);
 
-      // Track playing state - use ref for synchronous checks in callbacks
-      const isPlayingRef = useRef(false);
       // Track whether the player is ready (after onFirstPlay has fired)
       // Use both state (for triggering effects) and ref (for synchronous checks in imperative methods)
       const [isReady, setIsReady] = useState(false);
@@ -303,9 +302,9 @@ export const VLCPlayer = memo(
 
       const handlePlaying = useCallback(() => {
         debug('playing');
-        isPlayingRef.current = true;
+        onPlaying?.();
         onBuffer?.(false);
-      }, [onBuffer]);
+      }, [onBuffer, onPlaying]);
 
       const handleTimeChanged = useCallback(
         (event: { value: number }) => {
