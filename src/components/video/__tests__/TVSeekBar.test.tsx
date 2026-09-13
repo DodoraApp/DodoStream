@@ -70,6 +70,40 @@ describe('TVSeekBar', () => {
     expect(queryByTestId('tv-seek-bar')).toBeNull();
   });
 
+  it('renders one gap per chapter boundary and skips invalid starts', () => {
+    const chapters = [
+      { startTime: 0, endTime: 50 },
+      { startTime: 50, endTime: 100 },
+      { startTime: 100, endTime: 200 },
+      { startTime: 250, endTime: 300 },
+      { startTime: 1, endTime: 10 },
+      { startTime: 199, endTime: 200 },
+    ];
+    const { queryByTestId } = renderWithProviders(
+      <TVSeekBar value={20} maximumValue={200} chapters={chapters as any} />
+    );
+
+    // Boundaries at 25% and 50% remain. The 0s start, the beyond-duration chapter,
+    // and boundaries within 1% of either edge render no gap, and there is no third gap.
+    expect(queryByTestId('chapter-gap-0')).toBeTruthy();
+    expect(queryByTestId('chapter-gap-1')).toBeTruthy();
+    expect(queryByTestId('chapter-gap-2')).toBeNull();
+    expect(queryByTestId('chapter-gap-0')?.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ left: '25%' })])
+    );
+    expect(queryByTestId('chapter-gap-1')?.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ left: '50%' })])
+    );
+  });
+
+  it('targets the chapter label node on focus up', () => {
+    const { getByTestId } = renderWithProviders(
+      <TVSeekBar value={20} maximumValue={200} nextFocusUpId={42} />
+    );
+
+    expect(getByTestId('tv-seek-bar').props.nextFocusUp).toBe(42);
+  });
+
   it('performs one bounded seek step and commits only after the debounce delay', () => {
     const onSeekStart = jest.fn();
     const onValueChange = jest.fn();

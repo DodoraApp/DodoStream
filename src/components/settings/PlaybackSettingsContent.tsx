@@ -77,6 +77,9 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
     const setSkipIntroEnabledForProfile = usePlaybackStore(
       (state) => state.setSkipIntroEnabledForProfile
     );
+    const setSkipTimestampProvidersEnabledForProfile = usePlaybackStore(
+      (state) => state.setSkipTimestampProvidersEnabledForProfile
+    );
 
     const {
       player = DEFAULT_PROFILE_PLAYBACK_SETTINGS.player,
@@ -91,6 +94,7 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
       matchFrameRate = DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
       enableVideoSoftwareDecoding = DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
       skipIntroEnabled = DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipIntroEnabled,
+      skipTimestampProvidersEnabled = DEFAULT_PROFILE_PLAYBACK_SETTINGS.skipTimestampProvidersEnabled,
     } = profileSettings ?? {};
 
     const deviceLanguageCodes = getDevicePreferredLanguageCodes();
@@ -156,14 +160,28 @@ export const PlaybackSettingsContent: FC<PlaybackSettingsContentProps> = memo(
               activeProfileId && setSkipIntroEnabledForProfile(activeProfileId, value)
             }
           />
-          <Text variant="caption" color="textSecondary">
-            {t('playback.skip_intro_info')}
-          </Text>
-          <TouchableOpacity onPress={handleOpenIntroDB}>
-            <Text variant="caption" color="textLink">
-              {t('playback.powered_by', { name: 'IntroDB' })}
-            </Text>
-          </TouchableOpacity>
+          {skipIntroEnabled && (
+            <>
+              <SettingsSwitch
+                label={t('playback.timestamp_providers')}
+                description={t('playback.timestamp_providers_desc')}
+                value={skipTimestampProvidersEnabled}
+                onValueChange={(value) =>
+                  activeProfileId &&
+                  setSkipTimestampProvidersEnabledForProfile(activeProfileId, value)
+                }
+                testID="settings-switch-timestamp-providers"
+              />
+              <Text variant="caption" color="textSecondary">
+                {t('playback.timestamp_providers_info')}
+              </Text>
+              <TouchableOpacity onPress={handleOpenIntroDB}>
+                <Text variant="caption" color="textLink">
+                  {t('playback.powered_by', { name: 'IntroDB' })}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </SettingsCard>
 
         <SettingsCard title={t('playback.android_advanced')}>

@@ -37,6 +37,11 @@ describe('store selector stability regression', () => {
     );
     expect(getAllByText(/home|playback|subtitles/i).length).toBeGreaterThan(0);
   });
+  it('hides external timestamp provider settings when chapter skipping is disabled', () => {
+    const { queryByTestId } = renderWithProviders(<PlaybackSettingsContent />);
+
+    expect(queryByTestId('settings-switch-timestamp-providers')).toBeNull();
+  });
 
   it('renders the profile selector', () => {
     const { getAllByText } = renderWithProviders(<ProfileSelector onSelect={jest.fn()} />);

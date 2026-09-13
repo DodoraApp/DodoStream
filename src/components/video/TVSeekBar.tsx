@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function -- large TV-focused component; see AGENTS.md refactor note */
-import React, { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { FC, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   HWEvent,
   Platform,
@@ -20,6 +20,7 @@ import {
   TV_SEEK_REPEAT_INTERVAL_MS,
 } from '@/constants/playback';
 import { Box, Theme } from '@/theme/theme';
+import type { VideoChapter } from '@/types/player';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('TVSeekBar');
@@ -27,6 +28,10 @@ const debug = createDebugLogger('TVSeekBar');
 // ============================================================================
 // Constants
 // ============================================================================
+
+// Chapter boundaries within this percentage of either bar edge are treated as
+// the bar's start/end and render no gap - gaps only divide chapters.
+const CHAPTER_GAP_EDGE_INSET_PERCENT = 1;
 
 // Maximum duration for continuous seeking (safety timeout)
 const MAX_HOLD_DURATION_MS = 30000;
@@ -51,8 +56,14 @@ interface TVSeekBarProps {
   /** Called when focus changes */
   onFocus?: () => void;
   onBlur?: () => void;
+  /** Called with the native focusable seek-bar node. */
+  onRef?: (ref: View | null) => void;
   /** Whether this element should receive focus on TV */
   hasTVPreferredFocus?: boolean;
+  /** Chapters render as gaps that segment the track. */
+  chapters?: VideoChapter[];
+  /** Node handle that receives focus when the user presses up from the bar. */
+  nextFocusUpId?: number | null;
 }
 
 // ============================================================================
@@ -69,7 +80,10 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
     onSeekComplete,
     onFocus,
     onBlur,
+    onRef,
     hasTVPreferredFocus,
+    chapters = [],
+    nextFocusUpId,
   }) => {
     const theme = useTheme<Theme>();
     const [isFocused, setIsFocused] = useState(false);
@@ -90,6 +104,13 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
 
     // Ref for the pressable element and its node handle for trapping horizontal focus
     const pressableRef = useRef<View>(null);
+    const handlePressableRef = useCallback(
+      (node: View | null) => {
+        pressableRef.current = node;
+        onRef?.(node);
+      },
+      [onRef]
+    );
 
     // Keep ref in sync with state
     useEffect(() => {
@@ -304,7 +325,6 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
         onSeekComplete?.(localValueRef.current);
       }
     }, [onBlur, onSeekComplete, stopContinuousSeek]);
-
     // Calculate progress percentage and sizes from theme
     const progress = maximumValue > 0 ? (localValue / maximumValue) * 100 : 0;
     const trackHeight = theme.sizes.progressBarHeight;
@@ -315,6 +335,28 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
       ? theme.colors.focusBackgroundPrimary
       : theme.colors.primaryBackground;
 
+    // Chapter start positions (% of track) rendered as gaps that segment the bar.
+    // The continuous played/unplayed color still comes from the base tracks below.
+    // Boundaries within CHAPTER_GAP_EDGE_INSET_PERCENT of either edge read as a
+    // tick at the bar's start/end rather than a divider, so they are skipped.
+    const chapterGaps = useMemo(() => {
+      if (maximumValue <= 0 || chapters.length === 0) return [];
+      return chapters
+        .filter(
+          (chapter) =>
+            Number.isFinite(chapter.startTime) &&
+            Number.isFinite(chapter.endTime) &&
+            chapter.endTime > chapter.startTime
+        )
+        .map((chapter) => (chapter.startTime / maximumValue) * 100)
+        .filter(
+          (leftPercent) =>
+            leftPercent >= CHAPTER_GAP_EDGE_INSET_PERCENT &&
+            leftPercent <= 100 - CHAPTER_GAP_EDGE_INSET_PERCENT
+        );
+    }, [chapters, maximumValue]);
+    const gapWidth = theme.spacing.xs / 2;
+
     // Only render on TV platforms
     if (!Platform.isTV) {
       return null;
@@ -323,11 +365,12 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
     return (
       <TVFocusGuideView trapFocusLeft trapFocusRight>
         <Pressable
-          ref={pressableRef}
+          ref={handlePressableRef}
           disabled={disabled}
           onFocus={handleFocus}
           onBlur={handleBlur}
           hasTVPreferredFocus={hasTVPreferredFocus}
+          nextFocusUp={nextFocusUpId ?? undefined}
           style={styles.pressable}>
           <Box
             height={theme.sizes.inputHeight}
@@ -335,7 +378,7 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
             paddingHorizontal="s"
             opacity={disabled ? 0.5 : 1}>
             {/* Track container */}
-            <View style={styles.trackContainer}>
+            <View style={[styles.trackContainer, { height: trackHeight }]}>
               {/* Background track */}
               <View
                 style={[
@@ -360,7 +403,23 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
                   },
                 ]}
               />
-
+              {/* Chapter gaps: small segments that split the bar per chapter */}
+              {chapterGaps.map((leftPercent, index) => (
+                <View
+                  key={`chapter-gap-${index}`}
+                  testID={`chapter-gap-${index}`}
+                  style={[
+                    styles.chapterGap,
+                    {
+                      left: `${leftPercent}%`,
+                      width: gapWidth,
+                      marginLeft: -gapWidth / 2,
+                      height: trackHeight,
+                      backgroundColor: theme.colors.playerBackground,
+                    },
+                  ]}
+                />
+              ))}
               {/* Thumb */}
               {isFocused && (
                 <View
@@ -385,10 +444,6 @@ export const TVSeekBar: FC<TVSeekBarProps> = memo(
     );
   }
 );
-
-TVSeekBar.displayName = 'TVSeekBar';
-
-// ============================================================================
 // Styles
 // ============================================================================
 
@@ -409,6 +464,10 @@ const styles = StyleSheet.create({
   progressTrack: {
     position: 'absolute',
     left: 0,
+    top: 0,
+  },
+  chapterGap: {
+    position: 'absolute',
     top: 0,
   },
   thumb: {
