@@ -22,15 +22,16 @@ import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('RNVideoPlayer');
 
-const composeErrorString = (error: OnVideoErrorData['error']): string => {
-  const errorParts: string[] = [
-    error.errorCode,
-    error.errorString,
-    error.errorException,
-    error.error,
-  ].filter((str) => str !== undefined);
+const composeErrorString = (error?: Partial<OnVideoErrorData['error']>): string => {
+  if (!error || typeof error !== 'object') return 'Unknown player error';
 
-  return errorParts.length > 0 ? errorParts.join(' ') : JSON.stringify(error);
+  const errorParts = [error.errorCode, error.errorString, error.errorException, error.error].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
+
+  return errorParts.length > 0
+    ? errorParts.join(' ')
+    : (JSON.stringify(error) ?? 'Unknown player error');
 };
 
 export const RNVideoPlayer = memo(
@@ -119,16 +120,18 @@ export const RNVideoPlayer = memo(
 
     const handleError = useCallback(
       (data: OnVideoErrorData) => {
-        debug('error', { error: data.error });
-        onError?.(composeErrorString(data.error));
+        const error = data?.error;
+        debug('error', { error });
+        onError?.(composeErrorString(error));
       },
       [onError]
     );
 
     const handleAudioTracks = useCallback(
       (data: OnAudioTracksData) => {
-        debug('audioTracks', { count: data.audioTracks?.length });
-        const tracks: AudioTrack[] = data.audioTracks.map((track, index) => ({
+        const audioTracks = Array.isArray(data?.audioTracks) ? data.audioTracks : [];
+        debug('audioTracks', { count: audioTracks.length });
+        const tracks: AudioTrack[] = audioTracks.map((track, index) => ({
           index,
           title: track.title,
           language: track.language,
@@ -141,8 +144,9 @@ export const RNVideoPlayer = memo(
 
     const handleTextTracks = useCallback(
       (data: OnTextTracksData) => {
-        debug('textTracks', { count: data.textTracks?.length });
-        const tracks: TextTrack[] = data.textTracks.map((track, idx) => ({
+        const textTracks = Array.isArray(data?.textTracks) ? data.textTracks : [];
+        debug('textTracks', { count: textTracks.length });
+        const tracks: TextTrack[] = textTracks.map((track, idx) => ({
           source: 'video' as const,
           index: idx,
           title: track.title,

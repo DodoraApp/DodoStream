@@ -70,8 +70,9 @@ export const useAutoPlay = ({
   const [autoPlayFailed, setAutoPlayFailed] = useState(false);
   const [autoPlayCancelled, setAutoPlayCancelled] = useState(false);
   // zustand v5 + React 19: primitive selectors keep the snapshot cached.
+  const activeProfileId = usePlaybackStore((state) => state.activeProfileId);
   const autoPlayFirstStream = usePlaybackStore((state) =>
-    state.activeProfileId ? state.byProfile[state.activeProfileId]?.autoPlayFirstStream : false
+    activeProfileId ? state.byProfile[activeProfileId]?.autoPlayFirstStream : false
   );
 
   const autoPlayFromParams = parseBooleanParam(autoPlay);
@@ -83,33 +84,59 @@ export const useAutoPlay = ({
   const autoPlayAttemptRef = useRef(0);
   const didAutoNavigateRef = useRef(false);
   const [lastStreamTarget, setLastStreamTarget] = useState<StreamTarget | undefined>();
+  const lastStreamTargetKey = activeProfileId ? `${activeProfileId}::${metaId}::${videoId}` : null;
+  const [resolvedLastStreamTargetKey, setResolvedLastStreamTargetKey] = useState<string | null>(
+    null
+  );
+
+  const isLastStreamTargetResolved =
+    !shouldAutoPlay || !activeProfileId || resolvedLastStreamTargetKey === lastStreamTargetKey;
+  const currentLastStreamTarget =
+    activeProfileId && resolvedLastStreamTargetKey === lastStreamTargetKey
+      ? lastStreamTarget
+      : undefined;
 
   useEffect(() => {
+    if (!shouldAutoPlay || !activeProfileId) return;
+
     let isCancelled = false;
+    didAutoNavigateRef.current = false;
+    autoPlayAttemptRef.current = 0;
+
     void (async () => {
-      const profileId = usePlaybackStore.getState().activeProfileId;
-      if (!profileId) {
-        if (!isCancelled) setLastStreamTarget(undefined);
-        return;
+      let target: StreamTarget | undefined;
+      try {
+        target = await getLastStreamTarget(activeProfileId, metaId, videoId);
+      } catch (error) {
+        debug('lastStreamTargetLookupFailed', { activeProfileId, metaId, videoId, error });
       }
 
-      const target = await getLastStreamTarget(profileId, metaId, videoId);
-      if (!isCancelled) setLastStreamTarget(target);
+      if (!isCancelled) {
+        setLastStreamTarget(target);
+        setResolvedLastStreamTargetKey(lastStreamTargetKey);
+      }
     })();
 
     return () => {
       isCancelled = true;
     };
-  }, [metaId, videoId]);
+  }, [activeProfileId, lastStreamTargetKey, metaId, shouldAutoPlay, videoId]);
   const { data: streams, isLoading } = useStreams(type, metaId, videoId, effectiveAutoPlay);
 
-  const lastStream = findLastStream(streams, lastStreamTarget);
-  const lastStreamTargetForPlayback = resolveLastStreamTarget(lastStreamTarget, lastStream);
+  const lastStream = findLastStream(streams, currentLastStreamTarget);
+  const lastStreamTargetForPlayback = resolveLastStreamTarget(currentLastStreamTarget, lastStream);
   const lastStreamId = lastStreamTargetForPlayback?.streamId;
   const { openStreamTarget, openStreamFromStream } = useMediaNavigation();
 
   useEffect(() => {
-    if (!effectiveAutoPlay || didAutoNavigateRef.current || isLoading) return;
+    if (
+      !effectiveAutoPlay ||
+      didAutoNavigateRef.current ||
+      isLoading ||
+      !isLastStreamTargetResolved
+    ) {
+      return;
+    }
     didAutoNavigateRef.current = true;
 
     if (lastStreamTargetForPlayback) {
@@ -195,6 +222,7 @@ export const useAutoPlay = ({
     isLoading,
     backgroundImage,
     logoImage,
+    isLastStreamTargetResolved,
     t,
   ]);
 

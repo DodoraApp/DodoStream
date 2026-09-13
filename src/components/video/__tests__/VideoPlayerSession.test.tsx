@@ -21,6 +21,7 @@ jest.mock('@/store/profile.store', () => ({
 }));
 
 let mockIntroData: any;
+let mockPreferredAudioLanguages: string[] | undefined;
 jest.mock('@/api/introdb', () => ({
   useIntro: () => ({ data: mockIntroData }),
 }));
@@ -39,7 +40,7 @@ jest.mock('@/store/playback.store', () => ({
     selector({
       byProfile: {
         p1: {
-          preferredAudioLanguages: undefined,
+          preferredAudioLanguages: mockPreferredAudioLanguages,
           preferredSubtitleLanguages: undefined,
           skipIntroEnabled: true,
         },
@@ -81,6 +82,8 @@ type MockPlayerControlsProps = React.ComponentProps<typeof mockView> & {
   introData?: unknown;
   onPlayPause?: () => void;
   onVisibilityChange?: (visible: boolean) => void;
+  selectedAudioTrack?: { index: number };
+  onSelectAudioTrack?: (index: number) => void;
 };
 let mockPlayerControlsProps: MockPlayerControlsProps | undefined;
 let mockLastVlcProps: any;
@@ -149,6 +152,7 @@ describe('VideoPlayerSession', () => {
     mockSetLastStreamTarget.mockReset().mockResolvedValue(undefined);
     mockResumeHistoryItem = undefined;
     mockIntroData = undefined;
+    mockPreferredAudioLanguages = undefined;
     mockShowToast.mockReset();
     mockReplaceToStreams.mockReset();
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
@@ -244,6 +248,40 @@ describe('VideoPlayerSession', () => {
       expect.objectContaining({ metaId: 'm1', progressSeconds: 30, durationSeconds: 100 })
     );
   });
+  it('only seeks the current source when a delayed resume is superseded by a stream switch', () => {
+    mockResumeHistoryItem = { progressSeconds: 30 };
+    const { props, rerender } = renderSession({ source: 'https://example.com/first.m3u8' });
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+    });
+
+    rerender(<VideoPlayerSession {...props} source="https://example.com/second.m3u8" />);
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 200 });
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(mockSeekTo).toHaveBeenCalledTimes(1);
+    expect(mockSeekTo).toHaveBeenCalledWith(30, 200);
+  });
+
+  it('does not seek through an unmounted player session', () => {
+    mockResumeHistoryItem = { progressSeconds: 30 };
+    const { unmount } = renderSession();
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+    });
+    unmount();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(mockSeekTo).not.toHaveBeenCalled();
+  });
+
   it('keeps skip intro hidden until the resumed position is reported', () => {
     mockResumeHistoryItem = { type: 'series', progressSeconds: 30 };
     mockIntroData = { start_ms: 0, end_ms: 60_000 };
@@ -334,6 +372,42 @@ describe('VideoPlayerSession', () => {
       })
     );
   });
+  it.each([
+    ['a network error', 'Network timeout', 'exoplayer', 'exoplayer', true],
+    ['a codec error when fallback is disabled', 'Decoder failed', 'exoplayer', 'exoplayer', false],
+    [
+      'a codec error from a player that was not selected',
+      'Decoder failed',
+      'vlc',
+      'exoplayer',
+      true,
+    ],
+    ['a codec error after VLC is exhausted', 'Decoder failed', 'vlc', 'vlc', true],
+  ])(
+    'reports %s without switching players',
+    (_description, message, usedPlayerType, playerType, automaticFallback) => {
+      const setUsedPlayerType = jest.fn();
+      const onError = jest.fn();
+      renderSession({
+        usedPlayerType: usedPlayerType as 'exoplayer' | 'vlc',
+        playerType: playerType as 'exoplayer' | 'vlc',
+        automaticFallback,
+        setUsedPlayerType,
+        onError,
+      });
+
+      act(() => {
+        const playerProps = usedPlayerType === 'vlc' ? mockLastVlcProps : mockLastExoProps;
+        playerProps.onError(message);
+      });
+
+      expect(setUsedPlayerType).not.toHaveBeenCalled();
+      expect(onError).toHaveBeenCalledWith(message);
+      expect(mockShowToast).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'playback_error', preset: 'error' })
+      );
+    }
+  );
 
   it('autoplays next episode on end when Up Next is resolved and not cancelled', () => {
     // Arrange
@@ -366,6 +440,59 @@ describe('VideoPlayerSession', () => {
     expect(mockReplaceToStreams).toHaveBeenCalledWith(
       { metaId: 'm1', videoId: 'v2', type: 'series' },
       { autoPlay: '1', bingeGroup: 'bg' }
+    );
+  });
+  it('handles duplicated terminal events once for a resolved next episode', () => {
+    mockUpNextResolved = { videoId: 'v2', episodeLabel: 'S1E2' };
+    renderSession({ mediaType: 'series' as any, videoId: 'v1', bingeGroup: 'bg' });
+
+    act(() => {
+      mockLastExoProps.onEnd();
+      mockLastExoProps.onEnd();
+    });
+
+    expect(mockReplaceToStreams).toHaveBeenCalledTimes(1);
+    expect(mockReplaceToStreams).toHaveBeenCalledWith(
+      { metaId: 'm1', videoId: 'v2', type: 'series' },
+      { autoPlay: '1', bingeGroup: 'bg' }
+    );
+  });
+
+  it('honors cancellation that races with the terminal event', () => {
+    mockUpNextResolved = { videoId: 'v2', episodeLabel: 'S1E2' };
+    const onStop = jest.fn();
+    renderSession({ mediaType: 'series' as any, videoId: 'v1', bingeGroup: 'bg', onStop });
+
+    act(() => {
+      mockUpNextProps.onCancelAutoplay();
+      mockLastExoProps.onEnd();
+    });
+
+    expect(mockReplaceToStreams).not.toHaveBeenCalled();
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it('chooses the preferred audio track and ignores an unknown manual track index', () => {
+    mockPreferredAudioLanguages = ['de'];
+    renderSession();
+
+    act(() => {
+      mockLastExoProps.onAudioTracks([
+        { index: 0, title: 'English', language: 'en' },
+        { index: 1, title: 'Deutsch', language: 'de' },
+      ]);
+    });
+
+    expect(mockPlayerControlsProps?.selectedAudioTrack).toEqual(
+      expect.objectContaining({ index: 1, language: 'de' })
+    );
+
+    act(() => {
+      mockPlayerControlsProps?.onSelectAudioTrack?.(99);
+    });
+
+    expect(mockPlayerControlsProps?.selectedAudioTrack).toEqual(
+      expect.objectContaining({ index: 1, language: 'de' })
     );
   });
 
