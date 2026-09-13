@@ -17,6 +17,9 @@ export const UPNEXT_POPUP_MOVIE_RATIO = 0.9;
 export const UPNEXT_POPUP_INACTIVE_DELAY_MS = 5000;
 
 export const PLAYBACK_RATIO_PERSIST_INTERVAL = 5000;
+// Player diagnostics sampling
+export const PLAYER_STATISTICS_SAMPLE_INTERVAL_MS = 1000;
+export const PLAYER_STATISTICS_HISTORY_SIZE = 36;
 export const MAX_AUTO_PLAY_ATTEMPTS = 3;
 
 // Player control timing

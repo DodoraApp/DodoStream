@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 
 import { act, render } from '@testing-library/react-native';
 
@@ -65,10 +66,11 @@ describe('RNVideoPlayer native adapter', () => {
     };
   });
 
-  it('translates load, progress, buffering, end, and statistics events without changing their meaning', () => {
+  it('translates load, progress, buffering, bandwidth, end, and statistics events without changing their meaning', () => {
     const onLoad = jest.fn();
     const onProgress = jest.fn();
     const onBuffer = jest.fn();
+    const onBandwidthUpdate = jest.fn();
     const onEnd = jest.fn();
     const onStatistics = jest.fn();
     render(
@@ -78,6 +80,7 @@ describe('RNVideoPlayer native adapter', () => {
         onLoad={onLoad}
         onProgress={onProgress}
         onBuffer={onBuffer}
+        onBandwidthUpdate={onBandwidthUpdate}
         onEnd={onEnd}
         onStatistics={onStatistics}
       />
@@ -85,21 +88,64 @@ describe('RNVideoPlayer native adapter', () => {
 
     act(() => {
       getNativeCallback('onLoad')({ duration: 120 });
-      getNativeCallback('onProgress')({ currentTime: 12.5, seekableDuration: 90 });
-      getNativeCallback('onProgress')({ currentTime: 13, seekableDuration: 0 });
+      getNativeCallback('onProgress')({
+        currentTime: 12.5,
+        playableDuration: 42.5,
+        seekableDuration: 90,
+      });
+      getNativeCallback('onProgress')({
+        currentTime: 13,
+        playableDuration: 0,
+        seekableDuration: 0,
+      });
       getNativeCallback('onBuffer')({ isBuffering: true });
       getNativeCallback('onBuffer')({ isBuffering: false });
+      getNativeCallback('onBandwidthUpdate')({
+        bitrate: 4_000_000,
+        width: 1920,
+        height: 1080,
+        trackId: 'video-1',
+      });
       getNativeCallback('onEnd')();
       getNativeCallback('onVideoStatistics')({ bitrate: 4_000_000, droppedFrames: 2 });
     });
 
     expect(onLoad).toHaveBeenCalledWith({ duration: 120 });
-    expect(onProgress).toHaveBeenNthCalledWith(1, { currentTime: 12.5, duration: 90 });
-    expect(onProgress).toHaveBeenNthCalledWith(2, { currentTime: 13, duration: 0 });
+    expect(onProgress).toHaveBeenNthCalledWith(1, {
+      currentTime: 12.5,
+      duration: 90,
+      bufferedDuration: 42.5,
+      seekableDuration: 90,
+    });
+    expect(onProgress).toHaveBeenNthCalledWith(2, {
+      currentTime: 13,
+      duration: 0,
+      bufferedDuration: 0,
+      seekableDuration: 0,
+    });
     expect(onBuffer).toHaveBeenNthCalledWith(1, true);
     expect(onBuffer).toHaveBeenNthCalledWith(2, false);
+    expect(onBandwidthUpdate).toHaveBeenCalledWith({
+      bitrate: 4_000_000,
+      width: 1920,
+      height: 1080,
+      trackId: 'video-1',
+    });
     expect(onEnd).toHaveBeenCalledTimes(1);
     expect(onStatistics).toHaveBeenCalledWith({ bitrate: 4_000_000, droppedFrames: 2 });
+  });
+
+  it('defaults missing legacy passthrough settings to disabled on TV', () => {
+    const originalIsTV = Platform.isTV;
+    Object.defineProperty(Platform, 'isTV', { configurable: true, value: true });
+    mockPlaybackState = { byProfile: { 'profile-1': {} } };
+
+    try {
+      render(<RNVideoPlayer source="https://cdn.example/video.m3u8" paused={false} />);
+      expect(mockNativeVideoProps?.audioPassthrough).toBe(false);
+    } finally {
+      Object.defineProperty(Platform, 'isTV', { configurable: true, value: originalIsTV });
+    }
   });
 
   it('maps native tracks to stable app tracks and preserves the native subtitle index', () => {
@@ -229,7 +275,7 @@ describe('RNVideoPlayer native adapter', () => {
         tunneled: true,
         audioPassthrough: true,
         enableWorkarounds: false,
-        reportStatistics: true,
+        reportBandwidth: true,
         matchFrameRate: true,
         enableVideoSoftwareDecoding: true,
         controls: false,

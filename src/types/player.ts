@@ -18,6 +18,22 @@ export interface PlayerRef {
   seekTo: (time: number, duration: number) => void;
 }
 
+export type PlayerStatisticsValue = string | number | object | undefined;
+export type PlayerStatistics = Record<string, PlayerStatisticsValue>;
+export interface PlayerBandwidth {
+  bitrate: number;
+  width?: number;
+  height?: number;
+  trackId?: string;
+}
+
+export interface PlaybackDiagnostics {
+  bufferAheadSeconds?: number;
+  bufferHistory: number[];
+  rebufferCount: number;
+  totalRebufferSeconds: number;
+}
+
 export interface AudioTrack {
   index: number;
   title?: string;
@@ -90,7 +106,12 @@ export interface PlayerProps {
   paused: boolean;
   /** Video scaling mode (contain, cover, stretch) */
   fitMode?: VideoFitMode;
-  onProgress?: (data: { currentTime: number; duration?: number }) => void;
+  onProgress?: (data: {
+    currentTime: number;
+    duration?: number;
+    bufferedDuration?: number;
+    seekableDuration?: number;
+  }) => void;
   onLoad?: (data: { duration: number }) => void;
   onBuffer?: (buffering: boolean) => void;
   onPlaying?: () => void;
@@ -98,7 +119,8 @@ export interface PlayerProps {
   onError?: (message: string) => void;
   onAudioTracks?: (tracks: AudioTrack[]) => void;
   onTextTracks?: (tracks: TextTrack[]) => void;
-  onStatistics?: (statistics: Record<string, string | number | object | undefined>) => void;
+  onStatistics?: (statistics: PlayerStatistics) => void;
+  onBandwidthUpdate?: (data: PlayerBandwidth) => void;
   selectedAudioTrack?: AudioTrack;
   selectedTextTrack?: TextTrack;
   /** Native subtitle style (limited platform support) */
