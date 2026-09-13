@@ -91,15 +91,19 @@ export const EpisodeList: FC<EpisodeListProps> = ({
     }
 
     const currentEpisode = videos.find((video) => video.id === currentVideoId);
-    if (currentEpisode?.season !== undefined && seasons.includes(currentEpisode.season)) {
-      return currentEpisode.season;
+    if (currentEpisode) {
+      const currentSeason = currentEpisode.season ?? 0;
+      if (seasons.includes(currentSeason)) {
+        return currentSeason;
+      }
     }
 
-    if (
-      continueWatching?.video?.season !== undefined &&
-      seasons.includes(continueWatching.video.season)
-    ) {
-      return continueWatching.video.season;
+    const continueWatchingEpisode = continueWatching?.video;
+    if (continueWatchingEpisode) {
+      const continueWatchingSeason = continueWatchingEpisode.season ?? 0;
+      if (seasons.includes(continueWatchingSeason)) {
+        return continueWatchingSeason;
+      }
     }
 
     return seasons[0] ?? 0;
