@@ -11,6 +11,26 @@ describe('isStreamSelected', () => {
     expect(isStreamSelected(stream, 'addon-1::https://example.com/current.m3u8')).toBe(true);
   });
 
+  it('does not use the URL fallback when a different stable stream ID is selected', () => {
+    const selectedStream = {
+      addonId: 'addon-1',
+      infoHash: 'hash-1',
+      url: 'https://example.com/current.m3u8',
+    } as Stream;
+    const sameUrlFromAnotherAddon = {
+      addonId: 'addon-2',
+      url: selectedStream.url,
+    } as Stream;
+
+    expect(
+      isStreamSelected(
+        sameUrlFromAnotherAddon,
+        getStreamStableId(selectedStream),
+        selectedStream.url
+      )
+    ).toBe(false);
+  });
+
   it('matches the current URL when autoplay has no stable stream ID', () => {
     expect(isStreamSelected(stream, undefined, stream.url)).toBe(true);
   });

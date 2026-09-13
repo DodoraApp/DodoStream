@@ -820,11 +820,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           return;
         }
 
-        if (stream.url) {
-          closeSelectionMenu({ resumePlayback: false });
-        } else {
-          closeSelectionMenu();
-        }
+        closeSelectionMenu({ resumePlayback: false });
         onStreamSelect(stream);
       },
       [activeMenu, closeSelectionMenu, currentStreamUrl, onStreamSelect, streamId]
