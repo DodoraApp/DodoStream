@@ -30,7 +30,14 @@ import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/pla
 import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
 import { Box, Text, Theme } from '@/theme/theme';
-import { AudioTrack, PlayerRef, PlayerType, TextTrack, VideoFitMode } from '@/types/player';
+import {
+  AudioTrack,
+  PLAYER_CAPABILITIES,
+  PlayerRef,
+  PlayerType,
+  TextTrack,
+  VideoFitMode,
+} from '@/types/player';
 import type { ContentType, MetaVideo, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { formatFitModeLabel } from '@/utils/format';
@@ -817,7 +824,10 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const PlayerComponent = usedPlayerType === 'vlc' ? VLCPlayer : RNVideoPlayer;
   // Show custom loading screen on first load if background/logo is available
   const showCustomLoadingScreen = isVideoLoading && isFirstLoad && hasBackgroundOrLogo;
-  const showBufferingIndicator = isBuffering && !isPlaying && !paused;
+  const supportsRebufferingIndicator =
+    PLAYER_CAPABILITIES[usedPlayerType].supportsRebufferingIndicator;
+  const showBufferingIndicator =
+    isBuffering && !paused && (!isPlaying || supportsRebufferingIndicator);
   return (
     <Box flex={1} backgroundColor="playerBackground">
       <PlayerComponent

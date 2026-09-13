@@ -81,6 +81,13 @@ src/
 
 Lefthook runs `eslint --fix` and `prettier --write` on staged files at commit time.
 
+### Commit Messages
+
+- Use Conventional Commits: `<type>(<optional scope>): <imperative summary>`.
+- Use a lower-case type such as `feat`, `fix`, `refactor`, `test`, `docs`, or `chore`; scope the change when it improves clarity.
+- Keep the summary concise, imperative, and under 72 characters. Do not use generic messages such as `update` or `fix`.
+- Keep each commit to one logical change. Add a body only when it explains a non-obvious decision, risk, or migration.
+
 ### Import Order
 
 Auto-enforced by `simple-import-sort` (React first, then external, then `@/` aliases, then relative).

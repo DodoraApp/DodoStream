@@ -200,13 +200,18 @@ describe('VideoPlayerSession', () => {
     renderSession({ usedPlayerType: 'vlc' });
     expect(mockLastVlcProps).toBeTruthy();
   });
-  it('shows buffering only until playback starts', () => {
+  it('shows reliable buffering events before and after playback starts', () => {
     const { getByTestId, queryByTestId } = renderSession();
     triggerBuffering(mockLastExoProps);
     expect(mockPlayerControlsProps?.disableControls).toBe(false);
     expect(getByTestId('player-buffering-indicator')).toBeTruthy();
     act(() => mockLastExoProps.onBuffer(false));
     expect(queryByTestId('player-buffering-indicator')).toBeNull();
+    act(() => {
+      mockLastExoProps.onPlaying();
+      mockLastExoProps.onBuffer(true);
+    });
+    expect(getByTestId('player-buffering-indicator')).toBeTruthy();
 
     const vlcSession = renderSession({ usedPlayerType: 'vlc', playerType: 'vlc' });
     triggerBuffering(mockLastVlcProps);

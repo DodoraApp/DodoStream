@@ -1,5 +1,15 @@
 export type PlayerType = 'vlc' | 'exoplayer';
 
+export interface PlayerCapabilities {
+  /** Whether buffering events can safely show a spinner after playback begins. */
+  supportsRebufferingIndicator: boolean;
+}
+
+export const PLAYER_CAPABILITIES = {
+  vlc: { supportsRebufferingIndicator: false },
+  exoplayer: { supportsRebufferingIndicator: true },
+} as const satisfies Record<PlayerType, PlayerCapabilities>;
+
 export type TextTrackSource = 'video' | 'addon';
 
 export type VideoFitMode = 'contain' | 'cover' | 'stretch';
