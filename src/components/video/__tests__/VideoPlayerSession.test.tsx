@@ -22,6 +22,7 @@ jest.mock('@/store/profile.store', () => ({
 
 let mockIntroData: any;
 let mockPreferredAudioLanguages: string[] | undefined;
+let mockShowVideoStatistics = false;
 jest.mock('@/api/introdb', () => ({
   useIntro: () => ({ data: mockIntroData }),
 }));
@@ -42,6 +43,7 @@ jest.mock('@/store/playback.store', () => ({
         p1: {
           preferredAudioLanguages: mockPreferredAudioLanguages,
           preferredSubtitleLanguages: undefined,
+          showVideoStatistics: mockShowVideoStatistics,
           skipIntroEnabled: true,
         },
       },
@@ -116,6 +118,19 @@ jest.mock('../PlayerControls', () => ({
   },
 }));
 
+let mockStatisticsOverlayProps:
+  | {
+      statistics: Record<string, unknown>;
+      diagnostics: { rebufferCount: number; bufferHistory: number[] };
+    }
+  | undefined;
+jest.mock('../PlayerStatisticsOverlay', () => ({
+  PlayerStatisticsOverlay: (props: any) => {
+    mockStatisticsOverlayProps = props;
+    return null;
+  },
+}));
+
 let mockUpNextResolved: any | undefined;
 let mockUpNextProps: any;
 jest.mock('../UpNextPopup', () => ({
@@ -153,6 +168,7 @@ describe('VideoPlayerSession', () => {
     mockResumeHistoryItem = undefined;
     mockIntroData = undefined;
     mockPreferredAudioLanguages = undefined;
+    mockShowVideoStatistics = false;
     mockShowToast.mockReset();
     mockReplaceToStreams.mockReset();
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
@@ -200,6 +216,7 @@ describe('VideoPlayerSession', () => {
     renderSession({ usedPlayerType: 'vlc' });
     expect(mockLastVlcProps).toBeTruthy();
   });
+
   it('shows reliable buffering events before and after playback starts', () => {
     const { getByTestId, queryByTestId } = renderSession();
     triggerBuffering(mockLastExoProps);
@@ -229,6 +246,45 @@ describe('VideoPlayerSession', () => {
       mockLastVlcProps.onBuffer(true);
     });
     expect(vlcSession.queryByTestId('player-buffering-indicator')).toBeNull();
+  });
+  it('collects diagnostics only while the statistics overlay is visible', () => {
+    const { rerender } = renderSession({ usedPlayerType: 'exoplayer' });
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+      mockLastExoProps.onStatistics({ videoCodecName: 'HEVC' });
+      mockLastExoProps.onPlaying();
+      mockLastExoProps.onBuffer(true);
+      mockLastExoProps.onBuffer(false);
+      mockLastExoProps.onProgress({ currentTime: 10, bufferedDuration: 30 });
+    });
+
+    expect(mockStatisticsOverlayProps).toBeUndefined();
+    expect(mockLastExoProps).toBeTruthy();
+
+    // Enabling the overlay starts collection from the next event.
+    mockShowVideoStatistics = true;
+    rerender(
+      <VideoPlayerSession
+        source="https://example.com/stream.m3u8"
+        title="Title"
+        mediaType="movie"
+        metaId="m1"
+        onStop={jest.fn()}
+        onError={jest.fn()}
+        usedPlayerType="exoplayer"
+        setUsedPlayerType={jest.fn()}
+        playerType="exoplayer"
+        automaticFallback
+      />
+    );
+    act(() => {
+      mockLastExoProps.onPlaying();
+      mockLastExoProps.onStatistics({ videoCodecName: 'HEVC' });
+      mockLastExoProps.onProgress({ currentTime: 10, bufferedDuration: 30 });
+    });
+
+    expect(mockStatisticsOverlayProps?.statistics.videoCodecName).toBe('HEVC');
+    expect(mockStatisticsOverlayProps?.diagnostics.bufferHistory).toEqual([20]);
   });
   it('applies resume progress on load and seeks to resume time', () => {
     // Arrange

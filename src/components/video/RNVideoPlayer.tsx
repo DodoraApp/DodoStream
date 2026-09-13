@@ -1,7 +1,7 @@
 import React, { forwardRef, memo, useCallback, useImperativeHandle, useRef } from 'react';
-import { Platform } from 'react-native';
 import Video, {
   OnAudioTracksData,
+  OnBandwidthUpdateData,
   OnBufferData,
   OnLoadData,
   OnProgressData,
@@ -17,7 +17,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
-import { AudioTrack, PlayerProps, PlayerRef, TextTrack } from '@/types/player';
+import { AudioTrack, PlayerProps, PlayerRef, PlayerStatistics, TextTrack } from '@/types/player';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('RNVideoPlayer');
@@ -48,6 +48,7 @@ export const RNVideoPlayer = memo(
       onAudioTracks,
       onTextTracks,
       onStatistics,
+      onBandwidthUpdate,
       selectedAudioTrack,
       selectedTextTrack,
       subtitleStyle,
@@ -71,8 +72,7 @@ export const RNVideoPlayer = memo(
         return {
           tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
           audioPassthrough:
-            settings?.audioPassthrough ??
-            (Platform.isTV ? true : DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough),
+            settings?.audioPassthrough ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough,
           enableWorkarounds:
             settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
           showVideoStatistics:
@@ -98,6 +98,8 @@ export const RNVideoPlayer = memo(
         onProgress?.({
           currentTime: data.currentTime,
           duration: data.seekableDuration || 0,
+          bufferedDuration: data.playableDuration || 0,
+          seekableDuration: data.seekableDuration || 0,
         });
       },
       [onPlaying, onProgress, paused]
@@ -157,12 +159,24 @@ export const RNVideoPlayer = memo(
       },
       [onTextTracks]
     );
-
     const handleVideoStatistics = useCallback(
       (data: OnVideoStatisticsData) => {
-        onStatistics?.(data);
+        onStatistics?.(data as PlayerStatistics);
       },
       [onStatistics]
+    );
+
+    const handleBandwidthUpdate = useCallback(
+      (data: OnBandwidthUpdateData) => {
+        debug('bandwidth', data);
+        onBandwidthUpdate?.({
+          bitrate: data.bitrate,
+          width: data.width,
+          height: data.height,
+          trackId: data.trackId,
+        });
+      },
+      [onBandwidthUpdate]
     );
 
     const audioTrackSelection: SelectedTrack | undefined = selectedAudioTrack
@@ -205,7 +219,9 @@ export const RNVideoPlayer = memo(
         matchFrameRate={matchFrameRate}
         enableVideoSoftwareDecoding={enableVideoSoftwareDecoding}
         reportStatistics={showVideoStatistics}
+        reportBandwidth={showVideoStatistics}
         onVideoStatistics={handleVideoStatistics}
+        onBandwidthUpdate={handleBandwidthUpdate}
         style={{ flex: 1 }}
         paused={paused}
         controls={false}

@@ -3,7 +3,6 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 
-import { useTheme } from '@shopify/restyle';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -20,6 +19,7 @@ import {
 import { TOAST_DURATION_LONG, TOAST_DURATION_MEDIUM, TOAST_DURATION_SHORT } from '@/constants/ui';
 import { setLastStreamTarget } from '@/db';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { usePlaybackDiagnostics } from '@/hooks/usePlaybackDiagnostics';
 import { useNativeSubtitleStyle } from '@/hooks/useSubtitleStyle';
 import {
   useWatchHistoryActions,
@@ -29,7 +29,7 @@ import {
 import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
 import { showToast } from '@/store/toast.store';
-import { Box, Text, Theme } from '@/theme/theme';
+import { Box } from '@/theme/theme';
 import {
   AudioTrack,
   PLAYER_CAPABILITIES,
@@ -53,6 +53,7 @@ import { combineSubtitles } from '@/utils/subtitles';
 import { CustomSubtitles } from './CustomSubtitles';
 import { PlayerControls } from './PlayerControls';
 import { PlayerLoadingScreen } from './PlayerLoadingScreen';
+import { PlayerStatisticsOverlay } from './PlayerStatisticsOverlay';
 import { RNVideoPlayer } from './RNVideoPlayer';
 import { UpNextPopup, type UpNextResolved } from './UpNextPopup';
 import { VLCPlayer } from './VLCPlayer';
@@ -145,7 +146,6 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   automaticFallback,
 }) => {
   const { t } = useTranslation('player');
-  const theme = useTheme<Theme>();
   const queryClient = useQueryClient();
 
   const playerRef = useRef<PlayerRef>(null);
@@ -235,13 +235,21 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     },
     [upNextThreshold]
   );
-
   const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedAudioTrack, setSelectedAudioTrack] = useState<AudioTrack>();
   const [selectedTextTrack, setSelectedTextTrack] = useState<TextTrack>();
-  const [videoStatistics, setVideoStatistics] = useState<
-    Record<string, string | number | object | undefined>
-  >({});
+
+  const {
+    statistics: videoStatistics,
+    bandwidth,
+    diagnostics: playbackDiagnostics,
+    handleStatistics,
+    handleBandwidthUpdate,
+    handleBuffering: recordDiagnosticsBuffering,
+    markPlaybackStarted,
+    recordBufferSample,
+    reset: resetDiagnostics,
+  } = usePlaybackDiagnostics(showVideoStatistics);
 
   const { combinedSubtitles, areSubtitlesLoading, setVideoSubtitles } = useSubtitleCombiner(
     mediaType,
@@ -464,7 +472,12 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
     [bingeGroup, mediaType, metaId, replaceToStreams]
   );
   const handleProgress = useCallback(
-    (data: { currentTime: number; duration?: number }) => {
+    (data: {
+      currentTime: number;
+      duration?: number;
+      bufferedDuration?: number;
+      seekableDuration?: number;
+    }) => {
       const pendingResumeTime = pendingResumeTimeRef.current;
       if (pendingResumeTime !== null && data.currentTime < pendingResumeTime) {
         debug('progressBeforeResumeSeek', {
@@ -482,6 +495,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
       setCurrentTime(data.currentTime);
       lastKnownTimeRef.current = data.currentTime;
+      recordBufferSample(data.currentTime, data.bufferedDuration);
       // Only update duration state when it actually changes to avoid unnecessary re-renders
       if (data.duration && data.duration !== lastKnownDurationRef.current) {
         setDuration(data.duration);
@@ -494,33 +508,23 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         persistProgress(data.currentTime, currentDuration);
       }
     },
-    [persistProgress, updateThrottledProgressRatio]
+    [persistProgress, recordBufferSample, updateThrottledProgressRatio]
   );
 
   const handlePlaying = useCallback(() => {
     debug('playing');
+    markPlaybackStarted();
     setIsPlaying(true);
-  }, []);
+  }, [markPlaybackStarted]);
 
-  const handleBuffering = useCallback((buffering: boolean) => {
-    debug('buffering', { buffering });
-    setIsBuffering(buffering);
-  }, []);
-
-  const handleStatistics = useCallback(
-    (statistics: Record<string, string | number | object | undefined>) => {
-      debug('videoStatistics', statistics);
-      setVideoStatistics(statistics);
+  const handleBuffering = useCallback(
+    (buffering: boolean) => {
+      debug('buffering', { buffering });
+      recordDiagnosticsBuffering(buffering, paused);
+      setIsBuffering(buffering);
     },
-    []
+    [paused, recordDiagnosticsBuffering]
   );
-
-  useEffect(() => {
-    if (!allowCoverFit && fitMode === 'cover') {
-      // Deferred so the compiler does not flag synchronous setState in effects
-      queueMicrotask(() => setFitMode('contain'));
-    }
-  }, [allowCoverFit, fitMode]);
 
   const handleCycleFitMode = useCallback(() => {
     const nextMode = getNextFitMode(fitMode, allowCoverFit);
@@ -535,7 +539,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
   const handleLoad = useCallback(
     (data: { duration: number }) => {
       debug('load', { duration: data.duration, usedPlayerType, playerType, automaticFallback });
-
+      resetDiagnostics();
       // Mark first load as complete
       setIsFirstLoad(false);
 
@@ -609,6 +613,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
       playerType,
       queryClient,
       resumeHistoryItem?.progressSeconds,
+      resetDiagnostics,
       source,
       streamId,
       updateThrottledProgressRatio,
@@ -845,6 +850,7 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         onAudioTracks={handleAudioTracksLoaded}
         onTextTracks={handleTextTracksLoaded}
         onStatistics={handleStatistics}
+        onBandwidthUpdate={handleBandwidthUpdate}
         selectedAudioTrack={selectedAudioTrack}
         selectedTextTrack={selectedTextTrack?.source === 'video' ? selectedTextTrack : undefined}
         subtitleStyle={nativeSubtitleStyle}
@@ -860,44 +866,18 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
         </Box>
       )}
 
-      {showVideoStatistics && Object.keys(videoStatistics).length > 0 && (
-        <Box
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: theme.spacing.m,
-            left: theme.spacing.m,
-          }}>
-          <Box
-            style={{
-              position: 'relative',
-              borderRadius: theme.borderRadii.m,
-              overflow: 'hidden',
-            }}>
-            <Box
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: theme.colors.mainBackground,
-                  opacity: 0.75,
-                  borderRadius: theme.borderRadii.m,
-                },
-              ]}
-            />
-            <Box padding="s" gap="xs">
-              {Object.entries(videoStatistics).map(([key, value]) => (
-                <Box key={key} flexDirection="row" gap="s">
-                  <Text variant="caption" color="mainForeground">
-                    {key}:
-                  </Text>
-                  <Text variant="caption" color="mainForeground">
-                    {JSON.stringify(value)}
-                  </Text>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </Box>
+      {showVideoStatistics && (
+        <PlayerStatisticsOverlay
+          statistics={videoStatistics}
+          diagnostics={playbackDiagnostics}
+          bandwidth={bandwidth}
+          currentTime={currentTime}
+          duration={duration}
+          isPlaying={isPlaying}
+          isBuffering={isBuffering}
+          playerType={usedPlayerType}
+          source={source}
+        />
       )}
 
       {/* Custom subtitles overlay for addon-provided subtitles */}
