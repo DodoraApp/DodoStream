@@ -214,6 +214,7 @@ describe('StreamList selection', () => {
       expect.objectContaining({ id: 'addon-a', label: 'Alpha' }),
       expect.objectContaining({ id: 'addon-b', label: 'Bravo' }),
     ]);
+    expect(mockLegendProps).toEqual(expect.objectContaining({ dataKey: 'movie:movie-1::all' }));
 
     act(() => {
       tagFiltersProps.onSelectId('addon-a');
@@ -221,6 +222,7 @@ describe('StreamList selection', () => {
 
     expect(getByTestId(`stream-${getStreamStableId(playable as any)}`)).toBeTruthy();
     expect(queryByTestId(`stream-${getStreamStableId(alternative as any)}`)).toBeNull();
+    expect(mockLegendProps).toEqual(expect.objectContaining({ dataKey: 'movie:movie-1::addon-a' }));
   });
 
   it('renders partial stream results while other addons are still loading', () => {
