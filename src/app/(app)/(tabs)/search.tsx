@@ -153,7 +153,11 @@ export default function SearchTab() {
             emptyMessage={t('no_results')}
             errorMessage={t('search_failed')}>
             {() => (
-              <SearchResultsList searchResults={searchResults} onMediaPress={handleMediaPress} />
+              <SearchResultsList
+                searchResults={searchResults}
+                query={searchBar.submittedQuery}
+                onMediaPress={handleMediaPress}
+              />
             )}
           </LoadingQuery>
         )}
@@ -297,6 +301,7 @@ function SearchEmptyState() {
 
 interface SearchResultsListProps {
   searchResults: SearchCatalogResult[];
+  query: string;
   onMediaPress: (media: MetaPreview) => void;
 }
 
@@ -320,7 +325,7 @@ function flattenSearchResults(searchResults: SearchCatalogResult[]): SearchListI
   return items;
 }
 
-function SearchResultsList({ searchResults, onMediaPress }: SearchResultsListProps) {
+function SearchResultsList({ searchResults, query, onMediaPress }: SearchResultsListProps) {
   const flattenedData = useMemo(() => flattenSearchResults(searchResults), [searchResults]);
 
   const renderItem = useCallback(
@@ -328,15 +333,22 @@ function SearchResultsList({ searchResults, onMediaPress }: SearchResultsListPro
       if (item.type === 'header') {
         return <CatalogSectionHeader title={item.title} type={item.catalogType} />;
       }
-      return <StaticCatalogSection metas={item.metas} onMediaPress={onMediaPress} />;
+      return (
+        <StaticCatalogSection
+          dataKey={`search:${query}:${item.id}`}
+          metas={item.metas}
+          onMediaPress={onMediaPress}
+        />
+      );
     },
-    [onMediaPress]
+    [onMediaPress, query]
   );
 
   const keyExtractor = useCallback((item: SearchListItem) => item.id, []);
 
   return (
     <LegendList
+      dataKey={query}
       data={flattenedData}
       renderItem={renderItem}
       keyExtractor={keyExtractor}

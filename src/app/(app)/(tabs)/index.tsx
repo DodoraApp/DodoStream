@@ -592,6 +592,7 @@ const MyListSectionRow = memo(({ onMediaPress, onSectionFocused }: MyListSection
         />
       </Box>
       <MediaList
+        dataKey={`my-list:${selectedFilter ?? 'all'}`}
         data={mappedData}
         onMediaPress={onMediaPress}
         onItemFocused={onSectionFocused}
