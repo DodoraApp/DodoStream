@@ -926,7 +926,6 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
       [activeMenu, closeSelectionMenu, onEpisodeSelect, videoId]
     );
 
-    // When hidden, render minimal touchable area and skip chapter buttons
     if (!visible) {
       return (
         <>
@@ -936,7 +935,17 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
             onPress={showControls}
             hasTVPreferredFocus={!isSkipChapterVisible && !suppressPreferredFocus}
           />
-          {skipChapterButtons}
+          {skipChapterButtons.length > 0 && (
+            <Box
+              position="absolute"
+              bottom={theme.spacing.m}
+              right={theme.spacing.m}
+              flexDirection="row"
+              gap="s"
+              pointerEvents="box-none">
+              {skipChapterButtons}
+            </Box>
+          )}
         </>
       );
     }
@@ -951,7 +960,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           focusable={false}
           isTVSelectable={false}
           onPress={toggleControls}>
-          <Box flex={1} justifyContent="space-between">
+          <Box flex={1}>
             <TopBar
               title={title}
               onBack={handleBack}
@@ -959,9 +968,6 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
               currentTime={currentTime}
               duration={duration}
             />
-
-            {/* Center area - contains skip chapter buttons */}
-            <Box flex={1}>{skipChapterButtons}</Box>
           </Box>
           {showLoadingIndicator && (
             <Box
@@ -975,8 +981,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           )}
         </Pressable>
 
-        {/* Bottom Controls: gradient fades out towards the top, chapter labels sit
-            on its transparent upper region */}
+        {/* gradient's upper region stays transparent so chapter labels float over video */}
         <Box
           style={{
             position: 'absolute',
@@ -996,12 +1001,21 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
             <Box
               pointerEvents="box-none"
               paddingHorizontal="m"
-              gap="s"
+              // leaves room for the focused button's floating label (offset -l in ControlButton)
+              gap="l"
               style={{
                 paddingBottom:
                   insets.bottom > 0 ? insets.bottom + theme.spacing.m : theme.spacing.m,
               }}>
-              {/* Segmented seek bar + time display */}
+              {isSkipChapterVisible && (
+                <Box
+                  testID="player-skip-targets-row"
+                  pointerEvents="box-none"
+                  flexDirection="row"
+                  justifyContent="flex-end">
+                  {skipChapterButtons}
+                </Box>
+              )}
               <Box>
                 <ChapterLabels
                   chapters={chapters}
@@ -1033,9 +1047,7 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
                 />
               </Box>
 
-              {/* Control Buttons */}
               <Box flexDirection="row" alignItems="center" justifyContent="space-between">
-                {/* Left controls - flex: 1, justify start */}
                 <Box flex={1} flexDirection="row" justifyContent="flex-start">
                   <LeftControls
                     disableControls={disableControls}
@@ -1050,7 +1062,6 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
                   />
                 </Box>
 
-                {/* Center controls - flex to be pushed to center */}
                 <Box flex={1} flexDirection="row" justifyContent="center">
                   <PlaybackControls
                     paused={paused}
@@ -1063,7 +1074,6 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
                   />
                 </Box>
 
-                {/* Right controls - flex: 1, justify end */}
                 <Box flex={1} flexDirection="row" justifyContent="flex-end">
                   <RightControls
                     showSkipEpisode={showSkipEpisode}
@@ -1081,7 +1091,6 @@ export const PlayerControls: FC<PlayerControlsProps> = memo(
           </LinearGradient>
         </Box>
 
-        {/* Modals */}
         <PickerModal
           visible={showAudioTracks}
           onClose={() => setShowAudioTracks(false)}

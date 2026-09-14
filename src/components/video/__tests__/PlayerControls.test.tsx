@@ -267,9 +267,44 @@ describe('PlayerControls basic interactions', () => {
     expect(getByText(/Video EN \| English/)).toBeTruthy();
     expect(getByText(/Video ES \| Spanish/)).toBeTruthy();
   });
-  it('shows and handles a generic skip credits button', () => {
+  it('floats the skip button bottom-right while controls are hidden', () => {
     const onSkipChapter = jest.fn();
-    const { getByTestId, getByText } = renderWithProviders(
+    const { getByText, getByTestId, queryByTestId } = renderWithProviders(
+      <PlayerControls
+        paused={false}
+        currentTime={90}
+        duration={100}
+        showLoadingIndicator={false}
+        audioTracks={[]}
+        textTracks={[]}
+        skipTargets={[{ type: 'CREDITS', startTime: 80, endTime: 100 }]}
+        onSkipChapter={onSkipChapter}
+        mediaType="movie"
+        metaId="test-meta-id"
+        onPlayPause={() => {}}
+        onSeek={() => {}}
+        onSkipBackward={() => {}}
+        onSkipForward={() => {}}
+        onSelectAudioTrack={() => {}}
+        onSelectTextTrack={() => {}}
+        subtitleDelay={0}
+        onSubtitleDelayChange={() => {}}
+        fitMode="contain"
+        onToggleFitMode={() => {}}
+        onStreamSelect={() => {}}
+        onEpisodeSelect={() => {}}
+      />
+    );
+
+    // Assert: skip button floats while controls are hidden
+    expect(getByText('skip_credits')).toBeTruthy();
+    expect(queryByTestId('player-skip-targets-row')).toBeNull();
+    expect(getByTestId('player-controls-invisible-area')).toBeTruthy();
+  });
+
+  it('places the skip button inside the controls bar when controls are visible', () => {
+    const onSkipChapter = jest.fn();
+    const { getByText, getByTestId } = renderWithProviders(
       <PlayerControls
         paused={true}
         currentTime={90}
@@ -296,9 +331,13 @@ describe('PlayerControls basic interactions', () => {
       />
     );
 
+    // Act: reveal the controls
     fireEvent.press(getByTestId('player-controls-invisible-area'));
-    fireEvent.press(getByText('skip_credits'));
 
+    // Assert: skip button renders within the controls bar
+    const skipRow = getByTestId('player-skip-targets-row');
+    expect(within(skipRow).getByText('skip_credits')).toBeTruthy();
+    fireEvent.press(getByText('skip_credits'));
     expect(onSkipChapter).toHaveBeenCalledWith({
       type: 'CREDITS',
       startTime: 80,
