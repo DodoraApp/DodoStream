@@ -118,6 +118,13 @@ Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`).
   ```
 - Prefer file-local helper functions with early returns over nested ternary operators.
 
+### Comments
+
+- Code must be self-explanatory: descriptive names and small, focused units. If code needs a comment explaining _what_ it does, restructure the code instead of writing the comment.
+- Comment only non-obvious _why_: invariants, cross-file coupling, race conditions, or decisions a future reader would otherwise "fix" (e.g. a spacing token that must stay large because a floating label renders into the gap).
+- Never narrate the obvious or restate the code; delete such comments. Keep comments to one line where possible.
+- JSDoc on exported APIs states the contract, not the implementation.
+
 ## 5. Styling (Shopify Restyle)
 
 - **Source of truth:** `src/theme/theme.ts`.
