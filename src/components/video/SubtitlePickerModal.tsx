@@ -163,6 +163,7 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
     const idx = filteredItems.findIndex((i) => i.value === selectedValue);
     return idx >= 0 ? idx : undefined;
   }, [filteredItems, selectedValue]);
+  const dataKey = selectedGroupId ?? 'all';
 
   const handleSelectTrack = useCallback(
     (value: number) => {
@@ -219,6 +220,7 @@ export const SubtitlePickerModal: FC<SubtitlePickerModalProps> = ({
           {/* Subtitle list */}
           <Box flex={1}>
             <LegendList
+              dataKey={dataKey}
               data={filteredItems}
               renderItem={renderItem}
               keyExtractor={keyExtractor}

@@ -190,6 +190,7 @@ export const EpisodeList: FC<EpisodeListProps> = ({
       <FadeIn style={centered ? { flex: 1, justifyContent: 'center' } : { flex: 1 }}>
         <LegendList<MetaVideo>
           data={selectedSeasonEpisodes}
+          dataKey={`${metaId}:${selectedSeason}`}
           horizontal={isHorizontal}
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={initialScrollIndex}

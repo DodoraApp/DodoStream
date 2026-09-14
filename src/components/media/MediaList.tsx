@@ -52,6 +52,8 @@ HydratedMediaCard.displayName = 'HydratedMediaCard';
 interface MediaListProps {
   data: MetaPreview[];
   onMediaPress: (media: MetaPreview) => void;
+  /** Identity of the logical dataset currently shown by the list. */
+  dataKey?: string;
   /** Pass true to give the first item TV preferred focus */
   hasTVPreferredFocus?: boolean;
   /** Called whenever any card in this row receives focus (TV only at call site) */
@@ -64,6 +66,7 @@ export const MediaList = memo(
   ({
     data,
     onMediaPress,
+    dataKey,
     hasTVPreferredFocus = false,
     onItemFocused,
     hydrateMetadata,
@@ -107,6 +110,7 @@ export const MediaList = memo(
       <TVFocusGuideView trapFocusRight autoFocus>
         <LegendList
           data={data}
+          dataKey={dataKey}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           horizontal

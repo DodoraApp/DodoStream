@@ -194,6 +194,7 @@ export function PickerModal<T extends string | number | undefined = string | num
     const idx = filteredItems.findIndex((i) => i.value === selectedValue);
     return idx >= 0 ? idx : undefined;
   }, [filteredItems, selectedValue]);
+  const dataKey = selectedGroupId ?? 'all';
 
   const renderItem = useCallback(
     ({ item }: LegendListRenderItemProps<PickerItem<T>>) => (
@@ -220,6 +221,7 @@ export function PickerModal<T extends string | number | undefined = string | num
         />
       )}
       <LegendList
+        dataKey={dataKey}
         data={filteredItems}
         renderItem={renderItem}
         keyExtractor={keyExtractor}

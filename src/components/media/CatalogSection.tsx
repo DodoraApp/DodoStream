@@ -12,6 +12,8 @@ import { MetaPreview } from '@/types/stremio';
 export interface StaticCatalogSectionProps {
   metas: MetaPreview[];
   onMediaPress: (media: MetaPreview) => void;
+  /** Identity of the logical dataset currently shown by the section. */
+  dataKey?: string;
   hasTVPreferredFocus?: boolean;
   onSectionFocused?: () => void;
 }
@@ -21,6 +23,7 @@ export const StaticCatalogSection = memo(
     metas,
     onMediaPress,
     hasTVPreferredFocus = false,
+    dataKey,
     onSectionFocused,
   }: StaticCatalogSectionProps) => {
     if (!metas || metas.length === 0) {
@@ -28,6 +31,7 @@ export const StaticCatalogSection = memo(
     }
     return (
       <MediaList
+        dataKey={dataKey}
         data={metas}
         onMediaPress={onMediaPress}
         hasTVPreferredFocus={hasTVPreferredFocus}
@@ -44,6 +48,8 @@ export interface CatalogSectionProps {
   catalogType: string;
   catalogId: string;
   onMediaPress: (media: MetaPreview) => void;
+  /** Identity of the logical dataset currently shown by the section. */
+  dataKey?: string;
   hasTVPreferredFocus?: boolean;
   onSectionFocused?: () => void;
   /** Whether this section's query is allowed to fire. Defaults to true. */
@@ -55,6 +61,7 @@ export const CatalogSection = memo(
     manifestUrl,
     catalogType,
     catalogId,
+    dataKey,
     onMediaPress,
     hasTVPreferredFocus = false,
     onSectionFocused,
@@ -99,6 +106,7 @@ export const CatalogSection = memo(
 
     return (
       <StaticCatalogSection
+        dataKey={dataKey ?? `${manifestUrl}:${catalogType}:${catalogId}`}
         metas={data.metas}
         onMediaPress={onMediaPress}
         hasTVPreferredFocus={hasTVPreferredFocus}

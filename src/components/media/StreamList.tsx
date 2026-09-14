@@ -167,6 +167,7 @@ const StreamListItem = memo(
 
 interface StreamListInnerProps {
   streamList: Stream[];
+  dataKey: string;
   isHorizontal: boolean;
   selectedStreamId?: string;
   selectedStreamUrl?: string;
@@ -178,6 +179,7 @@ interface StreamListInnerProps {
 const StreamListInner = memo(
   ({
     streamList,
+    dataKey,
     isHorizontal,
     handleSelectStream,
     selectedStreamId,
@@ -224,6 +226,7 @@ const StreamListInner = memo(
 
         <TVFocusGuideView autoFocus={autoFocus}>
           <LegendList
+            dataKey={dataKey}
             data={streamList}
             horizontal={isHorizontal}
             showsHorizontalScrollIndicator={false}
@@ -387,6 +390,7 @@ export const StreamList = memo(
           isEmpty={(data) => haveAllAddonsFinishedLoading && data.length === 0}>
           {(streamList) => (
             <StreamListInner
+              dataKey={`${type}:${id}:${videoId ?? ''}:${selectedAddonId ?? 'all'}`}
               streamList={streamList}
               isHorizontal={isHorizontal}
               handleSelectStream={handleSelectStream}
