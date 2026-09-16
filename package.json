@@ -42,6 +42,7 @@
     "e2e:android:build": "node scripts/e2e/build-release.mjs",
     "test:e2e:tools": "node --test scripts/e2e/test/*.test.mjs",
     "test:e2e:tools:agent": "node --test --test-reporter=dot scripts/e2e/test/*.test.mjs",
+    "verify:workflows": "docker run --rm -v \"$PWD:/repo\" -w /repo rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 && docker run --rm -v \"$PWD:/repo\" -w /repo ghcr.io/zizmorcore/zizmor@sha256:a2eb396d886c053073405c7a980f2139ba2248ec172243cfa3841e57196e8101 --no-progress --color never .github/workflows",
     "verify:agent": "node scripts/agent-verify.mjs",
     "verify:ci": "pnpm verify:agent"
   },
