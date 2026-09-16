@@ -46,6 +46,24 @@ const checks = [
     args: ['lint'],
   },
   {
+    key: 'i18n-parity',
+    label: 'i18n key parity',
+    command: 'node',
+    args: ['scripts/verify-i18n-parity.mjs'],
+  },
+  {
+    key: 'whats-new-registry',
+    label: "What's New registry drift",
+    command: 'node',
+    args: ['scripts/verify-whats-new-registry.mjs'],
+  },
+  {
+    key: 'maestro-flows',
+    label: 'Maestro flow integrity',
+    command: 'node',
+    args: ['scripts/verify-maestro-flows.mjs'],
+  },
+  {
     key: 'test',
     label: 'Jest',
     command: 'pnpm',
