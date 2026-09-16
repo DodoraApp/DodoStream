@@ -1,6 +1,6 @@
 # DodoStream Agent Guidelines
 
-This is the canonical durable guidance for contributors and coding agents. OMP imports it through `.omp/AGENTS.md`.
+This is the canonical durable guidance for coding agents. Contributor-facing guidance lives in [CONTRIBUTING.md](CONTRIBUTING.md). OMP imports this file through `.omp/AGENTS.md`.
 
 ## Worktree and permission boundary
 
@@ -101,3 +101,4 @@ Profiles are fixed: `phone` is portrait; `tablet` and `tv` are landscape. The fi
 - If substantive work is ready for review: load the `pr-handoff` skill.
 - If a PR, comment, or label write is pending: create it only via `pr-handoff` and `github-write` with the exact approved payload. Never push, open a PR, or merge without explicit user approval for that action.
 - All non-trivial changes follow `slice-development` for slicing, proof levels, checkpoint commits, and the final evidence structure.
+- If the user intervenes because the agent did something wrong: find the durable rule, skill, or deterministic gate that should have prevented it. Apply small corrections (rule wording, skill steps, cheap deterministic gates) immediately with the next checkpoint; propose larger process changes in the final response instead of improvising them.
