@@ -1,0 +1,5 @@
+- Work only in the assigned Git worktree.
+- For autonomous work with multiple behavioral slices: state the expected behavior, verify each slice at the lowest meaningful level, review it, and create its checkpoint commit before the next slice.
+- Do not claim verification that was not run. Record skipped expensive checks and the reason.
+- Do not start Metro, use raw `adb`, or acquire/drive a device unless the task explicitly requires device verification or the user authorizes it; then use an `agent-device` MCP session and release it.
+- Never treat an OMP conversation checkpoint as a Git checkpoint.

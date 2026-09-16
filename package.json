@@ -23,6 +23,7 @@
     "new-whats-new": "node scripts/new-whats-new.mjs",
     "generate-whats-new": "node scripts/generate-whats-new-registry.mjs",
     "prebuild": "expo prebuild",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "test": "jest",
@@ -36,7 +37,10 @@
     "test:e2e:addon": "pnpm --filter @dodostream/e2e-addon test",
     "e2e:addon": "pnpm --filter @dodostream/e2e-addon start",
     "e2e:android": "node scripts/e2e/run-android.mjs",
-    "e2e:android:all": "node scripts/e2e/run-all.mjs"
+    "e2e:android:all": "node scripts/e2e/run-all.mjs",
+    "e2e:android:build": "node scripts/e2e/build-release.mjs",
+    "test:e2e:tools": "node --test scripts/e2e/test/*.test.mjs",
+    "verify:ci": "pnpm exec expo install --check && pnpx expo-doctor && pnpm exec expo prebuild --platform android && pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e:tools && pnpm --filter @dodostream/e2e-addon typecheck && pnpm test:e2e:addon"
   },
   "dependencies": {
     "@anatine/zod-openapi": "2.2.8",

@@ -67,31 +67,13 @@ jobs:
           node-version: '24'
 
       - name: 📦 Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: 🩺 Expo dependency compatibility (expo install --check)
-        run: pnpm exec expo install --check
+      - name: ✅ Run CI-equivalent verification
+        run: pnpm verify:ci
         env:
           CI: true
           EXPO_NO_TELEMETRY: 1
-
-      - name: 🩺 Expo Doctor
-        run: pnpx expo-doctor
-        env:
-          CI: true
-          EXPO_NO_TELEMETRY: 1
-
-      - name: 🧪 Run expo prebuild
-        run: pnpm exec expo prebuild
-
-      - name: 🧪 Run TypeScript check
-        run: pnpm tsc
-
-      - name: 🧹 Run ESLint & Prettier
-        run: pnpm run lint
-
-      - name: ✅ Run Tests
-        run: pnpm run test
 
   build:
     needs: test
@@ -183,7 +165,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm i -g eas-cli@latest
 
       - name: 🔖 Read app version
@@ -321,7 +303,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm i -g eas-cli@latest
 
       - name: 🚀 Publish to Expo
@@ -351,7 +333,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm i -g eas-cli@latest
 
       - name: 🔖 Read app version
@@ -375,10 +357,10 @@ jobs:
         run: |
           echo "Final list of APK artifacts:"
           find dist/ -name "*.apk" -type f -exec ls -lh {} \;
-          
+
           apk_count=$(find dist/ -name "*.apk" -type f 2>/dev/null | wc -l)
           echo "Total APKs ready for release: $apk_count"
-          
+
           if [ "$apk_count" -eq 0 ]; then
             echo "ERROR: No APK files found!"
             exit 1

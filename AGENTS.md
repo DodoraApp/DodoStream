@@ -1,323 +1,123 @@
 # DodoStream Agent Guidelines
 
-Essential context and rules for AI agents working on DodoStream.
+This is the canonical durable guidance for contributors and coding agents. OMP imports it through `.omp/AGENTS.md`.
 
-## 1. Project Overview
+## Worktree and permission boundary
 
-- **Type:** Expo React Native app for TV (Apple TV, Android TV) and Mobile.
-- **Stack:** Expo SDK 54, React Native TVOS, TypeScript (strict), Zustand, React Query, Shopify Restyle, Moti, LegendList (`@legendapp/list`).
-- **Routing:** File-based via `expo-router` in `src/app/`.
-- **Package Manager:** pnpm (v10). Use `pnpx expo install <package>` for adding deps, NOT `pnpm add`.
+- Work only in the assigned Git worktree. Do not stage, modify, or use another worktree's files or processes.
+- Every UX, UI, or user-facing functionality change requires live verification through the configured `agent-device` MCP server; tests supplement but do not replace that evidence.
+- Interact with `agent-device` only through its OMP MCP server. Do not invoke its CLI directly, use raw `adb`, boot or drive a simulator/emulator through another tool, or run `pnpm android`/`pnpm ios`.
+- If no agent-device session is active or the selected target is occupied by another agent, ask the user what to do before acquiring, booting, or reusing a target.
+- Do not start Metro unless the task explicitly requires a development-server workflow. The release-APK verification route does not require Metro.
+- Do not use Expo web as verification for this TV/mobile application.
+- Never claim a command, device observation, CI result, or screenshot that was not actually run or observed.
 
-## 2. Build & Test Commands
+## Project facts
+
+- DodoStream is an Expo SDK 57 React Native application for Android, Android TV, iOS, and tvOS builds.
+- The app uses the `react-native-tvos` 0.86 fork, Expo Router, TypeScript strict mode, Shopify Restyle, Zustand, TanStack React Query, LegendList, Moti/Reanimated, and pnpm 10.
+- `APP_VARIANT=dev` produces the separately installable development app (`app.dodora.dodostream.dev`); the default/prod variant uses `app.dodora.dodostream`.
+- `EXPO_TV=1` enables TV-specific native configuration. Android E2E builds also use `EXPO_PUBLIC_E2E=1` and `E2E_ORIENTATION=portrait|landscape`.
+- `app.config.ts` and the local config plugins are the source of native configuration. Native projects are generated artifacts; review prebuild output and do not hand-edit generated changes when config/plugin changes are the correct source.
+
+## Repository layout
+
+- `src/app/` — Expo Router routes and layouts.
+- `src/components/` — reusable UI grouped by basic, media, profile, and video domains.
+- `src/api/`, `src/hooks/`, `src/store/`, `src/db/` — API clients/hooks, Zustand state, and SQLite/Drizzle persistence.
+- `src/theme/`, `src/constants/`, `src/i18n/`, `src/types/`, `src/utils/` — visual tokens, domain constants, translations, shared types, and utilities.
+- `packages/e2e-addon/` — deterministic Stremio fixture used by Android E2E; `packages/remote-ui/` — remote UI package.
+- `scripts/` — repository tooling, including the Android E2E runner and fixture helpers.
+- `.maestro/` — Android E2E flows, configuration, and reviewed visual baselines.
+## MCP services
+
+- `.omp/mcp.json` is the repository MCP configuration. It registers `agent-device` for live Android/iOS interaction and GitHub for repository operations.
+- Use the `agent-device` MCP tools for opening, installing, resetting, snapshots, screenshots, logs, D-pad actions, and flow execution. Keep one named session per worktree and release it after verification.
+
+## Commands and gates
+
+Use pnpm for repository commands. Install Expo dependencies with `pnpm exec expo install <package>`; do not use ad-hoc package executors or package-manager add commands.
 
 ```bash
-pnpm install                        # Install dependencies
-pnpm start                          # Start Expo dev client
-pnpm android                        # Run on Android
-pnpm ios                            # Run on iOS
-pnpm lint                           # ESLint (expo + react-compiler + import-sort + custom rules)
-pnpm format                         # ESLint --fix + Prettier --write
-pnpm test                           # Run all Jest tests
-pnpm test -- path/to/file.test.ts   # Run a single test file
-pnpm test -- -t "test name"         # Run tests matching a name pattern
-pnpm tsc                            # Type-check (no emit)
-pnpm db:generate                    # Generate Drizzle migrations (after schema changes)
-pnpm db:studio                      # Open Drizzle Studio (SQLite browser)
+pnpm install
+pnpm typecheck
+pnpm exec eslint <changed-file>...
+pnpm lint
+pnpm format
+pnpm test
+pnpm test -- <path/to/file.test.ts>
+pnpm test -- -t "test name"
+pnpm --filter @dodostream/e2e-addon typecheck
+pnpm test:e2e:addon
+pnpm test:e2e:tools
+pnpm verify:ci
 ```
 
-### App Variant Env Vars
+`pnpm test:e2e:sync*` is an opt-in real-API suite and requires credentials and authorization. The root Jest suite intentionally excludes `scripts/sync-e2e/` and `packages/e2e-addon/`; run their package-specific commands explicitly.
 
-```bash
-APP_VARIANT=dev pnpm start          # Dev build (different bundle ID / app name)
-APP_VARIANT=prod pnpm start         # Production build
-EXPO_TV=1 pnpm start                # Enable TV mode
+The release APK is the source for Android E2E. Build it with `pnpm e2e:android:build -- --profile <phone|tablet|tv>` (see [E2E.md](E2E.md)), then use the `agent-device` MCP server for install, launch, reset, interaction, evidence capture, and Maestro-compatible flow execution. Do not use Metro, Expo web, direct `agent-device` CLI calls, or raw `adb` for this route.
+
+Profiles are fixed: `phone` is portrait; `tablet` and `tv` are landscape. The fixture's `/manifest.json` is its readiness and app-contract probe; do not invent a second health endpoint.
+
+`pnpm verify:ci` is the local PR-equivalent gate: Expo dependency compatibility, Expo Doctor, Android prebuild, root typecheck, full lint, Jest, no-device E2E tool contracts, fixture-package typecheck, and fixture protocol tests. It excludes credentialed sync E2E and live agent-device verification.
+
+## UI, platform, and data invariants
+
+- Use Restyle `Box`/`Text` and tokens from `src/theme/theme.ts` for colors, spacing, dimensions, radii, and focus styling. Never add hardcoded visual values or magic animation/playback timing.
+- Put user-facing strings in `src/i18n/translations/en/` and access them through `react-i18next`; do not hardcode UI copy.
+- Use `useDebugLogger`/`createDebugLogger` for meaningful business decisions and Toasts for user-facing failures. Handle API failures in React Query or service error paths.
+- Use React Query for data fetching. Effects synchronize with external systems only; do not fetch or derive state through raw `useEffect` chains.
+- Use `memo()` for frequently rendered/list components and `useCallback` for handlers passed to children. Do not use the legacy React Native `Animated` API; prefer Moti and use Reanimated directly only where Moti cannot express the behavior.
+- Use `Focusable` from `src/components/basic/Focusable.tsx` for interactive TV/mobile controls. Use `variant="outline"` only for `MediaCard` and `ContinueWatchingCard`; other controls use background/text focus tokens. Keep focus and selected state visually distinct.
+- Use `TVFocusGuideView`, `hasTVPreferredFocus`, `nextFocus*`, and imperative/native focus APIs only when the focus graph requires them. Native focus, D-pad transitions, real list recycling, player engines, and Android geometry require a real Android/TV check; Jest mocks cannot prove them.
+- Use LegendList for scrollable lists with stable `keyExtractor`, fixed item sizing when known, recycling only when local state permits it, and stable `renderItem` callbacks. Use `.map()` for non-scrollable lists.
+- Use expo-router file routes and layouts. Keep per-profile Zustand state keyed by profile and select only the state needed by a component.
+
+## Testing boundaries
+
+Choose the lowest verification level that observes the stated behavior:
+
+- Static: `pnpm typecheck` and changed-file ESLint.
+- Focused Jest unit/integration: utilities, parsers, stores, hooks, data transforms, API mapping, and database behavior.
+- Focused component/integration tests: rendered interactions, React Query/Zustand boundaries, and mocked native edges.
+- Affected package/build checks: fixture package, remote UI, or Expo config/native generation as applicable.
+- Authorized interactive Android/TV checks: native focus, D-pad behavior, player/lifecycle/system behavior, real recycling, and rendered geometry.
+- Targeted Maestro: only after an important deterministic path has stable selectors and reviewed baselines.
+
+Do not create a low-value unit test for behavior that only a native device can observe. Record the exact interaction and evidence instead.
+
+## Generated files, formatting, and commits
+
+- Use the owning generator for generated content. In particular, create What's New entries with `pnpm new-whats-new` and rebuild `src/constants/whats-new/_registry.ts` with `pnpm generate-whats-new`; see [CONTRIBUTING.md](CONTRIBUTING.md).
+- Agents must read the “Noteworthy feature release notes” section in [CONTRIBUTING.md](CONTRIBUTING.md) for the complete What's New criteria and procedure; do not duplicate that procedure here.
+- Lefthook formats staged JavaScript/TypeScript/JSON with ESLint and Prettier at commit time. Include only formatting caused by the change.
+
+## Incremental workflow
+
+For non-trivial behavior changes, load the `slice-development` skill. Define one observable behavior at a time, establish automated RED where meaningful (or a reproducible native expectation), implement the smallest coherent change, select proportionate proof, review the slice, and report exact evidence. Use `android-interactive-verification` only for an authorized native boundary.
+
+Autonomous work containing multiple behavioral slices creates a checkpoint commit after each verified slice before starting the next. A one-slice task gets one verified final commit. An OMP conversation checkpoint is never a Git checkpoint.
+
+Final evidence uses this structure:
+
+```md
+Implemented:
+
+- <observable behavior>
+
+Checkpoints:
+
+- <hash> <subject>
+
+Verified:
+
+- <level>: <command or interaction> — <observed result>
+
+Not run:
+
+- <check> — <concrete reason>
+
+Remaining concerns:
+
+- <actual concern, or none>
 ```
-
-### Simulators & Emulators
-
-- **NEVER boot, launch, build for, or drive iOS simulators / Android emulators on your own** (this includes `pnpm ios`, `pnpm android`, `xcrun simctl`, `adb`, etc.).
-- **NEVER start the Metro bundler or another development server on your own** (this includes `pnpm start`); ask the user for explicit instruction first.
-- **NEVER invoke `adb` or otherwise interact with Android devices/emulators without the user's explicit instruction**.
-- If a simulator/emulator run is needed, stop and ask the user first — they will run it or explicitly approve.
-- **NEVER use Expo web preview (`expo start --web`) for verification**; this TV/mobile app does not support the web platform.
-
-> CI order: `expo install --check` → `pnpm tsc` → `pnpm lint` → `pnpm test`
-
-## 3. Directory Structure
-
-```
-src/
-  app/          # File-system routes (expo-router). Each file = route.
-  components/   # UI components by domain: basic/, media/, video/, profile/
-  api/          # API clients: github/, introdb/, stremio/ + errors.ts
-  store/        # Zustand stores (profile, settings, watch-history, my-list, addon)
-  theme/        # Shopify Restyle theme (theme.ts is the single source of truth)
-  constants/    # Centralized constants: playback.ts, ui.ts, media.ts (NO magic numbers)
-  db/           # SQLite schema and Drizzle ORM setup
-  hooks/        # Custom React hooks
-  utils/        # Utilities and helpers
-  types/        # Shared TypeScript types
-```
-
-## 4. Code Style & Formatting
-
-### Prettier
-
-- `printWidth: 100`, `tabWidth: 2`, `singleQuote: true`, `bracketSameLine: true`, `trailingComma: 'es5'`.
-
-### ESLint
-
-- Flat config (`eslint.config.js`): expo base + `eslint-plugin-react-compiler` (recommended).
-- `react/display-name` is disabled.
-- **Auto-enforced rules** (run `pnpm lint` to check, `pnpm format` to auto-fix):
-  - `simple-import-sort/imports` — import order is auto-sorted on commit.
-  - `no-restricted-imports` — legacy `Animated` from `react-native` is banned.
-  - `no-console` — only `console.error` is allowed; use debug helpers for logging.
-  - `prefer-const`, `no-var` — enforced.
-  - `max-lines-per-function` — warns at 220 lines for component files.
-
-### Pre-commit Hooks
-
-Lefthook runs `eslint --fix` and `prettier --write` on staged files at commit time.
-
-### Commit Messages
-
-- Use Conventional Commits: `<type>(<optional scope>): <imperative summary>`.
-- Use a lower-case type such as `feat`, `fix`, `refactor`, `test`, `docs`, or `chore`; scope the change when it improves clarity.
-- Keep the summary concise, imperative, and under 72 characters. Do not use generic messages such as `update` or `fix`.
-- Keep each commit to one logical change. Add a body only when it explains a non-obvious decision, risk, or migration.
-
-### Import Order
-
-Auto-enforced by `simple-import-sort` (React first, then external, then `@/` aliases, then relative).
-Path alias: `@/*` maps to `src/*` (configured in `tsconfig.json`).
-
-### Naming Conventions
-
-- **Components/Files:** PascalCase (`MediaCard.tsx`).
-- **Hooks:** camelCase with `use` prefix (`useMediaDetails.ts`).
-- **Variables/Functions:** camelCase.
-- **Booleans:** Prefix with `is`, `has`, `should`.
-- **Handlers:** `handle*` for internal handlers, `on*` for callback props.
-- **Domain:** Use `Media` (not `Movie`). Use `isFocused` (not `focused`) for focus state.
-
-### TypeScript
-
-- Strict mode enabled. No `any`.
-- Define `interface ComponentProps` for all component props.
-- Rely on type inference for return types unless ambiguous.
-- Prefer optional chaining over `typeof fn === 'function'` checks.
-  ```ts
-  // Good
-  const id = getId?.(item) ?? item.fallback;
-  const label = getGroupLabel?.(groupId) ?? groupId;
-
-  // Avoid
-  const groupIdBad = typeof getItemGroupId === 'function' ? getItemGroupId(item) : item.groupId;
-  ```
-- Prefer file-local helper functions with early returns over nested ternary operators.
-
-### Comments
-
-- Code must be self-explanatory: descriptive names and small, focused units. If code needs a comment explaining _what_ it does, restructure the code instead of writing the comment.
-- Comment only non-obvious _why_: invariants, cross-file coupling, race conditions, or decisions a future reader would otherwise "fix" (e.g. a spacing token that must stay large because a floating label renders into the gap).
-- Never narrate the obvious or restate the code; delete such comments. Keep comments to one line where possible.
-- JSDoc on exported APIs states the contract, not the implementation.
-
-## 5. Styling (Shopify Restyle)
-
-- **Source of truth:** `src/theme/theme.ts`.
-- Use `Box`, `Text` from Restyle for all layout and text.
-- Use semantic color names (`mainBackground`, `cardBackground`, `textPrimary`, `focusBackground`).
-- Use theme spacing (`xs`, `s`, `m`, `l`, `xl`, `xxl`), border radii, card sizes, and focus values.
-- **Never** hardcode hex colors, pixel values, or magic numbers. Use theme tokens or constants.
-
-### Correct vs Wrong Styling
-
-```tsx
-// CORRECT - Use Box/Text with theme props
-<Box backgroundColor="cardBackground" padding="m" borderRadius="l">
-  <Text variant="cardTitle" color="textPrimary">Title</Text>
-</Box>
-
-// CORRECT - Use theme values for dimensions
-const theme = useTheme<Theme>();
-<Box width={theme.cardSizes.media.width} height={theme.cardSizes.media.height} />
-
-// WRONG - Hardcoded values
-<Box style={{ width: 140, height: 200, backgroundColor: '#1F222A' }} />
-```
-
-### Never Hardcode
-- Colors (use theme colors)
-- Spacing/padding/margin (use theme spacing)
-- Dimensions for cards, inputs, modals (use `theme.cardSizes` or `theme.sizes`)
-- Focus border width or scale (use `theme.focus`)
-- Toast durations (use constants from `src/constants/ui.ts`)
-- Playback timing values (use constants from `src/constants/playback.ts`)
-- **User-facing strings** (use i18n)
-
-## 6. Internationalization (i18n)
-
-- **Source of truth:** `src/i18n/translations/en/`.
-- **Namespaces:** Translations are split into files (namespaces).
-- **Usage:** Use `useTranslation` hook from `react-i18next`.
-  ```tsx
-  const { t } = useTranslation('profiles');
-  return <Text>{t('who_is_watching')}</Text>;
-  ```
-- **Multiple Namespaces:** `const { t } = useTranslation(['setup', 'common']);` -> `t('common:next')`.
-- **Dynamic Languages:** Available languages are automatically detected from the `translations/` directory using `require.context`. Use `AVAILABLE_LANGUAGES` from `@/i18n`.
-- **Hardcoded Strings:** NEVER use hardcoded strings in components. Always add them to `en/*.json` first.
-
-## 7. Error Handling & Logging
-
-- Handle API errors in React Query `onError` or try/catch in services.
-- Show Toasts for user-facing failures.
-- Use debug helpers for important decision points: autoplay, stream selection, navigation branches, error recovery.
-  ```ts
-  const debug = useDebugLogger('ComponentName'); // In components
-  const debug = createDebugLogger('ModuleName'); // In non-React modules
-  debug('eventName', { key: value });
-  ```
-
-## 8. Component Design & Hooks
-
-- Keep components under ~200 lines. Extract sub-components. (Lint warns at 220 lines.)
-- Use `memo()` for list items and frequently re-rendered components.
-- Use `useCallback` for event handlers passed to children.
-- Use `useMemo` only for genuinely expensive computations (never for components).
-- Define TypeScript interfaces for all component props.
-- Check `src/components/basic/` and `src/components/media/` before creating new components.
-
-### useEffect Best Practices
-Effects are for synchronizing with **external systems** only.
-- **Don't use for:** Deriving state from props (compute during render/useMemo), handling user actions (use event handlers), or chains of state updates.
-- **Do use for:** Subscriptions/cleanup, syncing with native modules, timer-based side effects.
-
-## 9. TV Focus & Navigation
-
-- **Always** use `<Focusable>` from `src/components/basic/Focusable.tsx` for interactive elements.
-- Prefer `variant="background"` or `variant="outline"` (no re-renders).
-- Only use render function `({ isFocused }) => ...` when children must react to focus state.
-- **Outline focus** (`variant="outline"`): Only for MediaCard and ContinueWatchingCard.
-- **Background focus** (`variant="background"`): All other components (buttons, tags, list items).
-- Focus vs Active: `focusBackground`/`focusForeground` for focus; `primaryBackground`/`primaryForeground` for selected.
-- Use `TVFocusGuideView` for focus groups/traps and `hasTVPreferredFocus` for initial focus.
-- Use `nextFocus*` props (`nextFocusDown`, `nextFocusRight`, etc.) to override default directional navigation.
-- Always test with D-pad/remote controls.
-
-### Focus Patterns
-
-**Pattern 1: Simple focus (Best performance)**
-```tsx
-// Focus handled automatically via variant
-<Focusable variant="background" onPress={handlePress}>
-  <Box padding="m" borderRadius="l">
-    <Text>Card Content</Text>
-  </Box>
-</Focusable>
-```
-
-**Pattern 2: Custom focus (Render function)**
-```tsx
-// Only use when children need to react to focus state (e.g., text color change)
-<Focusable variant="none" onPress={handlePress}>
-  {({ isFocused }) => (
-    <Box backgroundColor={isFocused ? 'focusBackground' : 'cardBackground'}>
-      <Text color={isFocused ? 'focusForeground' : 'textPrimary'}>Card Content</Text>
-    </Box>
-  )}
-</Focusable>
-```
-
-## 10. State Management (Zustand)
-
-- Per-profile data structure: `byProfile: Record<string, Data>`.
-- Access active profile: `useProfileStore.getState().activeProfileId`.
-- **Always** use selectors to prevent unnecessary re-renders.
-
-### Available Stores
-- `profile.store.ts` — Profile management
-- `app-settings.store.ts` — Global app settings
-- `profile-settings.store.ts` — Per-profile settings (player, languages)
-- `watch-history.store.ts` — Watch progress
-- `my-list.store.ts` — Saved items
-- `addon.store.ts` — Installed Stremio addons
-- `integrations.store.ts` — External service integrations (Simkl, etc.)
-
-## 11. Data Fetching & Lists
-
-- Use React Query (`@tanstack/react-query`) for all data fetching. Never fetch in raw `useEffect`.
-- Use `@legendapp/list` (LegendList) for all scrollable lists.
-- Use `useRecyclingState` for local state in list items.
-- For non-scrollable lists, use regular `.map()` instead.
-
-### LegendList Key Points
-- Use `keyExtractor` for proper recycling and layout caching.
-- Use `getFixedItemSize` when item sizes are known (skips measuring).
-- Use `recycleItems` for lists where items have no local state.
-- Wrap `renderItem` in `useCallback` with correct dependencies.
-
-## 12. Animation
-
-- Prefer **Moti** for UI animations (fade, slide, scale, skeleton).
-- Use **Reanimated** directly only if Moti can't express the behavior.
-- **Never** use the legacy `Animated` API. (Lint-enforced: `no-restricted-imports`.)
-- Keep animation timings in `src/constants/ui.ts`.
-
-## 13. Routing (expo-router)
-
-- Files in `src/app/` become routes automatically. Dynamic routes: `[id].tsx`.
-- Navigation: `router.push({ pathname: '/details/[id]', params: { id, type } })`.
-- Params: `const { id, type } = useLocalSearchParams<{ id: string; type: ContentType }>()`.
-- Use `_layout.tsx` for shared layouts.
-
-## 14. Testing
-
-- **Static analysis:** Catch issues early with **TypeScript** (type checking) and **ESLint** (linting).
-- **Write testable code:** Keep modules small; separate **UI (components)** from **business logic/state** so logic can be tested without rendering.
-- **Unit/Integration:** Jest with `jest-expo` preset. Structure as **Arrange / Act / Assert**.
-- **Component tests:** React Native Testing Library. Test from **user perspective** (text, accessibility queries). Avoid testing implementation details.
-- **Mocking:** Prefer real dependencies when practical, but mock **external systems** (network, native modules). See `jest.setup.js` for existing mocks.
-- **Snapshots:** Use sparingly and keep them small. Prefer explicit expectations.
-- **E2E tests:** Use device/simulator tests (Detox/Maestro) for critical flows.
-
-- **Android visual E2E:** See [E2E.md](E2E.md) for commands and snapshot updates.
-- Run `pnpm lint` and `pnpm test` before finishing any task.
-
-## 15. Forbidden Patterns
-
-- `useMemo` for components (use `memo()` instead).
-- Inline styles with magic numbers (`style={{ width: 100 }}`).
-- Raw `useEffect` for data fetching (use React Query).
-- `renderItem` defined inline (use `useCallback` or stable reference).
-- Hardcoded colors, dimensions, or timing values (use theme/constants).
-- `render*` methods in functional components.
-
-> **Lint-enforced:** legacy `Animated` API, `console.log`/`console.warn`, import order, `var`, non-`const` declarations.
-> See `pnpm lint` for the full rule list.
-## 16. Development Workflow
-
-1. **Analyze:** Read related files and existing patterns.
-2. **Plan:** Check for existing components/utilities before creating new ones.
-3. **Implement:** Follow strict typing, theme usage, and conventions above.
-4. **Changelog:** If the change is a noteworthy user-facing feature, create a What's New entry (see §17).
-5. **Verify:** Run `pnpm lint` and `pnpm test` before finishing.
-
-## 17. What's New Entries
-
-Create a What's New entry when a change ships a **noteworthy user-facing feature**: a major new **setting**, a new **integration** or **option**, or **heavy improvements** to an existing flow. Skip minor bug fixes, internal refactors, and cosmetic tweaks.
-
-Scaffold the entry (do not create the file by hand):
-
-```bash
-pnpm new-whats-new "vX.Y.Z" "Feature Name"
-```
-
-This creates `src/constants/whats-new/NNNN-vX.Y.Z-slug.md` with a template (see `scripts/new-whats-new.mjs`). Then:
-
-1. **Write the content:** Replace the template with a short markdown description — what changed, how to use it, any notes or limitations.
-2. **Ask the user for a picture:** If the feature is noteworthy, ask the user to provide a nice image (screenshot or illustration) and save it next to the markdown as `NNNN-vX.Y.Z-slug.png` (`.webp` and `.jpg` are also supported; see `scripts/generate-whats-new-registry.mjs`). The modal picks it up automatically.
-3. **Rebuild the registry:** Run `pnpm generate-whats-new` so `src/constants/whats-new/_registry.ts` stays in sync.
