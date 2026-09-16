@@ -32,7 +32,8 @@ This is the canonical durable guidance for contributors and coding agents. OMP i
 
 ## MCP services
 
-- `.omp/mcp.json` is the repository MCP configuration. It registers `agent-device` for live Android/iOS interaction and GitHub for repository operations.
+- `github` is the read-only GitHub MCP server; `github-write` is the write-capable one. Use `github` for all reading. Never call `github-write` tools (labels, comments, issues, PRs) without explicit user approval in the conversation for that specific action; prepare the exact payload and ask first.
+- Both servers authenticate via the `GITHUB_MCP_PAT` environment variable; if it is unset, tell the user rather than retrying.
 - Use the `agent-device` MCP tools for opening, installing, resetting, snapshots, screenshots, logs, D-pad actions, and flow execution. Keep one named session per worktree and release it after verification.
 
 ## Commands and gates
@@ -55,6 +56,7 @@ pnpm test:e2e:addon
 pnpm test:e2e:tools
 pnpm --silent verify:agent [--only <check-key>] [--json] [--verbose]
 pnpm verify:ci
+pnpm verify:workflows
 ```
 
 `pnpm test:e2e:sync*` is an opt-in real-API suite and requires credentials and authorization. The root Jest suite intentionally excludes `scripts/sync-e2e/` and `packages/e2e-addon/`; run their package-specific commands explicitly.
@@ -63,7 +65,7 @@ The release APK is the source for Android E2E. Build it with `pnpm e2e:android:b
 
 Profiles are fixed: `phone` is portrait; `tablet` and `tv` are landscape. The fixture's `/manifest.json` is its readiness and app-contract probe; do not invent a second health endpoint.
 
-`pnpm verify:ci` is the local PR-equivalent gate: Expo dependency compatibility, Expo Doctor, Android prebuild, root typecheck, full lint, Jest, no-device E2E tool contracts, fixture-package typecheck, and fixture protocol tests. It excludes credentialed sync E2E and live agent-device verification.
+`pnpm verify:ci` is the local PR-equivalent gate: Expo dependency compatibility, Expo Doctor, Android prebuild, root typecheck, full lint, Jest, no-device E2E tool contracts, fixture-package typecheck, and fixture protocol tests. It excludes credentialed sync E2E and live agent-device verification. Run `pnpm verify:workflows` whenever `.github/workflows/**` changes.
 
 ## UI, platform, and data invariants
 
@@ -77,18 +79,12 @@ Profiles are fixed: `phone` is portrait; `tablet` and `tv` are landscape. The fi
 - Use LegendList for scrollable lists with stable `keyExtractor`, fixed item sizing when known, recycling only when local state permits it, and stable `renderItem` callbacks. Use `.map()` for non-scrollable lists.
 - Use expo-router file routes and layouts. Keep per-profile Zustand state keyed by profile and select only the state needed by a component.
 
-## Testing boundaries
+## Code review rules
 
-Choose the lowest verification level that observes the stated behavior:
-
-- Static: `pnpm typecheck` and changed-file ESLint.
-- Focused Jest unit/integration: utilities, parsers, stores, hooks, data transforms, API mapping, and database behavior.
-- Focused component/integration tests: rendered interactions, React Query/Zustand boundaries, and mocked native edges.
-- Affected package/build checks: fixture package, remote UI, or Expo config/native generation as applicable.
-- Authorized interactive Android/TV checks: native focus, D-pad behavior, player/lifecycle/system behavior, real recycling, and rendered geometry.
-- Targeted Maestro: only after an important deterministic path has stable selectors and reviewed baselines.
-
-Do not create a low-value unit test for behavior that only a native device can observe. Record the exact interaction and evidence instead.
+- Generated `android/`/`ios/` output must trace to `app.config.ts` or a config plugin. Reject hand-edits to generated files; fix the owning config instead.
+- The fixture `/manifest.json` is the only health probe. Reject a second health endpoint.
+- Focus and selected states must stay visually distinct. Reject token changes that merge them — TV users navigate by focus alone.
+- Never weaken the deterministic gates (`verify:agent`, `verify:workflows`) to hide a failure; fix the failure or record the debt explicitly.
 
 ## Generated files, formatting, and commits
 
@@ -96,32 +92,12 @@ Do not create a low-value unit test for behavior that only a native device can o
 - Agents must read the “Noteworthy feature release notes” section in [CONTRIBUTING.md](CONTRIBUTING.md) for the complete What's New criteria and procedure; do not duplicate that procedure here.
 - Lefthook formats staged JavaScript/TypeScript/JSON with ESLint and Prettier at commit time. Include only formatting caused by the change.
 
-## Incremental workflow
+## Agent workflows
 
-For non-trivial behavior changes, load the `slice-development` skill. Define one observable behavior at a time, establish automated RED where meaningful (or a reproducible native expectation), implement the smallest coherent change, select proportionate proof, review the slice, and report exact evidence. Use `android-interactive-verification` only for an authorized native boundary.
-
-Autonomous work containing multiple behavioral slices creates a checkpoint commit after each verified slice before starting the next. A one-slice task gets one verified final commit. An OMP conversation checkpoint is never a Git checkpoint.
-
-Final evidence uses this structure:
-
-```md
-Implemented:
-
-- <observable behavior>
-
-Checkpoints:
-
-- <hash> <subject>
-
-Verified:
-
-- <level>: <command or interaction> — <observed result>
-
-Not run:
-
-- <check> — <concrete reason>
-
-Remaining concerns:
-
-- <actual concern, or none>
-```
+- If the task is prioritizing issues or choosing the next feature: load the `issue-triage` skill first.
+- If a bug report must be reproduced: load the `bug-reproduction` skill, then `slice-development` for the fix.
+- If a feature is delivered end to end: load the `feature-delivery` skill; it composes `slice-development` and `android-interactive-verification`.
+- If any code, test, or build behavior changed: run the owning check from the `agent-verification` skill before the next checkpoint.
+- If substantive work is ready for review: load the `pr-handoff` skill.
+- If a PR, comment, or label write is pending: create it only via `pr-handoff` and `github-write` with the exact approved payload. Never push, open a PR, or merge without explicit user approval for that action.
+- All non-trivial changes follow `slice-development` for slicing, proof levels, checkpoint commits, and the final evidence structure.
