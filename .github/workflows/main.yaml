@@ -1,7 +1,7 @@
 name: React Native CI/CD
 
 permissions:
-  contents: write
+  contents: read
 
 on:
   push:
@@ -53,7 +53,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🏗 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: 🏗 Install pnpm
         uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
@@ -62,7 +64,7 @@ jobs:
           run_install: false
 
       - name: 🏗 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
 
@@ -151,7 +153,9 @@ jobs:
 
     steps:
       - name: 🏗 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: 🏗 Install pnpm
         uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
@@ -159,7 +163,7 @@ jobs:
           cache: true
 
       - name: 🏗 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
 
@@ -177,7 +181,7 @@ jobs:
           echo "App version: $VERSION"
 
       - name: 📁 Setup expo-build-disk-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: node_modules/.expo-build-disk-cache
           key: ${{ runner.os }}-expo-build-disk-cache-${{ hashFiles('**/package.json') }}
@@ -221,9 +225,6 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          VERSION="${{ steps.app_version.outputs.version }}"
-          CHANNEL="${{ matrix.channel }}"
-          NODE_ENV="${{ matrix.node_env }}"
 
           # Extract the output archive
           echo "Extracting output.tar.gz..."
@@ -239,7 +240,7 @@ jobs:
           echo "Looking for APKs in outputs/apk/${BUILD_TYPE}/"
 
           # Find all APKs in the extracted directory
-          find outputs/apk/${BUILD_TYPE} -name "*.apk" -type f 2>/dev/null | while read apk; do
+          find outputs/apk/${BUILD_TYPE} -name "*.apk" -type f 2>/dev/null | while read -r apk; do
             filename=$(basename "$apk")
             echo "Found APK: $filename"
             
@@ -269,10 +270,14 @@ jobs:
             echo "No artifacts found!"
             exit 1
           fi
+        env:
+          VERSION: ${{ steps.app_version.outputs.version }}
+          CHANNEL: ${{ matrix.channel }}
+          NODE_ENV: ${{ matrix.node_env }}
 
       - name: 📦 Upload build artifacts
         if: steps.prepare_artifacts.outputs.artifacts_exist == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: DodoStream-${{ steps.app_version.outputs.version }}-${{ matrix.channel }}
           path: dist/*.apk
@@ -289,7 +294,9 @@ jobs:
 
     steps:
       - name: 🏗 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: 🏗 Install pnpm
         uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
@@ -297,7 +304,7 @@ jobs:
           cache: true
 
       - name: 🏗 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
 
@@ -316,10 +323,14 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Publish
+    permissions:
+      contents: write
 
     steps:
       - name: 🏗 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: 🏗 Install pnpm
         uses: pnpm/action-setup@1e1c8eafbd745f64b1ef30a7d7ed7965034c486c
@@ -327,7 +338,7 @@ jobs:
           cache: true
 
       - name: 🏗 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
 
@@ -345,7 +356,7 @@ jobs:
           echo "App version: $VERSION"
 
       - name: 📥 Download production APK artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: DodoStream-*-production*
           path: dist
@@ -367,14 +378,17 @@ jobs:
           fi
 
       - name: 🏷️ Create GitHub Release if not exists
-        uses: ncipollo/release-action@v1
-        with:
-          tag: v${{ steps.app_version.outputs.version }}
-          name: v${{ steps.app_version.outputs.version }}
+        env:
           # Custom PAT token required so that the other on: release workflow is triggered
-          token: ${{ secrets.RELEASE_PAT }}
-          artifacts: dist/*.apk
-          allowUpdates: false
-          skipIfReleaseExists: true
-          generateReleaseNotes: true
-          prerelease: true
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+          VERSION: ${{ steps.app_version.outputs.version }}
+        run: |
+          TAG="v${VERSION}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release ${TAG} already exists; skipping."
+            exit 0
+          fi
+          gh release create "$TAG" dist/*.apk \
+            --title "$TAG" \
+            --generate-notes \
+            --prerelease
