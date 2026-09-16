@@ -26,6 +26,8 @@
   "profile_switched": "Profil gewechselt",
   "cannot_delete_active": "Das aktive Profil kann nicht gelöscht werden",
   "profile_deleted": "Profil gelöscht",
+  "delete_confirm_title": "Profil löschen",
+  "delete_confirm_msg": "Möchtest du \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
   "current_profile": "Aktuelles Profil",
   "switch_profile": "Profil wechseln",
   "manage_profiles_desc": "Profile wechseln, bearbeiten oder löschen. Wiedergabeeinstellungen und Meine Liste gelten pro Profil.",
