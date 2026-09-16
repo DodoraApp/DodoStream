@@ -33,8 +33,8 @@ An open-source, privacy-focused media hub built with Expo + React Native, curren
 [Request a Feature](https://github.com/DodoraApp/DodoStream/issues/new?labels=enhancement&template=feature_request.md)
 
 [Join the Discord Server (for general ideas, suggestions, decisions)][discord-url]
- ---
- 
+---
+
 📋 If you have 5 minutes of time and want to help us shape the future development please fill out the [DodoStream User Survey](https://forms.gle/8errZef3y24t9rgd6)
 
 ---
@@ -52,7 +52,7 @@ Supports **Stremio Addons** (see details below).
 
 ## Screenshots
 
-These *are* outdated but kept for an initial impression.
+These _are_ outdated but kept for an initial impression.
 
 ![](docs/screenshots/tv/home-continue-watching.png)
 ![](docs/screenshots/tv/details.png)

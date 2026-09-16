@@ -227,7 +227,9 @@ const runVisualAssertions = async () => {
       continue;
     }
 
-    const details = failures.map((failure) => `  step ${failure.step}: ${failure.message}`).join('\n');
+    const details = failures
+      .map((failure) => `  step ${failure.step}: ${failure.message}`)
+      .join('\n');
     throw new Error(`screenshot regression(s) for ${profile}:\n${details}`);
   }
 };

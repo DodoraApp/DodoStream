@@ -29,6 +29,7 @@ This is the canonical durable guidance for contributors and coding agents. OMP i
 - `packages/e2e-addon/` — deterministic Stremio fixture used by Android E2E; `packages/remote-ui/` — remote UI package.
 - `scripts/` — repository tooling, including the Android E2E runner and fixture helpers.
 - `.maestro/` — Android E2E flows, configuration, and reviewed visual baselines.
+
 ## MCP services
 
 - `.omp/mcp.json` is the repository MCP configuration. It registers `agent-device` for live Android/iOS interaction and GitHub for repository operations.
@@ -44,12 +45,15 @@ pnpm typecheck
 pnpm exec eslint <changed-file>...
 pnpm lint
 pnpm format
+pnpm format:check
 pnpm test
+pnpm --silent test:agent
 pnpm test -- <path/to/file.test.ts>
 pnpm test -- -t "test name"
 pnpm --filter @dodostream/e2e-addon typecheck
 pnpm test:e2e:addon
 pnpm test:e2e:tools
+pnpm --silent verify:agent [--only <check-key>] [--json] [--verbose]
 pnpm verify:ci
 ```
 

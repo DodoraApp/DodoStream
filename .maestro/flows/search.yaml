@@ -9,16 +9,16 @@ appId: app.dodora.dodostream.dev
     id: nav-search
 - tapOn:
     id: search-input
-- inputText: "meridian"
+- inputText: 'meridian'
 - hideKeyboard
 - tapOn:
     id: search-submit
 
 # Grouped results from the fixture movie catalog.
 - extendedWaitUntil:
-    visible: "The Meridian Archive"
+    visible: 'The Meridian Archive'
     timeout: 15000
-- assertVisible: "DodoStream Movies"
+- assertVisible: 'DodoStream Movies'
 - takeScreenshot: search/01-results
 - runFlow:
     when:
@@ -30,7 +30,7 @@ appId: app.dodora.dodostream.dev
           thresholdPercentage: 98
 
 # Open a result.
-- tapOn: "The Meridian Archive"
+- tapOn: 'The Meridian Archive'
 - extendedWaitUntil:
     visible:
       id: media-play

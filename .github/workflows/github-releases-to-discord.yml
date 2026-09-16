@@ -12,9 +12,9 @@ jobs:
         uses: SethCohen/github-releases-to-discord@v1
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          color: "2105893"
-          username: "Release Changelog"
-          avatar_url: "https://cdn.discordapp.com/icons/1454918816596496496/1839bd6097f97f0a0353e82f1ca41d56.webp"
-          content: "||@everyone||"
-          footer_title: "Changelog"
+          color: '2105893'
+          username: 'Release Changelog'
+          avatar_url: 'https://cdn.discordapp.com/icons/1454918816596496496/1839bd6097f97f0a0353e82f1ca41d56.webp'
+          content: '||@everyone||'
+          footer_title: 'Changelog'
           reduce_headings: true
