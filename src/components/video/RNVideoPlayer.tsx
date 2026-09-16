@@ -18,7 +18,14 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { DEFAULT_PROFILE_PLAYBACK_SETTINGS, usePlaybackStore } from '@/store/playback.store';
 import { useProfileStore } from '@/store/profile.store';
-import { AudioTrack, PlayerProps, PlayerRef, PlayerStatistics, TextTrack, VideoChapter } from '@/types/player';
+import {
+  AudioTrack,
+  PlayerProps,
+  PlayerRef,
+  PlayerStatistics,
+  TextTrack,
+  VideoChapter,
+} from '@/types/player';
 import { createDebugLogger } from '@/utils/debug';
 
 const debug = createDebugLogger('RNVideoPlayer');

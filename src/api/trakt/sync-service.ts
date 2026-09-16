@@ -59,8 +59,7 @@ type TraktSeason = { number: number; episodes: { number: number; watched_at?: st
 
 /** Trakt sync payload ids: requires exactly one identifying field (imdb or tmdb). */
 type TraktRequestIds =
-  | { imdb: string; tmdb?: number | null }
-  | { tmdb: number; imdb?: string | null };
+  { imdb: string; tmdb?: number | null } | { tmdb: number; imdb?: string | null };
 
 /**
  * Narrow a partial `TraktIds` to a request-valid ids object.

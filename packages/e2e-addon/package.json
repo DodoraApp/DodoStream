@@ -9,6 +9,7 @@
     "start": "tsx src/server.ts",
     "build": "tsx scripts/generate-assets.ts",
     "test": "tsx --test test/*.test.ts",
+    "test:agent": "tsx --test --test-reporter=dot test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

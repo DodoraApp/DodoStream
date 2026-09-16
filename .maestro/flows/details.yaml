@@ -119,7 +119,6 @@ appId: app.dodora.dodostream.dev
       id: settings-picker-season
     timeout: 15000
 
-
 # Episode long-press action menu.
 - longPressOn:
     id: episode-e2e:series:harbor-lights:1:1

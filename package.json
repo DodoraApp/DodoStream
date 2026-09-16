@@ -25,9 +25,10 @@
     "prebuild": "expo prebuild",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
-    "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
+    "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier --write .",
+    "format:check": "prettier --check .",
     "test": "jest",
-    "web": "expo start --web",
+    "test:agent": "CI=true NO_COLOR=1 jest --no-watchman --silent",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "postinstall": "lefthook install",
@@ -40,7 +41,9 @@
     "e2e:android:all": "node scripts/e2e/run-all.mjs",
     "e2e:android:build": "node scripts/e2e/build-release.mjs",
     "test:e2e:tools": "node --test scripts/e2e/test/*.test.mjs",
-    "verify:ci": "pnpm exec expo install --check && pnpx expo-doctor && pnpm exec expo prebuild --platform android && pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e:tools && pnpm --filter @dodostream/e2e-addon typecheck && pnpm test:e2e:addon"
+    "test:e2e:tools:agent": "node --test --test-reporter=dot scripts/e2e/test/*.test.mjs",
+    "verify:agent": "node scripts/agent-verify.mjs",
+    "verify:ci": "pnpm verify:agent"
   },
   "dependencies": {
     "@anatine/zod-openapi": "2.2.8",
@@ -119,6 +122,7 @@
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "eslint-plugin-simple-import-sort": "^14.0.0",
+    "expo-doctor": "^1.20.4",
     "expo-sqlite-mock": "^4.0.0",
     "jest": "^29.7.0",
     "jest-expo": "^57.0.5",
