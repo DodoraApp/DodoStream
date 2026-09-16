@@ -1,5 +1,8 @@
 {
-  "setup": ["pnpm install", "cp \"$SUPERSET_ROOT_PATH/.env.local\" .env.local"],
+  "setup": [
+    "pnpm install --frozen-lockfile",
+    "if [ -f \"$SUPERSET_ROOT_PATH/.env.local\" ] && [ ! -f .env.local ]; then cp \"$SUPERSET_ROOT_PATH/.env.local\" .env.local; fi"
+  ],
   "teardown": [],
-  "run": []
+  "run": ["EXPO_NO_TELEMETRY=1 pnpm start"]
 }
