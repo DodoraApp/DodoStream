@@ -11,6 +11,34 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
+// Timers scheduled during tests (React Query GC timers with per-query gcTime,
+// component auto-hide timers) outlive their suites and keep the Jest event loop
+// alive — in workers that surfaces as "worker process has failed to exit
+// gracefully", in-band as "Jest did not exit". Unref them so the loop can drain
+// when the run completes; timers still fire normally while tests run.
+const originalSetTimeout = global.setTimeout;
+const originalSetInterval = global.setInterval;
+global.setTimeout = (...args) => {
+  const timer = originalSetTimeout(...args);
+  if (timer && typeof timer.unref === 'function') timer.unref();
+  return timer;
+};
+global.setInterval = (...args) => {
+  const timer = originalSetInterval(...args);
+  if (timer && typeof timer.unref === 'function') timer.unref();
+  return timer;
+};
+
+// expo-sqlite registers every opened database with its devtools client in __DEV__
+// (which jest-expo sets). That client opens a WebSocket that jest workers never
+// close — the source of the "worker process has failed to exit gracefully"
+// warning. The devtools client itself cannot be resolved as a subpath here, so
+// mock the 'expo/devtools' entry it depends on; SQLiteDevToolsClient tolerates a
+// null client via optional chaining.
+jest.mock('expo/devtools', () => ({
+  getDevToolsPluginClientAsync: jest.fn(async () => null),
+}));
+
 jest.mock('expo-image', () => {
   const React = require('react');
   const { View } = require('react-native');
