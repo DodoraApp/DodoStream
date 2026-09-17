@@ -79,7 +79,7 @@ const ToastItem: FC<ToastItemProps> = memo(({ toast, index, onDismiss }) => {
           };
         case 'warning':
           return {
-            background: '#F59E0B', // Amber/yellow for warning
+            background: theme.colors.warning,
             icon: theme.colors.mainBackground,
           };
         default:

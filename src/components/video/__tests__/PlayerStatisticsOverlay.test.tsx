@@ -42,7 +42,7 @@ describe('PlayerStatisticsOverlay', () => {
       />
     );
 
-    expect(getByText('PLAYBACK DIAGNOSTICS')).toBeTruthy();
+    expect(getByText('statistics_title')).toBeTruthy();
     expect(getByText('source:')).toBeTruthy();
     expect(getByText('cdn.example')).toBeTruthy();
     expect(getByText('state:')).toBeTruthy();
@@ -55,7 +55,7 @@ describe('PlayerStatisticsOverlay', () => {
     expect(getByText('stream:')).toBeTruthy();
     expect(getByText('video codec:')).toBeTruthy();
     expect(getByText('HEVC')).toBeTruthy();
-    expect(getByText('max 10.0s')).toBeTruthy();
+    expect(getByText('buffer_chart_max')).toBeTruthy();
     expect(getByTestId('player-statistics-buffer-chart')).toBeTruthy();
     expect(getByTestId('player-statistics-overlay').props.pointerEvents).toBe('box-none');
     expect(getByTestId('player-statistics-overlay-surface').props.pointerEvents).toBe('auto');

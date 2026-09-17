@@ -5,23 +5,8 @@ import { useTheme } from '@shopify/restyle';
 
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
+import { PICKER_COLORS } from '@/constants/colors';
 import { Box, Text, Theme } from '@/theme/theme';
-
-/** Default color palette for general use */
-const DEFAULT_COLORS = [
-  '#FFFFFF', // White
-  '#FFFF00', // Yellow
-  '#00FFFF', // Cyan
-  '#00FF00', // Green
-  '#FF00FF', // Magenta
-  '#FF0000', // Red
-  '#FFA500', // Orange
-  '#FFD700', // Gold
-  '#FFFACD', // Lemon chiffon
-  '#000000', // Black
-  '#333333', // Dark gray
-  '#666666', // Gray
-];
 
 interface ColorPickerProps {
   /** Currently selected color in hex format */
@@ -67,7 +52,7 @@ ColorSwatch.displayName = 'ColorSwatch';
  * Designed for TV remote navigation with focus states.
  */
 export const ColorPicker: FC<ColorPickerProps> = memo(
-  ({ value, onValueChange, label, colors = DEFAULT_COLORS, disabled = false }) => {
+  ({ value, onValueChange, label, colors = PICKER_COLORS, disabled = false }) => {
     const theme = useTheme<Theme>();
     const { t } = useTranslation('common');
     const [isModalVisible, setIsModalVisible] = useState(false);

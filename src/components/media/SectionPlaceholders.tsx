@@ -1,4 +1,5 @@
 import { memo, PropsWithChildren, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import Ionicons from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
@@ -106,10 +107,11 @@ type SectionEmptyPlaceholderProps = SectionPlaceholderBaseProps;
  * Non-focusable since there's nothing to interact with.
  */
 export const SectionEmptyPlaceholder = memo((props: SectionEmptyPlaceholderProps) => {
+  const { t } = useTranslation();
   return (
     <SectionPlaceholder {...props}>
       <Text variant="body" color="textSecondary" padding="m">
-        No content available
+        {t('common:no_content_available')}
       </Text>
     </SectionPlaceholder>
   );

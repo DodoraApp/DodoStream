@@ -1,4 +1,5 @@
 import React, { FC, memo, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   SUBTITLE_CUE_PREVIEW_COUNT,
@@ -96,6 +97,7 @@ function findCurrentCueIndexFrom(
  * Shows surrounding cues with fading opacity to give context.
  */
 export const SubtitleCuePreview: FC<SubtitleCuePreviewProps> = memo(({ cues, adjustedTime }) => {
+  const { t } = useTranslation('player');
   const halfCount = Math.floor(SUBTITLE_CUE_PREVIEW_COUNT / 2);
   const lastIndexRef = useRef(0);
 
@@ -137,7 +139,7 @@ export const SubtitleCuePreview: FC<SubtitleCuePreviewProps> = memo(({ cues, adj
     return (
       <Box flex={1} justifyContent="center" alignItems="center" padding="m">
         <Text variant="bodySmall" color="textSecondary">
-          No subtitles loaded
+          {t('no_subtitles_loaded')}
         </Text>
       </Box>
     );

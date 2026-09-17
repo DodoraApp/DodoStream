@@ -66,17 +66,35 @@ module.exports = [
     },
   },
   // i18n and theme tokens (AGENTS.md invariants: no hardcoded UI copy, Restyle tokens only).
-  // Severity is warn + a --max-warnings ratchet in package.json: deterministic gate that
-  // only tightens; fix violations opportunistically and lower the bound.
+  // Brand names are not translatable copy.
   {
     files: ['src/app/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
     plugins: {
       i18next,
     },
     rules: {
-      'i18next/no-literal-string': ['warn', { mode: 'jsx-text-only' }],
+      'i18next/no-literal-string': [
+        'error',
+        {
+          mode: 'jsx-text-only',
+          words: {
+            exclude: [
+              // Plugin defaults (numbers/symbols, ALL_CAPS, emoji)…
+              '[0-9!-/:-@[-`{-~]+',
+              '[A-Z_-]+',
+              /^\p{Emoji}+$/u,
+              // Decorative separators and dashes rendered as JSX text.
+              '•',
+              '—',
+              // …plus brand names, which are not translatable copy.
+              'DodoStream',
+              'IMDb',
+            ],
+          },
+        },
+      ],
       'no-restricted-syntax': [
-        'warn',
+        'error',
         {
           selector: 'Literal[value=/^(#[0-9a-fA-F]{3,8}|rgba?\\()/]',
           message: 'Use Restyle theme tokens from src/theme/theme.ts instead of hardcoded colors.',

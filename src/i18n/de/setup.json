@@ -56,5 +56,8 @@
   "complete": {
     "title": "Alles bereit!",
     "start_exploring": "Jetzt entdecken"
+  },
+  "progress": {
+    "step": "Schritt {{current}} von {{total}}"
   }
 }

@@ -109,7 +109,7 @@ export const CastTab: FC<CastTabProps> = ({ media, isActive }) => {
     return (
       <Box padding="l" alignItems="center">
         <Text variant="body" color="textSecondary">
-          No cast information available
+          {t('media:no_cast_information')}
         </Text>
       </Box>
     );

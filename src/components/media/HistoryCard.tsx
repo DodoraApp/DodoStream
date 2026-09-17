@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@shopify/restyle';
 
@@ -25,6 +26,7 @@ interface HistoryCardProps {
 export const HistoryCard = memo(
   ({ entry, onPress, onLongPress, hasTVPreferredFocus = false, testID }: HistoryCardProps) => {
     const theme = useTheme<Theme>();
+    const { t } = useTranslation();
     const isMissingMeta = !entry.metaName;
     const { data: resolvedMeta } = useMeta(entry.type, entry.id, isMissingMeta);
 
@@ -56,7 +58,7 @@ export const HistoryCard = memo(
           backgroundColor="cardBackground"
           borderRadius="l">
           <Text variant="caption" color="textSecondary">
-            Unavailable
+            {t('common:unavailable')}
           </Text>
         </Box>
       );

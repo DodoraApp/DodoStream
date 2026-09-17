@@ -67,34 +67,38 @@ jest.mock('@/components/video/PlayerMenuOverlay', () => ({
       : null,
 }));
 
+const renderControls = (overrides: Partial<React.ComponentProps<typeof PlayerControls>> = {}) =>
+  renderWithProviders(
+    <PlayerControls
+      paused={true}
+      currentTime={0}
+      duration={100}
+      showLoadingIndicator={false}
+      title="My Title"
+      audioTracks={[]}
+      textTracks={[]}
+      mediaType="movie"
+      metaId="test-meta-id"
+      onPlayPause={() => {}}
+      onSeek={() => {}}
+      onSkipBackward={() => {}}
+      onSkipForward={() => {}}
+      onSelectAudioTrack={() => {}}
+      onSelectTextTrack={() => {}}
+      subtitleDelay={0}
+      onSubtitleDelayChange={() => {}}
+      fitMode="contain"
+      onToggleFitMode={() => {}}
+      onStreamSelect={() => {}}
+      onEpisodeSelect={() => {}}
+      {...overrides}
+    />
+  );
+
 describe('PlayerControls basic interactions', () => {
   it('renders title and toggles visibility on press', () => {
     // Arrange
-    const { getByText, queryByText, getByTestId } = renderWithProviders(
-      <PlayerControls
-        paused={true}
-        currentTime={0}
-        duration={100}
-        showLoadingIndicator={false}
-        title="My Title"
-        audioTracks={[]}
-        textTracks={[]}
-        mediaType="movie"
-        metaId="test-meta-id"
-        onPlayPause={() => {}}
-        onSeek={() => {}}
-        onSkipBackward={() => {}}
-        onSkipForward={() => {}}
-        onSelectAudioTrack={() => {}}
-        onSelectTextTrack={() => {}}
-        subtitleDelay={0}
-        onSubtitleDelayChange={() => {}}
-        fitMode="contain"
-        onToggleFitMode={() => {}}
-        onStreamSelect={() => {}}
-        onEpisodeSelect={() => {}}
-      />
-    );
+    const { getByText, queryByText, getByTestId } = renderControls();
 
     // Assert (initial - controls are hidden)
     expect(queryByText('My Title')).toBeNull();
@@ -151,32 +155,12 @@ describe('PlayerControls basic interactions', () => {
 
   it('shows the loading indicator without disabling controls during buffering', () => {
     // Arrange
-    const { getByText, getByTestId } = renderWithProviders(
-      <PlayerControls
-        paused={false}
-        currentTime={0}
-        duration={100}
-        showLoadingIndicator={true}
-        disableControls={false}
-        title="My Title"
-        audioTracks={[]}
-        textTracks={[]}
-        onPlayPause={() => {}}
-        onSeek={() => {}}
-        onSkipBackward={() => {}}
-        onSkipForward={() => {}}
-        onSelectAudioTrack={() => {}}
-        onSelectTextTrack={() => {}}
-        subtitleDelay={0}
-        onSubtitleDelayChange={() => {}}
-        fitMode="contain"
-        onToggleFitMode={() => {}}
-        mediaType="movie"
-        metaId="movie-1"
-        onStreamSelect={() => {}}
-        onEpisodeSelect={() => {}}
-      />
-    );
+    const { getByText, getByTestId } = renderControls({
+      paused: false,
+      showLoadingIndicator: true,
+      disableControls: false,
+      metaId: 'movie-1',
+    });
 
     // Act
     fireEvent.press(getByTestId('player-controls-invisible-area'));
@@ -226,31 +210,7 @@ describe('PlayerControls basic interactions', () => {
       { source: 'video', index: 3, title: 'Video ES', language: 'es' },
     ];
 
-    const { getByText, getByTestId } = renderWithProviders(
-      <PlayerControls
-        paused={true}
-        currentTime={0}
-        duration={100}
-        showLoadingIndicator={false}
-        title="My Title"
-        audioTracks={[]}
-        textTracks={tracks as any}
-        mediaType="movie"
-        metaId="test-meta-id"
-        onPlayPause={() => {}}
-        onSeek={() => {}}
-        onSkipBackward={() => {}}
-        onSkipForward={() => {}}
-        onSelectAudioTrack={() => {}}
-        onSelectTextTrack={() => {}}
-        subtitleDelay={0}
-        onSubtitleDelayChange={() => {}}
-        fitMode="contain"
-        onToggleFitMode={() => {}}
-        onStreamSelect={() => {}}
-        onEpisodeSelect={() => {}}
-      />
-    );
+    const { getByText, getByTestId } = renderControls({ textTracks: tracks as any });
 
     // First show controls
     fireEvent.press(getByTestId('player-controls-invisible-area'));
@@ -269,32 +229,13 @@ describe('PlayerControls basic interactions', () => {
   });
   it('floats the skip button bottom-right while controls are hidden', () => {
     const onSkipChapter = jest.fn();
-    const { getByText, getByTestId, queryByTestId } = renderWithProviders(
-      <PlayerControls
-        paused={false}
-        currentTime={90}
-        duration={100}
-        showLoadingIndicator={false}
-        audioTracks={[]}
-        textTracks={[]}
-        skipTargets={[{ type: 'CREDITS', startTime: 80, endTime: 100 }]}
-        onSkipChapter={onSkipChapter}
-        mediaType="movie"
-        metaId="test-meta-id"
-        onPlayPause={() => {}}
-        onSeek={() => {}}
-        onSkipBackward={() => {}}
-        onSkipForward={() => {}}
-        onSelectAudioTrack={() => {}}
-        onSelectTextTrack={() => {}}
-        subtitleDelay={0}
-        onSubtitleDelayChange={() => {}}
-        fitMode="contain"
-        onToggleFitMode={() => {}}
-        onStreamSelect={() => {}}
-        onEpisodeSelect={() => {}}
-      />
-    );
+    const { getByText, getByTestId, queryByTestId } = renderControls({
+      paused: false,
+      currentTime: 90,
+      title: undefined,
+      skipTargets: [{ type: 'CREDITS', startTime: 80, endTime: 100 }],
+      onSkipChapter,
+    });
 
     // Assert: skip button floats while controls are hidden
     expect(getByText('skip_credits')).toBeTruthy();
@@ -304,32 +245,12 @@ describe('PlayerControls basic interactions', () => {
 
   it('places the skip button inside the controls bar when controls are visible', () => {
     const onSkipChapter = jest.fn();
-    const { getByText, getByTestId } = renderWithProviders(
-      <PlayerControls
-        paused={true}
-        currentTime={90}
-        duration={100}
-        showLoadingIndicator={false}
-        audioTracks={[]}
-        textTracks={[]}
-        skipTargets={[{ type: 'CREDITS', startTime: 80, endTime: 100 }]}
-        onSkipChapter={onSkipChapter}
-        mediaType="movie"
-        metaId="test-meta-id"
-        onPlayPause={() => {}}
-        onSeek={() => {}}
-        onSkipBackward={() => {}}
-        onSkipForward={() => {}}
-        onSelectAudioTrack={() => {}}
-        onSelectTextTrack={() => {}}
-        subtitleDelay={0}
-        onSubtitleDelayChange={() => {}}
-        fitMode="contain"
-        onToggleFitMode={() => {}}
-        onStreamSelect={() => {}}
-        onEpisodeSelect={() => {}}
-      />
-    );
+    const { getByText, getByTestId } = renderControls({
+      currentTime: 90,
+      title: undefined,
+      skipTargets: [{ type: 'CREDITS', startTime: 80, endTime: 100 }],
+      onSkipChapter,
+    });
 
     // Act: reveal the controls
     fireEvent.press(getByTestId('player-controls-invisible-area'));

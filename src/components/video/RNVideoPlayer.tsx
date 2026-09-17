@@ -42,22 +42,168 @@ const composeErrorString = (error?: Partial<OnVideoErrorData['error']>): string 
     : (JSON.stringify(error) ?? 'Unknown player error');
 };
 
+const usePlaybackSettings = (activeProfileId: string | undefined) =>
+  usePlaybackStore(
+    useShallow((state) => {
+      const settings = activeProfileId
+        ? state.byProfile[activeProfileId]
+        : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
+      return {
+        tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
+        audioPassthrough:
+          settings?.audioPassthrough ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough,
+        enableWorkarounds:
+          settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
+        showVideoStatistics:
+          settings?.showVideoStatistics ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
+        matchFrameRate:
+          settings?.matchFrameRate ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
+        enableVideoSoftwareDecoding:
+          settings?.enableVideoSoftwareDecoding ??
+          DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
+      };
+    })
+  );
+
+/** Translates native video events into app callbacks. Kept outside the component body. */
+const usePlayerEventHandlers = (props: PlayerProps) => {
+  const {
+    paused,
+    onProgress,
+    onBuffer,
+    onPlaying,
+    onLoad,
+    onError,
+    onAudioTracks,
+    onTextTracks,
+    onChapters,
+    onStatistics,
+    onBandwidthUpdate,
+  } = props;
+
+  const handleProgress = useCallback(
+    (data: OnProgressData) => {
+      if (!paused) onPlaying?.();
+      onProgress?.({
+        currentTime: data.currentTime,
+        duration: data.seekableDuration || 0,
+        bufferedDuration: data.playableDuration || 0,
+        seekableDuration: data.seekableDuration || 0,
+      });
+    },
+    [onPlaying, onProgress, paused]
+  );
+  const handleBuffer = useCallback(
+    (data: OnBufferData) => {
+      debug('buffering', { buffering: data.isBuffering });
+      onBuffer?.(data.isBuffering);
+    },
+    [onBuffer]
+  );
+
+  const handleLoad = useCallback(
+    (data: OnLoadData) => {
+      debug('load', { duration: data.duration, naturalSize: data.naturalSize });
+      onLoad?.({ duration: data.duration });
+    },
+    [onLoad]
+  );
+
+  const handleError = useCallback(
+    (data: OnVideoErrorData) => {
+      const error = data?.error;
+      debug('error', { error });
+      onError?.(composeErrorString(error));
+    },
+    [onError]
+  );
+
+  const handleAudioTracks = useCallback(
+    (data: OnAudioTracksData) => {
+      const audioTracks = Array.isArray(data?.audioTracks) ? data.audioTracks : [];
+      debug('audioTracks', { count: audioTracks.length });
+      const tracks: AudioTrack[] = audioTracks.map((track, index) => ({
+        index,
+        title: track.title,
+        language: track.language,
+        type: track.type,
+      }));
+      onAudioTracks?.(tracks);
+    },
+    [onAudioTracks]
+  );
+
+  const handleTextTracks = useCallback(
+    (data: OnTextTracksData) => {
+      const textTracks = Array.isArray(data?.textTracks) ? data.textTracks : [];
+      debug('textTracks', { count: textTracks.length });
+      const tracks: TextTrack[] = textTracks.map((track, idx) => ({
+        source: 'video' as const,
+        index: idx,
+        title: track.title,
+        language: track.language,
+        playerIndex: track.index, // Use the player's track index for selection
+      }));
+      onTextTracks?.(tracks);
+    },
+    [onTextTracks]
+  );
+
+  const handleVideoStatistics = useCallback(
+    (data: OnVideoStatisticsData) => {
+      onStatistics?.(data as PlayerStatistics);
+    },
+    [onStatistics]
+  );
+
+  const handleChapters = useCallback(
+    (data: OnChaptersData) => {
+      const chapters: VideoChapter[] = Array.isArray(data?.chapters)
+        ? data.chapters.map(({ title, startTime, endTime, type }) => ({
+            title,
+            startTime,
+            endTime,
+            type,
+          }))
+        : [];
+      debug('chapters', { count: chapters.length, chapters });
+      onChapters?.(chapters);
+    },
+    [onChapters]
+  );
+
+  const handleBandwidthUpdate = useCallback(
+    (data: OnBandwidthUpdateData) => {
+      debug('bandwidth', data);
+      onBandwidthUpdate?.({
+        bitrate: data.bitrate,
+        width: data.width,
+        height: data.height,
+        trackId: data.trackId,
+      });
+    },
+    [onBandwidthUpdate]
+  );
+
+  return {
+    handleProgress,
+    handleBuffer,
+    handleLoad,
+    handleError,
+    handleAudioTracks,
+    handleTextTracks,
+    handleVideoStatistics,
+    handleChapters,
+    handleBandwidthUpdate,
+  };
+};
+
 export const RNVideoPlayer = memo(
   forwardRef<PlayerRef, PlayerProps>((props, ref) => {
     const {
       source,
       paused,
-      onProgress,
-      onBuffer,
-      onPlaying,
-      onLoad,
       onEnd,
-      onError,
-      onAudioTracks,
-      onTextTracks,
-      onChapters,
-      onStatistics,
-      onBandwidthUpdate,
       selectedAudioTrack,
       selectedTextTrack,
       subtitleStyle,
@@ -73,27 +219,7 @@ export const RNVideoPlayer = memo(
       showVideoStatistics,
       matchFrameRate,
       enableVideoSoftwareDecoding,
-    } = usePlaybackStore(
-      useShallow((state) => {
-        const settings = activeProfileId
-          ? state.byProfile[activeProfileId]
-          : DEFAULT_PROFILE_PLAYBACK_SETTINGS;
-        return {
-          tunneled: settings?.tunneled ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.tunneled,
-          audioPassthrough:
-            settings?.audioPassthrough ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.audioPassthrough,
-          enableWorkarounds:
-            settings?.enableWorkarounds ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableWorkarounds,
-          showVideoStatistics:
-            settings?.showVideoStatistics ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.showVideoStatistics,
-          matchFrameRate:
-            settings?.matchFrameRate ?? DEFAULT_PROFILE_PLAYBACK_SETTINGS.matchFrameRate,
-          enableVideoSoftwareDecoding:
-            settings?.enableVideoSoftwareDecoding ??
-            DEFAULT_PROFILE_PLAYBACK_SETTINGS.enableVideoSoftwareDecoding,
-        };
-      })
-    );
+    } = usePlaybackSettings(activeProfileId);
 
     useImperativeHandle(ref, () => ({
       seekTo: (time: number) => {
@@ -101,109 +227,17 @@ export const RNVideoPlayer = memo(
       },
     }));
 
-    const handleProgress = useCallback(
-      (data: OnProgressData) => {
-        if (!paused) onPlaying?.();
-        onProgress?.({
-          currentTime: data.currentTime,
-          duration: data.seekableDuration || 0,
-          bufferedDuration: data.playableDuration || 0,
-          seekableDuration: data.seekableDuration || 0,
-        });
-      },
-      [onPlaying, onProgress, paused]
-    );
-    const handleBuffer = useCallback(
-      (data: OnBufferData) => {
-        debug('buffering', { buffering: data.isBuffering });
-        onBuffer?.(data.isBuffering);
-      },
-      [onBuffer]
-    );
-
-    const handleLoad = useCallback(
-      (data: OnLoadData) => {
-        debug('load', { duration: data.duration, naturalSize: data.naturalSize });
-        onLoad?.({ duration: data.duration });
-      },
-      [onLoad]
-    );
-
-    const handleError = useCallback(
-      (data: OnVideoErrorData) => {
-        const error = data?.error;
-        debug('error', { error });
-        onError?.(composeErrorString(error));
-      },
-      [onError]
-    );
-
-    const handleAudioTracks = useCallback(
-      (data: OnAudioTracksData) => {
-        const audioTracks = Array.isArray(data?.audioTracks) ? data.audioTracks : [];
-        debug('audioTracks', { count: audioTracks.length });
-        const tracks: AudioTrack[] = audioTracks.map((track, index) => ({
-          index,
-          title: track.title,
-          language: track.language,
-          type: track.type,
-        }));
-        onAudioTracks?.(tracks);
-      },
-      [onAudioTracks]
-    );
-
-    const handleTextTracks = useCallback(
-      (data: OnTextTracksData) => {
-        const textTracks = Array.isArray(data?.textTracks) ? data.textTracks : [];
-        debug('textTracks', { count: textTracks.length });
-        const tracks: TextTrack[] = textTracks.map((track, idx) => ({
-          source: 'video' as const,
-          index: idx,
-          title: track.title,
-          language: track.language,
-          playerIndex: track.index, // Use the player's track index for selection
-        }));
-        onTextTracks?.(tracks);
-      },
-      [onTextTracks]
-    );
-
-    const handleVideoStatistics = useCallback(
-      (data: OnVideoStatisticsData) => {
-        onStatistics?.(data as PlayerStatistics);
-      },
-      [onStatistics]
-    );
-
-    const handleChapters = useCallback(
-      (data: OnChaptersData) => {
-        const chapters: VideoChapter[] = Array.isArray(data?.chapters)
-          ? data.chapters.map(({ title, startTime, endTime, type }) => ({
-              title,
-              startTime,
-              endTime,
-              type,
-            }))
-          : [];
-        debug('chapters', { count: chapters.length, chapters });
-        onChapters?.(chapters);
-      },
-      [onChapters]
-    );
-
-    const handleBandwidthUpdate = useCallback(
-      (data: OnBandwidthUpdateData) => {
-        debug('bandwidth', data);
-        onBandwidthUpdate?.({
-          bitrate: data.bitrate,
-          width: data.width,
-          height: data.height,
-          trackId: data.trackId,
-        });
-      },
-      [onBandwidthUpdate]
-    );
+    const {
+      handleProgress,
+      handleBuffer,
+      handleLoad,
+      handleError,
+      handleAudioTracks,
+      handleTextTracks,
+      handleVideoStatistics,
+      handleChapters,
+      handleBandwidthUpdate,
+    } = usePlayerEventHandlers(props);
 
     const audioTrackSelection: SelectedTrack | undefined = selectedAudioTrack
       ? {

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@shopify/restyle';
 
@@ -134,6 +135,7 @@ const StatisticRow = memo(({ label, value }: StatisticRowProps) => (
 
 const BufferChart = memo(({ history }: { history: number[] }) => {
   const theme = useTheme<Theme>();
+  const { t } = useTranslation('player');
   const samples = history.slice(-PLAYER_STATISTICS_HISTORY_SIZE);
   const maxSeconds = Math.max(...samples, 1);
   const chartHeight = theme.sizes.iconMedium;
@@ -147,11 +149,11 @@ const BufferChart = memo(({ history }: { history: number[] }) => {
         gap="s"
         style={{ minWidth: 0, width: '100%' }}>
         <Text variant="caption" color="textSecondary">
-          buffer ahead over time
+          {t('buffer_chart_title')}
         </Text>
         {samples.length > 0 && (
           <Text variant="caption" color="textSecondary">
-            max {formatBufferDuration(maxSeconds)}
+            {t('buffer_chart_max', { duration: formatBufferDuration(maxSeconds) })}
           </Text>
         )}
       </Box>
@@ -182,7 +184,7 @@ const BufferChart = memo(({ history }: { history: number[] }) => {
         </Box>
       ) : (
         <Text variant="caption" color="textSecondary">
-          no samples yet
+          {t('buffer_chart_no_samples')}
         </Text>
       )}
     </Box>
@@ -204,6 +206,7 @@ export const PlayerStatisticsOverlay = memo<PlayerStatisticsOverlayProps>(
     source,
   }) => {
     const theme = useTheme<Theme>();
+    const { t } = useTranslation('player');
     const nativeEntries = NATIVE_STATISTIC_ORDER.flatMap((key) => {
       const value = statistics[key];
       return value === undefined ? [] : [[key, formatStatisticValue(value)] as const];
@@ -252,7 +255,7 @@ export const PlayerStatisticsOverlay = memo<PlayerStatisticsOverlayProps>(
           gap="xs"
           overflow="hidden">
           <Text variant="caption" color="textPrimary">
-            PLAYBACK DIAGNOSTICS
+            {t('statistics_title')}
           </Text>
           <BufferChart history={diagnostics.bufferHistory} />
           <Box

@@ -5,6 +5,7 @@ import { CompletedBadge } from '@/components/basic/CompletedBadge';
 import { ExpandableSection } from '@/components/basic/ExpandableSection';
 import FadeIn from '@/components/basic/FadeIn';
 import { Tag } from '@/components/basic/Tag';
+import { IMDB_BLACK, IMDB_YELLOW } from '@/constants/colors';
 import { useMediaWatchStatus } from '@/hooks/useMediaWatchStatus';
 import { Box, Text } from '@/theme/theme';
 import type { MetaDetail, MetaLink, MetaVideo } from '@/types/stremio';
@@ -44,9 +45,6 @@ const parseImdbRating = (imdbRating: string | undefined) => {
   const n = Number.parseFloat(imdbRating);
   return Number.isFinite(n) ? n : undefined;
 };
-
-const IMDB_YELLOW = '#F5C518';
-const IMDB_BLACK = '#000000';
 
 const extractGenres = (media: MetaDetail) => {
   const fromLinks = getLinksByCategory(media.links, 'genre').map((l) => l.name);
