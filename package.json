@@ -24,7 +24,7 @@
     "generate-whats-new": "node scripts/generate-whats-new-registry.mjs",
     "prebuild": "expo prebuild",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
+    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" --max-warnings 35",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier --write .",
     "format:check": "prettier --check .",
     "test": "jest",
@@ -104,6 +104,8 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^9.39.1",
     "@expo/dom-webview": "~57.0.1",
     "@expo/metro-runtime": "^57.0.15",
@@ -121,6 +123,7 @@
     "eslint": "^9.25.1",
     "eslint-config-expo": "~57.0.2",
     "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-i18next": "^6.1.5",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "expo-doctor": "^1.20.4",
