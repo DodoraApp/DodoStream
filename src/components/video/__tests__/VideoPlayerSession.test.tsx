@@ -154,60 +154,65 @@ const triggerBuffering = (playerProps: any) => {
   });
 };
 
-describe('VideoPlayerSession', () => {
-  let dateNowSpy: jest.SpyInstance<number, []>;
+let dateNowSpy: jest.SpyInstance<number, []>;
 
-  beforeEach(() => {
-    jest.useFakeTimers();
-    mockLastExoProps = undefined;
-    mockLastVlcProps = undefined;
-    mockPlayerControlsProps = undefined;
-    mockUpNextResolved = undefined;
-    mockUpNextProps = undefined;
-    mockSeekTo.mockReset();
-    mockUpsertItem.mockReset();
-    mockSetLastStreamTarget.mockReset().mockResolvedValue(undefined);
-    mockResumeHistoryItem = undefined;
-    mockIntroData = undefined;
-    mockPreferredAudioLanguages = undefined;
-    mockShowVideoStatistics = false;
-    mockShowToast.mockReset();
-    mockReplaceToStreams.mockReset();
-    dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
-  });
+const setupSessionMocks = () => {
+  jest.useFakeTimers();
+  mockLastExoProps = undefined;
+  mockLastVlcProps = undefined;
+  mockPlayerControlsProps = undefined;
+  mockUpNextResolved = undefined;
+  mockUpNextProps = undefined;
+  mockSeekTo.mockReset();
+  mockUpsertItem.mockReset();
+  mockSetLastStreamTarget.mockReset().mockResolvedValue(undefined);
+  mockResumeHistoryItem = undefined;
+  mockIntroData = undefined;
+  mockPreferredAudioLanguages = undefined;
+  mockShowVideoStatistics = false;
+  mockShowToast.mockReset();
+  mockReplaceToStreams.mockReset();
+  dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(10_000);
+};
 
-  afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
-    dateNowSpy.mockRestore();
-  });
+const teardownSessionTimers = () => {
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
+  dateNowSpy.mockRestore();
+};
 
-  const renderSession = (
-    overrides: Partial<React.ComponentProps<typeof VideoPlayerSession>> = {}
-  ) => {
-    const props: React.ComponentProps<typeof VideoPlayerSession> = {
-      source: 'https://example.com/stream.m3u8',
-      title: 'Title',
-      mediaType: 'movie' as any,
-      metaId: 'm1',
-      videoId: undefined,
-      bingeGroup: undefined,
-      onStop: jest.fn(),
-      onError: jest.fn(),
-      usedPlayerType: 'exoplayer',
-      setUsedPlayerType: jest.fn(),
-      playerType: 'exoplayer',
-      automaticFallback: true,
-      ...overrides,
-    };
-
-    return {
-      ...renderWithProviders(<VideoPlayerSession {...props} />, {
-        queryClient: createTestQueryClient(),
-      }),
-      props,
-    };
+const renderSession = (
+  overrides: Partial<React.ComponentProps<typeof VideoPlayerSession>> = {}
+) => {
+  const props: React.ComponentProps<typeof VideoPlayerSession> = {
+    source: 'https://example.com/stream.m3u8',
+    title: 'Title',
+    mediaType: 'movie' as any,
+    metaId: 'm1',
+    videoId: undefined,
+    bingeGroup: undefined,
+    onStop: jest.fn(),
+    onError: jest.fn(),
+    usedPlayerType: 'exoplayer',
+    setUsedPlayerType: jest.fn(),
+    playerType: 'exoplayer',
+    automaticFallback: true,
+    ...overrides,
   };
+
+  return {
+    ...renderWithProviders(<VideoPlayerSession {...props} />, {
+      queryClient: createTestQueryClient(),
+    }),
+    props,
+  };
+};
+
+// The suite is split across same-titled describes purely to stay under the
+// max-lines-per-function lint budget; the shared hooks keep behavior identical.
+describe('VideoPlayerSession', () => {
+  beforeEach(setupSessionMocks);
+  afterEach(teardownSessionTimers);
 
   it('renders the correct player component based on usedPlayerType', () => {
     renderSession({ usedPlayerType: 'exoplayer' });
@@ -430,6 +435,11 @@ describe('VideoPlayerSession', () => {
       })
     );
   });
+});
+
+describe('VideoPlayerSession', () => {
+  beforeEach(setupSessionMocks);
+  afterEach(teardownSessionTimers);
 
   it('attempts automatic fallback on error when enabled and user-selected player fails', () => {
     // Arrange
@@ -491,6 +501,11 @@ describe('VideoPlayerSession', () => {
       );
     }
   );
+});
+
+describe('VideoPlayerSession', () => {
+  beforeEach(setupSessionMocks);
+  afterEach(teardownSessionTimers);
 
   it('autoplays next episode on end when Up Next is resolved and not cancelled', () => {
     // Arrange

@@ -32,5 +32,10 @@
   "error_codec": "Videoformat wird von diesem Player nicht unterstützt",
   "error_network": "Netzwerkfehler - überprüfe deine Verbindung",
   "error_source": "Stream nicht verfügbar oder abgelaufen",
-  "error_unknown": "Ein Wiedergabefehler ist aufgetreten"
+  "error_unknown": "Ein Wiedergabefehler ist aufgetreten",
+  "statistics_title": "WIEDERGABE-DIAGNOSTIK",
+  "buffer_chart_title": "Puffer voraus im Zeitverlauf",
+  "buffer_chart_max": "max. {{duration}}",
+  "buffer_chart_no_samples": "noch keine Messwerte",
+  "no_subtitles_loaded": "Keine Untertitel geladen"
 }

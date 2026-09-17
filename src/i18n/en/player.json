@@ -32,5 +32,10 @@
   "error_codec": "Video format not supported by this player",
   "error_network": "Network error - check your connection",
   "error_source": "Stream unavailable or expired",
-  "error_unknown": "Playback error occurred"
+  "error_unknown": "Playback error occurred",
+  "statistics_title": "PLAYBACK DIAGNOSTICS",
+  "buffer_chart_title": "buffer ahead over time",
+  "buffer_chart_max": "max {{duration}}",
+  "buffer_chart_no_samples": "no samples yet",
+  "no_subtitles_loaded": "No subtitles loaded"
 }

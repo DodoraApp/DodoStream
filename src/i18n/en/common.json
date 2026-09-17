@@ -23,5 +23,7 @@
   "select_icon": "Select Icon",
   "select_color": "Select Color",
   "show_more": "Show more",
-  "show_less": "Show less"
+  "show_less": "Show less",
+  "unavailable": "Unavailable",
+  "no_content_available": "No content available"
 }

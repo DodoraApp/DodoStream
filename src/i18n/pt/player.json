@@ -32,5 +32,10 @@
   "error_codec": "Formato de vídeo não suportado por este leitor",
   "error_network": "Erro de rede - verifica a tua ligação",
   "error_source": "Stream indisponível ou expirada",
-  "error_unknown": "Ocorreu um erro de reprodução"
+  "error_unknown": "Ocorreu um erro de reprodução",
+  "statistics_title": "DIAGNÓSTICOS DE REPRODUÇÃO",
+  "buffer_chart_title": "buffer disponível ao longo do tempo",
+  "buffer_chart_max": "máx. {{duration}}",
+  "buffer_chart_no_samples": "sem amostras ainda",
+  "no_subtitles_loaded": "Nenhuma legenda carregada"
 }

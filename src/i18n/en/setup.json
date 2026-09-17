@@ -56,5 +56,8 @@
   "complete": {
     "title": "You're All Set!",
     "start_exploring": "Start Exploring"
+  },
+  "progress": {
+    "step": "Step {{current}} of {{total}}"
   }
 }

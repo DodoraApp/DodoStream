@@ -1,4 +1,5 @@
 import { FC, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { SetupWizardStep, WIZARD_STEPS } from '@/store/setup-wizard.store';
 import { Box, Text } from '@/theme/theme';
@@ -11,6 +12,7 @@ interface WizardProgressProps {
  * Progress indicator showing current step in the wizard
  */
 export const WizardProgress: FC<WizardProgressProps> = memo(({ currentStep }) => {
+  const { t } = useTranslation('setup');
   const currentIndex = WIZARD_STEPS.indexOf(currentStep);
   const totalSteps = WIZARD_STEPS.length;
 
@@ -29,7 +31,7 @@ export const WizardProgress: FC<WizardProgressProps> = memo(({ currentStep }) =>
         ))}
       </Box>
       <Text variant="caption" color="textSecondary">
-        Step {displayIndex} of {totalSteps}
+        {t('progress.step', { current: displayIndex, total: totalSteps })}
       </Text>
     </Box>
   );

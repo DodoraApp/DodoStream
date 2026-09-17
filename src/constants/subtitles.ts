@@ -26,6 +26,9 @@ export const SUBTITLE_PADDING_RATIO = {
 // Reference resolution for scaling (1080p)
 export const SUBTITLE_REFERENCE_HEIGHT = 1080;
 
+/** Static band colors for the subtitle style preview backdrop (dark to light mock gradient) */
+export const SUBTITLE_PREVIEW_BAND_COLORS = ['#0a0a14', '#3d4566', '#8899bb'];
+
 /**
  * Available font family options for the picker
  */

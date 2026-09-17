@@ -25,6 +25,7 @@
   "specials": "Specials",
   "unknown_episode": "Unknown Episode",
   "cast": "Cast",
+  "no_cast_information": "No cast information available",
   "directors": "Directors",
   "writers": "Writers",
   "search_placeholder": "Search movies and shows...",

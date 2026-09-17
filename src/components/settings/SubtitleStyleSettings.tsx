@@ -19,6 +19,7 @@ import {
   SUBTITLE_POSITION_MAX,
   SUBTITLE_POSITION_MIN,
   SUBTITLE_POSITION_STEP,
+  SUBTITLE_PREVIEW_BAND_COLORS,
 } from '@/constants/subtitles';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { usePlaybackStore } from '@/store/playback.store';
@@ -64,7 +65,7 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
           left={0}
           width="33%"
           height="100%"
-          style={{ backgroundColor: '#0a0a14' }}
+          style={{ backgroundColor: SUBTITLE_PREVIEW_BAND_COLORS[0] }}
         />
         <Box
           position="absolute"
@@ -72,7 +73,7 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
           left="33%"
           width="34%"
           height="100%"
-          style={{ backgroundColor: '#3d4566' }}
+          style={{ backgroundColor: SUBTITLE_PREVIEW_BAND_COLORS[1] }}
         />
         <Box
           position="absolute"
@@ -80,7 +81,7 @@ const SubtitlePreview = memo<SubtitlePreviewProps>(({ style, containerWidth }) =
           right={0}
           width="33%"
           height="100%"
-          style={{ backgroundColor: '#8899bb' }}
+          style={{ backgroundColor: SUBTITLE_PREVIEW_BAND_COLORS[2] }}
         />
       </Box>
 

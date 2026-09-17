@@ -24,7 +24,7 @@
     "generate-whats-new": "node scripts/generate-whats-new-registry.mjs",
     "prebuild": "expo prebuild",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" --max-warnings 35",
+    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier --write .",
     "format:check": "prettier --check .",
     "test": "jest",

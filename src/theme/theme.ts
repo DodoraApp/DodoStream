@@ -27,6 +27,7 @@ const palette = {
 
   // Functional
   red: '#FF3B30',
+  amber: '#F59E0B',
   overlayBlack: 'rgba(0, 0, 0, 0.6)',
   semiTransparentBlack: 'rgba(0, 0, 0, 0.4)',
   transparent: 'transparent',
@@ -76,6 +77,7 @@ const createAppTheme = (scalingFactor: number) =>
       textLink: palette.greenPrimary,
 
       danger: palette.red,
+      warning: palette.amber,
       transparent: 'transparent',
 
       inputBackground: palette.dark2,

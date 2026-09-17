@@ -23,5 +23,7 @@
   "select_icon": "Selecionar Ícone",
   "select_color": "Selecionar Cor",
   "show_more": "Mostrar mais",
-  "show_less": "Mostrar menos"
+  "show_less": "Mostrar menos",
+  "unavailable": "Indisponível",
+  "no_content_available": "Sem conteúdo disponível"
 }

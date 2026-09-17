@@ -56,6 +56,13 @@ const getNativeCallback = <T extends (...args: any[]) => any>(name: string): T =
   return callback as T;
 };
 
+// Element factory so render() and rerender() share one source of truth for the base props.
+const renderPlayer = (
+  overrides: Partial<React.ComponentProps<typeof RNVideoPlayer>> & {
+    ref?: React.Ref<PlayerRef>;
+  } = {}
+) => <RNVideoPlayer source="https://cdn.example/video.m3u8" paused={false} {...overrides} />;
+
 describe('RNVideoPlayer native adapter', () => {
   beforeEach(() => {
     mockNativeVideoProps = undefined;
@@ -82,18 +89,7 @@ describe('RNVideoPlayer native adapter', () => {
     const onBandwidthUpdate = jest.fn();
     const onEnd = jest.fn();
     const onStatistics = jest.fn();
-    render(
-      <RNVideoPlayer
-        source="https://cdn.example/video.m3u8"
-        paused={false}
-        onLoad={onLoad}
-        onProgress={onProgress}
-        onBuffer={onBuffer}
-        onBandwidthUpdate={onBandwidthUpdate}
-        onEnd={onEnd}
-        onStatistics={onStatistics}
-      />
-    );
+    render(renderPlayer({ onLoad, onProgress, onBuffer, onBandwidthUpdate, onEnd, onStatistics }));
 
     act(() => {
       getNativeCallback('onLoad')({ duration: 120 });
@@ -150,7 +146,7 @@ describe('RNVideoPlayer native adapter', () => {
     mockPlaybackState = { byProfile: { 'profile-1': {} } };
 
     try {
-      render(<RNVideoPlayer source="https://cdn.example/video.m3u8" paused={false} />);
+      render(renderPlayer());
       expect(mockNativeVideoProps?.audioPassthrough).toBe(false);
     } finally {
       Object.defineProperty(Platform, 'isTV', { configurable: true, value: originalIsTV });
@@ -163,13 +159,7 @@ describe('RNVideoPlayer native adapter', () => {
       { title: 'Main', startTime: 62.5, endTime: 120 },
     ];
     const onChapters = jest.fn();
-    render(
-      <RNVideoPlayer
-        source="https://cdn.example/video.m3u8"
-        paused={false}
-        onChapters={onChapters}
-      />
-    );
+    render(renderPlayer({ onChapters }));
 
     act(() => {
       getNativeCallback('onChapters')({ chapters });
@@ -182,14 +172,7 @@ describe('RNVideoPlayer native adapter', () => {
   it('maps native tracks to stable app tracks and preserves the native subtitle index', () => {
     const onAudioTracks = jest.fn();
     const onTextTracks = jest.fn();
-    render(
-      <RNVideoPlayer
-        source="https://cdn.example/video.m3u8"
-        paused={false}
-        onAudioTracks={onAudioTracks}
-        onTextTracks={onTextTracks}
-      />
-    );
+    render(renderPlayer({ onAudioTracks, onTextTracks }));
 
     act(() => {
       getNativeCallback('onAudioTracks')({
@@ -219,15 +202,7 @@ describe('RNVideoPlayer native adapter', () => {
     const onAudioTracks = jest.fn();
     const onTextTracks = jest.fn();
     const onError = jest.fn();
-    render(
-      <RNVideoPlayer
-        source="https://cdn.example/video.m3u8"
-        paused={false}
-        onAudioTracks={onAudioTracks}
-        onTextTracks={onTextTracks}
-        onError={onError}
-      />
-    );
+    render(renderPlayer({ onAudioTracks, onTextTracks, onError }));
 
     act(() => {
       getNativeCallback('onAudioTracks')({});
@@ -242,9 +217,7 @@ describe('RNVideoPlayer native adapter', () => {
 
   it('produces useful error text from partial and empty native error payloads', () => {
     const onError = jest.fn();
-    render(
-      <RNVideoPlayer source="https://cdn.example/video.m3u8" paused={false} onError={onError} />
-    );
+    render(renderPlayer({ onError }));
 
     act(() => {
       getNativeCallback('onError')({
@@ -263,9 +236,7 @@ describe('RNVideoPlayer native adapter', () => {
   });
 
   it('selects requested audio and embedded subtitle tracks while explicitly disabling subtitles by default', () => {
-    const { rerender } = render(
-      <RNVideoPlayer source="https://cdn.example/video.m3u8" paused={false} />
-    );
+    const { rerender } = render(renderPlayer());
 
     expect(mockNativeVideoProps).toEqual(
       expect.objectContaining({
@@ -275,12 +246,10 @@ describe('RNVideoPlayer native adapter', () => {
     );
 
     rerender(
-      <RNVideoPlayer
-        source="https://cdn.example/video.m3u8"
-        paused={false}
-        selectedAudioTrack={{ index: 3, language: 'de' }}
-        selectedTextTrack={{ source: 'video', index: 2, playerIndex: 9, language: 'en' }}
-      />
+      renderPlayer({
+        selectedAudioTrack: { index: 3, language: 'de' },
+        selectedTextTrack: { source: 'video', index: 2, playerIndex: 9, language: 'en' },
+      })
     );
 
     expect(mockNativeVideoProps).toEqual(
@@ -293,7 +262,7 @@ describe('RNVideoPlayer native adapter', () => {
 
   it('forwards imperative seek requests and applies all active playback settings', () => {
     const ref = React.createRef<PlayerRef>();
-    render(<RNVideoPlayer ref={ref} source="https://cdn.example/video.m3u8" paused />);
+    render(renderPlayer({ ref, paused: true }));
 
     act(() => {
       ref.current?.seekTo(42.25, 120);
