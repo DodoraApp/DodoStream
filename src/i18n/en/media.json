@@ -54,5 +54,12 @@
   "remove_from_history": "Remove from history",
   "watching": "Watching",
   "completed": "Completed",
-  "mark_as_watched": "Mark as watched"
+  "mark_as_watched": "Mark as watched",
+  "stream_filter_resolution": "Resolution",
+  "stream_filter_size": "File size",
+  "stream_filter_any": "Any",
+  "stream_filter_max_size": "Up to {{size}} GB",
+  "stream_filter_resolution_value": "Resolution: {{value}}",
+  "stream_filter_size_value": "Size: {{value}}",
+  "no_streams_match_filters": "No streams match the selected filters"
 }

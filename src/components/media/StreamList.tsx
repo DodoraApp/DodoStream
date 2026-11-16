@@ -12,14 +12,22 @@ import { Focusable } from '@/components/basic/Focusable';
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { HorizontalSpacer, VerticalSpacer } from '@/components/basic/Spacer';
 import { TagFilters, TagOption } from '@/components/basic/TagFilters';
+import { StreamFilterBar } from '@/components/media/StreamFilterBar';
 import { StreamListSkeleton } from '@/components/media/StreamListSkeleton';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
+import { useAppSettingsStore } from '@/store/app-settings.store';
 import { Box, Text, type Theme } from '@/theme/theme';
 import type { ContentType, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
 import { getFocusableBackgroundColor } from '@/utils/focus-colors';
 import { getStreamStableId, isStreamAvailable, isStreamSelected } from '@/utils/stream';
+import {
+  filterStreams,
+  getAvailableResolutions,
+  hasActiveStreamFilters,
+  NO_STREAM_FILTERS,
+} from '@/utils/stream-filters';
 
 const debug = createDebugLogger('StreamList');
 type AddonOption = TagOption;
@@ -339,11 +347,26 @@ export const StreamList = memo(
       return allResults.every((result) => !result.isLoading);
     }, [allResults]);
 
+    // Resolution and size filters: phone and tablet stream pages only. The TV
+    // layout and the centered player overlay keep their compact list.
+    const showStreamFilters = !isHorizontal && !centered;
+    const storedStreamFilters = useAppSettingsStore((state) => state.streamFilters);
+    const setStreamFilters = useAppSettingsStore((state) => state.setStreamFilters);
+    const streamFilters = showStreamFilters ? storedStreamFilters : NO_STREAM_FILTERS;
+    const availableResolutions = useMemo(() => getAvailableResolutions(streams ?? []), [streams]);
+
+    // Part of the list key, so the list starts fresh when a filter changes.
+    const streamFilterKey = hasActiveStreamFilters(streamFilters)
+      ? `:${streamFilters.resolution ?? 'any'}:${streamFilters.maxSizeGb ?? 'any'}`
+      : '';
+
     const filteredStreams = useMemo(() => {
       if (!streams) return streams;
-      if (!selectedAddonId) return streams;
-      return streams.filter((s) => (s.addonId ?? 'unknown') === selectedAddonId);
-    }, [streams, selectedAddonId]);
+      const byAddon = selectedAddonId
+        ? streams.filter((s) => (s.addonId ?? 'unknown') === selectedAddonId)
+        : streams;
+      return filterStreams(byAddon, streamFilters);
+    }, [streams, selectedAddonId, streamFilters]);
     useEffect(() => {
       const selectedStream = streams?.find((stream) =>
         isStreamSelected(stream, selectedStreamId, selectedStreamUrl)
@@ -379,6 +402,16 @@ export const StreamList = memo(
           />
         </FadeIn>
 
+        {showStreamFilters && (
+          <FadeIn>
+            <StreamFilterBar
+              filters={streamFilters}
+              availableResolutions={availableResolutions}
+              onChange={setStreamFilters}
+            />
+          </FadeIn>
+        )}
+
         <LoadingQuery
           isLoading={isLoading && !hasAnyAddonFinishedLoading}
           isError={isError}
@@ -386,11 +419,13 @@ export const StreamList = memo(
           loadingMessage={t('finding_streams')}
           loadingComponent={<StreamListSkeleton />}
           errorMessage={t('failed_load_streams')}
-          emptyMessage={t('no_streams')}
+          emptyMessage={
+            hasActiveStreamFilters(streamFilters) ? t('no_streams_match_filters') : t('no_streams')
+          }
           isEmpty={(data) => haveAllAddonsFinishedLoading && data.length === 0}>
           {(streamList) => (
             <StreamListInner
-              dataKey={`${type}:${id}:${videoId ?? ''}:${selectedAddonId ?? 'all'}`}
+              dataKey={`${type}:${id}:${videoId ?? ''}:${selectedAddonId ?? 'all'}${streamFilterKey}`}
               streamList={streamList}
               isHorizontal={isHorizontal}
               handleSelectStream={handleSelectStream}
