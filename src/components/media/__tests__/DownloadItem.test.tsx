@@ -76,6 +76,35 @@ describe('DownloadItem', () => {
     expect(queryByTestId('download-progress-7')).toBeNull();
   });
 
+  it('offers to choose a stream when a season download found none', () => {
+    const onChooseStream = jest.fn();
+    const item = download({ status: 'needs_stream', fileName: '', sourceUrl: '' });
+    const { getByTestId } = renderWithProviders(
+      <DownloadItem
+        download={item}
+        onPlay={onPlay}
+        onRetry={onRetry}
+        onRemove={onRemove}
+        onChooseStream={onChooseStream}
+      />
+    );
+
+    fireEvent.press(getByTestId('download-choose-stream-7'));
+
+    expect(onChooseStream).toHaveBeenCalledWith(item);
+    expect(getByTestId('download-status-7').props.children).toBe('media:download_needs_stream');
+  });
+
+  it('says when the streams could not be loaded instead of finding no match', () => {
+    const { getByTestId } = renderItem(
+      download({ status: 'needs_stream', errorMessage: 'streams_unavailable' })
+    );
+
+    expect(getByTestId('download-status-7').props.children).toBe(
+      'media:download_streams_unavailable'
+    );
+  });
+
   it('retries a failed download', () => {
     const item = download({ status: 'failed' });
     const { getByTestId } = renderItem(item);

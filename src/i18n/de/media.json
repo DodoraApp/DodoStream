@@ -89,5 +89,6 @@
   "download_choose_stream": "Stream auswählen",
   "download_season_issue_title": "Einige Folgen brauchen einen Stream",
   "download_season_issue_message": "Für {{count}} Folge(n) wurde kein passender Stream gefunden. In deinen Downloads kannst du für sie einen Stream auswählen.",
-  "download_open_downloads": "Downloads öffnen"
+  "download_open_downloads": "Downloads öffnen",
+  "download_streams_unavailable": "Streams konnten nicht geladen werden. Wähle einen zum Herunterladen."
 }

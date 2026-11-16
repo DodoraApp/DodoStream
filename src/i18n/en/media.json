@@ -89,5 +89,6 @@
   "download_choose_stream": "Choose stream",
   "download_season_issue_title": "Some episodes need a stream",
   "download_season_issue_message": "No matching stream was found for {{count}} episode(s). You can choose a stream for them in your downloads.",
-  "download_open_downloads": "Open downloads"
+  "download_open_downloads": "Open downloads",
+  "download_streams_unavailable": "Streams could not be loaded. Choose one to download."
 }

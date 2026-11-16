@@ -142,7 +142,10 @@ export async function createDownload(params: CreateDownloadParams): Promise<DbDo
  * shows up in the downloads and the user can pick a stream for it.
  */
 export async function createUnmatchedDownload(
-  params: Pick<CreateDownloadParams, 'profileId' | 'metaId' | 'videoId' | 'type' | 'title'>
+  params: Pick<CreateDownloadParams, 'profileId' | 'metaId' | 'videoId' | 'type' | 'title'> & {
+    /** Why no stream was found, when it was not a plain missing match. */
+    errorMessage?: string;
+  }
 ): Promise<void> {
   await initializeDatabase();
 
@@ -158,7 +161,7 @@ export async function createUnmatchedDownload(
     status: 'needs_stream' as const,
     bytesDownloaded: 0,
     bytesTotal: null,
-    errorMessage: null,
+    errorMessage: params.errorMessage ?? null,
     createdAt: now,
     updatedAt: now,
     completedAt: null,

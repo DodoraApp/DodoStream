@@ -172,6 +172,21 @@ describe('download manager', () => {
       expect(await listDownloadsForProfile(profileId)).toHaveLength(0);
     });
 
+    it('marks the download failed when the transfer cannot be created', async () => {
+      mockedFs.startFileDownload.mockImplementationOnce(() => {
+        throw new Error('No space left on device');
+      });
+
+      await expect(start()).rejects.toThrow('No space left on device');
+
+      const [row] = await listDownloadsForProfile(profileId);
+      expect(row.status).toBe('failed');
+      expect(row.errorMessage).toBe('No space left on device');
+      expect(isDownloadRunning(row.id)).toBe(false);
+      // A failed attempt can be retried right away.
+      await expect(retryDownload(row.id)).resolves.toMatchObject({ status: 'queued' });
+    });
+
     it('refuses a second download for a video that is running or finished', async () => {
       await start();
       await expect(start()).rejects.toMatchObject({ code: 'already_exists' });
@@ -354,7 +369,7 @@ describe('download manager', () => {
 
       const result = await season();
 
-      expect(result).toEqual({ started: 3, skipped: 0, unmatched: 0 });
+      expect(result).toEqual({ started: 3, skipped: 0, unmatched: 0, failed: 0 });
       expect(mockedFetchStreams).toHaveBeenCalledWith(
         'https://addon.example/manifest.json',
         'series',
@@ -390,14 +405,16 @@ describe('download manager', () => {
 
       const result = await season();
 
-      expect(result).toEqual({ started: 0, skipped: 1, unmatched: 2 });
+      expect(result).toEqual({ started: 0, skipped: 1, unmatched: 2, failed: 0 });
       expect(started).toHaveLength(1);
       const noMatch = await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:4');
       expect(noMatch?.status).toBe('needs_stream');
       expect(noMatch?.title).toBe('Show S1E4');
-      expect((await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:3'))?.status).toBe(
-        'needs_stream'
-      );
+      // An unreachable addon is a missing stream too, but keeps its reason.
+      const unreachable = await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:3');
+      expect(unreachable?.status).toBe('needs_stream');
+      expect(unreachable?.errorMessage).toBe('streams_unavailable');
+      expect(noMatch?.errorMessage).toBeUndefined();
 
       // Picking a stream for such an episode replaces the placeholder.
       const picked = await startDownload({
@@ -435,7 +452,7 @@ describe('download manager', () => {
         episodes: [referenceEpisode, ...episodes],
       });
 
-      expect(result).toEqual({ started: 4, skipped: 0, unmatched: 0 });
+      expect(result).toEqual({ started: 4, skipped: 0, unmatched: 0, failed: 0 });
       expect(started[0].params.url).toBe('https://cdn.example/s1e1.mkv');
       // No stream lookup for the episode the user picked the stream for.
       expect(mockedFetchStreams).not.toHaveBeenCalledWith(
@@ -444,6 +461,28 @@ describe('download manager', () => {
         'tt-show:1:1'
       );
       expect(mockedFetchStreams).toHaveBeenCalledTimes(3);
+    });
+
+    it('reports an episode whose download cannot start as failed, not as missing a stream', async () => {
+      mockedFetchStreams.mockImplementation(async (_manifestUrl, _type, id) => ({
+        streams: [
+          {
+            name: 'Addon 1080p',
+            url: `https://cdn.example/${id}-1080.mkv`,
+            behaviorHints: { bingeGroup: 'addon|1080p' },
+          },
+        ] as unknown as Stream[],
+      }));
+      mockedFs.startFileDownload.mockImplementationOnce(() => {
+        throw new Error('No space left on device');
+      });
+
+      const result = await season();
+
+      expect(result).toEqual({ started: 2, skipped: 0, unmatched: 0, failed: 1 });
+      const broken = await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:2');
+      expect(broken?.status).toBe('failed');
+      expect(broken?.errorMessage).toBe('No space left on device');
     });
 
     it('needs a direct reference stream that knows its addon', async () => {

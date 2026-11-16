@@ -89,5 +89,6 @@
   "download_choose_stream": "Escolher stream",
   "download_season_issue_title": "Alguns episódios precisam de um stream",
   "download_season_issue_message": "Não foi encontrado um stream correspondente para {{count}} episódio(s). Podes escolher um stream para eles nas tuas transferências.",
-  "download_open_downloads": "Abrir transferências"
+  "download_open_downloads": "Abrir transferências",
+  "download_streams_unavailable": "Não foi possível carregar os streams. Escolhe um para transferir."
 }

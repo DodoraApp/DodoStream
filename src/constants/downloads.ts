@@ -27,6 +27,12 @@ export const DOWNLOAD_AFTER_PLAYBACK_DELAY_MS = 1500;
  */
 export const SEASON_MATCH_MAX_SIZE_FACTOR = 2;
 
+/**
+ * Error message stored on a download that needs a stream because the addon
+ * could not be reached, as opposed to answering without a matching stream.
+ */
+export const DOWNLOAD_ERROR_STREAMS_UNAVAILABLE = 'streams_unavailable';
+
 /** Minimum time between two live progress updates of one download (milliseconds). */
 export const DOWNLOAD_PROGRESS_UI_INTERVAL_MS = 500;
 

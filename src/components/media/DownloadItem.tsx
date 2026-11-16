@@ -7,6 +7,7 @@ import { useTheme } from '@shopify/restyle';
 import { ConfirmModal } from '@/components/basic/ConfirmModal';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
+import { DOWNLOAD_ERROR_STREAMS_UNAVAILABLE } from '@/constants/downloads';
 import type { DbDownload } from '@/db';
 import { useDownloadProgress } from '@/hooks/useDownloads';
 import { Box, Text, type Theme } from '@/theme/theme';
@@ -82,7 +83,11 @@ export const DownloadItem = memo(
 
     const statusText = (() => {
       if (status === 'failed') return t('media:download_failed');
-      if (status === 'needs_stream') return t('media:download_needs_stream');
+      if (status === 'needs_stream') {
+        return download.errorMessage === DOWNLOAD_ERROR_STREAMS_UNAVAILABLE
+          ? t('media:download_streams_unavailable')
+          : t('media:download_needs_stream');
+      }
       if (status === 'queued') return t('media:download_queued');
       if (status === 'completed') {
         const size = bytesTotal ?? bytesDownloaded;

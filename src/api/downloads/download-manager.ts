@@ -15,6 +15,7 @@ import {
 import { fetchStreams } from '@/api/stremio/client';
 import {
   DOWNLOAD_AFTER_PLAYBACK_DELAY_MS,
+  DOWNLOAD_ERROR_STREAMS_UNAVAILABLE,
   DOWNLOAD_PROGRESS_PERSIST_INTERVAL_MS,
   DOWNLOAD_PROGRESS_UI_INTERVAL_MS,
   DOWNLOAD_TASK_ID_PREFIX,
@@ -113,6 +114,8 @@ export type SeasonDownloadResult = {
   skipped: number;
   /** Episodes without a corresponding stream; the user has to pick one. */
   unmatched: number;
+  /** Episodes whose download could not be started; they show up as failed. */
+  failed: number;
 };
 
 /** A download that can be replaced by a new attempt. */
@@ -263,18 +266,30 @@ const track = (download: DbDownload, task: FileDownloadTask): void => {
     });
 };
 
-const runDownload = (download: DbDownload): void => {
-  track(
-    download,
-    startFileDownload({
+/**
+ * Starts the native transfer. If it cannot even be created (no space, no
+ * permission), nothing would ever move the row on, so it is marked failed
+ * right away and the error is passed on to the caller.
+ */
+const runDownload = async (download: DbDownload): Promise<void> => {
+  let task: FileDownloadTask;
+  try {
+    task = startFileDownload({
       taskId: getTaskId(download.id),
       url: download.sourceUrl,
       fileName: download.fileName,
       headers: download.requestHeaders,
       title: download.title,
       ...createHandlers(download.id),
-    })
-  );
+    });
+  } catch (error) {
+    debug('startFailed', { id: download.id, error });
+    await removeFileQuietly(download.fileName);
+    await markDownloadFailed(download.id, error instanceof Error ? error.message : undefined);
+    await invalidateDownloads();
+    throw error;
+  }
+  track(download, task);
 };
 
 /**
@@ -317,7 +332,7 @@ export async function startDownload(params: StartDownloadParams): Promise<DbDown
 
   debug('start', { id: download.id, metaId, videoId, hasHeaders: !!download.requestHeaders });
   void requestNotificationPermission();
-  runDownload(download);
+  await runDownload(download);
   await invalidateDownloads();
   return download;
 }
@@ -339,9 +354,9 @@ export async function startSeasonDownload(
     throw new DownloadError('not_downloadable');
   }
 
-  const result: SeasonDownloadResult = { started: 0, skipped: 0, unmatched: 0 };
+  const result: SeasonDownloadResult = { started: 0, skipped: 0, unmatched: 0, failed: 0 };
 
-  const markUnmatched = async (episode: SeasonEpisode) => {
+  const markUnmatched = async (episode: SeasonEpisode, errorMessage?: string) => {
     result.unmatched += 1;
     await createUnmatchedDownload({
       profileId,
@@ -349,6 +364,7 @@ export async function startSeasonDownload(
       videoId: episode.videoId,
       type,
       title: episode.title,
+      errorMessage,
     }).catch((error: unknown) => debug('markUnmatchedFailed', { error }));
   };
 
@@ -379,21 +395,39 @@ export async function startSeasonDownload(
         result.skipped += 1;
         continue;
       }
+    } catch (error) {
+      debug('seasonEpisodeLookupFailed', { videoId: episode.videoId, error });
+      result.failed += 1;
+      continue;
+    }
 
+    // The addon could not be reached: the user picks a stream on the stream
+    // page, which loads the streams again. The reason is kept for display.
+    let candidates: Stream[];
+    try {
       const response = await fetchStreams(addonManifestUrl, type, episode.videoId);
-      const candidates = (response.streams ?? []).map((stream) => ({
+      candidates = (response.streams ?? []).map((stream) => ({
         ...stream,
         addonId: referenceStream.addonId,
         addonName: referenceStream.addonName,
         addonManifestUrl,
       }));
-      const stream = findMatchingStream(referenceStream, candidates);
-      if (!stream) {
-        debug('seasonEpisodeNoMatch', { videoId: episode.videoId, count: candidates.length });
-        await markUnmatched(episode);
-        continue;
-      }
+    } catch (error) {
+      debug('seasonEpisodeStreamsUnavailable', { videoId: episode.videoId, error });
+      await markUnmatched(episode, DOWNLOAD_ERROR_STREAMS_UNAVAILABLE);
+      continue;
+    }
 
+    const stream = findMatchingStream(referenceStream, candidates);
+    if (!stream) {
+      debug('seasonEpisodeNoMatch', { videoId: episode.videoId, count: candidates.length });
+      await markUnmatched(episode);
+      continue;
+    }
+
+    // Starting can fail for other reasons (storage, database). Such an
+    // episode is a failed download with a retry, not a missing stream.
+    try {
       await startDownload({
         profileId,
         metaId,
@@ -404,8 +438,8 @@ export async function startSeasonDownload(
       });
       result.started += 1;
     } catch (error) {
-      debug('seasonEpisodeFailed', { videoId: episode.videoId, error });
-      await markUnmatched(episode);
+      debug('seasonEpisodeStartFailed', { videoId: episode.videoId, error });
+      result.failed += 1;
     }
   }
 
@@ -434,7 +468,7 @@ export async function retryDownload(id: number): Promise<DbDownload> {
   });
 
   debug('retry', { id: download.id });
-  runDownload(download);
+  await runDownload(download);
   await invalidateDownloads();
   return download;
 }

@@ -14,12 +14,24 @@ export type StreamResolution = (typeof STREAM_RESOLUTIONS)[number];
 const BYTES_PER_UNIT = 1000;
 export const BYTES_PER_GB = BYTES_PER_UNIT ** 3;
 
-const RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
-  ['2160p', /\b(2160p|4k|uhd)\b/i],
-  ['1440p', /\b(1440p|2k|qhd)\b/i],
-  ['1080p', /\b(1080p|fhd)\b/i],
+/** Pixel counts like "1080p" state the resolution of the file itself. */
+const EXPLICIT_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
+  ['2160p', /\b2160p\b/i],
+  ['1440p', /\b1440p\b/i],
+  ['1080p', /\b1080p\b/i],
   ['720p', /\b720p\b/i],
-  ['480p', /\b(480p|576p|sd)\b/i],
+  ['480p', /\b(480p|576p)\b/i],
+];
+
+/**
+ * Quality labels like "4K" are only used when no pixel count is stated,
+ * because release names also use them for the source ("4K.Remaster.1080p").
+ */
+const LOOSE_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
+  ['2160p', /\b(4k|uhd)\b/i],
+  ['1440p', /\b(2k|qhd)\b/i],
+  ['1080p', /\bfhd\b/i],
+  ['480p', /\bsd\b/i],
 ];
 
 /** Names shown for resolutions that are better known by another name. */
@@ -53,7 +65,9 @@ const getStreamText = (stream: Stream): string =>
 /** Resolution an addon states for the stream, or undefined when it states none. */
 export const getStreamResolution = (stream: Stream): StreamResolution | undefined => {
   const text = getStreamText(stream);
-  return RESOLUTION_PATTERNS.find(([, pattern]) => pattern.test(text))?.[0];
+  const findIn = (patterns: readonly [StreamResolution, RegExp][]) =>
+    patterns.find(([, pattern]) => pattern.test(text))?.[0];
+  return findIn(EXPLICIT_RESOLUTION_PATTERNS) ?? findIn(LOOSE_RESOLUTION_PATTERNS);
 };
 
 /** Display name of a resolution, e.g. "4K" for 2160p. */
