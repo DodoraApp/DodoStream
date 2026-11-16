@@ -25,6 +25,18 @@ describe('getStreamResolution', () => {
     expect(getStreamResolution(stream({ name: 'UHD', description: 'Movie 720p' }))).toBe('720p');
   });
 
+  it('reads underscore-separated release names', () => {
+    expect(getStreamResolution(stream({ title: 'Movie_1080p_WEB' }))).toBe('1080p');
+    expect(getStreamResolution(stream({ title: 'Movie_4K_HDR' }))).toBe('2160p');
+    expect(getStreamLanguages(stream({ title: 'Movie_German_DL_1080p' }))).toEqual(['DE']);
+    expect(getStreamSizeBytes(stream({ title: 'Movie_2.5GB_x265' }))).toBe(2.5 * BYTES_PER_GB);
+  });
+
+  it('does not match a resolution inside another token', () => {
+    expect(getStreamResolution(stream({ title: 'Movie x1080pz' }))).toBeUndefined();
+    expect(getStreamResolution(stream({ title: 'Movie 14K' }))).toBeUndefined();
+  });
+
   it('returns undefined when no resolution is stated', () => {
     expect(getStreamResolution(stream({ name: 'Addon', title: 'Some stream' }))).toBeUndefined();
     // HDR and HD are not resolutions on their own.
