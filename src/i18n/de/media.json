@@ -75,7 +75,6 @@
   "download_notification_progress": "Wird heruntergeladen … {progress} %",
   "download_notification_paused": "Pausiert",
   "download_season_started": "{{started}} Downloads gestartet",
-  "download_season_skipped": "{{skipped}} Folgen übersprungen (bereits heruntergeladen oder kein passender Stream)",
   "movies_section": "Filme",
   "series_section": "Serien",
   "download_season": "Staffel herunterladen",
@@ -85,5 +84,10 @@
   "download_deleted_after_watching": "Download nach dem Ansehen gelöscht",
   "download_watched_title": "Angesehenen Download löschen?",
   "download_watched_message": "Du hast zu Ende geschaut: {{titles}}",
-  "download_keep": "Behalten"
+  "download_keep": "Behalten",
+  "download_needs_stream": "Kein passender Stream gefunden. Wähle einen zum Herunterladen.",
+  "download_choose_stream": "Stream auswählen",
+  "download_season_issue_title": "Einige Folgen brauchen einen Stream",
+  "download_season_issue_message": "Für {{count}} Folge(n) wurde kein passender Stream gefunden. In deinen Downloads kannst du für sie einen Stream auswählen.",
+  "download_open_downloads": "Downloads öffnen"
 }

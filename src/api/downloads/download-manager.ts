@@ -24,6 +24,7 @@ import {
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import {
   createDownload,
+  createUnmatchedDownload,
   type DbDownload,
   deleteDownload,
   getDownloadById,
@@ -106,9 +107,17 @@ export type PlaybackEndedParams = {
 };
 
 export type SeasonDownloadResult = {
+  /** Episodes whose download was started. */
   started: number;
+  /** Episodes that already had a download. */
   skipped: number;
+  /** Episodes without a corresponding stream; the user has to pick one. */
+  unmatched: number;
 };
+
+/** A download that can be replaced by a new attempt. */
+const isReplaceable = (download: DbDownload): boolean =>
+  download.status === 'failed' || download.status === 'needs_stream';
 
 /**
  * File transfers known to this app process, keyed by download id. The native
@@ -129,6 +138,8 @@ const invalidateDownloads = () => queryClient.invalidateQueries({ queryKey: down
 const isBackgroundEnabled = () => useAppSettingsStore.getState().backgroundDownloadsEnabled;
 
 const removeFileQuietly = async (fileName: string) => {
+  // Downloads that still need a stream have no file.
+  if (!fileName) return;
   try {
     await deleteDownloadFile(fileName);
   } catch (error) {
@@ -279,7 +290,7 @@ export async function startDownload(params: StartDownloadParams): Promise<DbDown
   }
 
   const existing = await getDownloadForVideo(profileId, metaId, videoId);
-  if (existing && existing.status !== 'failed') {
+  if (existing && !isReplaceable(existing)) {
     throw new DownloadError('already_exists');
   }
   if (existing) {
@@ -314,8 +325,9 @@ export async function startDownload(params: StartDownloadParams): Promise<DbDown
 /**
  * Starts several episodes at once. For every episode the addon of the
  * reference stream is asked for its streams and the corresponding one
- * (same binge group or name) is downloaded. Episodes that already have a
- * download or offer no corresponding direct stream are skipped.
+ * (same languages, same resolution, similar size) is downloaded. Episodes
+ * that already have a download are skipped. Episodes without a corresponding
+ * stream are recorded as needing a stream, so the user can pick one.
  */
 export async function startSeasonDownload(
   params: StartSeasonDownloadParams
@@ -327,7 +339,18 @@ export async function startSeasonDownload(
     throw new DownloadError('not_downloadable');
   }
 
-  const result: SeasonDownloadResult = { started: 0, skipped: 0 };
+  const result: SeasonDownloadResult = { started: 0, skipped: 0, unmatched: 0 };
+
+  const markUnmatched = async (episode: SeasonEpisode) => {
+    result.unmatched += 1;
+    await createUnmatchedDownload({
+      profileId,
+      metaId,
+      videoId: episode.videoId,
+      type,
+      title: episode.title,
+    }).catch((error: unknown) => debug('markUnmatchedFailed', { error }));
+  };
 
   if (referenceEpisode) {
     try {
@@ -352,7 +375,7 @@ export async function startSeasonDownload(
 
     try {
       const existing = await getDownloadForVideo(profileId, metaId, episode.videoId);
-      if (existing && existing.status !== 'failed') {
+      if (existing && !isReplaceable(existing)) {
         result.skipped += 1;
         continue;
       }
@@ -367,7 +390,7 @@ export async function startSeasonDownload(
       const stream = findMatchingStream(referenceStream, candidates);
       if (!stream) {
         debug('seasonEpisodeNoMatch', { videoId: episode.videoId, count: candidates.length });
-        result.skipped += 1;
+        await markUnmatched(episode);
         continue;
       }
 
@@ -382,7 +405,7 @@ export async function startSeasonDownload(
       result.started += 1;
     } catch (error) {
       debug('seasonEpisodeFailed', { videoId: episode.videoId, error });
-      result.skipped += 1;
+      await markUnmatched(episode);
     }
   }
 

@@ -75,7 +75,6 @@
   "download_notification_progress": "A transferir... {progress}%",
   "download_notification_paused": "Em pausa",
   "download_season_started": "{{started}} transferências iniciadas",
-  "download_season_skipped": "{{skipped}} episódios ignorados (já transferidos ou sem stream correspondente)",
   "movies_section": "Filmes",
   "series_section": "Séries",
   "download_season": "Transferir temporada",
@@ -85,5 +84,10 @@
   "download_deleted_after_watching": "Transferência eliminada depois de ver",
   "download_watched_title": "Eliminar a transferência já vista?",
   "download_watched_message": "Acabaste de ver: {{titles}}",
-  "download_keep": "Manter"
+  "download_keep": "Manter",
+  "download_needs_stream": "Nenhum stream correspondente encontrado. Escolhe um para transferir.",
+  "download_choose_stream": "Escolher stream",
+  "download_season_issue_title": "Alguns episódios precisam de um stream",
+  "download_season_issue_message": "Não foi encontrado um stream correspondente para {{count}} episódio(s). Podes escolher um stream para eles nas tuas transferências.",
+  "download_open_downloads": "Abrir transferências"
 }

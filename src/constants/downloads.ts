@@ -21,6 +21,12 @@ export const MAX_CONCURRENT_DOWNLOADS = 3;
  */
 export const DOWNLOAD_AFTER_PLAYBACK_DELAY_MS = 1500;
 
+/**
+ * A stream of another episode counts as similar in size when it is at most
+ * this many times larger or smaller than the stream the user picked.
+ */
+export const SEASON_MATCH_MAX_SIZE_FACTOR = 2;
+
 /** Minimum time between two live progress updates of one download (milliseconds). */
 export const DOWNLOAD_PROGRESS_UI_INTERVAL_MS = 500;
 

@@ -17,6 +17,10 @@ interface DownloadsState {
   watchedDownloads: DbDownload[];
   addWatchedDownload: (download: DbDownload) => void;
   clearWatchedDownloads: () => void;
+
+  /** Result of a season download with episodes that still need a stream. */
+  seasonIssue: { metaId: string; count: number } | null;
+  setSeasonIssue: (seasonIssue: { metaId: string; count: number } | null) => void;
 }
 
 export const useDownloadsStore = create<DownloadsState>((set) => ({
@@ -42,4 +46,7 @@ export const useDownloadsStore = create<DownloadsState>((set) => ({
     ),
 
   clearWatchedDownloads: () => set({ watchedDownloads: [] }),
+
+  seasonIssue: null,
+  setSeasonIssue: (seasonIssue) => set({ seasonIssue }),
 }));

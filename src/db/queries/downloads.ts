@@ -137,6 +137,47 @@ export async function createDownload(params: CreateDownloadParams): Promise<DbDo
   return toDbDownload(rows[0]);
 }
 
+/**
+ * Records an episode a season download could not find a stream for, so it
+ * shows up in the downloads and the user can pick a stream for it.
+ */
+export async function createUnmatchedDownload(
+  params: Pick<CreateDownloadParams, 'profileId' | 'metaId' | 'videoId' | 'type' | 'title'>
+): Promise<void> {
+  await initializeDatabase();
+
+  const now = Date.now();
+  const values = {
+    type: params.type,
+    title: params.title,
+    streamId: null,
+    streamTitle: null,
+    sourceUrl: '',
+    requestHeaders: null,
+    fileName: '',
+    status: 'needs_stream' as const,
+    bytesDownloaded: 0,
+    bytesTotal: null,
+    errorMessage: null,
+    createdAt: now,
+    updatedAt: now,
+    completedAt: null,
+  };
+
+  await db
+    .insert(downloads)
+    .values({
+      profileId: params.profileId,
+      metaId: params.metaId,
+      videoId: params.videoId ?? '',
+      ...values,
+    })
+    .onConflictDoUpdate({
+      target: [downloads.profileId, downloads.metaId, downloads.videoId],
+      set: values,
+    });
+}
+
 export async function getDownloadById(id: number): Promise<DbDownload | null> {
   await initializeDatabase();
 

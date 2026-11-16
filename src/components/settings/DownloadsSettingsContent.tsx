@@ -41,6 +41,7 @@ const DownloadSection = memo(({ title, downloads, handlers, testID }: DownloadSe
           download={download}
           onPlay={handlers.onPlay}
           onRetry={handlers.onRetry}
+          onChooseStream={handlers.onChooseStream}
           onRemove={handlers.onRemove}
         />
       ))}

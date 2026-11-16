@@ -1,4 +1,7 @@
+import { SEASON_MATCH_MAX_SIZE_FACTOR } from '@/constants/downloads';
+import type { DownloadStatus } from '@/db/schema';
 import type { Stream } from '@/types/stremio';
+import { getStreamLanguages, getStreamResolution, getStreamSizeBytes } from '@/utils/stream-info';
 
 const BYTES_PER_UNIT = 1024;
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
@@ -73,24 +76,59 @@ const getBingeGroup = (stream: Stream): string | undefined => {
 
 /**
  * Finds the stream of another episode that corresponds to a reference stream,
- * so a whole season is downloaded from the same source and in the same quality.
- * Matches the addon's binge group first, then the stream name. Returns
- * undefined rather than guessing when nothing corresponds.
+ * so a whole season is downloaded in the same quality: same audio languages,
+ * same resolution and a similar file size. Streams of the same binge group
+ * are preferred, because addons use it for exactly this purpose.
+ *
+ * Returns undefined rather than guessing when nothing corresponds, so the
+ * user can pick a stream for that episode.
  */
 export const findMatchingStream = (reference: Stream, candidates: Stream[]): Stream | undefined => {
   const downloadable = candidates.filter(isStreamDownloadable);
 
+  const resolution = getStreamResolution(reference);
+  const languages = getStreamLanguages(reference).join(',');
+  const size = getStreamSizeBytes(reference);
+
+  const sameQuality = downloadable.filter(
+    (candidate) =>
+      (!resolution || getStreamResolution(candidate) === resolution) &&
+      (!languages || getStreamLanguages(candidate).join(',') === languages)
+  );
+
+  // Without any stated quality the stream name is the only thing to go by.
+  if (!resolution && !languages) {
+    const group = getBingeGroup(reference);
+    return (
+      (group ? downloadable.find((candidate) => getBingeGroup(candidate) === group) : undefined) ??
+      (reference.name
+        ? downloadable.find((candidate) => candidate.name === reference.name)
+        : undefined)
+    );
+  }
+
+  const similarSize = sameQuality.filter((candidate) => {
+    const candidateSize = getStreamSizeBytes(candidate);
+    if (!size || !candidateSize) return true;
+    const ratio = candidateSize / size;
+    return ratio >= 1 / SEASON_MATCH_MAX_SIZE_FACTOR && ratio <= SEASON_MATCH_MAX_SIZE_FACTOR;
+  });
+  if (similarSize.length === 0) return undefined;
+
   const group = getBingeGroup(reference);
-  if (group) {
-    const byGroup = downloadable.find((candidate) => getBingeGroup(candidate) === group);
-    if (byGroup) return byGroup;
-  }
+  const sameGroup = group
+    ? similarSize.filter((candidate) => getBingeGroup(candidate) === group)
+    : [];
+  const pool = sameGroup.length > 0 ? sameGroup : similarSize;
 
-  if (reference.name) {
-    return downloadable.find((candidate) => candidate.name === reference.name);
-  }
+  if (!size) return pool[0];
 
-  return undefined;
+  // Closest in size; the first one wins a tie, which keeps the addon's order.
+  return pool.reduce((best, candidate) => {
+    const distance = Math.abs((getStreamSizeBytes(candidate) ?? size) - size);
+    const bestDistance = Math.abs((getStreamSizeBytes(best) ?? size) - size);
+    return distance < bestDistance ? candidate : best;
+  });
 };
 
 /** File extension for the downloaded file, taken from the addon hint or the URL. */
@@ -115,6 +153,28 @@ export const buildDownloadFileName = (
     .join('_')
     .replace(/[^a-z0-9._-]+/gi, '-');
   return `${base}_${uniqueSuffix}.${extension}`;
+};
+
+/** Icon that stands for the state of a download across the app. */
+export const getDownloadStatusIcon = (
+  status: DownloadStatus
+): 'download' | 'hourglass-outline' | 'alert-circle-outline' => {
+  if (status === 'completed') return 'download';
+  if (status === 'queued' || status === 'downloading') return 'hourglass-outline';
+  return 'alert-circle-outline';
+};
+
+/**
+ * State that sums up several downloads of one title: in progress wins over
+ * a problem, a problem wins over finished.
+ */
+export const getOverallDownloadStatus = (
+  statuses: DownloadStatus[]
+): DownloadStatus | undefined => {
+  if (statuses.length === 0) return undefined;
+  const active = statuses.find((status) => status === 'downloading' || status === 'queued');
+  if (active) return active;
+  return statuses.find((status) => status === 'failed' || status === 'needs_stream') ?? 'completed';
 };
 
 /** Progress between 0 and 1, or undefined when the total size is unknown. */

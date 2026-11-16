@@ -44,6 +44,20 @@ export function useDownloadsForMeta(metaId: string): DbDownload[] {
   return useMemo(() => (data ?? []).filter((item) => item.metaId === metaId), [data, metaId]);
 }
 
+/** Download state of one video, read from the shared downloads list. */
+export function useDownloadStatus(
+  metaId: string,
+  videoId?: string
+): DbDownload['status'] | undefined {
+  const { data } = useDownloads();
+  return useMemo(
+    () =>
+      data?.find((item) => item.metaId === metaId && (item.videoId ?? '') === (videoId ?? ''))
+        ?.status,
+    [data, metaId, videoId]
+  );
+}
+
 /** The download of the active profile for one video, or null when there is none. */
 export function useDownloadForVideo(metaId: string, videoId?: string, enabled: boolean = true) {
   const profileId = useProfileStore((state) => state.activeProfileId);
@@ -107,16 +121,17 @@ export function useDownloadActions() {
       return startSeasonDownload({ ...params, profileId });
     },
     retry: false,
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       if (!result) return;
       showToast({
         title: t('download_season_started', { started: result.started }),
-        message:
-          result.skipped > 0
-            ? t('download_season_skipped', { skipped: result.skipped })
-            : undefined,
         preset: result.started > 0 ? 'success' : 'warning',
       });
+      if (result.unmatched > 0) {
+        useDownloadsStore
+          .getState()
+          .setSeasonIssue({ metaId: variables.metaId, count: result.unmatched });
+      }
     },
     onError: handleError,
   });
@@ -155,7 +170,7 @@ export function useDownloadActions() {
 /** Stable handlers for the actions of a `DownloadItem`. */
 export function useDownloadItemHandlers() {
   const { t } = useTranslation('media');
-  const { openStreamTarget } = useMediaNavigation();
+  const { openStreamTarget, pushToStreams } = useMediaNavigation();
   const { retryDownload: retry, removeDownload: remove } = useDownloadActions();
 
   const onPlay = useCallback(
@@ -179,9 +194,24 @@ export function useDownloadItemHandlers() {
   );
 
   const onRetry = useCallback((download: DbDownload) => retry(download.id), [retry]);
+
+  // Opens the stream selection of the video, where a stream can be downloaded.
+  const onChooseStream = useCallback(
+    (download: DbDownload) => {
+      pushToStreams(
+        {
+          metaId: download.metaId,
+          videoId: download.videoId ?? download.metaId,
+          type: download.type,
+        },
+        { autoPlay: '0' }
+      );
+    },
+    [pushToStreams]
+  );
   const onRemove = useCallback((download: DbDownload) => remove(download.id), [remove]);
 
-  return { onPlay, onRetry, onRemove };
+  return { onPlay, onRetry, onRemove, onChooseStream };
 }
 
 export type DownloadMenuAction = 'delete-download' | 'download-season';

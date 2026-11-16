@@ -354,7 +354,7 @@ describe('download manager', () => {
 
       const result = await season();
 
-      expect(result).toEqual({ started: 3, skipped: 0 });
+      expect(result).toEqual({ started: 3, skipped: 0, unmatched: 0 });
       expect(mockedFetchStreams).toHaveBeenCalledWith(
         'https://addon.example/manifest.json',
         'series',
@@ -370,7 +370,7 @@ describe('download manager', () => {
       );
     });
 
-    it('skips episodes that are already downloaded, have no match or fail to load', async () => {
+    it('skips downloaded episodes and records the ones without a stream for a manual choice', async () => {
       await startDownload({
         profileId,
         metaId: 'tt-show',
@@ -390,8 +390,28 @@ describe('download manager', () => {
 
       const result = await season();
 
-      expect(result).toEqual({ started: 0, skipped: 3 });
+      expect(result).toEqual({ started: 0, skipped: 1, unmatched: 2 });
       expect(started).toHaveLength(1);
+      const noMatch = await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:4');
+      expect(noMatch?.status).toBe('needs_stream');
+      expect(noMatch?.title).toBe('Show S1E4');
+      expect((await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:3'))?.status).toBe(
+        'needs_stream'
+      );
+
+      // Picking a stream for such an episode replaces the placeholder.
+      const picked = await startDownload({
+        profileId,
+        metaId: 'tt-show',
+        videoId: 'tt-show:1:4',
+        type: 'series',
+        title: 'Show S1E4',
+        stream: directStream({ url: 'https://cdn.example/manual.mkv' }),
+      });
+      expect(picked.id).toBe(noMatch?.id);
+      expect(picked.status).toBe('queued');
+      // A placeholder has no file, so nothing may be deleted for it.
+      expect(mockedFs.deleteDownloadFile).not.toHaveBeenCalledWith('');
     });
 
     it('downloads the reference episode with exactly the chosen stream', async () => {
@@ -415,7 +435,7 @@ describe('download manager', () => {
         episodes: [referenceEpisode, ...episodes],
       });
 
-      expect(result).toEqual({ started: 4, skipped: 0 });
+      expect(result).toEqual({ started: 4, skipped: 0, unmatched: 0 });
       expect(started[0].params.url).toBe('https://cdn.example/s1e1.mkv');
       // No stream lookup for the episode the user picked the stream for.
       expect(mockedFetchStreams).not.toHaveBeenCalledWith(

@@ -75,7 +75,6 @@
   "download_notification_progress": "Downloading... {progress}%",
   "download_notification_paused": "Paused",
   "download_season_started": "{{started}} downloads started",
-  "download_season_skipped": "{{skipped}} episodes skipped (already downloaded or no matching stream)",
   "movies_section": "Movies",
   "series_section": "Series",
   "download_season": "Download season",
@@ -85,5 +84,10 @@
   "download_deleted_after_watching": "Download deleted after watching",
   "download_watched_title": "Delete watched download?",
   "download_watched_message": "You finished watching: {{titles}}",
-  "download_keep": "Keep"
+  "download_keep": "Keep",
+  "download_needs_stream": "No matching stream found. Choose one to download.",
+  "download_choose_stream": "Choose stream",
+  "download_season_issue_title": "Some episodes need a stream",
+  "download_season_issue_message": "No matching stream was found for {{count}} episode(s). You can choose a stream for them in your downloads.",
+  "download_open_downloads": "Open downloads"
 }

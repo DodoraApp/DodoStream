@@ -85,17 +85,21 @@ const ensureDownloadsDirectory = (): void => {
 };
 
 export async function downloadFileExists(fileName: string): Promise<boolean> {
+  if (!fileName) return false;
   return getFile(fileName).exists;
 }
 
 /** Size of the file on disk in bytes, or undefined when it does not exist. */
 export async function getDownloadFileSize(fileName: string): Promise<number | undefined> {
+  if (!fileName) return undefined;
   const file = getFile(fileName);
   if (!file.exists) return undefined;
   return file.size ?? undefined;
 }
 
 export async function deleteDownloadFile(fileName: string): Promise<void> {
+  // An empty name would address the downloads directory itself.
+  if (!fileName) return;
   const file = getFile(fileName);
   if (file.exists) file.delete();
 }

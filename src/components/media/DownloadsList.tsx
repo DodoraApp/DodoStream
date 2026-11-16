@@ -28,13 +28,19 @@ export const DownloadsList = memo(({ metaId }: DownloadsListProps) => {
     () => (metaId ? allDownloads?.filter((item) => item.metaId === metaId) : allDownloads),
     [allDownloads, metaId]
   );
-  const { onPlay, onRetry, onRemove } = useDownloadItemHandlers();
+  const { onPlay, onRetry, onRemove, onChooseStream } = useDownloadItemHandlers();
 
   const renderItem = useCallback(
     ({ item }: { item: DbDownload }) => (
-      <DownloadItem download={item} onPlay={onPlay} onRetry={onRetry} onRemove={onRemove} />
+      <DownloadItem
+        download={item}
+        onPlay={onPlay}
+        onRetry={onRetry}
+        onRemove={onRemove}
+        onChooseStream={onChooseStream}
+      />
     ),
-    [onPlay, onRemove, onRetry]
+    [onChooseStream, onPlay, onRemove, onRetry]
   );
 
   if (isLoading) {

@@ -70,56 +70,89 @@ describe('getStreamRequestHeaders', () => {
 });
 
 describe('findMatchingStream', () => {
-  const reference = stream({
-    name: 'Addon 1080p',
-    url: 'https://example.com/e1.mkv',
-    behaviorHints: { bingeGroup: 'addon|1080p|x265' },
+  const episode = (text: string, extra: Record<string, unknown> = {}) =>
+    stream({
+      description: text,
+      url: `https://example.com/${encodeURIComponent(text)}.mkv`,
+      ...extra,
+    });
+
+  const reference = episode('🇬🇧 1080p 📦 2.0 GB', { name: 'Addon' });
+
+  it('picks the stream with the same language and resolution', () => {
+    const otherResolution = episode('🇬🇧 2160p 📦 2.1 GB');
+    const otherLanguage = episode('🇩🇪 1080p 📦 2.0 GB');
+    const match = episode('🇬🇧 1080p 📦 2.2 GB');
+
+    expect(findMatchingStream(reference, [otherResolution, otherLanguage, match])).toBe(match);
   });
 
-  it('prefers the same binge group', () => {
-    const sameName = stream({ name: 'Addon 1080p', url: 'https://example.com/other.mkv' });
-    const sameGroup = stream({
-      name: 'Addon 1080p HDR',
-      url: 'https://example.com/e2.mkv',
+  it('treats the UK and US flag as the same language and needs every language to match', () => {
+    const usFlag = episode('🇺🇸 1080p 📦 2.0 GB');
+    const dual = episode('🇬🇧 🇩🇪 1080p 📦 2.0 GB');
+
+    expect(findMatchingStream(reference, [dual, usFlag])).toBe(usFlag);
+    expect(findMatchingStream(reference, [dual])).toBeUndefined();
+  });
+
+  it('picks the closest file size among the matching streams', () => {
+    const larger = episode('🇬🇧 1080p 📦 3.5 GB');
+    const closest = episode('🇬🇧 1080p 📦 1.8 GB');
+    const smaller = episode('🇬🇧 1080p 📦 1.1 GB');
+
+    expect(findMatchingStream(reference, [larger, closest, smaller])).toBe(closest);
+  });
+
+  it('rejects streams that are far larger or smaller', () => {
+    const remux = episode('🇬🇧 1080p 📦 9.0 GB');
+    const tiny = episode('🇬🇧 1080p 📦 400 MB');
+
+    expect(findMatchingStream(reference, [remux, tiny])).toBeUndefined();
+  });
+
+  it('prefers the same binge group over a closer size', () => {
+    const grouped = stream({
+      description: '🇬🇧 1080p 📦 2.0 GB',
+      url: 'https://example.com/e1.mkv',
+      behaviorHints: { bingeGroup: 'addon|1080p|x265' },
+    });
+    const closerSize = episode('🇬🇧 1080p 📦 2.0 GB');
+    const sameGroup = episode('🇬🇧 1080p 📦 2.6 GB', {
       behaviorHints: { bingeGroup: 'addon|1080p|x265' },
     });
 
-    expect(findMatchingStream(reference, [sameName, sameGroup])).toBe(sameGroup);
+    expect(findMatchingStream(grouped, [closerSize, sameGroup])).toBe(sameGroup);
   });
 
-  it('also reads the legacy group hint', () => {
-    const legacy = stream({
-      url: 'https://example.com/e2.mkv',
-      behaviorHints: { group: 'addon|1080p|x265' },
-    });
+  it('keeps a stream of unknown size as a candidate', () => {
+    const noSize = episode('🇬🇧 1080p');
 
-    expect(findMatchingStream(reference, [legacy])).toBe(legacy);
-  });
-
-  it('falls back to the same stream name', () => {
-    const other = stream({ name: 'Addon 720p', url: 'https://example.com/720.mkv' });
-    const sameName = stream({ name: 'Addon 1080p', url: 'https://example.com/e2.mkv' });
-
-    expect(findMatchingStream(reference, [other, sameName])).toBe(sameName);
+    expect(findMatchingStream(reference, [noSize])).toBe(noSize);
   });
 
   it('never returns a stream that cannot be downloaded', () => {
-    const hls = stream({
-      name: 'Addon 1080p',
-      url: 'https://example.com/e2.m3u8',
-      behaviorHints: { bingeGroup: 'addon|1080p|x265' },
-    });
+    const hls = stream({ description: '🇬🇧 1080p 📦 2.0 GB', url: 'https://example.com/e2.m3u8' });
 
     expect(findMatchingStream(reference, [hls])).toBeUndefined();
   });
 
-  it('returns undefined instead of guessing another quality', () => {
-    const other = stream({ name: 'Addon 720p', url: 'https://example.com/720.mkv' });
+  it('falls back to binge group or name when the reference states no quality', () => {
+    const plain = stream({
+      name: 'Addon stream',
+      url: 'https://example.com/e1.mkv',
+      behaviorHints: { group: 'addon-group' },
+    });
+    const sameName = stream({ name: 'Addon stream', url: 'https://example.com/a.mkv' });
+    const sameGroup = stream({
+      name: 'Other',
+      url: 'https://example.com/b.mkv',
+      behaviorHints: { bingeGroup: 'addon-group' },
+    });
+    const unrelated = stream({ name: 'Other', url: 'https://example.com/c.mkv' });
 
-    expect(findMatchingStream(reference, [other])).toBeUndefined();
-    expect(
-      findMatchingStream(stream({ url: 'https://example.com/a.mkv' }), [other])
-    ).toBeUndefined();
+    expect(findMatchingStream(plain, [unrelated, sameName, sameGroup])).toBe(sameGroup);
+    expect(findMatchingStream(plain, [unrelated, sameName])).toBe(sameName);
+    expect(findMatchingStream(plain, [unrelated])).toBeUndefined();
   });
 });
 
