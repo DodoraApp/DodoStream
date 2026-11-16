@@ -38,6 +38,10 @@
     "about": {
       "title": "About",
       "desc": "App info, version, and useful links"
+    },
+    "downloads": {
+      "title": "Downloads",
+      "desc": "Offline content and background downloads"
     }
   },
   "ui": {
@@ -358,5 +362,18 @@
     "empty": "No synced items yet",
     "imported": "Imported",
     "exported": "Exported"
+  },
+  "downloads": {
+    "options": "Options",
+    "background": "Continue in background",
+    "background_desc": "Keep downloading while the app is in the background or the screen is locked. A notification shows the progress.",
+    "storage": "Storage",
+    "storage_used": "{{size}} used by {{count}} downloads",
+    "delete_all": "Delete all downloads",
+    "delete_all_desc": "Remove all downloaded movies and episodes for this profile",
+    "delete_all_confirm_title": "Delete all downloads",
+    "delete_all_confirm_msg": "Are you sure you want to delete all downloads for this profile? Running downloads are canceled. This action cannot be undone.",
+    "all_deleted": "Downloads deleted",
+    "downloaded_content": "Downloaded content"
   }
 }

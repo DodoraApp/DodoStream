@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { TFunction } from 'i18next';
 
 import type { SettingsMenuItem } from '@/components/settings/SettingsMenu';
@@ -45,6 +47,18 @@ export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] =
     icon: 'text-outline',
     href: '/settings/subtitles',
   },
+  // Downloads are a phone feature and stay hidden on TV.
+  ...(Platform.isTV
+    ? []
+    : [
+        {
+          id: 'downloads',
+          title: t('settings:menu.downloads.title'),
+          description: t('settings:menu.downloads.desc'),
+          icon: 'download-outline' as const,
+          href: '/settings/downloads',
+        },
+      ]),
 ];
 
 export const SETTINGS_GLOBAL_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] = (t) => [
@@ -82,4 +96,5 @@ export const SETTINGS_ROUTES: Record<string, string> = {
   addons: '/settings/addons',
   about: '/settings/about',
   integrations: '/settings/integrations',
+  downloads: '/settings/downloads',
 };

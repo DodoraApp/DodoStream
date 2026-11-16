@@ -38,6 +38,10 @@
     "about": {
       "title": "Sobre",
       "desc": "Informação da app, versão e ligações úteis"
+    },
+    "downloads": {
+      "title": "Transferências",
+      "desc": "Conteúdo offline e transferências em segundo plano"
     }
   },
   "ui": {
@@ -358,5 +362,18 @@
     "empty": "Ainda sem itens sincronizados",
     "imported": "Importado",
     "exported": "Exportado"
+  },
+  "downloads": {
+    "options": "Opções",
+    "background": "Continuar em segundo plano",
+    "background_desc": "Continua a transferir quando a aplicação está em segundo plano ou o ecrã está bloqueado. Uma notificação mostra o progresso.",
+    "storage": "Armazenamento",
+    "storage_used": "{{size}} usados por {{count}} transferências",
+    "delete_all": "Eliminar todas as transferências",
+    "delete_all_desc": "Remove todos os filmes e episódios transferidos deste perfil",
+    "delete_all_confirm_title": "Eliminar todas as transferências",
+    "delete_all_confirm_msg": "Tens a certeza de que queres eliminar todas as transferências deste perfil? As transferências em curso são canceladas. Esta ação não pode ser anulada.",
+    "all_deleted": "Transferências eliminadas",
+    "downloaded_content": "Conteúdo transferido"
   }
 }

@@ -86,6 +86,12 @@ export default function SettingsLayout() {
         }}
       />
       <Stack.Screen
+        name="downloads"
+        options={{
+          title: t('menu.downloads.title'),
+        }}
+      />
+      <Stack.Screen
         name="data"
         options={{
           title: t('menu.data.title'),

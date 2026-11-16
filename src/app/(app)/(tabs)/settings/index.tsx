@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/basic/PageHeader';
 import { AboutSettingsContent } from '@/components/settings/AboutSettingsContent';
 import { AddonsSettingsContent } from '@/components/settings/AddonsSettingsContent';
 import { DataSettingsContent } from '@/components/settings/DataSettingsContent';
+import { DownloadsSettingsContent } from '@/components/settings/DownloadsSettingsContent';
 import { HomeSettingsContent } from '@/components/settings/HomeSettingsContent';
 import { IntegrationsSettingsContent } from '@/components/settings/IntegrationsSettingsContent';
 import { PlaybackSettingsContent } from '@/components/settings/PlaybackSettingsContent';
@@ -135,6 +136,8 @@ const PageContent = ({ selectedPage }: { selectedPage: string }) => {
       return <AddonsSettingsContent />;
     case 'data':
       return <DataSettingsContent />;
+    case 'downloads':
+      return <DownloadsSettingsContent />;
     case 'about':
       return <AboutSettingsContent />;
     case 'integrations':
