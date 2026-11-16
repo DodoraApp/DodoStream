@@ -5,10 +5,13 @@ import { TVFocusGuideView } from 'react-native';
 import { Button } from '@/components/basic/Button';
 import { PickerModal } from '@/components/basic/PickerModal';
 import { ProgressButton } from '@/components/basic/ProgressButton';
+import { DownloadsHeaderButton } from '@/components/media/DownloadsHeaderButton';
 import { MyListHeaderButton } from '@/components/media/MyListHeaderButton';
+import { SeasonDownloadModal } from '@/components/media/SeasonDownloadModal';
 import { TOAST_DURATION_SHORT } from '@/constants/ui';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { useContinueWatchingForMeta } from '@/hooks/useContinueWatching';
+import { useMenuWithDownloads } from '@/hooks/useDownloads';
 import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { useIsInMyList, useMyListActions } from '@/hooks/useMyListDb';
@@ -57,6 +60,14 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
     videos: media.videos,
   });
 
+  // Three-dots menu, extended by season download and "Delete download"
+  const menu = useMenuWithDownloads({
+    metaId,
+    videoId: isMultiVideo ? undefined : videoId,
+    withSeasonDownload: isMultiVideo,
+    items: mediaActions.items,
+    onAction: mediaActions.handleAction,
+  });
   // My List state
   const isInMyList = useIsInMyList(metaId, type);
   const { toggleMyList } = useMyListActions();
@@ -136,7 +147,8 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
           onPress={handleToggleMyList}
           testID="media-add-to-list"
         />
-        {mediaActions.items.length > 0 && (
+        <DownloadsHeaderButton metaId={metaId} testID="media-downloads" />
+        {menu.items.length > 0 && (
           <Button
             icon="ellipsis-horizontal"
             variant="secondary"
@@ -149,13 +161,21 @@ export const MediaButtons = memo(({ metaId, type, media }: MediaButtonsProps) =>
   );
 
   const renderPickerModal = () => (
-    <PickerModal
-      visible={mediaActions.isVisible}
-      onClose={mediaActions.closeActions}
-      label={media.name}
-      items={mediaActions.items}
-      onValueChange={mediaActions.handleAction}
-    />
+    <>
+      <PickerModal
+        visible={mediaActions.isVisible}
+        onClose={mediaActions.closeActions}
+        label={media.name}
+        items={menu.items}
+        onValueChange={menu.handleAction}
+      />
+      <SeasonDownloadModal
+        visible={menu.isSeasonDownloadVisible}
+        onClose={menu.closeSeasonDownload}
+        media={media}
+        type={type}
+      />
+    </>
   );
 
   // Render buttons based on content type and watch state

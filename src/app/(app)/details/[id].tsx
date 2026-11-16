@@ -13,6 +13,7 @@ import { DetailsShell } from '@/components/media/DetailsShell';
 import { MediaButtons } from '@/components/media/MediaButtons';
 import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
 import { MediaDetailsTabs } from '@/components/media/MediaDetailsTabs';
+import { useMenuWithDownloads } from '@/hooks/useDownloads';
 import { useMediaDetailsActions } from '@/hooks/useMediaDetailsActions';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import type { Theme } from '@/theme/theme';
@@ -34,6 +35,14 @@ export default function MediaDetails() {
     metaName: activeEpisode?.title ?? activeEpisode?.name ?? '',
     targetVideoId: activeEpisode?.id,
     removalScope: 'item',
+  });
+
+  // Adds "Delete download" for the long-pressed episode, when it has one
+  const episodeMenu = useMenuWithDownloads({
+    metaId: id,
+    videoId: activeEpisode?.id,
+    items: episodeActions.items,
+    onAction: episodeActions.handleAction,
   });
 
   const handleEpisodePress = useCallback(
@@ -96,8 +105,8 @@ export default function MediaDetails() {
         visible={episodeActions.isVisible}
         onClose={episodeActions.closeActions}
         label={activeEpisode?.title ?? activeEpisode?.name ?? ''}
-        items={episodeActions.items}
-        onValueChange={episodeActions.handleAction}
+        items={episodeMenu.items}
+        onValueChange={episodeMenu.handleAction}
       />
     </Container>
   );

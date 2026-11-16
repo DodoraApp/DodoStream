@@ -8,16 +8,20 @@ import {
   type FileDownloadHandlers,
   type FileDownloadTask,
   getDownloadFileSize,
+  getDownloadFileUri,
   getExistingFileDownloads,
   startFileDownload,
 } from '@/api/downloads/download-fs';
 import { fetchStreams } from '@/api/stremio/client';
 import {
+  DOWNLOAD_AFTER_PLAYBACK_DELAY_MS,
   DOWNLOAD_PROGRESS_PERSIST_INTERVAL_MS,
   DOWNLOAD_PROGRESS_UI_INTERVAL_MS,
   DOWNLOAD_TASK_ID_PREFIX,
+  DOWNLOADS_ENABLED,
   MAX_CONCURRENT_DOWNLOADS,
 } from '@/constants/downloads';
+import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import {
   createDownload,
   type DbDownload,
@@ -31,6 +35,7 @@ import {
   removeProfileDownloads,
   updateDownloadProgress,
 } from '@/db/queries/downloads';
+import { getWatchHistoryItem } from '@/db/queries/watchHistory';
 import { useAppSettingsStore } from '@/store/app-settings.store';
 import { useDownloadsStore } from '@/store/downloads.store';
 import { showToast } from '@/store/toast.store';
@@ -87,7 +92,17 @@ export type StartSeasonDownloadParams = {
   type: ContentType;
   /** The stream the user picked; other episodes use the corresponding stream. */
   referenceStream: Stream;
+  /** The episode the reference stream belongs to; downloaded with exactly that stream. */
+  referenceEpisode?: SeasonEpisode;
   episodes: SeasonEpisode[];
+};
+
+export type PlaybackEndedParams = {
+  profileId: string;
+  metaId: string;
+  videoId?: string;
+  /** The source the player was playing. */
+  source: string;
 };
 
 export type SeasonDownloadResult = {
@@ -104,6 +119,8 @@ const activeTasks = new Map<number, FileDownloadTask>();
 
 /** True while transfers are paused because the app left the foreground. */
 let pausedForBackground = false;
+
+const FILE_URI_PREFIX = 'file://';
 
 const getTaskId = (id: number) => `${DOWNLOAD_TASK_ID_PREFIX}${id}`;
 
@@ -303,7 +320,7 @@ export async function startDownload(params: StartDownloadParams): Promise<DbDown
 export async function startSeasonDownload(
   params: StartSeasonDownloadParams
 ): Promise<SeasonDownloadResult> {
-  const { profileId, metaId, type, referenceStream, episodes } = params;
+  const { profileId, metaId, type, referenceStream, referenceEpisode, episodes } = params;
   const { addonManifestUrl } = referenceStream;
 
   if (!addonManifestUrl || !isStreamDownloadable(referenceStream)) {
@@ -312,8 +329,27 @@ export async function startSeasonDownload(
 
   const result: SeasonDownloadResult = { started: 0, skipped: 0 };
 
+  if (referenceEpisode) {
+    try {
+      await startDownload({
+        profileId,
+        metaId,
+        videoId: referenceEpisode.videoId,
+        type,
+        title: referenceEpisode.title,
+        stream: referenceStream,
+      });
+      result.started += 1;
+    } catch (error) {
+      debug('seasonReferenceEpisodeFailed', { videoId: referenceEpisode.videoId, error });
+      result.skipped += 1;
+    }
+  }
+
   // One request at a time keeps the load on the addon low.
   for (const episode of episodes) {
+    if (episode.videoId === referenceEpisode?.videoId) continue;
+
     try {
       const existing = await getDownloadForVideo(profileId, metaId, episode.videoId);
       if (existing && existing.status !== 'failed') {
@@ -410,6 +446,44 @@ export async function removeAllDownloadsForProfile(profileId: string): Promise<v
 }
 
 /**
+ * Applies the "after watching" setting once playback of a downloaded file
+ * ends: deletes the download, queues a question for the user, or keeps it.
+ * Does nothing for streamed playback and for downloads not watched to the end.
+ */
+export async function handlePlaybackEnded(params: PlaybackEndedParams): Promise<void> {
+  const { profileId, metaId, videoId, source } = params;
+  const { downloadAfterWatching } = useAppSettingsStore.getState();
+
+  if (!DOWNLOADS_ENABLED || downloadAfterWatching === 'keep') return;
+  if (!source.startsWith(FILE_URI_PREFIX)) return;
+
+  try {
+    await new Promise<void>((resolve) => setTimeout(resolve, DOWNLOAD_AFTER_PLAYBACK_DELAY_MS));
+
+    const download = await getDownloadForVideo(profileId, metaId, videoId);
+    if (!download || download.status !== 'completed') return;
+    if (getDownloadFileUri(download.fileName) !== source) return;
+
+    const history = await getWatchHistoryItem(profileId, metaId, videoId);
+    const ratio =
+      history && history.durationSeconds > 0
+        ? history.progressSeconds / history.durationSeconds
+        : 0;
+    if (ratio < PLAYBACK_FINISHED_RATIO) return;
+
+    if (downloadAfterWatching === 'delete') {
+      await removeDownload(download.id);
+      showToast({ title: t('media:download_deleted_after_watching'), message: download.title });
+      return;
+    }
+
+    useDownloadsStore.getState().addWatchedDownload(download);
+  } catch (error) {
+    debug('playbackEndedFailed', { metaId, videoId, error });
+  }
+}
+
+/**
  * Brings the database back in sync after an app start. Transfers the system
  * kept running are followed again; downloads whose transfer is gone are
  * marked as completed or failed depending on what is on disk.
@@ -500,7 +574,7 @@ let isInitialized = false;
 
 /** Call once on app start, after the database is ready. */
 export async function initializeDownloads(): Promise<void> {
-  if (isInitialized) return;
+  if (isInitialized || !DOWNLOADS_ENABLED) return;
   isInitialized = true;
 
   applyConfig();

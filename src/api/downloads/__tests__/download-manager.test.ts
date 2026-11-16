@@ -21,6 +21,7 @@ import {
   markDownloadStarted,
   updateDownloadProgress,
 } from '@/db/queries/downloads';
+import { getWatchHistoryItem } from '@/db/queries/watchHistory';
 import { downloads } from '@/db/schema';
 import { useAppSettingsStore } from '@/store/app-settings.store';
 import { useDownloadsStore } from '@/store/downloads.store';
@@ -30,6 +31,7 @@ import type { Stream } from '@/types/stremio';
 import {
   DownloadError,
   handleAppStateChange,
+  handlePlaybackEnded,
   isDownloadRunning,
   recoverDownloads,
   removeAllDownloadsForProfile,
@@ -40,6 +42,11 @@ import {
 } from '../download-manager';
 
 jest.mock('@/api/downloads/download-fs');
+jest.mock('@/constants/downloads', () => ({
+  ...jest.requireActual('@/constants/downloads'),
+  DOWNLOAD_AFTER_PLAYBACK_DELAY_MS: 0,
+}));
+jest.mock('@/db/queries/watchHistory', () => ({ getWatchHistoryItem: jest.fn() }));
 jest.mock('@/api/stremio/client', () => ({ fetchStreams: jest.fn() }));
 jest.mock('i18next', () => ({ t: (key: string) => key }));
 jest.mock('@/store/toast.store', () => ({ showToast: jest.fn() }));
@@ -57,6 +64,7 @@ type Transfer = {
 
 const mockedFs = jest.mocked(downloadFs);
 const mockedFetchStreams = jest.mocked(fetchStreams);
+const mockedGetWatchHistoryItem = jest.mocked(getWatchHistoryItem);
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
 
 const createTransfer = (handlers: FileDownloadHandlers): Transfer => {
@@ -110,8 +118,12 @@ describe('download manager', () => {
     jest.clearAllMocks();
     started = [];
     await db.delete(downloads);
-    useDownloadsStore.setState({ progressById: {} });
-    useAppSettingsStore.setState({ backgroundDownloadsEnabled: true });
+    useDownloadsStore.setState({ progressById: {}, watchedDownloads: [] });
+    useAppSettingsStore.setState({
+      backgroundDownloadsEnabled: true,
+      downloadAfterWatching: 'ask',
+    });
+    mockedFs.getDownloadFileUri.mockImplementation((fileName) => `file:///downloads/${fileName}`);
 
     mockedFs.deleteDownloadFile.mockResolvedValue(undefined);
     mockedFs.getDownloadFileSize.mockResolvedValue(undefined);
@@ -382,6 +394,38 @@ describe('download manager', () => {
       expect(started).toHaveLength(1);
     });
 
+    it('downloads the reference episode with exactly the chosen stream', async () => {
+      mockedFetchStreams.mockImplementation(async (_manifestUrl, _type, id) => ({
+        streams: [
+          {
+            name: 'Addon 1080p',
+            url: `https://cdn.example/${id}-1080.mkv`,
+            behaviorHints: { bingeGroup: 'addon|1080p' },
+          },
+        ] as unknown as Stream[],
+      }));
+      const referenceEpisode = { videoId: 'tt-show:1:1', title: 'Show S1E1' };
+
+      const result = await startSeasonDownload({
+        profileId,
+        metaId: 'tt-show',
+        type: 'series',
+        referenceStream: reference,
+        referenceEpisode,
+        episodes: [referenceEpisode, ...episodes],
+      });
+
+      expect(result).toEqual({ started: 4, skipped: 0 });
+      expect(started[0].params.url).toBe('https://cdn.example/s1e1.mkv');
+      // No stream lookup for the episode the user picked the stream for.
+      expect(mockedFetchStreams).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        'tt-show:1:1'
+      );
+      expect(mockedFetchStreams).toHaveBeenCalledTimes(3);
+    });
+
     it('needs a direct reference stream that knows its addon', async () => {
       await expect(
         startSeasonDownload({
@@ -393,6 +437,85 @@ describe('download manager', () => {
         })
       ).rejects.toMatchObject({ code: 'not_downloadable' });
       expect(mockedFetchStreams).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handlePlaybackEnded', () => {
+    const finishDownload = async () => {
+      const download = await start();
+      started[0].transfer.resolve({ bytesTotal: 100 });
+      await flush();
+      jest.mocked(showToast).mockClear();
+      mockedFs.deleteDownloadFile.mockClear();
+      return download;
+    };
+    const watched = (progressSeconds: number) =>
+      mockedGetWatchHistoryItem.mockResolvedValue({
+        progressSeconds,
+        durationSeconds: 100,
+      } as Awaited<ReturnType<typeof getWatchHistoryItem>>);
+    const ended = (download: { fileName: string }, source?: string) =>
+      handlePlaybackEnded({
+        profileId,
+        metaId: 'tt-manager-1',
+        source: source ?? `file:///downloads/${download.fileName}`,
+      });
+
+    it('queues a question when a download was watched to the end', async () => {
+      const download = await finishDownload();
+      watched(95);
+
+      await ended(download);
+
+      expect(useDownloadsStore.getState().watchedDownloads.map((item) => item.id)).toEqual([
+        download.id,
+      ]);
+      expect((await getDownloadById(download.id))?.status).toBe('completed');
+    });
+
+    it('deletes the download automatically when the setting says so', async () => {
+      useAppSettingsStore.setState({ downloadAfterWatching: 'delete' });
+      const download = await finishDownload();
+      watched(95);
+
+      await ended(download);
+
+      expect(await getDownloadById(download.id)).toBeNull();
+      expect(mockedFs.deleteDownloadFile).toHaveBeenCalledWith(download.fileName);
+      expect(useDownloadsStore.getState().watchedDownloads).toHaveLength(0);
+    });
+
+    it('keeps a download that was not watched to the end', async () => {
+      useAppSettingsStore.setState({ downloadAfterWatching: 'delete' });
+      const download = await finishDownload();
+      watched(40);
+
+      await ended(download);
+
+      expect((await getDownloadById(download.id))?.status).toBe('completed');
+    });
+
+    it('never touches a download when the title was streamed instead', async () => {
+      useAppSettingsStore.setState({ downloadAfterWatching: 'delete' });
+      const download = await finishDownload();
+      watched(95);
+
+      await ended(download, 'https://cdn.example/movie.mkv');
+      await ended(download, 'file:///downloads/another-file.mkv');
+
+      expect((await getDownloadById(download.id))?.status).toBe('completed');
+    });
+
+    it('does nothing when the setting is to keep downloads', async () => {
+      useAppSettingsStore.setState({ downloadAfterWatching: 'keep' });
+      const download = await finishDownload();
+      watched(95);
+
+      await ended(download);
+
+      expect((await getDownloadById(download.id))?.status).toBe('completed');
+      expect(useDownloadsStore.getState().watchedDownloads).toHaveLength(0);
+      expect(mockedGetWatchHistoryItem).not.toHaveBeenCalled();
     });
   });
 

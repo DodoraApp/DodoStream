@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { LegendList } from '@legendapp/list/react-native';
@@ -14,11 +14,20 @@ import { Box, Text, type Theme } from '@/theme/theme';
 
 const keyExtractor = (item: DbDownload) => String(item.id);
 
-/** All downloads of the active profile with progress, cancel, delete and offline playback. */
-export const DownloadsList = memo(() => {
+export interface DownloadsListProps {
+  /** Limits the list to the downloads of one movie or series. */
+  metaId?: string;
+}
+
+/** Downloads of the active profile with progress, cancel, delete and offline playback. */
+export const DownloadsList = memo(({ metaId }: DownloadsListProps) => {
   const { t } = useTranslation('media');
   const theme = useTheme<Theme>();
-  const { data, isLoading } = useDownloads();
+  const { data: allDownloads, isLoading } = useDownloads();
+  const data = useMemo(
+    () => (metaId ? allDownloads?.filter((item) => item.metaId === metaId) : allDownloads),
+    [allDownloads, metaId]
+  );
   const { onPlay, onRetry, onRemove } = useDownloadItemHandlers();
 
   const renderItem = useCallback(

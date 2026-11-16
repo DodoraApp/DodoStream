@@ -74,12 +74,16 @@
   "download_notification_starting": "A iniciar a transferência...",
   "download_notification_progress": "A transferir... {progress}%",
   "download_notification_paused": "Em pausa",
-  "download_season_title": "Transferir",
-  "download_season_message": "Transferir apenas este episódio ou todos os {{count}} episódios desta temporada?",
-  "download_this_episode": "Este episódio",
-  "download_whole_season": "Temporada completa",
   "download_season_started": "{{started}} transferências iniciadas",
   "download_season_skipped": "{{skipped}} episódios ignorados (já transferidos ou sem stream correspondente)",
   "movies_section": "Filmes",
-  "series_section": "Séries"
+  "series_section": "Séries",
+  "download_season": "Transferir temporada",
+  "download_season_choose_stream": "Escolher um stream",
+  "download_season_hint": "O primeiro episódio usa este stream. Os restantes episódios usam o stream correspondente da mesma fonte.",
+  "download_delete": "Eliminar transferência",
+  "download_deleted_after_watching": "Transferência eliminada depois de ver",
+  "download_watched_title": "Eliminar a transferência já vista?",
+  "download_watched_message": "Acabaste de ver: {{titles}}",
+  "download_keep": "Manter"
 }

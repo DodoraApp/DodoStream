@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import type { DbDownload } from '@/db/queries/downloads';
+
 export interface DownloadProgress {
   bytesDownloaded: number;
   bytesTotal?: number;
@@ -10,6 +12,11 @@ interface DownloadsState {
   progressById: Record<number, DownloadProgress>;
   setProgress: (id: number, progress: DownloadProgress) => void;
   clearProgress: (id: number) => void;
+
+  /** Watched downloads the user is asked about deleting. Not persisted. */
+  watchedDownloads: DbDownload[];
+  addWatchedDownload: (download: DbDownload) => void;
+  clearWatchedDownloads: () => void;
 }
 
 export const useDownloadsStore = create<DownloadsState>((set) => ({
@@ -24,4 +31,15 @@ export const useDownloadsStore = create<DownloadsState>((set) => ({
       const { [id]: _removed, ...rest } = state.progressById;
       return { progressById: rest };
     }),
+
+  watchedDownloads: [],
+
+  addWatchedDownload: (download) =>
+    set((state) =>
+      state.watchedDownloads.some((item) => item.id === download.id)
+        ? state
+        : { watchedDownloads: [...state.watchedDownloads, download] }
+    ),
+
+  clearWatchedDownloads: () => set({ watchedDownloads: [] }),
 }));

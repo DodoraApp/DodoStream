@@ -374,6 +374,11 @@
     "delete_all_confirm_title": "Alle Downloads löschen",
     "delete_all_confirm_msg": "Möchtest du wirklich alle Downloads dieses Profils löschen? Laufende Downloads werden abgebrochen. Das kann nicht rückgängig gemacht werden.",
     "all_deleted": "Downloads gelöscht",
-    "downloaded_content": "Heruntergeladene Inhalte"
+    "downloaded_content": "Heruntergeladene Inhalte",
+    "after_watching": "Nach dem Ansehen",
+    "after_watching_desc": "Was mit einem Download passiert, sobald du ihn zu Ende geschaut hast",
+    "after_watching_keep": "Behalten",
+    "after_watching_ask": "Nachfragen",
+    "after_watching_delete": "Automatisch löschen"
   }
 }

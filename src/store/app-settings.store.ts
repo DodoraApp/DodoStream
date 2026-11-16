@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+/** What happens to a download once it has been watched to the end. */
+export type DownloadAfterWatching = 'keep' | 'ask' | 'delete';
+
 interface AppSettingsState {
   releaseCheckOnStartup: boolean;
   setReleaseCheckOnStartup: (releaseCheckOnStartup: boolean) => void;
@@ -12,6 +15,8 @@ interface AppSettingsState {
   /** Keep downloads running while the app is in the background or the screen is locked. */
   backgroundDownloadsEnabled: boolean;
   setBackgroundDownloadsEnabled: (backgroundDownloadsEnabled: boolean) => void;
+  downloadAfterWatching: DownloadAfterWatching;
+  setDownloadAfterWatching: (downloadAfterWatching: DownloadAfterWatching) => void;
 }
 
 export const useAppSettingsStore = create<AppSettingsState>()(
@@ -26,6 +31,8 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       backgroundDownloadsEnabled: true,
       setBackgroundDownloadsEnabled: (backgroundDownloadsEnabled) =>
         set({ backgroundDownloadsEnabled }),
+      downloadAfterWatching: 'ask',
+      setDownloadAfterWatching: (downloadAfterWatching) => set({ downloadAfterWatching }),
     }),
     {
       name: 'app-settings-storage',
@@ -35,6 +42,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         showWhatsNewOnStartup: state.showWhatsNewOnStartup,
         lastSeenWhatsNewId: state.lastSeenWhatsNewId,
         backgroundDownloadsEnabled: state.backgroundDownloadsEnabled,
+        downloadAfterWatching: state.downloadAfterWatching,
       }),
     }
   )

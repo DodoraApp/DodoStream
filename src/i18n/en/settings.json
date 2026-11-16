@@ -374,6 +374,11 @@
     "delete_all_confirm_title": "Delete all downloads",
     "delete_all_confirm_msg": "Are you sure you want to delete all downloads for this profile? Running downloads are canceled. This action cannot be undone.",
     "all_deleted": "Downloads deleted",
-    "downloaded_content": "Downloaded content"
+    "downloaded_content": "Downloaded content",
+    "after_watching": "After watching",
+    "after_watching_desc": "What happens to a download once you have watched it to the end",
+    "after_watching_keep": "Keep",
+    "after_watching_ask": "Ask",
+    "after_watching_delete": "Delete automatically"
   }
 }

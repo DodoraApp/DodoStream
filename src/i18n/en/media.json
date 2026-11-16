@@ -74,12 +74,16 @@
   "download_notification_starting": "Starting download...",
   "download_notification_progress": "Downloading... {progress}%",
   "download_notification_paused": "Paused",
-  "download_season_title": "Download",
-  "download_season_message": "Download only this episode or all {{count}} episodes of this season?",
-  "download_this_episode": "This episode",
-  "download_whole_season": "Whole season",
   "download_season_started": "{{started}} downloads started",
   "download_season_skipped": "{{skipped}} episodes skipped (already downloaded or no matching stream)",
   "movies_section": "Movies",
-  "series_section": "Series"
+  "series_section": "Series",
+  "download_season": "Download season",
+  "download_season_choose_stream": "Choose a stream",
+  "download_season_hint": "The first episode uses this stream. The other episodes use the matching stream from the same source.",
+  "download_delete": "Delete download",
+  "download_deleted_after_watching": "Download deleted after watching",
+  "download_watched_title": "Delete watched download?",
+  "download_watched_message": "You finished watching: {{titles}}",
+  "download_keep": "Keep"
 }

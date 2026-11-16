@@ -1,15 +1,18 @@
-import { FC, memo, useCallback, useMemo } from 'react';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import { Button } from '@/components/basic/Button';
+import { ConfirmModal } from '@/components/basic/ConfirmModal';
+import { PickerInput } from '@/components/basic/PickerInput';
+import type { PickerItem } from '@/components/basic/PickerModal';
 import { DownloadItem } from '@/components/media/DownloadItem';
 import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { SettingsSwitch } from '@/components/settings/SettingsSwitch';
 import type { DbDownload } from '@/db';
 import { useDownloadActions, useDownloadItemHandlers, useDownloads } from '@/hooks/useDownloads';
-import { useAppSettingsStore } from '@/store/app-settings.store';
+import { type DownloadAfterWatching, useAppSettingsStore } from '@/store/app-settings.store';
 import { showToast } from '@/store/toast.store';
 import { Box, Text } from '@/theme/theme';
 import { formatBytes } from '@/utils/downloads';
@@ -60,6 +63,16 @@ export const DownloadsSettingsContent: FC<DownloadsSettingsContentProps> = memo(
     const setBackgroundDownloadsEnabled = useAppSettingsStore(
       (state) => state.setBackgroundDownloadsEnabled
     );
+    const downloadAfterWatching = useAppSettingsStore((state) => state.downloadAfterWatching);
+    const setDownloadAfterWatching = useAppSettingsStore((state) => state.setDownloadAfterWatching);
+    const afterWatchingItems = useMemo<PickerItem<DownloadAfterWatching>[]>(
+      () => [
+        { label: t('downloads.after_watching_ask'), value: 'ask' },
+        { label: t('downloads.after_watching_delete'), value: 'delete' },
+        { label: t('downloads.after_watching_keep'), value: 'keep' },
+      ],
+      [t]
+    );
     const { data } = useDownloads();
     const handlers = useDownloadItemHandlers();
     const { removeAllDownloads } = useDownloadActions();
@@ -83,18 +96,13 @@ export const DownloadsSettingsContent: FC<DownloadsSettingsContentProps> = memo(
       [downloads]
     );
 
+    const [isDeleteAllVisible, setIsDeleteAllVisible] = useState(false);
+    const openDeleteAll = useCallback(() => setIsDeleteAllVisible(true), []);
+    const closeDeleteAll = useCallback(() => setIsDeleteAllVisible(false), []);
     const handleDeleteAll = useCallback(() => {
-      Alert.alert(t('downloads.delete_all_confirm_title'), t('downloads.delete_all_confirm_msg'), [
-        { text: t('common:cancel'), style: 'cancel' },
-        {
-          text: t('common:delete'),
-          style: 'destructive',
-          onPress: async () => {
-            await removeAllDownloads();
-            showToast({ title: t('downloads.all_deleted'), preset: 'success' });
-          },
-        },
-      ]);
+      void removeAllDownloads().then(() => {
+        showToast({ title: t('downloads.all_deleted'), preset: 'success' });
+      });
     }, [removeAllDownloads, t]);
 
     const content = (
@@ -107,6 +115,21 @@ export const DownloadsSettingsContent: FC<DownloadsSettingsContentProps> = memo(
             onValueChange={setBackgroundDownloadsEnabled}
             testID="settings-downloads-background"
           />
+          <SettingsRow
+            label={t('downloads.after_watching')}
+            description={t('downloads.after_watching_desc')}>
+            <PickerInput
+              label={t('downloads.after_watching')}
+              icon="checkmark-done-outline"
+              items={afterWatchingItems}
+              selectedValue={downloadAfterWatching}
+              selectedLabel={
+                afterWatchingItems.find((item) => item.value === downloadAfterWatching)?.label ?? ''
+              }
+              onValueChange={setDownloadAfterWatching}
+              testID="settings-downloads-after-watching"
+            />
+          </SettingsRow>
         </SettingsCard>
 
         <SettingsCard title={t('downloads.storage')}>
@@ -122,7 +145,7 @@ export const DownloadsSettingsContent: FC<DownloadsSettingsContentProps> = memo(
               </Text>
               <Button
                 title={t('common:delete')}
-                onPress={handleDeleteAll}
+                onPress={openDeleteAll}
                 variant="secondary"
                 disabled={downloads.length === 0}
                 testID="settings-downloads-delete-all"
@@ -153,6 +176,17 @@ export const DownloadsSettingsContent: FC<DownloadsSettingsContentProps> = memo(
             </>
           )}
         </SettingsCard>
+
+        <ConfirmModal
+          visible={isDeleteAllVisible}
+          title={t('downloads.delete_all_confirm_title')}
+          message={t('downloads.delete_all_confirm_msg')}
+          icon="trash-outline"
+          confirmLabel={t('common:delete')}
+          onConfirm={handleDeleteAll}
+          onClose={closeDeleteAll}
+          testID="settings-downloads-delete-all-confirm"
+        />
       </Box>
     );
 

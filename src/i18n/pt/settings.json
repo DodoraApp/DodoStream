@@ -374,6 +374,11 @@
     "delete_all_confirm_title": "Eliminar todas as transferências",
     "delete_all_confirm_msg": "Tens a certeza de que queres eliminar todas as transferências deste perfil? As transferências em curso são canceladas. Esta ação não pode ser anulada.",
     "all_deleted": "Transferências eliminadas",
-    "downloaded_content": "Conteúdo transferido"
+    "downloaded_content": "Conteúdo transferido",
+    "after_watching": "Depois de ver",
+    "after_watching_desc": "O que acontece a uma transferência depois de a veres até ao fim",
+    "after_watching_keep": "Manter",
+    "after_watching_ask": "Perguntar",
+    "after_watching_delete": "Eliminar automaticamente"
   }
 }
