@@ -14,13 +14,20 @@ export type StreamResolution = (typeof STREAM_RESOLUTIONS)[number];
 const BYTES_PER_UNIT = 1000;
 export const BYTES_PER_GB = BYTES_PER_UNIT ** 3;
 
+/**
+ * Matches a whole token. Unlike \b this also treats "_" as a separator,
+ * because release names use it like "." ("Movie_1080p_WEB").
+ */
+const token = (pattern: string): RegExp =>
+  new RegExp(`(?:^|[^a-z0-9])(?:${pattern})(?=[^a-z0-9]|$)`, 'i');
+
 /** Pixel counts like "1080p" state the resolution of the file itself. */
 const EXPLICIT_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
-  ['2160p', /\b2160p\b/i],
-  ['1440p', /\b1440p\b/i],
-  ['1080p', /\b1080p\b/i],
-  ['720p', /\b720p\b/i],
-  ['480p', /\b(480p|576p)\b/i],
+  ['2160p', token('2160p')],
+  ['1440p', token('1440p')],
+  ['1080p', token('1080p')],
+  ['720p', token('720p')],
+  ['480p', token('480p|576p')],
 ];
 
 /**
@@ -28,16 +35,16 @@ const EXPLICIT_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
  * because release names also use them for the source ("4K.Remaster.1080p").
  */
 const LOOSE_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
-  ['2160p', /\b(4k|uhd)\b/i],
-  ['1440p', /\b(2k|qhd)\b/i],
-  ['1080p', /\bfhd\b/i],
-  ['480p', /\bsd\b/i],
+  ['2160p', token('4k|uhd')],
+  ['1440p', token('2k|qhd')],
+  ['1080p', token('fhd')],
+  ['480p', token('sd')],
 ];
 
 /** Names shown for resolutions that are better known by another name. */
 const RESOLUTION_LABELS: Partial<Record<StreamResolution, string>> = { '2160p': '4K' };
 
-const SIZE_PATTERN = /(\d+(?:[.,]\d+)?)\s*(tb|gb|mb|kb|tib|gib|mib|kib)\b/i;
+const SIZE_PATTERN = /(\d+(?:[.,]\d+)?)\s*(tb|gb|mb|kb|tib|gib|mib|kib)(?![a-z])/i;
 const SIZE_UNIT_EXPONENT: Record<string, number> = { k: 1, m: 2, g: 3, t: 4 };
 
 /** Flag emojis are pairs of regional indicator symbols. */
@@ -47,13 +54,13 @@ const LATIN_A = 0x41;
 
 /** Language names addons write out, mapped to the country code of their flag. */
 const LANGUAGE_WORDS: readonly [string, RegExp][] = [
-  ['GB', /\b(english|eng)\b/i],
-  ['DE', /\b(german|deutsch|ger)\b/i],
-  ['FR', /\b(french|fran[cç]ais)\b/i],
-  ['ES', /\b(spanish|espa[nñ]ol)\b/i],
-  ['IT', /\b(italian|italiano)\b/i],
-  ['PT', /\b(portuguese|portugu[eê]s)\b/i],
-  ['MULTI', /\b(multi|dual[ .-]?audio)\b/i],
+  ['GB', token('english|eng')],
+  ['DE', token('german|deutsch|ger')],
+  ['FR', token('french|fran[cç]ais')],
+  ['ES', token('spanish|espa[nñ]ol')],
+  ['IT', token('italian|italiano')],
+  ['PT', token('portuguese|portugu[eê]s')],
+  ['MULTI', token('multi|dual[ .-]?audio')],
 ];
 
 /** English is shown with either flag; treat them as the same language. */
