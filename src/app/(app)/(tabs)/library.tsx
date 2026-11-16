@@ -13,6 +13,7 @@ import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { PageHeader } from '@/components/basic/PageHeader';
 import { PickerModal } from '@/components/basic/PickerModal';
 import { TagFilters } from '@/components/basic/TagFilters';
+import { DownloadsList } from '@/components/media/DownloadsList';
 import { HistoryCard } from '@/components/media/HistoryCard';
 import { MediaCard } from '@/components/media/MediaCard';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
@@ -29,7 +30,7 @@ import { calculateMediaGridColumns } from '@/utils/layout';
 // Types
 // ============================================================================
 
-type LibraryTab = 'my-list' | 'history';
+type LibraryTab = 'my-list' | 'history' | 'downloads';
 
 // ============================================================================
 // My List Card Component
@@ -325,23 +326,30 @@ export default function Library() {
 
   // Support deep linking to a specific tab via ?tab=history (initial state only)
   const { tab: paramsTab } = useLocalSearchParams<{ tab?: string }>();
+  // Downloads are a phone feature and stay hidden on TV.
+  const showDownloads = !Platform.isTV;
   const [selectedTab, setSelectedTab] = useState<LibraryTab>(
-    paramsTab === 'history' ? 'history' : 'my-list'
+    paramsTab === 'history'
+      ? 'history'
+      : paramsTab === 'downloads' && showDownloads
+        ? 'downloads'
+        : 'my-list'
   );
 
   const LIBRARY_TABS = useMemo(
     () => [
       { id: 'my-list' as const, label: t('my_list') },
       { id: 'history' as const, label: t('history') },
+      ...(showDownloads ? [{ id: 'downloads' as const, label: t('downloads') }] : []),
     ],
-    [t]
+    [showDownloads, t]
   );
 
   // Calculate grid columns
   const numColumns = useMemo(() => calculateMediaGridColumns(width, theme), [width, theme]);
 
   const handleTabChange = useCallback((id: string | null) => {
-    if (id === 'my-list' || id === 'history') {
+    if (id === 'my-list' || id === 'history' || id === 'downloads') {
       setSelectedTab(id);
     }
   }, []);
@@ -366,8 +374,10 @@ export default function Library() {
         {/* Lazy load tabs - only render the selected one */}
         {selectedTab === 'my-list' ? (
           <MyListTab numColumns={numColumns} />
-        ) : (
+        ) : selectedTab === 'history' ? (
           <HistoryTab numColumns={numColumns} />
+        ) : (
+          <DownloadsList />
         )}
       </Box>
     </Container>

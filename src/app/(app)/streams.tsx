@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert, Platform } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
 import { useTheme } from '@shopify/restyle';
@@ -10,16 +11,22 @@ import { Button } from '@/components/basic/Button';
 import { Container } from '@/components/basic/Container';
 import { LoadingIndicator } from '@/components/basic/LoadingIndicator';
 import { LoadingQuery } from '@/components/basic/LoadingQuery';
+import { DownloadItem } from '@/components/media/DownloadItem';
 import { MediaDetailsHeader } from '@/components/media/MediaDetailsHeader';
 import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
 import { StreamList } from '@/components/media/StreamList';
 import { useAutoPlay } from '@/hooks/useAutoPlay';
+import {
+  useDownloadActions,
+  useDownloadForVideo,
+  useDownloadItemHandlers,
+} from '@/hooks/useDownloads';
 import { Box, Text, type Theme } from '@/theme/theme';
-import { ContentType } from '@/types/stremio';
+import { ContentType, type Stream } from '@/types/stremio';
 import { formatPlayerTitle } from '@/utils/format';
 
 export default function StreamsPage() {
-  const { t } = useTranslation('media');
+  const { t } = useTranslation(['media', 'common']);
   const theme = useTheme<Theme>();
   const {
     metaId,
@@ -50,6 +57,74 @@ export default function StreamsPage() {
     backgroundImage: meta?.background,
     logoImage: meta?.logo,
   });
+
+  // Downloads are a phone feature; TV layouts keep the plain stream list.
+  const { data: download } = useDownloadForVideo(metaId, videoId);
+  const { startDownload, startSeasonDownload } = useDownloadActions();
+  const downloadHandlers = useDownloadItemHandlers();
+  const canStartDownload = !Platform.isTV && (download === null || download?.status === 'failed');
+
+  // All episodes of the selected episode's season, in the order of the addon.
+  const seasonEpisodes = useMemo(() => {
+    if (selectedVideo?.season == null) return [];
+    return (meta?.videos ?? [])
+      .filter((video) => video.season === selectedVideo.season)
+      .map((video) => ({
+        videoId: video.id,
+        title: formatPlayerTitle(meta, video) ?? meta?.name ?? video.id,
+      }));
+  }, [meta, selectedVideo]);
+
+  const handleDownload = useCallback(
+    (stream: Stream) => {
+      const downloadEpisode = () =>
+        startDownload({
+          metaId,
+          videoId,
+          type,
+          title: playerTitle ?? meta?.name ?? metaId,
+          stream,
+        });
+
+      if (seasonEpisodes.length <= 1 || !stream.addonManifestUrl) {
+        downloadEpisode();
+        return;
+      }
+
+      Alert.alert(
+        t('download_season_title'),
+        t('download_season_message', { count: seasonEpisodes.length }),
+        [
+          { text: t('common:cancel'), style: 'cancel' },
+          { text: t('download_this_episode'), onPress: downloadEpisode },
+          {
+            text: t('download_whole_season'),
+            onPress: () => {
+              // The picked episode uses exactly the chosen stream; the others are looked up.
+              downloadEpisode();
+              startSeasonDownload({
+                metaId,
+                type,
+                referenceStream: stream,
+                episodes: seasonEpisodes.filter((episode) => episode.videoId !== videoId),
+              });
+            },
+          },
+        ]
+      );
+    },
+    [
+      meta?.name,
+      metaId,
+      playerTitle,
+      seasonEpisodes,
+      startDownload,
+      startSeasonDownload,
+      t,
+      type,
+      videoId,
+    ]
+  );
 
   if (effectiveAutoPlay) {
     return (
@@ -100,6 +175,16 @@ export default function StreamsPage() {
             <Box flex={1} backgroundColor="mainBackground">
               <MediaDetailsHeader media={mediaData} video={selectedVideo} variant="minimal" />
               <Box paddingHorizontal="l">
+                {!Platform.isTV && download ? (
+                  <Box paddingBottom="m">
+                    <DownloadItem
+                      download={download}
+                      onPlay={downloadHandlers.onPlay}
+                      onRetry={downloadHandlers.onRetry}
+                      onRemove={downloadHandlers.onRemove}
+                    />
+                  </Box>
+                ) : null}
                 <StreamList
                   type={type}
                   id={metaId}
@@ -107,6 +192,7 @@ export default function StreamsPage() {
                   title={playerTitle}
                   backgroundImage={mediaData.background}
                   logoImage={mediaData.logo}
+                  onDownload={canStartDownload ? handleDownload : undefined}
                 />
               </Box>
             </Box>
