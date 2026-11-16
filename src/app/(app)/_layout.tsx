@@ -5,6 +5,7 @@ import { useTheme } from '@shopify/restyle';
 import { Redirect, Stack, useRouter } from 'expo-router';
 
 import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
+import { PendingWatchSync } from '@/components/layout/PendingWatchSync';
 import { SeasonDownloadIssuePrompt } from '@/components/layout/SeasonDownloadIssuePrompt';
 import { WatchedDownloadsPrompt } from '@/components/layout/WatchedDownloadsPrompt';
 import { WhatsNewModal } from '@/components/layout/WhatsNewModal';
@@ -45,6 +46,7 @@ export default function AppLayout() {
     <>
       <GithubReleaseModal enabled={releaseCheckOnStartup} />
       <WhatsNewModal />
+      <PendingWatchSync />
       <WatchedDownloadsPrompt />
       <SeasonDownloadIssuePrompt />
       <Stack

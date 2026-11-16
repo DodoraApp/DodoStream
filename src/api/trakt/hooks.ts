@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 
 import {
+  type IntegrationSyncOptions,
   type IntegrationSyncProvider,
   useIntegrationSync,
 } from '@/api/integrations/use-integration-sync';
@@ -82,7 +83,7 @@ export function useTraktPinAuth(
   return usePinAuth(provider, handleSuccess);
 }
 
-export function useTraktSync(profileId?: string) {
+export function useTraktSync(profileId?: string, options?: IntegrationSyncOptions) {
   const traktSettings = useIntegrationsStore((state) =>
     profileId ? state.settings[profileId]?.trakt : undefined
   );
@@ -127,7 +128,7 @@ export function useTraktSync(profileId?: string) {
     [profileId, traktSettings, updateTraktToken]
   );
 
-  return useIntegrationSync(syncProvider);
+  return useIntegrationSync(syncProvider, options);
 }
 
 export async function completeTraktConnection(

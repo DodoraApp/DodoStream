@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 
 import {
+  type IntegrationSyncOptions,
   type IntegrationSyncProvider,
   useIntegrationSync,
 } from '@/api/integrations/use-integration-sync';
@@ -68,7 +69,7 @@ export function useSimklPinAuth(onSuccess: (accessToken: string) => void) {
   return usePinAuth(provider, handleSuccess);
 }
 
-export function useSimklSync(profileId?: string) {
+export function useSimklSync(profileId?: string, options?: IntegrationSyncOptions) {
   const simklSettings = useIntegrationsStore((state) =>
     profileId ? state.settings[profileId]?.simkl : undefined
   );
@@ -89,7 +90,7 @@ export function useSimklSync(profileId?: string) {
     [profileId, simklSettings]
   );
 
-  return useIntegrationSync(syncProvider);
+  return useIntegrationSync(syncProvider, options);
 }
 
 /**
