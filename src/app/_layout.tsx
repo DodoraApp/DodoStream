@@ -20,6 +20,7 @@ import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { type ErrorBoundaryProps, Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
+import { initializeDownloads } from '@/api/downloads/download-manager';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
 import { Button } from '@/components/basic/Button';
 import { Container } from '@/components/basic/Container';
@@ -92,6 +93,7 @@ function Layout() {
       try {
         await initializeDatabase();
         await runSqliteDataMigration();
+        await initializeDownloads();
         await initializeUIStore();
         await initializeProfiles();
         await initializeAddons();

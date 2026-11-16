@@ -9,6 +9,9 @@ interface AppSettingsState {
   setShowWhatsNewOnStartup: (showWhatsNewOnStartup: boolean) => void;
   lastSeenWhatsNewId: string | null;
   setLastSeenWhatsNewId: (lastSeenWhatsNewId: string | null) => void;
+  /** Keep downloads running while the app is in the background or the screen is locked. */
+  backgroundDownloadsEnabled: boolean;
+  setBackgroundDownloadsEnabled: (backgroundDownloadsEnabled: boolean) => void;
 }
 
 export const useAppSettingsStore = create<AppSettingsState>()(
@@ -20,6 +23,9 @@ export const useAppSettingsStore = create<AppSettingsState>()(
       setShowWhatsNewOnStartup: (showWhatsNewOnStartup) => set({ showWhatsNewOnStartup }),
       lastSeenWhatsNewId: null,
       setLastSeenWhatsNewId: (lastSeenWhatsNewId) => set({ lastSeenWhatsNewId }),
+      backgroundDownloadsEnabled: true,
+      setBackgroundDownloadsEnabled: (backgroundDownloadsEnabled) =>
+        set({ backgroundDownloadsEnabled }),
     }),
     {
       name: 'app-settings-storage',
@@ -28,6 +34,7 @@ export const useAppSettingsStore = create<AppSettingsState>()(
         releaseCheckOnStartup: state.releaseCheckOnStartup,
         showWhatsNewOnStartup: state.showWhatsNewOnStartup,
         lastSeenWhatsNewId: state.lastSeenWhatsNewId,
+        backgroundDownloadsEnabled: state.backgroundDownloadsEnabled,
       }),
     }
   )
