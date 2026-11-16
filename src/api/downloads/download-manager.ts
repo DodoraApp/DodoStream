@@ -397,7 +397,9 @@ export async function startSeasonDownload(
       result.started += 1;
     } catch (error) {
       debug('seasonReferenceEpisodeFailed', { videoId: referenceEpisode.videoId, error });
-      result.skipped += 1;
+      // Only an existing download is skipped; anything else did not start.
+      if (error instanceof DownloadError && error.code === 'already_exists') result.skipped += 1;
+      else result.failed += 1;
     }
   }
 

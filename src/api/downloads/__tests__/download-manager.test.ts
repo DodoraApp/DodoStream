@@ -496,6 +496,30 @@ describe('download manager', () => {
       expect(broken?.errorMessage).toBe('No space left on device');
     });
 
+    it('counts the chosen episode as failed or skipped depending on why it did not start', async () => {
+      mockedFetchStreams.mockResolvedValue({ streams: [] });
+      const referenceEpisode = { videoId: 'tt-show:1:1', title: 'Show S1E1' };
+      const run = () =>
+        startSeasonDownload({
+          profileId,
+          metaId: 'tt-show',
+          type: 'series',
+          referenceStream: reference,
+          referenceEpisode,
+          episodes: [referenceEpisode],
+        });
+
+      mockedFs.startFileDownload.mockImplementationOnce(() => {
+        throw new Error('No space left on device');
+      });
+      expect(await run()).toEqual({ started: 0, skipped: 0, unmatched: 0, failed: 1 });
+
+      await retryDownload(
+        (await getDownloadForVideo(profileId, 'tt-show', 'tt-show:1:1'))?.id ?? -1
+      );
+      expect(await run()).toEqual({ started: 0, skipped: 1, unmatched: 0, failed: 0 });
+    });
+
     it('needs a direct reference stream that knows its addon', async () => {
       await expect(
         startSeasonDownload({
