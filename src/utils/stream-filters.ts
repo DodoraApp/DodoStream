@@ -16,8 +16,16 @@ export interface StreamFilters {
 
 export const NO_STREAM_FILTERS: StreamFilters = { resolution: null, maxSizeGb: null };
 
-const BYTES_PER_UNIT = 1024;
+// Decimal units, so the limits match the sizes addons display ("5.26 GB").
+const BYTES_PER_UNIT = 1000;
 const BYTES_PER_GB = BYTES_PER_UNIT ** 3;
+
+/** Names shown for resolutions that are better known by another name. */
+const RESOLUTION_LABELS: Partial<Record<StreamResolution, string>> = { '2160p': '4K' };
+
+/** Display name of a resolution, e.g. "4K" for 2160p. */
+export const getResolutionLabel = (resolution: StreamResolution): string =>
+  RESOLUTION_LABELS[resolution] ?? resolution;
 
 const RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
   ['2160p', /\b(2160p|4k|uhd)\b/i],

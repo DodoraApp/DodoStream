@@ -2,6 +2,7 @@ import type { Stream } from '@/types/stremio';
 import {
   filterStreams,
   getAvailableResolutions,
+  getResolutionLabel,
   getStreamResolution,
   getStreamSizeBytes,
   hasActiveStreamFilters,
@@ -9,14 +10,15 @@ import {
 } from '@/utils/stream-filters';
 
 const stream = (value: Record<string, unknown>) => value as unknown as Stream;
-const GB = 1024 ** 3;
+const GB = 1000 ** 3;
+const MB = 1000 ** 2;
 
 const uhd = stream({
   title: '✅ | 🔥4K | 🟡',
   description: '🖥️ DV | HDR10 📺 HEVC\n🎥 WEB-DL 📦 9.18 GB',
 });
 const fullHd = stream({ name: 'Addon\n1080p', title: 'Movie.2020.1080p.WEB-DL\n💾 2,4 GB' });
-const hd = stream({ name: 'Addon 720p', behaviorHints: { videoSize: 800 * 1024 ** 2 } });
+const hd = stream({ name: 'Addon 720p', behaviorHints: { videoSize: 800 * MB } });
 const unknown = stream({ name: 'Addon', title: 'Some stream' });
 
 describe('getStreamResolution', () => {
@@ -38,13 +40,13 @@ describe('getStreamResolution', () => {
 
 describe('getStreamSizeBytes', () => {
   it('prefers the addon hint', () => {
-    expect(getStreamSizeBytes(hd)).toBe(800 * 1024 ** 2);
+    expect(getStreamSizeBytes(hd)).toBe(800 * MB);
   });
 
   it('parses sizes with dot or comma and different units', () => {
     expect(getStreamSizeBytes(uhd)).toBeCloseTo(9.18 * GB);
     expect(getStreamSizeBytes(fullHd)).toBeCloseTo(2.4 * GB);
-    expect(getStreamSizeBytes(stream({ title: '700 MB' }))).toBe(700 * 1024 ** 2);
+    expect(getStreamSizeBytes(stream({ title: '700 MB' }))).toBe(700 * MB);
     expect(getStreamSizeBytes(stream({ title: '1.5GiB' }))).toBe(1.5 * GB);
   });
 
@@ -71,6 +73,16 @@ describe('filterStreams', () => {
     expect(filterStreams(all, { resolution: null, maxSizeGb: 1 })).toEqual([hd]);
   });
 
+  it('uses the size an addon displays: "5.26 GB" is not within "up to 5 GB"', () => {
+    const shown = stream({ name: 'Addon 1080p', description: '📦 5.26 GB' });
+    const hinted = stream({ name: 'Addon 1080p', behaviorHints: { videoSize: 5.26 * GB } });
+    const within = stream({ name: 'Addon 1080p', description: '📦 4.78 GB' });
+
+    expect(filterStreams([shown, hinted, within], { resolution: null, maxSizeGb: 5 })).toEqual([
+      within,
+    ]);
+  });
+
   it('combines both filters', () => {
     expect(filterStreams(all, { resolution: '2160p', maxSizeGb: 5 })).toEqual([]);
     expect(filterStreams(all, { resolution: '2160p', maxSizeGb: 10 })).toEqual([uhd]);
@@ -81,5 +93,12 @@ describe('getAvailableResolutions', () => {
   it('lists the resolutions that occur, highest first', () => {
     expect(getAvailableResolutions([hd, unknown, uhd])).toEqual(['2160p', '720p']);
     expect(getAvailableResolutions([unknown])).toEqual([]);
+  });
+});
+
+describe('getResolutionLabel', () => {
+  it('names 2160p the way users know it', () => {
+    expect(getResolutionLabel('2160p')).toBe('4K');
+    expect(getResolutionLabel('1080p')).toBe('1080p');
   });
 });

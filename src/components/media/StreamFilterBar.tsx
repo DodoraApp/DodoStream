@@ -5,6 +5,7 @@ import { PickerInput } from '@/components/basic/PickerInput';
 import type { PickerItem } from '@/components/basic/PickerModal';
 import { Box } from '@/theme/theme';
 import {
+  getResolutionLabel,
   STREAM_MAX_SIZE_OPTIONS_GB,
   type StreamFilters,
   type StreamResolution,
@@ -35,7 +36,10 @@ export const StreamFilterBar = memo(
           : availableResolutions;
       return [
         { label: t('stream_filter_any'), value: ANY_RESOLUTION },
-        ...resolutions.map((resolution) => ({ label: resolution, value: resolution })),
+        ...resolutions.map((resolution) => ({
+          label: getResolutionLabel(resolution),
+          value: resolution,
+        })),
       ];
     }, [availableResolutions, filters.resolution, t]);
 
@@ -72,7 +76,9 @@ export const StreamFilterBar = memo(
           items={resolutionItems}
           selectedValue={filters.resolution ?? ANY_RESOLUTION}
           selectedLabel={t('stream_filter_resolution_value', {
-            value: filters.resolution ?? t('stream_filter_any'),
+            value: filters.resolution
+              ? getResolutionLabel(filters.resolution)
+              : t('stream_filter_any'),
           })}
           onValueChange={handleResolutionChange}
           testID="stream-filter-resolution"
