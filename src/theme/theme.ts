@@ -153,6 +153,8 @@ const createAppTheme = (scalingFactor: number) =>
       loadingIndicatorLogoSizeLarge: withScale(65, scalingFactor),
       progressBarHeight: withScale(6, scalingFactor),
       episodeThumbnailGradientHeight: withScale(80, scalingFactor),
+      // Height of the watched/unreleased badge in a thumbnail corner (text line plus padding)
+      episodeCornerBadgeHeight: withScale(28, scalingFactor),
       mediaDetailsHeader: withScale(350, scalingFactor),
       // Tab bar (mobile only)
       tabBarHeight: withScale(50, scalingFactor),

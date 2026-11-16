@@ -97,7 +97,11 @@ export const EpisodeItem = memo(
               !!isFinished && <CompletedBadge mode="overlay" source={historyItem?.source} />
             )}
 
-            <DownloadStatusBadge metaId={metaId} videoId={video.id} />
+            <DownloadStatusBadge
+              metaId={metaId}
+              videoId={video.id}
+              belowCornerBadge={isUnreleased || isFinished || isCurrentEpisode}
+            />
 
             {!isFinished && clampedProgressRatio > 0 && (
               <Box position="absolute" left={0} right={0} bottom={0}>
