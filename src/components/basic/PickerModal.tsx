@@ -1,6 +1,6 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView } from 'react-native';
+import { type LayoutChangeEvent, ScrollView, View } from 'react-native';
 
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
@@ -211,6 +211,12 @@ export function PickerModal<T extends string | number | undefined = string | num
 
   const keyExtractor = useCallback((item: PickerItem<T>) => item.value?.toString() ?? '', []);
 
+  // A popup that has to scroll opens at the selected entry, like the long list.
+  const popupScrollRef = useRef<ScrollView>(null);
+  const handleSelectedEntryLayout = useCallback((event: LayoutChangeEvent) => {
+    popupScrollRef.current?.scrollTo({ y: event.nativeEvent.layout.y, animated: false });
+  }, []);
+
   // Short menus without groups open as a compact popup sized to their entries.
   if (groups.length === 0 && items.length <= PICKER_POPUP_MAX_ITEMS) {
     return (
@@ -218,17 +224,21 @@ export function PickerModal<T extends string | number | undefined = string | num
         {/* Scrolls when the popup gets less room than its entries need
             (landscape, large font scaling). */}
         <ScrollView
+          ref={popupScrollRef}
           testID="picker-popup"
           style={{ flexGrow: 0, flexShrink: 1 }}
           showsVerticalScrollIndicator={false}>
-          {items.map((item) => (
-            <PickerListItem
-              key={keyExtractor(item)}
-              item={item}
-              isSelected={item.value === selectedValue}
-              onPress={handleValueChange}
-            />
-          ))}
+          {items.map((item) => {
+            const isSelected = item.value === selectedValue;
+            return (
+              <View
+                key={keyExtractor(item)}
+                onLayout={isSelected ? handleSelectedEntryLayout : undefined}
+                testID={isSelected ? 'picker-popup-selected' : undefined}>
+                <PickerListItem item={item} isSelected={isSelected} onPress={handleValueChange} />
+              </View>
+            );
+          })}
         </ScrollView>
       </Modal>
     );

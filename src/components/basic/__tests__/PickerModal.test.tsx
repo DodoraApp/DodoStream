@@ -1,6 +1,6 @@
 import * as mockReact from 'react';
 import React from 'react';
-import { View as mockView } from 'react-native';
+import { ScrollView, View as mockView } from 'react-native';
 
 import { fireEvent } from '@testing-library/react-native';
 
@@ -77,6 +77,21 @@ describe('PickerModal', () => {
     const { getByTestId } = renderPicker({ items: itemsOf(PICKER_POPUP_MAX_ITEMS) });
 
     expect(getByTestId('picker-popup').type).toBe('RCTScrollView');
+  });
+
+  it('scrolls a popup to the selected entry when it opens', () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => {});
+    const { getByTestId } = renderPicker({
+      items: itemsOf(PICKER_POPUP_MAX_ITEMS),
+      selectedValue: `value-${PICKER_POPUP_MAX_ITEMS}`,
+    });
+
+    fireEvent(getByTestId('picker-popup-selected'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 320, width: 300, height: 60 } },
+    });
+
+    expect(scrollTo).toHaveBeenCalledWith({ y: 320, animated: false });
+    scrollTo.mockRestore();
   });
 
   it('reports the chosen entry and closes', () => {
