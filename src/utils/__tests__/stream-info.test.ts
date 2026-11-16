@@ -20,6 +20,11 @@ describe('getStreamResolution', () => {
     expect(getStreamResolution(stream({ title: 'Movie 480p' }))).toBe('480p');
   });
 
+  it('prefers a stated pixel count over a quality label of the source', () => {
+    expect(getStreamResolution(stream({ title: 'Movie.4K.Remaster.1080p.BluRay' }))).toBe('1080p');
+    expect(getStreamResolution(stream({ name: 'UHD', description: 'Movie 720p' }))).toBe('720p');
+  });
+
   it('returns undefined when no resolution is stated', () => {
     expect(getStreamResolution(stream({ name: 'Addon', title: 'Some stream' }))).toBeUndefined();
     // HDR and HD are not resolutions on their own.
