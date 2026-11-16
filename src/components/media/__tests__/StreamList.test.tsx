@@ -6,9 +6,7 @@ import { act, fireEvent } from '@testing-library/react-native';
 
 import * as streamsApi from '@/api/stremio';
 import * as mediaNavigation from '@/hooks/useMediaNavigation';
-import { useAppSettingsStore } from '@/store/app-settings.store';
 import { getStreamStableId } from '@/utils/stream';
-import { NO_STREAM_FILTERS } from '@/utils/stream-filters';
 import { renderWithProviders } from '@/utils/test-utils';
 
 import { StreamList } from '../StreamList';
@@ -106,7 +104,6 @@ describe('StreamList selection', () => {
     mockTagFiltersProps = undefined;
     mockFilterBarProps = undefined;
     mockIsTVLayout = false;
-    useAppSettingsStore.setState({ streamFilters: NO_STREAM_FILTERS });
     streams = [playable, alternative, external, unavailable];
     openStreamFromStream = jest.fn();
     (mediaNavigation.useMediaNavigation as jest.Mock).mockReturnValue({ openStreamFromStream });
@@ -296,7 +293,6 @@ describe('StreamList resolution and size filters', () => {
     mockLegendProps = undefined;
     mockFilterBarProps = undefined;
     mockIsTVLayout = false;
-    useAppSettingsStore.setState({ streamFilters: NO_STREAM_FILTERS });
     (mediaNavigation.useMediaNavigation as jest.Mock).mockReturnValue({
       openStreamFromStream: jest.fn(),
     });
@@ -326,14 +322,14 @@ describe('StreamList resolution and size filters', () => {
     expect(ids(queryByTestId)).toEqual([fullHd]);
   });
 
-  it('remembers the filter for the next title', async () => {
+  it('starts without filters again when the list is opened anew', async () => {
     const first = renderWithProviders(<StreamList type="movie" id="movie-1" />);
     await setFilters({ resolution: '1080p', maxSizeGb: null });
     first.unmount();
 
     const { queryByTestId } = renderWithProviders(<StreamList type="movie" id="movie-2" />);
 
-    expect(ids(queryByTestId)).toEqual([fullHd]);
+    expect(ids(queryByTestId)).toEqual([uhd, fullHd]);
   });
 
   it('shows an empty state but keeps the filter bar when nothing matches', async () => {
@@ -345,18 +341,14 @@ describe('StreamList resolution and size filters', () => {
     expect(getByTestId('stream-filter-bar')).toBeTruthy();
   });
 
-  it('has no filters in the TV layout or the player overlay and ignores a stored filter there', () => {
-    useAppSettingsStore.setState({ streamFilters: { resolution: '1080p', maxSizeGb: null } });
-
+  it('has no filters in the TV layout or the player overlay', () => {
     mockIsTVLayout = true;
     const tv = renderWithProviders(<StreamList type="movie" id="movie-1" />);
     expect(tv.queryByTestId('stream-filter-bar')).toBeNull();
-    expect(ids(tv.queryByTestId)).toEqual([uhd, fullHd]);
     tv.unmount();
 
     mockIsTVLayout = false;
     const overlay = renderWithProviders(<StreamList type="movie" id="movie-1" centered />);
     expect(overlay.queryByTestId('stream-filter-bar')).toBeNull();
-    expect(ids(overlay.queryByTestId)).toEqual([uhd, fullHd]);
   });
 });

@@ -16,7 +16,6 @@ import { StreamFilterBar } from '@/components/media/StreamFilterBar';
 import { StreamListSkeleton } from '@/components/media/StreamListSkeleton';
 import { useResponsiveLayout } from '@/hooks/useBreakpoint';
 import { useMediaNavigation } from '@/hooks/useMediaNavigation';
-import { useAppSettingsStore } from '@/store/app-settings.store';
 import { Box, Text, type Theme } from '@/theme/theme';
 import type { ContentType, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
@@ -350,9 +349,9 @@ export const StreamList = memo(
     // Resolution and size filters: phone and tablet stream pages only. The TV
     // layout and the centered player overlay keep their compact list.
     const showStreamFilters = !isHorizontal && !centered;
-    const storedStreamFilters = useAppSettingsStore((state) => state.streamFilters);
-    const setStreamFilters = useAppSettingsStore((state) => state.setStreamFilters);
-    const streamFilters = showStreamFilters ? storedStreamFilters : NO_STREAM_FILTERS;
+    // Local state: the filters start empty every time the list is opened.
+    const [selectedStreamFilters, setStreamFilters] = useState(NO_STREAM_FILTERS);
+    const streamFilters = showStreamFilters ? selectedStreamFilters : NO_STREAM_FILTERS;
     const availableResolutions = useMemo(() => getAvailableResolutions(streams ?? []), [streams]);
 
     // Part of the list key, so the list starts fresh when a filter changes.

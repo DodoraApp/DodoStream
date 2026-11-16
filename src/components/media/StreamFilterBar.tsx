@@ -4,12 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { PickerInput } from '@/components/basic/PickerInput';
 import type { PickerItem } from '@/components/basic/PickerModal';
 import { Box } from '@/theme/theme';
-import {
-  getResolutionLabel,
-  STREAM_MAX_SIZE_OPTIONS_GB,
-  type StreamFilters,
-  type StreamResolution,
-} from '@/utils/stream-filters';
+import { STREAM_MAX_SIZE_OPTIONS_GB, type StreamFilters } from '@/utils/stream-filters';
+import { getResolutionLabel, type StreamResolution } from '@/utils/stream-info';
 
 const ANY_RESOLUTION = 'any';
 const ANY_SIZE = 0;
