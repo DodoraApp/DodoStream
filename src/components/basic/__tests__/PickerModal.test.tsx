@@ -73,6 +73,12 @@ describe('PickerModal', () => {
     expect(getByText(`Entry ${PICKER_POPUP_MAX_ITEMS}`)).toBeTruthy();
   });
 
+  it('keeps the popup entries scrollable when the screen is short', () => {
+    const { getByTestId } = renderPicker({ items: itemsOf(PICKER_POPUP_MAX_ITEMS) });
+
+    expect(getByTestId('picker-popup').type).toBe('RCTScrollView');
+  });
+
   it('reports the chosen entry and closes', () => {
     const { getByText } = renderPicker({});
 

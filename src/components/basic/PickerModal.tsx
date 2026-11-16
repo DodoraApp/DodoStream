@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView } from 'react-native';
 
 import { LegendList, type LegendListRenderItemProps } from '@legendapp/list/react-native';
 import Ionicons, { IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
@@ -214,7 +215,12 @@ export function PickerModal<T extends string | number | undefined = string | num
   if (groups.length === 0 && items.length <= PICKER_POPUP_MAX_ITEMS) {
     return (
       <Modal visible={visible} onClose={onClose} label={label} icon={icon} fitContent>
-        <Box testID="picker-popup">
+        {/* Scrolls when the popup gets less room than its entries need
+            (landscape, large font scaling). */}
+        <ScrollView
+          testID="picker-popup"
+          style={{ flexGrow: 0, flexShrink: 1 }}
+          showsVerticalScrollIndicator={false}>
           {items.map((item) => (
             <PickerListItem
               key={keyExtractor(item)}
@@ -223,7 +229,7 @@ export function PickerModal<T extends string | number | undefined = string | num
               onPress={handleValueChange}
             />
           ))}
-        </Box>
+        </ScrollView>
       </Modal>
     );
   }
