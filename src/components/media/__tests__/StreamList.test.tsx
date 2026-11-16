@@ -13,6 +13,7 @@ import { StreamList } from '../StreamList';
 
 let mockLegendProps: Record<string, any> | undefined;
 let mockTagFiltersProps: Record<string, any> | undefined;
+let mockFilterBarProps: Record<string, any> | undefined;
 let mockIsTVLayout = false;
 
 jest.mock('@/api/stremio');
@@ -38,6 +39,12 @@ jest.mock('@/components/basic/TagFilters', () => ({
   TagFilters: (props: Record<string, any>) => {
     mockTagFiltersProps = props;
     return mockReact.createElement(mockView, { testID: 'stream-tag-filters' });
+  },
+}));
+jest.mock('@/components/media/StreamFilterBar', () => ({
+  StreamFilterBar: (props: Record<string, any>) => {
+    mockFilterBarProps = props;
+    return mockReact.createElement(mockView, { testID: 'stream-filter-bar' });
   },
 }));
 jest.mock('@/components/basic/LoadingQuery', () => ({
@@ -95,6 +102,7 @@ describe('StreamList selection', () => {
     jest.clearAllMocks();
     mockLegendProps = undefined;
     mockTagFiltersProps = undefined;
+    mockFilterBarProps = undefined;
     mockIsTVLayout = false;
     streams = [playable, alternative, external, unavailable];
     openStreamFromStream = jest.fn();
@@ -255,5 +263,92 @@ describe('StreamList selection', () => {
     rerender(<StreamList type="movie" id="movie-1" layout="horizontal" />);
 
     expect(mockLegendProps).toEqual(expect.objectContaining({ horizontal: true }));
+  });
+});
+
+describe('StreamList resolution and size filters', () => {
+  const uhd = {
+    addonId: 'addon-a',
+    name: 'Addon 4K',
+    description: '📦 9.18 GB',
+    url: 'https://cdn.example/uhd.mkv',
+  };
+  const fullHd = {
+    addonId: 'addon-a',
+    name: 'Addon 1080p',
+    description: '📦 2.4 GB',
+    url: 'https://cdn.example/fhd.mkv',
+  };
+  const ids = (queryByTestId: (id: string) => unknown) =>
+    [uhd, fullHd].filter((stream) => queryByTestId(`stream-${getStreamStableId(stream as any)}`));
+
+  // The store update reaches the list on the next tick.
+  const setFilters = (filters: { resolution: string | null; maxSizeGb: number | null }) =>
+    act(async () => {
+      mockFilterBarProps?.onChange(filters);
+    });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockLegendProps = undefined;
+    mockFilterBarProps = undefined;
+    mockIsTVLayout = false;
+    (mediaNavigation.useMediaNavigation as jest.Mock).mockReturnValue({
+      openStreamFromStream: jest.fn(),
+    });
+    (streamsApi.useStreams as jest.Mock).mockImplementation(() => ({
+      data: [uhd, fullHd],
+      isLoading: false,
+      isError: false,
+      allResults: [{ isLoading: false }],
+      addons: [{ id: 'addon-a', name: 'Alpha', manifestUrl: 'https://addons.example/a' }],
+    }));
+  });
+
+  it('offers the resolutions that occur and shows every stream without a filter', () => {
+    const { queryByTestId } = renderWithProviders(<StreamList type="movie" id="movie-1" />);
+
+    expect(mockFilterBarProps?.availableResolutions).toEqual(['2160p', '1080p']);
+    expect(ids(queryByTestId)).toEqual([uhd, fullHd]);
+  });
+
+  it('narrows the list by resolution and by maximum size', async () => {
+    const { queryByTestId } = renderWithProviders(<StreamList type="movie" id="movie-1" />);
+
+    await setFilters({ resolution: '2160p', maxSizeGb: null });
+    expect(ids(queryByTestId)).toEqual([uhd]);
+
+    await setFilters({ resolution: null, maxSizeGb: 5 });
+    expect(ids(queryByTestId)).toEqual([fullHd]);
+  });
+
+  it('starts without filters again when the list is opened anew', async () => {
+    const first = renderWithProviders(<StreamList type="movie" id="movie-1" />);
+    await setFilters({ resolution: '1080p', maxSizeGb: null });
+    first.unmount();
+
+    const { queryByTestId } = renderWithProviders(<StreamList type="movie" id="movie-2" />);
+
+    expect(ids(queryByTestId)).toEqual([uhd, fullHd]);
+  });
+
+  it('shows an empty state but keeps the filter bar when nothing matches', async () => {
+    const { getByTestId } = renderWithProviders(<StreamList type="movie" id="movie-1" />);
+
+    await setFilters({ resolution: '2160p', maxSizeGb: 1 });
+
+    expect(getByTestId('stream-empty')).toBeTruthy();
+    expect(getByTestId('stream-filter-bar')).toBeTruthy();
+  });
+
+  it('has no filters in the TV layout or the player overlay', () => {
+    mockIsTVLayout = true;
+    const tv = renderWithProviders(<StreamList type="movie" id="movie-1" />);
+    expect(tv.queryByTestId('stream-filter-bar')).toBeNull();
+    tv.unmount();
+
+    mockIsTVLayout = false;
+    const overlay = renderWithProviders(<StreamList type="movie" id="movie-1" centered />);
+    expect(overlay.queryByTestId('stream-filter-bar')).toBeNull();
   });
 });

@@ -1,0 +1,121 @@
+import type { Stream } from '@/types/stremio';
+
+/**
+ * Reads quality details from what an addon provides for a stream. Addons
+ * describe them in free text spread over name, title and description, so
+ * every value here is a best effort and may be undefined.
+ */
+
+/** Vertical resolutions a stream can have, highest first. */
+export const STREAM_RESOLUTIONS = ['2160p', '1440p', '1080p', '720p', '480p'] as const;
+export type StreamResolution = (typeof STREAM_RESOLUTIONS)[number];
+
+// Decimal units, so sizes match what addons display ("5.26 GB").
+const BYTES_PER_UNIT = 1000;
+export const BYTES_PER_GB = BYTES_PER_UNIT ** 3;
+
+/**
+ * Matches a whole token. Unlike \b this also treats "_" as a separator,
+ * because release names use it like "." ("Movie_1080p_WEB").
+ */
+const token = (pattern: string): RegExp =>
+  new RegExp(`(?:^|[^a-z0-9])(?:${pattern})(?=[^a-z0-9]|$)`, 'i');
+
+/** Pixel counts like "1080p" state the resolution of the file itself. */
+const EXPLICIT_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
+  ['2160p', token('2160p')],
+  ['1440p', token('1440p')],
+  ['1080p', token('1080p')],
+  ['720p', token('720p')],
+  ['480p', token('480p|576p')],
+];
+
+/**
+ * Quality labels like "4K" are only used when no pixel count is stated,
+ * because release names also use them for the source ("4K.Remaster.1080p").
+ */
+const LOOSE_RESOLUTION_PATTERNS: readonly [StreamResolution, RegExp][] = [
+  ['2160p', token('4k|uhd')],
+  ['1440p', token('2k|qhd')],
+  ['1080p', token('fhd')],
+  ['480p', token('sd')],
+];
+
+/** Names shown for resolutions that are better known by another name. */
+const RESOLUTION_LABELS: Partial<Record<StreamResolution, string>> = { '2160p': '4K' };
+
+const SIZE_PATTERN = /(\d+(?:[.,]\d+)?)\s*(tb|gb|mb|kb|tib|gib|mib|kib)(?![a-z])/i;
+const SIZE_UNIT_EXPONENT: Record<string, number> = { k: 1, m: 2, g: 3, t: 4 };
+
+/** Flag emojis are pairs of regional indicator symbols. */
+const FLAG_PATTERN = /[\u{1F1E6}-\u{1F1FF}]{2}/gu;
+const REGIONAL_INDICATOR_A = 0x1f1e6;
+const LATIN_A = 0x41;
+
+/** Language names addons write out, mapped to the country code of their flag. */
+const LANGUAGE_WORDS: readonly [string, RegExp][] = [
+  ['GB', token('english|eng')],
+  ['DE', token('german|deutsch|ger')],
+  ['FR', token('french|fran[cç]ais')],
+  ['ES', token('spanish|espa[nñ]ol')],
+  ['IT', token('italian|italiano')],
+  ['PT', token('portuguese|portugu[eê]s')],
+  ['MULTI', token('multi|dual[ .-]?audio')],
+];
+
+/** English is shown with either flag; treat them as the same language. */
+const FLAG_ALIASES: Record<string, string> = { US: 'GB' };
+
+const getStreamText = (stream: Stream): string =>
+  [stream.name, stream.title, stream.description].filter(Boolean).join('\n');
+
+/** Resolution an addon states for the stream, or undefined when it states none. */
+export const getStreamResolution = (stream: Stream): StreamResolution | undefined => {
+  const text = getStreamText(stream);
+  const findIn = (patterns: readonly [StreamResolution, RegExp][]) =>
+    patterns.find(([, pattern]) => pattern.test(text))?.[0];
+  return findIn(EXPLICIT_RESOLUTION_PATTERNS) ?? findIn(LOOSE_RESOLUTION_PATTERNS);
+};
+
+/** Display name of a resolution, e.g. "4K" for 2160p. */
+export const getResolutionLabel = (resolution: StreamResolution): string =>
+  RESOLUTION_LABELS[resolution] ?? resolution;
+
+/** File size in bytes from the addon hint or its description, or undefined when unknown. */
+export const getStreamSizeBytes = (stream: Stream): number | undefined => {
+  const hinted = (stream.behaviorHints as { videoSize?: unknown } | undefined)?.videoSize;
+  if (typeof hinted === 'number' && hinted > 0) return hinted;
+
+  const match = SIZE_PATTERN.exec(getStreamText(stream));
+  if (!match) return undefined;
+
+  const value = Number.parseFloat(match[1].replace(',', '.'));
+  const exponent = SIZE_UNIT_EXPONENT[match[2][0].toLowerCase()];
+  if (!Number.isFinite(value) || value <= 0 || !exponent) return undefined;
+
+  return value * BYTES_PER_UNIT ** exponent;
+};
+
+/**
+ * Audio languages an addon states, as sorted country codes of their flags
+ * (plus "MULTI"). Empty when the addon states none.
+ */
+export const getStreamLanguages = (stream: Stream): string[] => {
+  const text = getStreamText(stream);
+  const languages = new Set<string>();
+
+  for (const flag of text.match(FLAG_PATTERN) ?? []) {
+    const code = [...flag]
+      .map((symbol) =>
+        String.fromCharCode((symbol.codePointAt(0) ?? 0) - REGIONAL_INDICATOR_A + LATIN_A)
+      )
+      .join('');
+    languages.add(FLAG_ALIASES[code] ?? code);
+  }
+
+  for (const [code, pattern] of LANGUAGE_WORDS) {
+    if (pattern.test(text)) languages.add(code);
+  }
+
+  return [...languages].sort();
+};
