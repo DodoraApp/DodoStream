@@ -1,10 +1,10 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert } from 'react-native';
 
 import Ionicons, { type IoniconsIconName } from '@react-native-vector-icons/ionicons/static';
 import { useTheme } from '@shopify/restyle';
 
+import { ConfirmModal } from '@/components/basic/ConfirmModal';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
 import type { DbDownload } from '@/db';
@@ -99,22 +99,10 @@ export const DownloadItem = memo(({ download, onPlay, onRetry, onRemove }: Downl
   const handlePlay = useCallback(() => onPlay(download), [download, onPlay]);
   const handleRetry = useCallback(() => onRetry(download), [download, onRetry]);
 
-  const handleRemove = useCallback(() => {
-    Alert.alert(
-      isActive
-        ? t('media:download_cancel_confirm_title')
-        : t('media:download_delete_confirm_title'),
-      title,
-      [
-        { text: t('common:back'), style: 'cancel' },
-        {
-          text: isActive ? t('media:download_cancel') : t('common:delete'),
-          style: 'destructive',
-          onPress: () => onRemove(download),
-        },
-      ]
-    );
-  }, [download, isActive, onRemove, t, title]);
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+  const openConfirm = useCallback(() => setIsConfirmVisible(true), []);
+  const closeConfirm = useCallback(() => setIsConfirmVisible(false), []);
+  const handleConfirmRemove = useCallback(() => onRemove(download), [download, onRemove]);
 
   return (
     <Box
@@ -155,7 +143,7 @@ export const DownloadItem = memo(({ download, onPlay, onRetry, onRemove }: Downl
           <DownloadActionButton
             icon={isActive ? 'close' : 'trash-outline'}
             label={isActive ? t('media:download_cancel') : t('common:delete')}
-            onPress={handleRemove}
+            onPress={openConfirm}
             testID={`download-remove-${id}`}
           />
         </Box>
@@ -171,6 +159,22 @@ export const DownloadItem = memo(({ download, onPlay, onRetry, onRemove }: Downl
         testID={`download-status-${id}`}>
         {statusText}
       </Text>
+
+      <ConfirmModal
+        visible={isConfirmVisible}
+        title={
+          isActive
+            ? t('media:download_cancel_confirm_title')
+            : t('media:download_delete_confirm_title')
+        }
+        message={title}
+        icon={isActive ? 'close-circle-outline' : 'trash-outline'}
+        confirmLabel={isActive ? t('media:download_cancel') : t('common:delete')}
+        cancelLabel={t('common:back')}
+        onConfirm={handleConfirmRemove}
+        onClose={closeConfirm}
+        testID={`download-confirm-${id}`}
+      />
     </Box>
   );
 });

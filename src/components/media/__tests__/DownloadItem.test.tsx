@@ -1,5 +1,4 @@
 import React from 'react';
-import { Alert } from 'react-native';
 
 import { fireEvent } from '@testing-library/react-native';
 
@@ -34,27 +33,15 @@ describe('DownloadItem', () => {
   const onPlay = jest.fn();
   const onRetry = jest.fn();
   const onRemove = jest.fn();
-  let alertSpy: jest.SpyInstance;
 
   const renderItem = (item: DbDownload) =>
     renderWithProviders(
       <DownloadItem download={item} onPlay={onPlay} onRetry={onRetry} onRemove={onRemove} />
     );
 
-  /** Presses the destructive button of the confirmation dialog. */
-  const confirmAlert = () => {
-    const buttons = alertSpy.mock.calls[0][2] as { style?: string; onPress?: () => void }[];
-    buttons.find((button) => button.style === 'destructive')?.onPress?.();
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     useDownloadsStore.setState({ progressById: {} });
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    alertSpy.mockRestore();
   });
 
   it('shows live progress of a running download and only offers to cancel it', () => {
@@ -99,25 +86,33 @@ describe('DownloadItem', () => {
     expect(getByTestId('download-status-7').props.children).toBe('media:download_failed');
   });
 
-  it('asks before canceling or deleting and removes only after confirmation', () => {
+  it('asks in an app dialog before deleting and removes only after confirmation', () => {
     const item = download({ status: 'completed' });
-    const { getByTestId } = renderItem(item);
+    const { getByTestId, getByText } = renderItem(item);
 
     fireEvent.press(getByTestId('download-remove-7'));
 
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-    expect(alertSpy.mock.calls[0][0]).toBe('media:download_delete_confirm_title');
+    expect(getByText('media:download_delete_confirm_title')).toBeTruthy();
     expect(onRemove).not.toHaveBeenCalled();
 
-    confirmAlert();
+    fireEvent.press(getByTestId('download-confirm-7-confirm'));
     expect(onRemove).toHaveBeenCalledWith(item);
   });
 
+  it('keeps the download when the dialog is dismissed', () => {
+    const { getByTestId } = renderItem(download({ status: 'completed' }));
+
+    fireEvent.press(getByTestId('download-remove-7'));
+    fireEvent.press(getByTestId('download-confirm-7-cancel'));
+
+    expect(onRemove).not.toHaveBeenCalled();
+  });
+
   it('words the confirmation as a cancel for an unfinished download', () => {
-    const { getByTestId } = renderItem(download({ status: 'queued' }));
+    const { getByTestId, getByText } = renderItem(download({ status: 'queued' }));
 
     fireEvent.press(getByTestId('download-remove-7'));
 
-    expect(alertSpy.mock.calls[0][0]).toBe('media:download_cancel_confirm_title');
+    expect(getByText('media:download_cancel_confirm_title')).toBeTruthy();
   });
 });

@@ -16,6 +16,7 @@ import { TagFilters } from '@/components/basic/TagFilters';
 import { DownloadsList } from '@/components/media/DownloadsList';
 import { HistoryCard } from '@/components/media/HistoryCard';
 import { MediaCard } from '@/components/media/MediaCard';
+import { DOWNLOADS_ENABLED } from '@/constants/downloads';
 import { NO_POSTER_PORTRAIT } from '@/constants/images';
 import { MOBILE_DRAW_DISTANCE, TV_DRAW_DISTANCE } from '@/constants/ui';
 import type { DbMyListItem, DbWatchedMetaSummary } from '@/db';
@@ -326,8 +327,7 @@ export default function Library() {
 
   // Support deep linking to a specific tab via ?tab=history (initial state only)
   const { tab: paramsTab } = useLocalSearchParams<{ tab?: string }>();
-  // Downloads are a phone feature and stay hidden on TV.
-  const showDownloads = !Platform.isTV;
+  const showDownloads = DOWNLOADS_ENABLED;
   const [selectedTab, setSelectedTab] = useState<LibraryTab>(
     paramsTab === 'history'
       ? 'history'

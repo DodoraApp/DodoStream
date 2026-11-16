@@ -1,8 +1,7 @@
-import { Platform } from 'react-native';
-
 import { TFunction } from 'i18next';
 
 import type { SettingsMenuItem } from '@/components/settings/SettingsMenu';
+import { DOWNLOADS_ENABLED } from '@/constants/downloads';
 
 export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] = (t) => [
   {
@@ -47,8 +46,7 @@ export const SETTINGS_PROFILE_MENU_ITEMS: (t: TFunction) => SettingsMenuItem[] =
     icon: 'text-outline',
     href: '/settings/subtitles',
   },
-  // Downloads are a phone feature and stay hidden on TV.
-  ...(Platform.isTV
+  ...(!DOWNLOADS_ENABLED
     ? []
     : [
         {
