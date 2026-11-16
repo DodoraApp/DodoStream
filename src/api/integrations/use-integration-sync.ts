@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AppState } from 'react-native';
 
 import { useQueryClient } from '@tanstack/react-query';
+import * as Network from 'expo-network';
 
 import { INTEGRATION_AUTO_SYNC_INTERVAL_MS, TOAST_DURATION_SHORT } from '@/constants/ui';
 import { syncLogKeys } from '@/hooks/useSyncLog';
@@ -40,6 +41,34 @@ export interface IntegrationSyncProvider<TSnapshot = unknown, TSyncCursors = unk
   errorMessageKey: string;
 }
 
+export interface IntegrationSyncOptions {
+  /**
+   * Sync on mount and when the app returns to the foreground (default: true).
+   * Turn it off for an instance that only syncs on demand.
+   */
+  autoSync?: boolean;
+}
+
+/**
+ * Syncs running right now, keyed by profile and provider. Shared by every
+ * hook instance, so the player, the settings and the catch-up sync never run
+ * the same sync twice at once.
+ */
+const runningSyncs = new Set<string>();
+
+/**
+ * Whether the device can reach the internet. An unknown state counts as
+ * online, so a sync is only skipped when the device is known to be offline.
+ */
+export async function isDeviceOnline(): Promise<boolean> {
+  try {
+    const state = await Network.getNetworkStateAsync();
+    return state.isConnected !== false && state.isInternetReachable !== false;
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Generic integration sync hook.
  *
@@ -49,12 +78,12 @@ export interface IntegrationSyncProvider<TSnapshot = unknown, TSyncCursors = unk
  * accessors.
  */
 export function useIntegrationSync<TSnapshot, TSyncCursors>(
-  config: IntegrationSyncProvider<TSnapshot, TSyncCursors>
+  config: IntegrationSyncProvider<TSnapshot, TSyncCursors>,
+  { autoSync = true }: IntegrationSyncOptions = {}
 ): IntegrationSyncState {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
-  const isSyncingRef = useRef(false);
 
   const { setLastSyncAt, setSyncStatus } = useIntegrationsStore();
   const lastSyncAt = useIntegrationsStore((state) =>
@@ -73,12 +102,19 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
     const cfg = configRef.current;
     const connection = cfg.getConnection();
     const syncMode = cfg.getSyncMode();
-    if (!cfg.profileId || !connection || !syncMode || isSyncingRef.current) return;
+    if (!cfg.profileId || !connection || !syncMode) return;
 
-    isSyncingRef.current = true;
-    setIsSyncing(true);
-    setSyncStatus(cfg.profileId, cfg.provider, 'syncing');
+    const runningKey = `${cfg.profileId}:${cfg.provider}`;
+    if (runningSyncs.has(runningKey)) return;
+    runningSyncs.add(runningKey);
     try {
+      // Offline (for example while watching a download) there is nothing to
+      // gain but an error toast. Watched items stay in the local history and
+      // are exported with the next sync, which also covers several of them.
+      if (!(await isDeviceOnline())) return;
+
+      setIsSyncing(true);
+      setSyncStatus(cfg.profileId, cfg.provider, 'syncing');
       // Allow providers to refresh tokens or perform other pre-flight checks.
       const activeConnection = cfg.beforeSync ? await cfg.beforeSync(connection) : connection;
 
@@ -135,7 +171,7 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
         });
       }
     } finally {
-      isSyncingRef.current = false;
+      runningSyncs.delete(runningKey);
       setIsSyncing(false);
     }
   }, [queryClient, setLastSyncAt, setSyncStatus, t]);
@@ -148,14 +184,14 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
 
   useEffect(() => {
     const cfg = configRef.current;
-    if (!cfg.profileId || !cfg.getConnection()) return;
+    if (!autoSync || !cfg.profileId || !cfg.getConnection()) return;
     if (shouldSync()) sync();
-  }, [config.profileId, shouldSync, sync]);
+  }, [autoSync, config.profileId, shouldSync, sync]);
 
   // Sync when app returns to foreground
   useEffect(() => {
     const cfg = configRef.current;
-    if (!cfg.profileId || !cfg.getConnection()) return;
+    if (!autoSync || !cfg.profileId || !cfg.getConnection()) return;
 
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active' && shouldSync()) {
@@ -164,7 +200,7 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
     });
 
     return () => subscription.remove();
-  }, [config.profileId, shouldSync, sync]);
+  }, [autoSync, config.profileId, shouldSync, sync]);
 
   return { sync, isSyncing, lastSyncAt };
 }

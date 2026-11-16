@@ -12,6 +12,9 @@ export const normalizeStreamUrl = (url: string): string => {
   }
 };
 
+/** Whether the player source is a file on the device, such as a download. */
+export const isLocalFileSource = (source: string): boolean => source.startsWith('file://');
+
 /** Returns whether a stream can be opened by the player. */
 export const isStreamAvailable = (stream: Stream): boolean =>
   Boolean(stream.url || stream.externalUrl || stream.ytId);

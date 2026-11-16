@@ -422,6 +422,16 @@ describe('VideoPlayerSession', () => {
       },
     });
   });
+  it('never remembers a downloaded file as the last stream', () => {
+    renderSession({ source: 'file:///data/downloads/tt-1_1.mkv', streamId: 'addon-1::url' });
+
+    act(() => {
+      mockLastExoProps.onLoad({ duration: 100 });
+    });
+
+    expect(mockSetLastStreamTarget).not.toHaveBeenCalled();
+  });
+
   it('persists the stable stream ID with the last stream target', () => {
     renderSession({ streamId: 'addon-1::info-hash' });
 

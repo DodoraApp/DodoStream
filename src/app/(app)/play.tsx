@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
+import { handlePlaybackEnded } from '@/api/downloads/download-manager';
 import { useSimklSync } from '@/api/simkl/hooks';
 import { useTraktSync } from '@/api/trakt/hooks';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
@@ -45,6 +46,15 @@ const Play = () => {
   const activeProfileId = useProfileStore((state) => state.activeProfileId);
   const { sync: syncSimkl } = useSimklSync(activeProfileId);
   const { sync: syncTrakt } = useTraktSync(activeProfileId);
+
+  // When this video stops playing (player closed or next episode started),
+  // apply the "after watching" setting to its download.
+  useEffect(() => {
+    if (!activeProfileId || !metaId) return undefined;
+    return () => {
+      void handlePlaybackEnded({ profileId: activeProfileId, metaId, videoId, source });
+    };
+  }, [activeProfileId, metaId, source, videoId]);
 
   const shouldReturnToStreams = fromAutoPlay === '1';
 

@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CompletedBadge } from '@/components/basic/CompletedBadge';
 import { Focusable } from '@/components/basic/Focusable';
 import { ProgressBar } from '@/components/basic/ProgressBar';
+import { DownloadStatusBadge } from '@/components/media/DownloadStatusBadge';
 import { PlayingIndicator } from '@/components/media/PlayingIndicator';
 import { PLAYBACK_FINISHED_RATIO } from '@/constants/playback';
 import { getWatchProgressRatio, useWatchHistoryItem } from '@/hooks/useWatchHistoryDb';
@@ -95,6 +96,12 @@ export const EpisodeItem = memo(
             ) : (
               !!isFinished && <CompletedBadge mode="overlay" source={historyItem?.source} />
             )}
+
+            <DownloadStatusBadge
+              metaId={metaId}
+              videoId={video.id}
+              belowCornerBadge={isUnreleased || isFinished || isCurrentEpisode}
+            />
 
             {!isFinished && clampedProgressRatio > 0 && (
               <Box position="absolute" left={0} right={0} bottom={0}>

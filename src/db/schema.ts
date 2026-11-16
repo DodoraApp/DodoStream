@@ -9,6 +9,9 @@ const contentTypeColumn = (name: string) =>
 const streamTargetTypeColumn = (name: string) =>
   text(name, { enum: ['url', 'external', 'yt'] as const });
 
+const downloadStatusColumn = (name: string) =>
+  text(name, { enum: ['queued', 'downloading', 'completed', 'failed', 'needs_stream'] as const });
+
 const watchStatusColumn = (name: string) =>
   text(name, { enum: ['watching', 'dismissed', 'completed'] as const });
 
@@ -156,6 +159,41 @@ export const syncLog = sqliteTable(
   (table) => [index('sync_log_profile_idx').on(table.profileId, table.id)]
 );
 
+export const downloads = sqliteTable(
+  'downloads',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    profileId: text('profile_id').notNull(),
+    metaId: text('meta_id').notNull(),
+    videoId: text('video_id').notNull().default(''),
+    type: contentTypeColumn('type').notNull(),
+    title: text('title').notNull(),
+    streamId: text('stream_id'),
+    streamTitle: text('stream_title'),
+    sourceUrl: text('source_url').notNull(),
+    // JSON-encoded request headers (behaviorHints.proxyHeaders.request)
+    requestHeaders: text('request_headers'),
+    // File name inside the app's downloads directory (never an absolute path)
+    fileName: text('file_name').notNull(),
+    status: downloadStatusColumn('status').notNull().default('queued'),
+    bytesDownloaded: integer('bytes_downloaded').notNull().default(0),
+    bytesTotal: integer('bytes_total'),
+    errorMessage: text('error_message'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    completedAt: integer('completed_at'),
+  },
+  (table) => [
+    unique().on(table.profileId, table.metaId, table.videoId),
+    index('downloads_profile_created_idx').on(table.profileId, table.createdAt),
+  ]
+);
+
+/**
+ * `needs_stream`: a season download found no corresponding stream for this
+ * episode; the user has to pick one. Such a row has no source URL or file yet.
+ */
+export type DownloadStatus = 'queued' | 'downloading' | 'completed' | 'failed' | 'needs_stream';
 export type WatchHistoryStatus = 'watching' | 'dismissed' | 'completed';
 export type SyncLogProvider = 'simkl' | 'trakt';
 export type SyncLogDirection = 'import' | 'export';

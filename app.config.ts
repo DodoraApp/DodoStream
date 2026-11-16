@@ -50,6 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       'expo-asset',
+      '@kesha-antonov/react-native-background-downloader',
       'expo-image',
       'expo-system-ui',
       '@react-native-vector-icons/ionicons',
@@ -129,6 +130,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       permissions: [
         'android.permission.FOREGROUND_SERVICE',
         'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+        // Progress notification of downloads that continue in the background
+        'android.permission.POST_NOTIFICATIONS',
         'android.permission.INTERNET',
         'android.permission.ACCESS_NETWORK_STATE',
         'android.permission.ACCESS_WIFI_STATE',

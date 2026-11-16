@@ -18,7 +18,8 @@ import { useMediaNavigation } from '@/hooks/useMediaNavigation';
 import { Box, Text, type Theme } from '@/theme/theme';
 import type { ContentType, Stream } from '@/types/stremio';
 import { createDebugLogger } from '@/utils/debug';
-import { getFocusableBackgroundColor } from '@/utils/focus-colors';
+import { isStreamDownloadable } from '@/utils/downloads';
+import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
 import { getStreamStableId, isStreamAvailable, isStreamSelected } from '@/utils/stream';
 
 const debug = createDebugLogger('StreamList');
@@ -45,18 +46,28 @@ export interface StreamListProps {
   centered?: boolean;
   /** Defaults to the platform layout. Player rails force a vertical list. */
   layout?: 'auto' | 'horizontal' | 'vertical';
+  /** When provided, downloadable streams in a vertical list show a download button. */
+  onDownload?: (stream: Stream) => void;
 }
 
 interface StreamListItemProps {
   stream: Stream;
   horizontal: boolean;
   onSelect: (stream: Stream) => void;
+  onDownload?: (stream: Stream) => void;
   selectedStreamId?: string;
   selectedStreamUrl?: string;
 }
 
 const StreamListItem = memo(
-  ({ stream, horizontal, onSelect, selectedStreamId, selectedStreamUrl }: StreamListItemProps) => {
+  ({
+    stream,
+    horizontal,
+    onSelect,
+    onDownload,
+    selectedStreamId,
+    selectedStreamUrl,
+  }: StreamListItemProps) => {
     const { t } = useTranslation('media');
     const theme = useTheme<Theme>();
     const available = isStreamAvailable(stream);
@@ -78,8 +89,9 @@ const StreamListItem = memo(
 
     const showCountry =
       !!stream.behaviorHints?.countryWhitelist && stream.behaviorHints.countryWhitelist.length > 0;
+    const showDownload = !!onDownload && !horizontal && isStreamDownloadable(stream);
 
-    return (
+    const card = (
       <Focusable
         onPress={() => onSelect(stream)}
         onFocusChange={handleFocusChange}
@@ -162,6 +174,37 @@ const StreamListItem = memo(
         )}
       </Focusable>
     );
+
+    if (!showDownload) return card;
+
+    return (
+      <Box flexDirection="row" alignItems="stretch" gap="s">
+        <Box flex={1}>{card}</Box>
+        <Focusable
+          onPress={() => onDownload(stream)}
+          accessibilityRole="button"
+          accessibilityLabel={t('download')}
+          recyclingKey={recyclingKey}
+          testID={`stream-download-${recyclingKey}`}
+          style={{ justifyContent: 'center' }}
+          focusedStyle={{ borderRadius: theme.borderRadii.m }}>
+          {({ isFocused }) => (
+            <Box
+              flex={1}
+              justifyContent="center"
+              backgroundColor={getFocusableBackgroundColor({ isFocused })}
+              paddingHorizontal="m"
+              borderRadius="m">
+              <Ionicons
+                name="download-outline"
+                size={theme.sizes.iconMedium}
+                color={theme.colors[getFocusableForegroundColor({ isFocused })]}
+              />
+            </Box>
+          )}
+        </Focusable>
+      </Box>
+    );
   }
 );
 
@@ -172,6 +215,7 @@ interface StreamListInnerProps {
   selectedStreamId?: string;
   selectedStreamUrl?: string;
   handleSelectStream: (stream: Stream) => void;
+  onDownload?: (stream: Stream) => void;
   centered?: boolean;
   autoFocus: boolean;
 }
@@ -182,6 +226,7 @@ const StreamListInner = memo(
     dataKey,
     isHorizontal,
     handleSelectStream,
+    onDownload,
     selectedStreamId,
     selectedStreamUrl,
     centered = false,
@@ -193,12 +238,13 @@ const StreamListInner = memo(
         <StreamListItem
           stream={item}
           onSelect={handleSelectStream}
+          onDownload={onDownload}
           horizontal={isHorizontal}
           selectedStreamId={selectedStreamId}
           selectedStreamUrl={selectedStreamUrl}
         />
       ),
-      [handleSelectStream, isHorizontal, selectedStreamId, selectedStreamUrl]
+      [handleSelectStream, isHorizontal, onDownload, selectedStreamId, selectedStreamUrl]
     );
 
     const keyExtractor = useCallback((item: Stream) => getStreamStableId(item), []);
@@ -257,6 +303,7 @@ export const StreamList = memo(
     centered = false,
     layout = 'auto',
     autoFocus = true,
+    onDownload,
   }: StreamListProps) => {
     const { t } = useTranslation('media');
     const { data: streams, isLoading, isError, allResults, addons } = useStreams(type, id, videoId);
@@ -394,6 +441,7 @@ export const StreamList = memo(
               streamList={streamList}
               isHorizontal={isHorizontal}
               handleSelectStream={handleSelectStream}
+              onDownload={onDownload}
               selectedStreamId={selectedStreamId}
               selectedStreamUrl={selectedStreamUrl}
               centered={centered}

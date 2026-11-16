@@ -20,6 +20,7 @@ import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { type ErrorBoundaryProps, Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
+import { initializeDownloads } from '@/api/downloads/download-manager';
 import { AppStartAnimation } from '@/components/basic/AppStartAnimation';
 import { Button } from '@/components/basic/Button';
 import { Container } from '@/components/basic/Container';
@@ -100,6 +101,14 @@ function Layout() {
         useUIStore.getState().setInitialized(true);
         useProfileStore.getState().setInitialized(true);
         useAddonStore.getState().setInitialized(true);
+      }
+
+      // Downloads come last and on their own: a failure there must not keep
+      // profiles and addons from loading.
+      try {
+        await initializeDownloads();
+      } catch (error) {
+        console.error('[boot] downloads init failed', error);
       }
     };
     void init();

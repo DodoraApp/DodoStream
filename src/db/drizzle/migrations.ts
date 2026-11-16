@@ -58,6 +58,13 @@ const journal = {
       tag: '0007_great_guardsmen',
       breakpoints: true,
     },
+    {
+      idx: 8,
+      version: '6',
+      when: 1794817808950,
+      tag: '0008_unique_outlaw_kid',
+      breakpoints: true,
+    },
   ],
 };
 
@@ -181,6 +188,30 @@ const m0006 = `CREATE TABLE \`sync_log\` (
 CREATE INDEX \`sync_log_profile_idx\` ON \`sync_log\` (\`profile_id\`,\`id\`);`;
 const m0007 = `ALTER TABLE \`watch_history\` ADD \`last_stream_id\` text;`;
 
+const m0008 = `CREATE TABLE \`downloads\` (
+	\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	\`profile_id\` text NOT NULL,
+	\`meta_id\` text NOT NULL,
+	\`video_id\` text DEFAULT '' NOT NULL,
+	\`type\` text NOT NULL,
+	\`title\` text NOT NULL,
+	\`stream_id\` text,
+	\`stream_title\` text,
+	\`source_url\` text NOT NULL,
+	\`request_headers\` text,
+	\`file_name\` text NOT NULL,
+	\`status\` text DEFAULT 'queued' NOT NULL,
+	\`bytes_downloaded\` integer DEFAULT 0 NOT NULL,
+	\`bytes_total\` integer,
+	\`error_message\` text,
+	\`created_at\` integer NOT NULL,
+	\`updated_at\` integer NOT NULL,
+	\`completed_at\` integer
+);
+--> statement-breakpoint
+CREATE INDEX \`downloads_profile_created_idx\` ON \`downloads\` (\`profile_id\`,\`created_at\`);--> statement-breakpoint
+CREATE UNIQUE INDEX \`downloads_profile_id_meta_id_video_id_unique\` ON \`downloads\` (\`profile_id\`,\`meta_id\`,\`video_id\`);`;
+
 export default {
   journal,
   migrations: {
@@ -192,5 +223,6 @@ export default {
     m0005,
     m0006,
     m0007,
+    m0008,
   },
 };

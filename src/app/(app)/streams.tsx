@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView } from 'react-native-gesture-handler';
 
@@ -13,9 +13,11 @@ import { LoadingQuery } from '@/components/basic/LoadingQuery';
 import { MediaDetailsHeader } from '@/components/media/MediaDetailsHeader';
 import { MediaDetailsSkeleton } from '@/components/media/MediaDetailsSkeleton';
 import { StreamList } from '@/components/media/StreamList';
+import { DOWNLOADS_ENABLED } from '@/constants/downloads';
 import { useAutoPlay } from '@/hooks/useAutoPlay';
+import { useDownloadActions } from '@/hooks/useDownloads';
 import { Box, Text, type Theme } from '@/theme/theme';
-import { ContentType } from '@/types/stremio';
+import { ContentType, type Stream } from '@/types/stremio';
 import { formatPlayerTitle } from '@/utils/format';
 
 export default function StreamsPage() {
@@ -50,6 +52,15 @@ export default function StreamsPage() {
     backgroundImage: meta?.background,
     logoImage: meta?.logo,
   });
+
+  const { startDownload } = useDownloadActions();
+
+  const handleDownload = useCallback(
+    (stream: Stream) => {
+      startDownload({ metaId, videoId, type, title: playerTitle ?? meta?.name ?? metaId, stream });
+    },
+    [meta?.name, metaId, playerTitle, startDownload, type, videoId]
+  );
 
   if (effectiveAutoPlay) {
     return (
@@ -107,6 +118,7 @@ export default function StreamsPage() {
                   title={playerTitle}
                   backgroundImage={mediaData.background}
                   logoImage={mediaData.logo}
+                  onDownload={DOWNLOADS_ENABLED ? handleDownload : undefined}
                 />
               </Box>
             </Box>

@@ -257,3 +257,53 @@ describe('StreamList selection', () => {
     expect(mockLegendProps).toEqual(expect.objectContaining({ horizontal: true }));
   });
 });
+
+describe('StreamList downloads', () => {
+  const direct = {
+    addonId: 'addon-a',
+    name: 'Direct file',
+    url: 'https://cdn.example/movie.mkv',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsTVLayout = false;
+    (mediaNavigation.useMediaNavigation as jest.Mock).mockReturnValue({
+      openStreamFromStream: jest.fn(),
+    });
+    (streamsApi.useStreams as jest.Mock).mockImplementation(() => ({
+      data: [direct, playable, external, unavailable],
+      isLoading: false,
+      isError: false,
+      allResults: [],
+      addons: [{ id: 'addon-a', name: 'Alpha', manifestUrl: 'https://addons.example/a' }],
+    }));
+  });
+
+  it('offers a download only for direct file streams and reports the chosen stream', () => {
+    const onDownload = jest.fn();
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <StreamList type="movie" id="movie-1" onDownload={onDownload} />
+    );
+
+    fireEvent.press(getByTestId(`stream-download-${getStreamStableId(direct as any)}`));
+
+    expect(onDownload).toHaveBeenCalledWith(direct);
+    // HLS manifests, external links and torrents cannot be downloaded.
+    for (const stream of [playable, external, unavailable]) {
+      expect(queryByTestId(`stream-download-${getStreamStableId(stream as any)}`)).toBeNull();
+    }
+  });
+
+  it('shows no download button without a handler or in the horizontal TV layout', () => {
+    const testID = `stream-download-${getStreamStableId(direct as any)}`;
+
+    const withoutHandler = renderWithProviders(<StreamList type="movie" id="movie-1" />);
+    expect(withoutHandler.queryByTestId(testID)).toBeNull();
+    withoutHandler.unmount();
+
+    mockIsTVLayout = true;
+    const tv = renderWithProviders(<StreamList type="movie" id="movie-1" onDownload={jest.fn()} />);
+    expect(tv.queryByTestId(testID)).toBeNull();
+  });
+});

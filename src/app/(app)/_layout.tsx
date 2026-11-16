@@ -5,6 +5,9 @@ import { useTheme } from '@shopify/restyle';
 import { Redirect, Stack, useRouter } from 'expo-router';
 
 import { GithubReleaseModal } from '@/components/layout/GithubReleaseModal';
+import { PendingWatchSync } from '@/components/layout/PendingWatchSync';
+import { SeasonDownloadIssuePrompt } from '@/components/layout/SeasonDownloadIssuePrompt';
+import { WatchedDownloadsPrompt } from '@/components/layout/WatchedDownloadsPrompt';
 import { WhatsNewModal } from '@/components/layout/WhatsNewModal';
 import { ProfileSelector } from '@/components/profile/ProfileSelector';
 import { useAppSettingsStore } from '@/store/app-settings.store';
@@ -43,6 +46,9 @@ export default function AppLayout() {
     <>
       <GithubReleaseModal enabled={releaseCheckOnStartup} />
       <WhatsNewModal />
+      <PendingWatchSync />
+      <WatchedDownloadsPrompt />
+      <SeasonDownloadIssuePrompt />
       <Stack
         screenOptions={{
           headerStyle: {
@@ -66,6 +72,7 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen name="catalog" options={{ title: t('catalog') }} />
+        <Stack.Screen name="downloads" options={{ title: t('downloads') }} />
         <Stack.Screen name="streams" options={{ headerShown: false }} />
         <Stack.Screen name="play" options={{ headerShown: false }} />
       </Stack>

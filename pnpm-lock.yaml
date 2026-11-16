@@ -26,6 +26,9 @@ importers:
       '@expo-google-fonts/poppins':
         specifier: ^0.4.1
         version: 0.4.1
+      '@kesha-antonov/react-native-background-downloader':
+        specifier: ^4.8.0
+        version: 4.8.0(react-native-tvos@0.86.2-0)
       '@legendapp/list':
         specifier: 3.3.10
         version: 3.3.10(react-dom@19.2.3(react@19.2.3))(react-native-tvos@0.86.2-0)(react@19.2.3)
@@ -83,6 +86,9 @@ importers:
       expo-drizzle-studio-plugin:
         specifier: ^0.2.1
         version: 0.2.1(expo-sqlite@57.0.5(expo@57.0.33)(react-native-tvos@0.86.2-0)(react@19.2.3))(expo@57.0.33)
+      expo-file-system:
+        specifier: ~57.0.7
+        version: 57.0.7(expo@57.0.33)(react-native-tvos@0.86.2-0)
       expo-font:
         specifier: ^57.0.4
         version: 57.0.4(expo@57.0.33)(react-native-tvos@0.86.2-0)(react@19.2.3)
@@ -343,7 +349,7 @@ importers:
         version: 9.39.1
       '@tailwindcss/vite':
         specifier: ^4.0.0
-        version: 4.2.4(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
+        version: 4.2.4(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1))
       '@types/react':
         specifier: ^19.0.0
         version: 19.1.17
@@ -352,7 +358,7 @@ importers:
         version: 19.2.3(@types/react@19.1.17)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
+        version: 4.7.0(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1))
       eslint:
         specifier: ^9.39.1
         version: 9.39.1(jiti@2.6.1)
@@ -370,10 +376,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^6.1.0
-        version: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)
+        version: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
       vite-plugin-singlefile:
         specifier: ^2.0.2
-        version: 2.3.3(rollup@4.60.2)(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
+        version: 2.3.3(rollup@4.60.2)(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1))
 
 packages:
 
@@ -2434,6 +2440,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@kesha-antonov/react-native-background-downloader@4.8.0':
+    resolution: {integrity: sha512-AR+4IlRhMvDNMUsF1ziJk58KHLlCEQpNYdo7GpZHP3dqSRp6sLEyhUrg38lG4u7UFeY9XksTUxk2VX16W1PdnQ==}
+    peerDependencies:
+      react-native: '>=0.57.0'
 
   '@legendapp/list@3.3.10':
     resolution: {integrity: sha512-S8cwV11oJJD2m47JoRnCmlgbUrnY/f48TPL1zl1C3wwyrvru53Zf1NtYFlMtAU6lUKh/cU9RIffLI7unbf3kmg==}
@@ -10526,6 +10537,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@kesha-antonov/react-native-background-downloader@4.8.0(react-native-tvos@0.86.2-0)':
+    dependencies:
+      react-native: react-native-tvos@0.86.2-0(patch_hash=e91fec82df6b5870c3625e79ba3c16e25c5cecceb339f6f21cd184eca5d363df)(@babel/core@7.29.13)(@react-native/jest-preset@0.86.3(@babel/core@7.29.13)(react@19.2.3))(@react-native/metro-config@0.87.1(@babel/core@7.29.13))(@types/react@19.2.18)(react-native-tvos@0.86.2-0)(react@19.2.3)
+
   '@legendapp/list@3.3.10(react-dom@19.2.3(react@19.2.3))(react-native-tvos@0.86.2-0)(react@19.2.3)':
     dependencies:
       react: 19.2.3
@@ -11259,12 +11274,12 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.2.4
       '@tailwindcss/oxide-win32-x64-msvc': 4.2.4
 
-  '@tailwindcss/vite@4.2.4(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))':
+  '@tailwindcss/vite@4.2.4(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1))':
     dependencies:
       '@tailwindcss/node': 4.2.4
       '@tailwindcss/oxide': 4.2.4
       tailwindcss: 4.2.4
-      vite: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
 
   '@tanstack/query-core@5.102.8': {}
 
@@ -11568,7 +11583,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitejs/plugin-react@4.7.0(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))':
+  '@vitejs/plugin-react@4.7.0(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -11576,7 +11591,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -16974,14 +16989,14 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  vite-plugin-singlefile@2.3.3(rollup@4.60.2)(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)):
+  vite-plugin-singlefile@2.3.3(rollup@4.60.2)(vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)):
     dependencies:
       micromatch: 4.0.8
-      vite: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite: 6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1)
     optionalDependencies:
       rollup: 4.60.2
 
-  vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0):
+  vite@6.4.2(@types/node@25.0.9)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -16993,10 +17008,10 @@ snapshots:
       '@types/node': 25.0.9
       fsevents: 2.3.3
       jiti: 2.6.1
-      lightningcss: 1.32.0
+      lightningcss: 1.33.0
       terser: 5.51.2
       tsx: 4.23.13
-      yaml: 2.9.0
+      yaml: 2.9.1
 
   vlq@1.0.1: {}
 

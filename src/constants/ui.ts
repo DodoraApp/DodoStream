@@ -81,6 +81,9 @@ export const TV_SCROLL_DEBOUNCE_MS = 150;
 
 // Integration auto-sync
 export const INTEGRATION_AUTO_SYNC_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
+// Minimum time between two catch-up syncs triggered by network changes, so a
+// flaky connection cannot cause a series of syncs and error toasts.
+export const PENDING_WATCH_SYNC_MIN_INTERVAL_MS = 60 * 1000;
 
 // Simkl PIN auth
 export const SIMKL_PIN_TIMEOUT_S = 15 * 60; // 15 minutes in seconds

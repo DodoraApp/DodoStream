@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { removeAllDownloadsForProfile } from '@/api/downloads/download-manager';
 import { AVATAR_COLORS, AVATAR_ICONS } from '@/constants/profiles';
 import { removeProfileMyList, removeProfileWatchHistory } from '@/db';
 import { useHomeStore } from '@/store/home.store';
@@ -134,6 +135,7 @@ export const useProfileStore = create<ProfileState>()(
 
         removeProfileWatchHistory(id).catch(() => {});
         removeProfileMyList(id).catch(() => {});
+        removeAllDownloadsForProfile(id).catch(() => {});
       },
 
       switchProfile: (id: string, pin?: string) => {

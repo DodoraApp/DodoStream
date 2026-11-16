@@ -49,7 +49,7 @@ import {
   normalizeLanguageCode,
 } from '@/utils/languages';
 import { classifyPlayerError } from '@/utils/player-errors';
-import { getStreamStableId, getVideoSessionId } from '@/utils/stream';
+import { getStreamStableId, getVideoSessionId, isLocalFileSource } from '@/utils/stream';
 import { combineSubtitles } from '@/utils/subtitles';
 
 import { CustomSubtitles } from './CustomSubtitles';
@@ -598,7 +598,9 @@ export const VideoPlayerSession: FC<VideoPlayerSessionProps> = ({
 
       // Only remember the last stream if playback actually starts loading successfully.
       // This prevents a broken stream URL from being remembered and re-tried forever.
-      if (!didPersistLastTargetRef.current && data.duration > 0) {
+      // A downloaded file is never remembered: it can be deleted, and auto-play
+      // must then fall back to the online stream that was chosen before.
+      if (!didPersistLastTargetRef.current && data.duration > 0 && !isLocalFileSource(source)) {
         didPersistLastTargetRef.current = true;
         if (activeProfileId) {
           setLastStreamTarget({
