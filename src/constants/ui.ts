@@ -10,6 +10,10 @@ export const TOAST_EXIT_DURATION_MS = 200;
 // Toast layout
 export const TOAST_MAX_VISIBLE = 5;
 
+// A picker with at most this many entries (and no groups) opens as a compact
+// popup sized to its content instead of a full-height list.
+export const PICKER_POPUP_MAX_ITEMS = 6;
+
 // Loading animation timings
 export const LOADING_LOGO_ANIMATION_DURATION_MS = 800;
 

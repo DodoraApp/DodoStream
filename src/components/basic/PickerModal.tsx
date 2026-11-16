@@ -8,6 +8,7 @@ import { useTheme } from '@shopify/restyle';
 import { Focusable } from '@/components/basic/Focusable';
 import { Modal } from '@/components/basic/Modal';
 import { TagFilters } from '@/components/basic/TagFilters';
+import { PICKER_POPUP_MAX_ITEMS } from '@/constants/ui';
 import { useGroupOptions } from '@/hooks/useGroupOptions';
 import { Box, Text, Theme } from '@/theme/theme';
 import { getFocusableBackgroundColor, getFocusableForegroundColor } from '@/utils/focus-colors';
@@ -208,6 +209,24 @@ export function PickerModal<T extends string | number | undefined = string | num
   );
 
   const keyExtractor = useCallback((item: PickerItem<T>) => item.value?.toString() ?? '', []);
+
+  // Short menus without groups open as a compact popup sized to their entries.
+  if (groups.length === 0 && items.length <= PICKER_POPUP_MAX_ITEMS) {
+    return (
+      <Modal visible={visible} onClose={onClose} label={label} icon={icon} fitContent>
+        <Box testID="picker-popup">
+          {items.map((item) => (
+            <PickerListItem
+              key={keyExtractor(item)}
+              item={item}
+              isSelected={item.value === selectedValue}
+              onPress={handleValueChange}
+            />
+          ))}
+        </Box>
+      </Modal>
+    );
+  }
 
   return (
     <Modal visible={visible} onClose={onClose} label={label} icon={icon}>

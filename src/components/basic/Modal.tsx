@@ -39,6 +39,12 @@ export interface ModalProps {
   autoFocus?: boolean;
   /** Horizontal placement for the modal surface. */
   contentAlignment?: 'center' | 'right';
+  /**
+   * Size the modal to its content and float it as a popup with a margin,
+   * instead of filling the available height (default: false).
+   * Use it for short content such as context menus and confirmations.
+   */
+  fitContent?: boolean;
 }
 const debug = createDebugLogger('Modal');
 
@@ -59,6 +65,7 @@ export const Modal: FC<ModalProps> = ({
   wide = false,
   autoFocus = true,
   contentAlignment = 'center',
+  fitContent = false,
 }) => {
   useEffect(() => {
     debug('visibility', {
@@ -73,6 +80,9 @@ export const Modal: FC<ModalProps> = ({
   const { breakpoint } = useResponsiveLayout();
   const { height: windowHeight } = useWindowDimensions();
   const alignItems = contentAlignment === 'right' ? 'flex-end' : 'center';
+  // A popup shrinks to its content and keeps a margin to the screen edges.
+  const popupMargin = fitContent ? theme.spacing.m : 0;
+  const fill = fitContent ? { flexShrink: 1 } : { flex: 1 };
 
   return (
     <RNModal
@@ -86,10 +96,10 @@ export const Modal: FC<ModalProps> = ({
           StyleSheet.absoluteFill,
           {
             backgroundColor: theme.colors.overlayBackground,
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            paddingLeft: insets.left,
-            paddingRight: insets.right,
+            paddingTop: insets.top + popupMargin,
+            paddingBottom: insets.bottom + popupMargin,
+            paddingLeft: insets.left + popupMargin,
+            paddingRight: insets.right + popupMargin,
             justifyContent: 'center',
             alignItems,
           },
@@ -103,21 +113,21 @@ export const Modal: FC<ModalProps> = ({
             trapFocusDown
             trapFocusLeft
             trapFocusRight
-            style={{ flex: 1, alignItems, justifyContent: 'center' }}>
-            <Pressable onPress={() => {}} focusable={false} style={{ flex: 1 }}>
+            style={{ ...fill, alignItems, justifyContent: 'center' }}>
+            <Pressable onPress={() => {}} focusable={false} style={fill}>
               <Box
-                flex={1}
                 backgroundColor="cardBackground"
                 borderRadius="l"
                 paddingVertical={disablePadding ? undefined : 'm'}
                 paddingHorizontal={disablePadding ? undefined : 'm'}
                 gap="m"
                 style={{
+                  ...fill,
                   minWidth: wide
                     ? theme.sizes.modalMinWidthWide[breakpoint]
                     : theme.sizes.modalMinWidth[breakpoint],
                   maxWidth: theme.sizes.modalMaxWidth[breakpoint],
-                  maxHeight: windowHeight - insets.top - insets.bottom, // Ensure modal doesn't exceed screen height
+                  maxHeight: windowHeight - insets.top - insets.bottom - popupMargin * 2, // Ensure modal doesn't exceed screen height
                   overflow: 'hidden' as const,
                 }}>
                 <Box
