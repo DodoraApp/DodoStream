@@ -101,9 +101,13 @@ export const DownloadsSettingsContent: FC<DownloadsSettingsContentProps> = memo(
     const openDeleteAll = useCallback(() => setIsDeleteAllVisible(true), []);
     const closeDeleteAll = useCallback(() => setIsDeleteAllVisible(false), []);
     const handleDeleteAll = useCallback(() => {
-      void removeAllDownloads().then(() => {
-        showToast({ title: t('downloads.all_deleted'), preset: 'success' });
-      });
+      removeAllDownloads()
+        .then(() => {
+          showToast({ title: t('downloads.all_deleted'), preset: 'success' });
+        })
+        .catch(() => {
+          // useDownloadActions already shows the error toast.
+        });
     }, [removeAllDownloads, t]);
 
     const content = (

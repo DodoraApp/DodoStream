@@ -197,6 +197,17 @@ describe('download manager', () => {
       expect(started).toHaveLength(1);
     });
 
+    it('starts only one transfer when the same video is requested twice at once', async () => {
+      const results = await Promise.allSettled([start(), start()]);
+
+      expect(results.map((result) => result.status).sort()).toEqual(['fulfilled', 'rejected']);
+      expect(results.find((result) => result.status === 'rejected')).toMatchObject({
+        reason: { code: 'already_exists' },
+      });
+      expect(started).toHaveLength(1);
+      expect(await listDownloadsForProfile(profileId)).toHaveLength(1);
+    });
+
     it('lets several videos download at the same time', async () => {
       const first = await start({}, 'tt-parallel-1');
       const second = await start({}, 'tt-parallel-2');

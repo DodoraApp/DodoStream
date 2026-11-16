@@ -65,6 +65,24 @@ describe('PendingWatchSync', () => {
     expect(mockSyncSimkl).toHaveBeenCalledTimes(1);
   });
 
+  it('still syncs Trakt when the Simkl sync fails', async () => {
+    useIntegrationsStore.setState({
+      settings: {
+        p1: {
+          simkl: { connection: { accessToken: 'token' } },
+          trakt: { connection: { accessToken: 'token' } },
+        },
+      },
+    } as never);
+    mockSyncSimkl.mockRejectedValueOnce(new Error('Simkl down'));
+
+    renderWithProviders(<PendingWatchSync />);
+    await flush();
+
+    expect(mockSyncSimkl).toHaveBeenCalledTimes(1);
+    expect(mockSyncTrakt).toHaveBeenCalledTimes(1);
+  });
+
   it('adds no sync while everything is already synced', async () => {
     mockedHasUnsynced.mockResolvedValue(false);
 

@@ -26,18 +26,20 @@ export const PendingWatchSync = memo(() => {
     if (!profileId) return;
     const settings = useIntegrationsStore.getState().settings[profileId];
 
-    try {
-      if (settings?.simkl?.connection && (await hasUnsyncedWatches(profileId, 'simkl'))) {
-        debug('syncSimkl', { profileId });
-        await syncSimkl();
+    // Each service on its own, so a failure at one does not hold back the other.
+    const syncIfPending = async (provider: 'simkl' | 'trakt', sync: () => Promise<void>) => {
+      try {
+        if (!settings?.[provider]?.connection) return;
+        if (!(await hasUnsyncedWatches(profileId, provider))) return;
+        debug('sync', { profileId, provider });
+        await sync();
+      } catch (error) {
+        debug('syncPendingFailed', { provider, error });
       }
-      if (settings?.trakt?.connection && (await hasUnsyncedWatches(profileId, 'trakt'))) {
-        debug('syncTrakt', { profileId });
-        await syncTrakt();
-      }
-    } catch (error) {
-      debug('syncPendingFailed', { error });
-    }
+    };
+
+    await syncIfPending('simkl', syncSimkl);
+    await syncIfPending('trakt', syncTrakt);
   }, [profileId, syncSimkl, syncTrakt]);
 
   useEffect(() => {

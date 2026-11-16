@@ -129,6 +129,12 @@ const isReplaceable = (download: DbDownload): boolean =>
  */
 const activeTasks = new Map<number, FileDownloadTask>();
 
+/** Videos whose download is being started right now, keyed by profile and video. */
+const startingVideos = new Set<string>();
+
+const getVideoKey = (profileId: string, metaId: string, videoId?: string) =>
+  `${profileId}|${metaId}|${videoId ?? ''}`;
+
 /** True while transfers are paused because the app left the foreground. */
 let pausedForBackground = false;
 
@@ -304,37 +310,47 @@ export async function startDownload(params: StartDownloadParams): Promise<DbDown
     throw new DownloadError('not_downloadable');
   }
 
-  const existing = await getDownloadForVideo(profileId, metaId, videoId);
-  if (existing && !isReplaceable(existing)) {
-    throw new DownloadError('already_exists');
-  }
-  if (existing) {
-    await removeFileQuietly(existing.fileName);
-  }
+  // Two quick taps must not start two transfers for the same video: both
+  // would pass the existence check before either row is written.
+  const key = getVideoKey(profileId, metaId, videoId);
+  if (startingVideos.has(key)) throw new DownloadError('already_exists');
+  startingVideos.add(key);
 
-  const download = await createDownload({
-    profileId,
-    metaId,
-    videoId,
-    type,
-    title,
-    streamId: getStreamStableId(stream),
-    streamTitle: stream.title ?? stream.name ?? undefined,
-    sourceUrl: stream.url,
-    requestHeaders: getStreamRequestHeaders(stream),
-    fileName: buildDownloadFileName(
+  try {
+    const existing = await getDownloadForVideo(profileId, metaId, videoId);
+    if (existing && !isReplaceable(existing)) {
+      throw new DownloadError('already_exists');
+    }
+    if (existing) {
+      await removeFileQuietly(existing.fileName);
+    }
+
+    const download = await createDownload({
+      profileId,
       metaId,
       videoId,
-      getDownloadFileExtension(stream),
-      Date.now().toString(36)
-    ),
-  });
+      type,
+      title,
+      streamId: getStreamStableId(stream),
+      streamTitle: stream.title ?? stream.name ?? undefined,
+      sourceUrl: stream.url,
+      requestHeaders: getStreamRequestHeaders(stream),
+      fileName: buildDownloadFileName(
+        metaId,
+        videoId,
+        getDownloadFileExtension(stream),
+        Date.now().toString(36)
+      ),
+    });
 
-  debug('start', { id: download.id, metaId, videoId, hasHeaders: !!download.requestHeaders });
-  void requestNotificationPermission();
-  await runDownload(download);
-  await invalidateDownloads();
-  return download;
+    debug('start', { id: download.id, metaId, videoId, hasHeaders: !!download.requestHeaders });
+    void requestNotificationPermission();
+    await runDownload(download);
+    await invalidateDownloads();
+    return download;
+  } finally {
+    startingVideos.delete(key);
+  }
 }
 
 /**
