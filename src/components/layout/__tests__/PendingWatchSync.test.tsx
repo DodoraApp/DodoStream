@@ -50,9 +50,11 @@ describe('PendingWatchSync', () => {
   });
 
   it('syncs again as soon as the connection is back, not while offline', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000_000);
     renderWithProviders(<PendingWatchSync />);
     await flush();
     mockSyncSimkl.mockClear();
+    now.mockReturnValue(1_000_000 + 61_000);
 
     await act(async () => {
       mockNetworkListener?.({ isConnected: false, isInternetReachable: false });
@@ -63,6 +65,7 @@ describe('PendingWatchSync', () => {
       mockNetworkListener?.({ isConnected: true, isInternetReachable: true });
     });
     expect(mockSyncSimkl).toHaveBeenCalledTimes(1);
+    now.mockRestore();
   });
 
   it('still syncs Trakt when the Simkl sync fails', async () => {
@@ -81,6 +84,24 @@ describe('PendingWatchSync', () => {
 
     expect(mockSyncSimkl).toHaveBeenCalledTimes(1);
     expect(mockSyncTrakt).toHaveBeenCalledTimes(1);
+  });
+
+  it('tries at most once a minute while the connection keeps changing', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000_000);
+    renderWithProviders(<PendingWatchSync />);
+    await flush();
+
+    await act(async () => {
+      mockNetworkListener?.({ isConnected: true, isInternetReachable: true });
+    });
+    expect(mockSyncSimkl).toHaveBeenCalledTimes(1);
+
+    now.mockReturnValue(1_000_000 + 61_000);
+    await act(async () => {
+      mockNetworkListener?.({ isConnected: true, isInternetReachable: true });
+    });
+    expect(mockSyncSimkl).toHaveBeenCalledTimes(2);
+    now.mockRestore();
   });
 
   it('adds no sync while everything is already synced', async () => {

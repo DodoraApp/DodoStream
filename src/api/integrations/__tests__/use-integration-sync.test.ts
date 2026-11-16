@@ -74,6 +74,31 @@ describe('useIntegrationSync', () => {
     expect(useIntegrationsStore.getState().lastSyncAt['sync-profile']?.simkl).toBeGreaterThan(0);
   });
 
+  it('never runs the same sync twice at once, across hook instances', async () => {
+    let finishExport: (ok: boolean) => void = () => {};
+    runExport.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        finishExport = resolve;
+      })
+    );
+    const first = renderHookWithProviders(() => useIntegrationSync(config, { autoSync: false }));
+    const second = renderHookWithProviders(() => useIntegrationSync(config, { autoSync: false }));
+
+    let running: Promise<void> = Promise.resolve();
+    await act(async () => {
+      running = first.result.current.sync();
+    });
+    await act(() => second.result.current.sync());
+    expect(runExport).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      finishExport(true);
+      await running;
+    });
+    await act(() => second.result.current.sync());
+    expect(runExport).toHaveBeenCalledTimes(2);
+  });
+
   it('only syncs on mount when auto sync is on', async () => {
     renderHookWithProviders(() => useIntegrationSync(config, { autoSync: false }));
     await act(async () => {});

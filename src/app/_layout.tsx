@@ -93,7 +93,6 @@ function Layout() {
       try {
         await initializeDatabase();
         await runSqliteDataMigration();
-        await initializeDownloads();
         await initializeUIStore();
         await initializeProfiles();
         await initializeAddons();
@@ -102,6 +101,14 @@ function Layout() {
         useUIStore.getState().setInitialized(true);
         useProfileStore.getState().setInitialized(true);
         useAddonStore.getState().setInitialized(true);
+      }
+
+      // Downloads come last and on their own: a failure there must not keep
+      // profiles and addons from loading.
+      try {
+        await initializeDownloads();
+      } catch (error) {
+        console.error('[boot] downloads init failed', error);
       }
     };
     void init();

@@ -50,6 +50,13 @@ export interface IntegrationSyncOptions {
 }
 
 /**
+ * Syncs running right now, keyed by profile and provider. Shared by every
+ * hook instance, so the player, the settings and the catch-up sync never run
+ * the same sync twice at once.
+ */
+const runningSyncs = new Set<string>();
+
+/**
  * Whether the device can reach the internet. An unknown state counts as
  * online, so a sync is only skipped when the device is known to be offline.
  */
@@ -77,7 +84,6 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
-  const isSyncingRef = useRef(false);
 
   const { setLastSyncAt, setSyncStatus } = useIntegrationsStore();
   const lastSyncAt = useIntegrationsStore((state) =>
@@ -96,9 +102,11 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
     const cfg = configRef.current;
     const connection = cfg.getConnection();
     const syncMode = cfg.getSyncMode();
-    if (!cfg.profileId || !connection || !syncMode || isSyncingRef.current) return;
+    if (!cfg.profileId || !connection || !syncMode) return;
 
-    isSyncingRef.current = true;
+    const runningKey = `${cfg.profileId}:${cfg.provider}`;
+    if (runningSyncs.has(runningKey)) return;
+    runningSyncs.add(runningKey);
     try {
       // Offline (for example while watching a download) there is nothing to
       // gain but an error toast. Watched items stay in the local history and
@@ -163,7 +171,7 @@ export function useIntegrationSync<TSnapshot, TSyncCursors>(
         });
       }
     } finally {
-      isSyncingRef.current = false;
+      runningSyncs.delete(runningKey);
       setIsSyncing(false);
     }
   }, [queryClient, setLastSyncAt, setSyncStatus, t]);
