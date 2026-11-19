@@ -1,0 +1,63 @@
+{
+  "welcome": {
+    "title": "Te damos la bienvenida a DodoStream",
+    "description": "Vamos a dejarlo todo listo en unos pocos pasos",
+    "get_started": "Empezar",
+    "feature_profile": "Crea tu primer perfil",
+    "feature_integrations": "Conecta integraciones",
+    "feature_addons": "Instala complementos",
+    "feature_customize": "Personaliza los ajustes",
+    "legal_disclaimer": "DodoStream no aloja ni proporciona ningún contenido. Todo el contenido multimedia procede de complementos de terceros. Eres responsable de cumplir la legislación local."
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "Elige el idioma que prefieras para la aplicación",
+    "select_language": "Seleccionar idioma"
+  },
+  "ui": {
+    "title": "Elige tu estilo",
+    "description": "Escoge un tema y ajusta la escala de la interfaz"
+  },
+  "profile": {
+    "title": "Crea tu perfil",
+    "description": "Elige un nombre y un avatar que te representen"
+  },
+  "integrations": {
+    "title": "Conecta tus cuentas",
+    "description": "Sincroniza tu historial de visualización y tu lista de seguimiento con servicios externos",
+    "about_title": "Acerca de las integraciones",
+    "about_description": "Conecta tu cuenta de Simkl para registrar automáticamente lo que ves y mantener tu lista de seguimiento sincronizada en todos tus dispositivos."
+  },
+  "addons": {
+    "title": "Añade fuentes de streaming",
+    "description": "Instala complementos para descubrir y reproducir contenido",
+    "skip_title": "¿Omitir la configuración de complementos?",
+    "skip_message": "Necesitas al menos un complemento de metadatos para explorar contenido. Puedes añadir complementos más tarde en Ajustes.",
+    "skip_anyway": "Omitir de todos modos",
+    "about_title": "Acerca de los complementos",
+    "about_description": "DodoStream usa complementos compatibles con Stremio para ofrecer contenido. Necesitas al menos un complemento de metadatos para explorar películas y series.",
+    "about_types": "Los complementos ofrecen distintos tipos de contenido:",
+    "about_type_metadata": "Metadatos",
+    "about_type_metadata_desc": " - Permiten explorar catálogos y consultar información sobre el contenido",
+    "about_type_streams": "Streams",
+    "about_type_streams_desc": " - Ofrecen streams de vídeo reproducibles",
+    "about_type_subtitles": "Subtítulos",
+    "about_type_subtitles_desc": " - Añaden subtítulos externos"
+  },
+  "home": {
+    "title": "Personaliza la pantalla de inicio",
+    "description": "Configura el aspecto de tu pantalla de inicio"
+  },
+  "playback": {
+    "title": "Preferencias de reproducción",
+    "description": "Configura cómo se reproduce el contenido",
+    "info_desc": "Después de la configuración, puedes personalizar el estilo de los subtítulos, los ajustes del reproductor y mucho más en el menú Ajustes."
+  },
+  "complete": {
+    "title": "¡Ya está todo listo!",
+    "start_exploring": "Empezar a explorar"
+  },
+  "progress": {
+    "step": "Paso {{current}} de {{total}}"
+  }
+}
